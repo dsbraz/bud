@@ -1,0 +1,44 @@
+﻿@inherits LayoutComponentBase
+@inject AuthState AuthState
+@inject ApiClient Api
+@inject NavigationManager Nav
+<div class="app-shell">
+    <aside class="app-sidebar">
+        <div class="sidebar-header">
+            <div class="brand">Bud</div>
+            <div class="brand-subtitle">Gestão de cadastros</div>
+        </div>
+        <NavMenu />
+    </aside>
+
+    <main class="app-main">
+        <header class="app-topbar">
+            <div class="topbar-title">Bud</div>
+            <div class="topbar-actions">
+                <div class="topbar-user">@UserLabel</div>
+                <button class="button ghost" @onclick="HandleLogout">Sair</button>
+            </div>
+        </header>
+        <section class="app-content">
+            @Body
+        </section>
+    </main>
+</div>
+
+@code {
+    private string UserLabel => AuthState.Session is null
+        ? "Sistema interno"
+        : $"{AuthState.Session.DisplayName} · {AuthState.Session.Email}";
+
+    protected override async Task OnInitializedAsync()
+    {
+        await AuthState.EnsureInitializedAsync();
+    }
+
+    private async Task HandleLogout()
+    {
+        await Api.LogoutAsync();
+        await AuthState.ClearAsync();
+        Nav.NavigateTo("login", true);
+    }
+}

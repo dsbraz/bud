@@ -1,0 +1,110 @@
+using Bud.Server.Data;
+using Bud.Server.Middleware;
+using Bud.Server.Services;
+using Bud.Server.Validators;
+using FluentValidation;
+using Microsoft.EntityFrameworkCore;
+
+var builder = WebApplication.CreateBuilder(args);
+
+// Add controllers and API explorer
+builder.Services.AddControllers();
+builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddSwaggerGen();
+
+// Add ProblemDetails and exception handling
+builder.Services.AddProblemDetails();
+builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
+
+// Add FluentValidation
+builder.Services.AddValidatorsFromAssemblyContaining<CreateOrganizationValidator>();
+
+// Add DbContext
+var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
+if (string.IsNullOrWhiteSpace(connectionString))
+{
+    throw new InvalidOperationException("Connection string 'DefaultConnection' not configured.");
+}
+
+builder.Services.AddDbContext<ApplicationDbContext>(options =>
+{
+    options.UseNpgsql(connectionString);
+});
+
+// Add Services
+builder.Services.AddScoped<IOrganizationService, OrganizationService>();
+builder.Services.AddScoped<IWorkspaceService, WorkspaceService>();
+builder.Services.AddScoped<ITeamService, TeamService>();
+builder.Services.AddScoped<ICollaboratorService, CollaboratorService>();
+builder.Services.AddScoped<IMissionService, MissionService>();
+builder.Services.AddScoped<IMissionMetricService, MissionMetricService>();
+builder.Services.AddScoped<IAuthService, AuthService>();
+
+// Add Health Checks
+builder.Services.AddHealthChecks()
+    .AddNpgSql(connectionString, name: "postgres", tags: ["db", "ready"]);
+
+var app = builder.Build();
+
+// Configure the HTTP request pipeline
+if (app.Environment.IsDevelopment())
+{
+    app.UseSwagger();
+    app.UseSwaggerUI();
+}
+
+// Apply migrations in development
+if (app.Environment.IsDevelopment())
+{
+    using var scope = app.Services.CreateScope();
+    var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+    var logger = scope.ServiceProvider.GetRequiredService<ILoggerFactory>()
+        .CreateLogger("DatabaseMigration");
+
+    const int maxAttempts = 5;
+    var migrated = false;
+    for (var attempt = 1; attempt <= maxAttempts; attempt++)
+    {
+        try
+        {
+            dbContext.Database.Migrate();
+            migrated = true;
+            break;
+        }
+        catch (Exception ex)
+        {
+            logger.LogWarning(ex, "Migration attempt {Attempt} failed.", attempt);
+            Thread.Sleep(TimeSpan.FromSeconds(3));
+        }
+    }
+
+    if (!migrated)
+    {
+        logger.LogError("Database migration failed after {Attempts} attempts.", maxAttempts);
+    }
+}
+
+app.UseExceptionHandler();
+app.UseHttpsRedirection();
+app.UseBlazorFrameworkFiles();
+app.UseStaticFiles();
+
+app.MapControllers();
+
+// Health check endpoints
+app.MapHealthChecks("/health/live", new Microsoft.AspNetCore.Diagnostics.HealthChecks.HealthCheckOptions
+{
+    Predicate = _ => false // No checks for liveness
+});
+
+app.MapHealthChecks("/health/ready", new Microsoft.AspNetCore.Diagnostics.HealthChecks.HealthCheckOptions
+{
+    Predicate = check => check.Tags.Contains("ready")
+});
+
+app.MapFallbackToFile("index.html");
+
+app.Run();
+
+// Make the implicit Program class public for testing
+public partial class Program { }

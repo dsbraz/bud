@@ -1,0 +1,266 @@
+@page "/mission-metrics"
+@inject ApiClient Api
+
+<div class="page-header">
+    <div>
+        <div class="page-kicker">Gestão</div>
+        <h1>Métricas</h1>
+        <p class="page-subtitle">Defina métricas para suas missões.</p>
+    </div>
+</div>
+
+<MissionsMenu />
+
+<div class="grid-2">
+    <div class="card">
+        <h2>Criar métrica</h2>
+        <EditForm Model="@newMetric" OnValidSubmit="CreateMetric">
+            <DataAnnotationsValidator />
+            <div class="form-row">
+                <label>Missão</label>
+                <select class="input" @bind="createMissionId">
+                    <option value="">Selecione</option>
+                    @foreach (var mission in missions)
+                    {
+                        <option value="@mission.Id">@mission.Name</option>
+                    }
+                </select>
+            </div>
+            <div class="form-row">
+                <label>Nome</label>
+                <InputText class="input" @bind-Value="newMetric.Name" />
+            </div>
+            <div class="form-row">
+                <label>Tipo</label>
+                <select class="input" value="@createMetricTypeValue" @onchange="OnMetricTypeChanged">
+                    <option value="">Selecione</option>
+                    @foreach (var metricType in Enum.GetValues<MetricType>())
+                    {
+                        <option value="@metricType">@GetMetricTypeLabel(metricType)</option>
+                    }
+                </select>
+            </div>
+            @if (createMetricTypeValue == nameof(MetricType.Qualitative))
+            {
+                <div class="form-row">
+                    <label>Texto alvo</label>
+                    <InputText class="input" @bind-Value="newMetric.TargetText" />
+                </div>
+            }
+            @if (createMetricTypeValue == nameof(MetricType.Quantitative))
+            {
+                <div class="form-row">
+                    <label>Valor alvo</label>
+                    <InputNumber class="input" @bind-Value="newMetric.TargetValue" />
+                </div>
+                <div class="form-row">
+                    <label>Unidade</label>
+                    <select class="input" @bind="createMetricUnitValue">
+                        <option value="">Selecione</option>
+                        @foreach (var unit in Enum.GetValues<MetricUnit>())
+                        {
+                            <option value="@unit">@GetUnitLabel(unit)</option>
+                        }
+                    </select>
+                </div>
+            }
+            <div class="form-actions">
+                <button class="button primary" type="submit">Salvar</button>
+            </div>
+        </EditForm>
+        @if (!string.IsNullOrWhiteSpace(formMessage))
+        {
+            <p class="form-message">@formMessage</p>
+        }
+    </div>
+
+    <div class="card">
+        <h2>Lista</h2>
+        <div class="form-row">
+            <label>Missão</label>
+            <select class="input" @bind="filterMissionId">
+                <option value="">Todas</option>
+                @foreach (var mission in missions)
+                {
+                    <option value="@mission.Id">@mission.Name</option>
+                }
+            </select>
+        </div>
+        <div class="form-row">
+            <label>Busca</label>
+            <InputText class="input" @bind-Value="search" />
+        </div>
+        <div class="form-actions">
+            <button class="button" @onclick="LoadMetrics">Atualizar</button>
+        </div>
+
+        @if (metrics is null)
+        {
+            <p class="muted">Carregando...</p>
+        }
+        else if (metrics.Items.Count == 0)
+        {
+            <p class="muted">Nenhuma métrica encontrada.</p>
+        }
+        else
+        {
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Nome</th>
+                        <th>Tipo</th>
+                        <th>Alvo</th>
+                        <th>Missão</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var metric in metrics.Items)
+                    {
+                        <tr>
+                            <td>@metric.Name</td>
+                            <td>@GetMetricTypeLabel(metric.Type)</td>
+                            <td>@GetTargetLabel(metric)</td>
+                            <td>@GetMissionName(metric.MissionId)</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+            <p class="muted">Total: @metrics.Total</p>
+        }
+    </div>
+</div>
+
+@code {
+    private CreateMissionMetricRequest newMetric = new();
+    private PagedResult<MissionMetric>? metrics;
+    private List<Mission> missions = new();
+    private string? createMissionId;
+    private string? createMetricTypeValue;
+    private string? createMetricUnitValue;
+    private string? filterMissionId;
+    private string? search;
+    private string? formMessage;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadMissions();
+        await LoadMetrics();
+    }
+
+    private async Task LoadMissions()
+    {
+        var result = await Api.GetMissionsAsync(null, null, null, 1, 200);
+        missions = result?.Items.ToList() ?? new List<Mission>();
+    }
+
+    private async Task LoadMetrics()
+    {
+        var missionId = Guid.TryParse(filterMissionId, out var parsedMissionId)
+            ? parsedMissionId
+            : (Guid?)null;
+
+        metrics = await Api.GetMissionMetricsAsync(missionId, search, 1, 20) ?? new PagedResult<MissionMetric>();
+    }
+
+    private async Task OnMetricTypeChanged(ChangeEventArgs e)
+    {
+        createMetricTypeValue = e.Value?.ToString();
+        newMetric.TargetText = null;
+        newMetric.TargetValue = null;
+        createMetricUnitValue = null;
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private async Task CreateMetric()
+    {
+        formMessage = null;
+
+        if (!Guid.TryParse(createMissionId, out var missionId))
+        {
+            formMessage = "Selecione uma missão.";
+            return;
+        }
+
+        if (string.IsNullOrWhiteSpace(newMetric.Name))
+        {
+            formMessage = "Informe o nome da métrica.";
+            return;
+        }
+
+        if (!Enum.TryParse<MetricType>(createMetricTypeValue, out var metricType))
+        {
+            formMessage = "Selecione o tipo da metrica.";
+            return;
+        }
+
+        newMetric.MissionId = missionId;
+        newMetric.Type = metricType;
+
+        if (metricType == MetricType.Qualitative)
+        {
+            if (string.IsNullOrWhiteSpace(newMetric.TargetText))
+            {
+                formMessage = "Informe o texto alvo.";
+                return;
+            }
+        }
+        else
+        {
+            if (newMetric.TargetValue is null)
+            {
+                formMessage = "Informe o valor alvo.";
+                return;
+            }
+
+            if (!Enum.TryParse<MetricUnit>(createMetricUnitValue, out var metricUnit))
+            {
+                formMessage = "Selecione a unidade.";
+                return;
+            }
+
+            newMetric.Unit = metricUnit;
+        }
+
+        await Api.CreateMissionMetricAsync(newMetric);
+        newMetric = new CreateMissionMetricRequest();
+        createMissionId = null;
+        createMetricTypeValue = null;
+        createMetricUnitValue = null;
+        await LoadMetrics();
+        formMessage = "Métrica criada com sucesso.";
+    }
+
+    private string GetMissionName(Guid missionId)
+    {
+        return missions.FirstOrDefault(m => m.Id == missionId)?.Name ?? "—";
+    }
+
+    private static string GetMetricTypeLabel(MetricType type) => type switch
+    {
+        MetricType.Qualitative => "Qualitativa",
+        MetricType.Quantitative => "Quantitativa",
+        _ => type.ToString()
+    };
+
+    private static string GetUnitLabel(MetricUnit unit) => unit switch
+    {
+        MetricUnit.Integer => "Inteiro",
+        MetricUnit.Decimal => "Decimal",
+        MetricUnit.Percentage => "Percentual",
+        MetricUnit.Hours => "Horas",
+        MetricUnit.Points => "Pontos",
+        _ => unit.ToString()
+    };
+
+    private static string GetTargetLabel(MissionMetric metric)
+    {
+        if (metric.Type == MetricType.Qualitative)
+        {
+            return metric.TargetText ?? "—";
+        }
+
+        var value = metric.TargetValue?.ToString() ?? "—";
+        var unit = metric.Unit.HasValue ? GetUnitLabel(metric.Unit.Value) : "—";
+        return $"{value} {unit}";
+    }
+}

@@ -1,0 +1,93 @@
+@page "/login"
+@layout AuthLayout
+@inject ApiClient Api
+@inject AuthState AuthState
+@inject NavigationManager Nav
+@using Microsoft.AspNetCore.WebUtilities
+
+<div class="auth-card">
+    <h2>Entrar</h2>
+    <p class="muted">Não é necessário senha.</p>
+
+    <EditForm Model="@login" OnValidSubmit="HandleLogin">
+        <DataAnnotationsValidator />
+        <div class="form-row">
+            <label>E-mail</label>
+            <InputText class="input" @bind-Value="login.Email" placeholder="admin ou colaborador@empresa.com" />
+        </div>
+        <div class="form-actions">
+            <button class="button primary" type="submit" disabled="@isSubmitting">Entrar</button>
+        </div>
+    </EditForm>
+
+    @if (!string.IsNullOrWhiteSpace(errorMessage))
+    {
+        <p class="form-message error">@errorMessage</p>
+    }
+</div>
+
+@code {
+    private AuthLoginRequest login = new();
+    private bool isSubmitting;
+    private string? errorMessage;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await AuthState.EnsureInitializedAsync();
+        if (AuthState.IsAuthenticated)
+        {
+            Nav.NavigateTo("/", true);
+        }
+    }
+
+    private async Task HandleLogin()
+    {
+        errorMessage = null;
+        if (string.IsNullOrWhiteSpace(login.Email))
+        {
+            errorMessage = "Informe o e-mail para continuar.";
+            return;
+        }
+
+        isSubmitting = true;
+        try
+        {
+            var response = await Api.LoginAsync(login);
+            if (response is null)
+            {
+                errorMessage = "Usuário não encontrado. Verifique o e-mail.";
+                return;
+            }
+
+            await AuthState.SetSessionAsync(response);
+
+            var returnUrl = GetReturnUrl();
+            Nav.NavigateTo(returnUrl ?? "/", true);
+        }
+        finally
+        {
+            isSubmitting = false;
+        }
+    }
+
+    private string? GetReturnUrl()
+    {
+        var uri = Nav.ToAbsoluteUri(Nav.Uri);
+        if (string.IsNullOrWhiteSpace(uri.Query))
+        {
+            return null;
+        }
+
+        var query = QueryHelpers.ParseQuery(uri.Query);
+        if (query.TryGetValue("returnUrl", out var returnUrl))
+        {
+            var value = returnUrl.ToString();
+            if (!string.IsNullOrWhiteSpace(value))
+            {
+                return value;
+            }
+        }
+
+        return null;
+    }
+}

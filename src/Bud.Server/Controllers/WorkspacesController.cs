@@ -1,0 +1,123 @@
+using Bud.Server.Services;
+using Bud.Shared.Contracts;
+using Bud.Shared.Models;
+using FluentValidation;
+using Microsoft.AspNetCore.Mvc;
+
+namespace Bud.Server.Controllers;
+
+[ApiController]
+[Route("api/workspaces")]
+public sealed class WorkspacesController(
+    IWorkspaceService workspaceService,
+    IValidator<CreateWorkspaceRequest> createValidator,
+    IValidator<UpdateWorkspaceRequest> updateValidator) : ControllerBase
+{
+    [HttpPost]
+    [ProducesResponseType(typeof(Workspace), StatusCodes.Status201Created)]
+    [ProducesResponseType(typeof(ValidationProblemDetails), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<Workspace>> Create(CreateWorkspaceRequest request, CancellationToken cancellationToken)
+    {
+        var validationResult = await createValidator.ValidateAsync(request, cancellationToken);
+        if (!validationResult.IsValid)
+        {
+            return ValidationProblem(new ValidationProblemDetails(
+                validationResult.ToDictionary()));
+        }
+
+        var result = await workspaceService.CreateAsync(request, cancellationToken);
+
+        if (result.IsFailure)
+        {
+            return result.ErrorType == ServiceErrorType.NotFound
+                ? NotFound(new ProblemDetails { Detail = result.Error })
+                : BadRequest(new ProblemDetails { Detail = result.Error });
+        }
+
+        return CreatedAtAction(nameof(GetById), new { id = result.Value!.Id }, result.Value);
+    }
+
+    [HttpPut("{id:guid}")]
+    [ProducesResponseType(typeof(Workspace), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ValidationProblemDetails), StatusCodes.Status400BadRequest)]
+    public async Task<ActionResult<Workspace>> Update(Guid id, UpdateWorkspaceRequest request, CancellationToken cancellationToken)
+    {
+        var validationResult = await updateValidator.ValidateAsync(request, cancellationToken);
+        if (!validationResult.IsValid)
+        {
+            return ValidationProblem(new ValidationProblemDetails(
+                validationResult.ToDictionary()));
+        }
+
+        var result = await workspaceService.UpdateAsync(id, request, cancellationToken);
+
+        if (result.IsFailure)
+        {
+            return result.ErrorType == ServiceErrorType.NotFound
+                ? NotFound(new ProblemDetails { Detail = result.Error })
+                : BadRequest(new ProblemDetails { Detail = result.Error });
+        }
+
+        return Ok(result.Value);
+    }
+
+    [HttpDelete("{id:guid}")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> Delete(Guid id, CancellationToken cancellationToken)
+    {
+        var result = await workspaceService.DeleteAsync(id, cancellationToken);
+
+        if (result.IsFailure)
+        {
+            return result.ErrorType == ServiceErrorType.NotFound
+                ? NotFound(new ProblemDetails { Detail = result.Error })
+                : BadRequest(new ProblemDetails { Detail = result.Error });
+        }
+
+        return NoContent();
+    }
+
+    [HttpGet("{id:guid}")]
+    [ProducesResponseType(typeof(Workspace), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<Workspace>> GetById(Guid id, CancellationToken cancellationToken)
+    {
+        var result = await workspaceService.GetByIdAsync(id, cancellationToken);
+
+        return result.IsSuccess
+            ? Ok(result.Value)
+            : NotFound(new ProblemDetails { Detail = result.Error });
+    }
+
+    [HttpGet]
+    [ProducesResponseType(typeof(PagedResult<Workspace>), StatusCodes.Status200OK)]
+    public async Task<ActionResult<PagedResult<Workspace>>> GetAll(
+        [FromQuery] Guid? organizationId,
+        [FromQuery] string? search,
+        [FromQuery] int page = 1,
+        [FromQuery] int pageSize = 10,
+        CancellationToken cancellationToken = default)
+    {
+        var result = await workspaceService.GetAllAsync(organizationId, search, page, pageSize, cancellationToken);
+        return Ok(result.Value);
+    }
+
+    [HttpGet("{id:guid}/teams")]
+    [ProducesResponseType(typeof(PagedResult<Team>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<PagedResult<Team>>> GetTeams(
+        Guid id,
+        [FromQuery] int page = 1,
+        [FromQuery] int pageSize = 10,
+        CancellationToken cancellationToken = default)
+    {
+        var result = await workspaceService.GetTeamsAsync(id, page, pageSize, cancellationToken);
+
+        return result.IsSuccess
+            ? Ok(result.Value)
+            : NotFound(new ProblemDetails { Detail = result.Error });
+    }
+}

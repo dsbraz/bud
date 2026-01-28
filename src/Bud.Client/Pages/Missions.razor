@@ -1,0 +1,312 @@
+@page "/missions"
+@inject ApiClient Api
+
+<div class="page-header">
+    <div>
+        <div class="page-kicker">Gestão</div>
+        <h1>Missões</h1>
+        <p class="page-subtitle">Defina missões por escopo e acompanhe status.</p>
+    </div>
+</div>
+
+<MissionsMenu />
+
+<div class="grid-2">
+    <div class="card">
+        <h2>Criar missão</h2>
+        <EditForm Model="@newMission" OnValidSubmit="CreateMission">
+            <DataAnnotationsValidator />
+            <div class="form-row">
+                <label>Escopo</label>
+                <select class="input" value="@createScopeTypeValue" @onchange="OnCreateScopeTypeChanged">
+                    <option value="">Selecione</option>
+                    @foreach (var scopeType in Enum.GetValues<MissionScopeType>())
+                    {
+                        <option value="@scopeType">@GetScopeLabel(scopeType)</option>
+                    }
+                </select>
+            </div>
+            <div class="form-row">
+                <label>Referência</label>
+                <select class="input" @bind="createScopeId">
+                    <option value="">Selecione</option>
+                    @foreach (var option in GetScopeOptions(createScopeTypeValue))
+                    {
+                        <option value="@option.Id">@option.Name</option>
+                    }
+                </select>
+            </div>
+            <div class="form-row">
+                <label>Nome</label>
+                <InputText class="input" @bind-Value="newMission.Name" />
+            </div>
+            <div class="form-row">
+                <label>Início</label>
+                <InputDate class="input" @bind-Value="newMission.StartDate" />
+            </div>
+            <div class="form-row">
+                <label>Fim</label>
+                <InputDate class="input" @bind-Value="newMission.EndDate" />
+            </div>
+            <div class="form-row">
+                <label>Status</label>
+                <InputSelect class="input" @bind-Value="newMission.Status">
+                    @foreach (var status in Enum.GetValues<MissionStatus>())
+                    {
+                        <option value="@status">@GetStatusLabel(status)</option>
+                    }
+                </InputSelect>
+            </div>
+            <div class="form-actions">
+                <button class="button primary" type="submit">Salvar</button>
+            </div>
+        </EditForm>
+        @if (!string.IsNullOrWhiteSpace(formMessage))
+        {
+            <p class="form-message">@formMessage</p>
+        }
+    </div>
+
+    <div class="card">
+        <h2>Lista</h2>
+        <div class="form-row">
+            <label>Escopo</label>
+            <select class="input" value="@filterScopeTypeValue" @onchange="OnFilterScopeTypeChanged">
+                <option value="">Todos</option>
+                @foreach (var scopeType in Enum.GetValues<MissionScopeType>())
+                {
+                    <option value="@scopeType">@GetScopeLabel(scopeType)</option>
+                }
+            </select>
+        </div>
+        <div class="form-row">
+            <label>Referência</label>
+            <select class="input" @bind="filterScopeId">
+                <option value="">Todas</option>
+                @foreach (var option in GetScopeOptions(filterScopeTypeValue))
+                {
+                    <option value="@option.Id">@option.Name</option>
+                }
+            </select>
+        </div>
+        <div class="form-row">
+            <label>Busca</label>
+            <InputText class="input" @bind-Value="search" />
+        </div>
+        <div class="form-actions">
+            <button class="button" @onclick="LoadMissions">Atualizar</button>
+        </div>
+
+        @if (missions is null)
+        {
+            <p class="muted">Carregando...</p>
+        }
+        else if (missions.Items.Count == 0)
+        {
+            <p class="muted">Nenhuma missão encontrada.</p>
+        }
+        else
+        {
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Nome</th>
+                        <th>Escopo</th>
+                        <th>Período</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var mission in missions.Items)
+                    {
+                        <tr>
+                            <td>@mission.Name</td>
+                            <td>@GetMissionScopeName(mission)</td>
+                            <td>@mission.StartDate.ToString("yyyy-MM-dd") - @mission.EndDate.ToString("yyyy-MM-dd")</td>
+                            <td>@GetStatusLabel(mission.Status)</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+            <p class="muted">Total: @missions.Total</p>
+        }
+    </div>
+</div>
+
+@code {
+    private sealed record ScopeOption(string Id, string Name);
+
+    private CreateMissionRequest newMission = new();
+    private PagedResult<Mission>? missions;
+    private List<Organization> organizations = new();
+    private List<Workspace> workspaces = new();
+    private List<Team> teams = new();
+    private List<Collaborator> collaborators = new();
+    private string? createScopeTypeValue;
+    private string? createScopeId;
+    private string? filterScopeTypeValue;
+    private string? filterScopeId;
+    private string? search;
+    private string? formMessage;
+
+    protected override async Task OnInitializedAsync()
+    {
+        newMission = new CreateMissionRequest
+        {
+            StartDate = DateTime.Today,
+            EndDate = DateTime.Today.AddDays(7),
+            Status = MissionStatus.Planned
+        };
+
+        await LoadReferenceData();
+        await LoadMissions();
+    }
+
+    private async Task LoadReferenceData()
+    {
+        var orgsResult = await Api.GetOrganizationsAsync(null, 1, 200);
+        organizations = orgsResult?.Items.ToList() ?? new List<Organization>();
+
+        var workspacesResult = await Api.GetWorkspacesAsync(null, null, 1, 200);
+        workspaces = workspacesResult?.Items.ToList() ?? new List<Workspace>();
+
+        var teamsResult = await Api.GetTeamsAsync(null, null, null, 1, 200);
+        teams = teamsResult?.Items.ToList() ?? new List<Team>();
+
+        var collaboratorsResult = await Api.GetCollaboratorsAsync(null, null, 1, 200);
+        collaborators = collaboratorsResult?.Items.ToList() ?? new List<Collaborator>();
+    }
+
+    private async Task LoadMissions()
+    {
+        var scopeType = ParseScopeType(filterScopeTypeValue);
+        var scopeId = Guid.TryParse(filterScopeId, out var parsedScopeId)
+            ? parsedScopeId
+            : (Guid?)null;
+
+        missions = await Api.GetMissionsAsync(scopeType, scopeId, search, 1, 20) ?? new PagedResult<Mission>();
+    }
+
+    private async Task OnCreateScopeTypeChanged(ChangeEventArgs e)
+    {
+        createScopeTypeValue = e.Value?.ToString();
+        createScopeId = null;
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private async Task OnFilterScopeTypeChanged(ChangeEventArgs e)
+    {
+        filterScopeTypeValue = e.Value?.ToString();
+        filterScopeId = null;
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private async Task CreateMission()
+    {
+        formMessage = null;
+
+        if (!Enum.TryParse<MissionScopeType>(createScopeTypeValue, out var scopeType))
+        {
+            formMessage = "Selecione o escopo.";
+            return;
+        }
+
+        if (!Guid.TryParse(createScopeId, out var scopeId))
+        {
+            formMessage = "Selecione a referência do escopo.";
+            return;
+        }
+
+        if (string.IsNullOrWhiteSpace(newMission.Name))
+        {
+            formMessage = "Informe o nome da missão.";
+            return;
+        }
+
+        if (newMission.EndDate < newMission.StartDate)
+        {
+            formMessage = "A data de fim precisa ser igual ou maior que a data de início.";
+            return;
+        }
+
+        newMission.ScopeType = scopeType;
+        newMission.ScopeId = scopeId;
+
+        await Api.CreateMissionAsync(newMission);
+        newMission = new CreateMissionRequest
+        {
+            StartDate = DateTime.Today,
+            EndDate = DateTime.Today.AddDays(7),
+            Status = MissionStatus.Planned
+        };
+        createScopeTypeValue = null;
+        createScopeId = null;
+        await LoadMissions();
+        formMessage = "Missão criada com sucesso.";
+    }
+
+    private IEnumerable<ScopeOption> GetScopeOptions(string? scopeTypeValue)
+    {
+        if (!Enum.TryParse<MissionScopeType>(scopeTypeValue, out var scopeType))
+        {
+            return Enumerable.Empty<ScopeOption>();
+        }
+
+        return scopeType switch
+        {
+            MissionScopeType.Organization => organizations.Select(o => new ScopeOption(o.Id.ToString(), o.Name)),
+            MissionScopeType.Workspace => workspaces.Select(w => new ScopeOption(w.Id.ToString(), w.Name)),
+            MissionScopeType.Team => teams.Select(t => new ScopeOption(t.Id.ToString(), t.Name)),
+            MissionScopeType.Collaborator => collaborators.Select(c => new ScopeOption(c.Id.ToString(), c.FullName)),
+            _ => Enumerable.Empty<ScopeOption>()
+        };
+    }
+
+    private MissionScopeType? ParseScopeType(string? scopeTypeValue)
+    {
+        return Enum.TryParse<MissionScopeType>(scopeTypeValue, out var scopeType) ? scopeType : null;
+    }
+
+    private string GetMissionScopeName(Mission mission)
+    {
+        if (mission.OrganizationId.HasValue)
+        {
+            return organizations.FirstOrDefault(o => o.Id == mission.OrganizationId.Value)?.Name ?? "—";
+        }
+
+        if (mission.WorkspaceId.HasValue)
+        {
+            return workspaces.FirstOrDefault(w => w.Id == mission.WorkspaceId.Value)?.Name ?? "—";
+        }
+
+        if (mission.TeamId.HasValue)
+        {
+            return teams.FirstOrDefault(t => t.Id == mission.TeamId.Value)?.Name ?? "—";
+        }
+
+        if (mission.CollaboratorId.HasValue)
+        {
+            return collaborators.FirstOrDefault(c => c.Id == mission.CollaboratorId.Value)?.FullName ?? "—";
+        }
+
+        return "—";
+    }
+
+    private static string GetScopeLabel(MissionScopeType scopeType) => scopeType switch
+    {
+        MissionScopeType.Organization => "Organização",
+        MissionScopeType.Workspace => "Workspace",
+        MissionScopeType.Team => "Equipe",
+        MissionScopeType.Collaborator => "Colaborador",
+        _ => scopeType.ToString()
+    };
+
+    private static string GetStatusLabel(MissionStatus status) => status switch
+    {
+        MissionStatus.Planned => "Planejada",
+        MissionStatus.Active => "Ativa",
+        MissionStatus.Completed => "Concluída",
+        MissionStatus.Cancelled => "Cancelada",
+        _ => status.ToString()
+    };
+}

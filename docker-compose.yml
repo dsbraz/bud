@@ -1,0 +1,32 @@
+services:
+  db:
+    image: postgres:16
+    container_name: bud-db
+    environment:
+      POSTGRES_DB: bud
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: dev
+    container_name: bud-web
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      ConnectionStrings__DefaultConnection: Host=db;Port=5432;Database=bud;Username=postgres;Password=postgres
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./src:/src/src
+      - ./Directory.Build.props:/src/Directory.Build.props
+    depends_on:
+      - db
+
+volumes:
+  postgres_data:

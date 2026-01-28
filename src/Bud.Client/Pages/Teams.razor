@@ -1,0 +1,183 @@
+@page "/teams"
+@inject ApiClient Api
+
+<div class="page-header">
+    <div>
+        <div class="page-kicker">Gestão</div>
+        <h1>Equipes</h1>
+        <p class="page-subtitle">Crie equipes e subequipes por workspace.</p>
+    </div>
+</div>
+
+<ManagementMenu />
+
+<div class="grid-2">
+    <div class="card">
+        <h2>Criar equipe</h2>
+        <EditForm Model="@newTeam" OnValidSubmit="CreateTeam">
+            <DataAnnotationsValidator />
+            <div class="form-row">
+                <label>Workspace</label>
+                <select class="input" value="@createWorkspaceId" @onchange="OnCreateWorkspaceChanged">
+                    <option value="">Selecione</option>
+                    @foreach (var workspace in workspaces)
+                    {
+                        <option value="@workspace.Id">@workspace.Name</option>
+                    }
+                </select>
+            </div>
+            <div class="form-row">
+                <label>Equipe pai (opcional)</label>
+                <select class="input" @bind="createParentTeamId">
+                    <option value="">Nenhuma</option>
+                    @foreach (var team in parentTeams)
+                    {
+                        <option value="@team.Id">@team.Name</option>
+                    }
+                </select>
+            </div>
+            <div class="form-row">
+                <label>Nome</label>
+                <InputText class="input" @bind-Value="newTeam.Name" />
+            </div>
+            <div class="form-actions">
+                <button class="button primary" type="submit">Salvar</button>
+            </div>
+        </EditForm>
+        @if (!string.IsNullOrWhiteSpace(formMessage))
+        {
+            <p class="form-message">@formMessage</p>
+        }
+    </div>
+
+    <div class="card">
+        <h2>Lista</h2>
+        <div class="form-row">
+            <label>Workspace</label>
+            <select class="input" @bind="selectedWorkspaceId">
+                <option value="">Todos</option>
+                @foreach (var workspace in workspaces)
+                {
+                    <option value="@workspace.Id">@workspace.Name</option>
+                }
+            </select>
+        </div>
+        <div class="form-row">
+            <label>Busca</label>
+            <InputText class="input" @bind-Value="search" />
+        </div>
+        <div class="form-actions">
+            <button class="button" @onclick="LoadTeams">Atualizar</button>
+        </div>
+
+        @if (teams is null)
+        {
+            <p class="muted">Carregando...</p>
+        }
+        else if (teams.Items.Count == 0)
+        {
+            <p class="muted">Nenhuma equipe encontrada.</p>
+        }
+        else
+        {
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Nome</th>
+                        <th>Workspace</th>
+                        <th>Equipe pai</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var team in teams.Items)
+                    {
+                        var workspace = workspaces.FirstOrDefault(w => w.Id == team.WorkspaceId);
+                        var parent = allTeams.FirstOrDefault(t => t.Id == team.ParentTeamId);
+                        <tr>
+                            <td>@team.Name</td>
+                            <td>@(workspace?.Name ?? "—")</td>
+                            <td>@(parent?.Name ?? "—")</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+            <p class="muted">Total: @teams.Total</p>
+        }
+    </div>
+</div>
+
+@code {
+    private CreateTeamRequest newTeam = new();
+    private List<Workspace> workspaces = new();
+    private List<Team> parentTeams = new();
+    private List<Team> allTeams = new();
+    private PagedResult<Team>? teams;
+    private string? search;
+    private string? selectedWorkspaceId;
+    private string? createWorkspaceId;
+    private string? createParentTeamId;
+    private string? formMessage;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadWorkspaces();
+        await LoadTeams();
+    }
+
+    private async Task LoadWorkspaces()
+    {
+        var result = await Api.GetWorkspacesAsync(null, null, 1, 100);
+        workspaces = result?.Items.ToList() ?? new List<Workspace>();
+    }
+
+    private async Task LoadTeams()
+    {
+        var filterWorkspaceId = Guid.TryParse(selectedWorkspaceId, out var parsedWorkspaceId)
+            ? parsedWorkspaceId
+            : (Guid?)null;
+        teams = await Api.GetTeamsAsync(filterWorkspaceId, null, search, 1, 20) ?? new PagedResult<Team>();
+
+        var allTeamsResult = await Api.GetTeamsAsync(null, null, null, 1, 200);
+        allTeams = allTeamsResult?.Items.ToList() ?? new List<Team>();
+    }
+
+    private async Task OnCreateWorkspaceChanged(ChangeEventArgs e)
+    {
+        createWorkspaceId = e.Value?.ToString();
+        createParentTeamId = null;
+        parentTeams.Clear();
+
+        if (Guid.TryParse(createWorkspaceId, out var workspaceId))
+        {
+            var result = await Api.GetTeamsAsync(workspaceId, null, null, 1, 200);
+            parentTeams = result?.Items.ToList() ?? new List<Team>();
+        }
+    }
+
+    private async Task CreateTeam()
+    {
+        formMessage = null;
+        if (!Guid.TryParse(createWorkspaceId, out var workspaceId))
+        {
+            formMessage = "Selecione um workspace.";
+            return;
+        }
+
+        if (string.IsNullOrWhiteSpace(newTeam.Name))
+        {
+            formMessage = "Informe o nome da equipe.";
+            return;
+        }
+
+        newTeam.WorkspaceId = workspaceId;
+        newTeam.ParentTeamId = Guid.TryParse(createParentTeamId, out var parentId) ? parentId : null;
+
+        await Api.CreateTeamAsync(newTeam);
+        newTeam = new CreateTeamRequest();
+        createWorkspaceId = null;
+        createParentTeamId = null;
+        parentTeams.Clear();
+        await LoadTeams();
+        formMessage = "Equipe criada com sucesso.";
+    }
+}

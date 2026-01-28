@@ -1,0 +1,149 @@
+@page "/workspaces"
+@inject ApiClient Api
+
+<div class="page-header">
+    <div>
+        <div class="page-kicker">Gestão</div>
+        <h1>Workspaces</h1>
+        <p class="page-subtitle">Crie workspaces vinculados às organizações.</p>
+    </div>
+</div>
+
+<ManagementMenu />
+
+<div class="grid-2">
+    <div class="card">
+        <h2>Criar workspace</h2>
+        <EditForm Model="@newWorkspace" OnValidSubmit="CreateWorkspace">
+            <DataAnnotationsValidator />
+            <div class="form-row">
+                <label>Organização</label>
+            <select class="input" @bind="createOrganizationId">
+                <option value="">Selecione</option>
+                @foreach (var org in organizations)
+                {
+                    <option value="@org.Id">@org.Name</option>
+                }
+            </select>
+            </div>
+            <div class="form-row">
+                <label>Nome</label>
+                <InputText class="input" @bind-Value="newWorkspace.Name" />
+            </div>
+            <div class="form-actions">
+                <button class="button primary" type="submit">Salvar</button>
+            </div>
+        </EditForm>
+        @if (!string.IsNullOrWhiteSpace(formMessage))
+        {
+            <p class="form-message">@formMessage</p>
+        }
+    </div>
+
+    <div class="card">
+        <h2>Lista</h2>
+        <div class="form-row">
+            <label>Organização</label>
+            <select class="input" @bind="selectedOrganizationId">
+                <option value="">Todas</option>
+                @foreach (var org in organizations)
+                {
+                    <option value="@org.Id">@org.Name</option>
+                }
+            </select>
+        </div>
+        <div class="form-row">
+            <label>Busca</label>
+            <InputText class="input" @bind-Value="search" />
+        </div>
+        <div class="form-actions">
+            <button class="button" @onclick="LoadWorkspaces">Atualizar</button>
+        </div>
+
+        @if (workspaces is null)
+        {
+            <p class="muted">Carregando...</p>
+        }
+        else if (workspaces.Items.Count == 0)
+        {
+            <p class="muted">Nenhum workspace encontrado.</p>
+        }
+        else
+        {
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Nome</th>
+                        <th>Organização</th>
+                        <th>ID</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var workspace in workspaces.Items)
+                    {
+                        var org = organizations.FirstOrDefault(o => o.Id == workspace.OrganizationId);
+                        <tr>
+                            <td>@workspace.Name</td>
+                            <td>@(org?.Name ?? "—")</td>
+                            <td class="mono">@workspace.Id</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+            <p class="muted">Total: @workspaces.Total</p>
+        }
+    </div>
+</div>
+
+@code {
+    private CreateWorkspaceRequest newWorkspace = new();
+    private List<Organization> organizations = new();
+    private PagedResult<Workspace>? workspaces;
+    private string? search;
+    private string? selectedOrganizationId;
+    private string? createOrganizationId;
+    private string? formMessage;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadOrganizations();
+        await LoadWorkspaces();
+    }
+
+    private async Task LoadOrganizations()
+    {
+        var result = await Api.GetOrganizationsAsync(null, 1, 100);
+        organizations = result?.Items.ToList() ?? new List<Organization>();
+    }
+
+    private async Task LoadWorkspaces()
+    {
+        var filterOrgId = Guid.TryParse(selectedOrganizationId, out var parsedOrgId)
+            ? parsedOrgId
+            : (Guid?)null;
+        workspaces = await Api.GetWorkspacesAsync(filterOrgId, search, 1, 20) ?? new PagedResult<Workspace>();
+    }
+
+    private async Task CreateWorkspace()
+    {
+        formMessage = null;
+        if (!Guid.TryParse(createOrganizationId, out var organizationId))
+        {
+            formMessage = "Selecione uma organização.";
+            return;
+        }
+
+        if (string.IsNullOrWhiteSpace(newWorkspace.Name))
+        {
+            formMessage = "Informe o nome do workspace.";
+            return;
+        }
+
+        newWorkspace.OrganizationId = organizationId;
+        await Api.CreateWorkspaceAsync(newWorkspace);
+        newWorkspace = new CreateWorkspaceRequest();
+        createOrganizationId = null;
+        await LoadWorkspaces();
+        formMessage = "Workspace criado com sucesso.";
+    }
+}

@@ -1,0 +1,6 @@
+@Bud.Server_HostAddress = http://localhost:8080
+
+GET {{Bud.Server_HostAddress}}/api/organizations?page=1&pageSize=10
+Accept: application/json
+
+###

@@ -1,0 +1,127 @@
+using Bud.Server.Data;
+using Bud.Shared.Contracts;
+using Bud.Shared.Models;
+using Microsoft.EntityFrameworkCore;
+
+namespace Bud.Server.Services;
+
+public sealed class OrganizationService(ApplicationDbContext dbContext) : IOrganizationService
+{
+    public async Task<ServiceResult<Organization>> CreateAsync(CreateOrganizationRequest request, CancellationToken cancellationToken = default)
+    {
+        var organization = new Organization
+        {
+            Id = Guid.NewGuid(),
+            Name = request.Name.Trim(),
+        };
+
+        dbContext.Organizations.Add(organization);
+        await dbContext.SaveChangesAsync(cancellationToken);
+
+        return ServiceResult<Organization>.Success(organization);
+    }
+
+    public async Task<ServiceResult<Organization>> UpdateAsync(Guid id, UpdateOrganizationRequest request, CancellationToken cancellationToken = default)
+    {
+        var organization = await dbContext.Organizations.FindAsync([id], cancellationToken);
+
+        if (organization is null)
+        {
+            return ServiceResult<Organization>.NotFound("Organization not found.");
+        }
+
+        organization.Name = request.Name.Trim();
+        await dbContext.SaveChangesAsync(cancellationToken);
+
+        return ServiceResult<Organization>.Success(organization);
+    }
+
+    public async Task<ServiceResult> DeleteAsync(Guid id, CancellationToken cancellationToken = default)
+    {
+        var organization = await dbContext.Organizations.FindAsync([id], cancellationToken);
+
+        if (organization is null)
+        {
+            return ServiceResult.NotFound("Organization not found.");
+        }
+
+        dbContext.Organizations.Remove(organization);
+        await dbContext.SaveChangesAsync(cancellationToken);
+
+        return ServiceResult.Success();
+    }
+
+    public async Task<ServiceResult<Organization>> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
+    {
+        var organization = await dbContext.Organizations
+            .AsNoTracking()
+            .FirstOrDefaultAsync(o => o.Id == id, cancellationToken);
+
+        return organization is null
+            ? ServiceResult<Organization>.NotFound("Organization not found.")
+            : ServiceResult<Organization>.Success(organization);
+    }
+
+    public async Task<ServiceResult<PagedResult<Organization>>> GetAllAsync(string? search, int page, int pageSize, CancellationToken cancellationToken = default)
+    {
+        page = page < 1 ? 1 : page;
+        pageSize = pageSize is < 1 or > 100 ? 10 : pageSize;
+
+        var query = dbContext.Organizations.AsNoTracking();
+
+        if (!string.IsNullOrWhiteSpace(search))
+        {
+            query = query.Where(o => o.Name.Contains(search.Trim()));
+        }
+
+        var total = await query.CountAsync(cancellationToken);
+        var items = await query
+            .OrderBy(o => o.Name)
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
+            .ToListAsync(cancellationToken);
+
+        var result = new PagedResult<Organization>
+        {
+            Items = items,
+            Total = total,
+            Page = page,
+            PageSize = pageSize
+        };
+
+        return ServiceResult<PagedResult<Organization>>.Success(result);
+    }
+
+    public async Task<ServiceResult<PagedResult<Workspace>>> GetWorkspacesAsync(Guid id, int page, int pageSize, CancellationToken cancellationToken = default)
+    {
+        page = page < 1 ? 1 : page;
+        pageSize = pageSize is < 1 or > 100 ? 10 : pageSize;
+
+        var organizationExists = await dbContext.Organizations.AnyAsync(o => o.Id == id, cancellationToken);
+        if (!organizationExists)
+        {
+            return ServiceResult<PagedResult<Workspace>>.NotFound("Organization not found.");
+        }
+
+        var query = dbContext.Workspaces
+            .AsNoTracking()
+            .Where(w => w.OrganizationId == id);
+
+        var total = await query.CountAsync(cancellationToken);
+        var items = await query
+            .OrderBy(w => w.Name)
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
+            .ToListAsync(cancellationToken);
+
+        var result = new PagedResult<Workspace>
+        {
+            Items = items,
+            Total = total,
+            Page = page,
+            PageSize = pageSize
+        };
+
+        return ServiceResult<PagedResult<Workspace>>.Success(result);
+    }
+}

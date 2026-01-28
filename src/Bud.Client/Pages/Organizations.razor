@@ -1,0 +1,105 @@
+@page "/organizations"
+@inject ApiClient Api
+
+<div class="page-header">
+    <div>
+        <div class="page-kicker">Gestão</div>
+        <h1>Organizações</h1>
+        <p class="page-subtitle">Crie e liste organizações cadastradas.</p>
+    </div>
+</div>
+
+<ManagementMenu />
+
+<div class="grid-2">
+    <div class="card">
+        <h2>Criar organização</h2>
+        <EditForm Model="@newOrganization" OnValidSubmit="CreateOrganization">
+            <DataAnnotationsValidator />
+            <div class="form-row">
+                <label>Nome</label>
+                <InputText class="input" @bind-Value="newOrganization.Name" />
+            </div>
+            <div class="form-actions">
+                <button class="button primary" type="submit">Salvar</button>
+            </div>
+        </EditForm>
+        @if (!string.IsNullOrWhiteSpace(formMessage))
+        {
+            <p class="form-message">@formMessage</p>
+        }
+    </div>
+
+    <div class="card">
+        <h2>Lista</h2>
+        <div class="form-row">
+            <label>Busca</label>
+            <InputText class="input" @bind-Value="search" />
+        </div>
+        <div class="form-actions">
+            <button class="button" @onclick="LoadOrganizations">Atualizar</button>
+        </div>
+
+        @if (organizations is null)
+        {
+            <p class="muted">Carregando...</p>
+        }
+        else if (organizations.Items.Count == 0)
+        {
+            <p class="muted">Nenhuma organização encontrada.</p>
+        }
+        else
+        {
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Nome</th>
+                        <th>ID</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var org in organizations.Items)
+                    {
+                        <tr>
+                            <td>@org.Name</td>
+                            <td class="mono">@org.Id</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+            <p class="muted">Total: @organizations.Total</p>
+        }
+    </div>
+</div>
+
+@code {
+    private CreateOrganizationRequest newOrganization = new();
+    private PagedResult<Organization>? organizations;
+    private string? search;
+    private string? formMessage;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadOrganizations();
+    }
+
+    private async Task LoadOrganizations()
+    {
+        organizations = await Api.GetOrganizationsAsync(search, 1, 20) ?? new PagedResult<Organization>();
+    }
+
+    private async Task CreateOrganization()
+    {
+        formMessage = null;
+        if (string.IsNullOrWhiteSpace(newOrganization.Name))
+        {
+            formMessage = "Informe o nome da organização.";
+            return;
+        }
+
+        await Api.CreateOrganizationAsync(newOrganization);
+        newOrganization = new CreateOrganizationRequest();
+        await LoadOrganizations();
+        formMessage = "Organização criada com sucesso.";
+    }
+}

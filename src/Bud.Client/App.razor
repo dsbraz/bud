@@ -1,0 +1,42 @@
+﻿@inject AuthState AuthState
+@inject NavigationManager Nav
+
+<Router AppAssembly="@typeof(App).Assembly" OnNavigateAsync="HandleNavigationAsync">
+    <Found Context="routeData">
+        <RouteView RouteData="@routeData" DefaultLayout="@typeof(MainLayout)" />
+        <FocusOnNavigate RouteData="@routeData" Selector="h1" />
+    </Found>
+    <NotFound>
+        <LayoutView Layout="@typeof(MainLayout)">
+            <NotFound />
+        </LayoutView>
+    </NotFound>
+</Router>
+
+@code {
+    private async Task HandleNavigationAsync(NavigationContext context)
+    {
+        await AuthState.EnsureInitializedAsync();
+
+        var path = context.Path ?? string.Empty;
+        var isLogin = path.StartsWith("login", StringComparison.OrdinalIgnoreCase);
+
+        if (!AuthState.IsAuthenticated && !isLogin)
+        {
+            var returnUrl = Uri.EscapeDataString(GetCurrentRelativeUrl());
+            Nav.NavigateTo($"login?returnUrl={returnUrl}", true);
+            return;
+        }
+
+        if (AuthState.IsAuthenticated && isLogin)
+        {
+            Nav.NavigateTo("/", true);
+        }
+    }
+
+    private string GetCurrentRelativeUrl()
+    {
+        var uri = Nav.ToAbsoluteUri(Nav.Uri);
+        return string.IsNullOrWhiteSpace(uri.PathAndQuery) ? "/" : uri.PathAndQuery;
+    }
+}

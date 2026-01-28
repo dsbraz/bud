@@ -1,0 +1,174 @@
+@page "/collaborators"
+@inject ApiClient Api
+
+<div class="page-header">
+    <div>
+        <div class="page-kicker">Gestão</div>
+        <h1>Colaboradores</h1>
+        <p class="page-subtitle">Cadastre colaboradores vinculados às equipes.</p>
+    </div>
+</div>
+
+<ManagementMenu />
+
+<div class="grid-2">
+    <div class="card">
+        <h2>Criar colaborador</h2>
+        <EditForm Model="@newCollaborator" OnValidSubmit="CreateCollaborator">
+            <DataAnnotationsValidator />
+            <div class="form-row">
+                <label>Equipe</label>
+                <select class="input" @bind="createTeamId">
+                    <option value="">Selecione</option>
+                    @foreach (var team in teams)
+                    {
+                        <option value="@team.Id">@team.Name</option>
+                    }
+                </select>
+            </div>
+            <div class="form-row">
+                <label>Nome completo</label>
+                <InputText class="input" @bind-Value="newCollaborator.FullName" />
+            </div>
+            <div class="form-row">
+                <label>E-mail</label>
+                <InputText class="input" @bind-Value="newCollaborator.Email" />
+            </div>
+            <div class="form-row">
+                <label>Perfil</label>
+                <InputSelect class="input" @bind-Value="newCollaborator.Role">
+                    <option value="@CollaboratorRole.IndividualContributor">Contribuidor individual</option>
+                    <option value="@CollaboratorRole.Leader">Lider</option>
+                </InputSelect>
+            </div>
+            <div class="form-actions">
+                <button class="button primary" type="submit">Salvar</button>
+            </div>
+        </EditForm>
+        @if (!string.IsNullOrWhiteSpace(formMessage))
+        {
+            <p class="form-message">@formMessage</p>
+        }
+    </div>
+
+    <div class="card">
+        <h2>Lista</h2>
+        <div class="form-row">
+            <label>Equipe</label>
+            <select class="input" @bind="selectedTeamId">
+                <option value="">Todas</option>
+                @foreach (var team in teams)
+                {
+                    <option value="@team.Id">@team.Name</option>
+                }
+            </select>
+        </div>
+        <div class="form-row">
+            <label>Busca</label>
+            <InputText class="input" @bind-Value="search" />
+        </div>
+        <div class="form-actions">
+            <button class="button" @onclick="LoadCollaborators">Atualizar</button>
+        </div>
+
+        @if (collaborators is null)
+        {
+            <p class="muted">Carregando...</p>
+        }
+        else if (collaborators.Items.Count == 0)
+        {
+            <p class="muted">Nenhum colaborador encontrado.</p>
+        }
+        else
+        {
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Nome</th>
+                        <th>E-mail</th>
+                        <th>Perfil</th>
+                        <th>Equipe</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var collaborator in collaborators.Items)
+                    {
+                        var team = teams.FirstOrDefault(t => t.Id == collaborator.TeamId);
+                        <tr>
+                            <td>@collaborator.FullName</td>
+                            <td>@collaborator.Email</td>
+                            <td>@GetRoleLabel(collaborator.Role)</td>
+                            <td>@(team?.Name ?? "—")</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+            <p class="muted">Total: @collaborators.Total</p>
+        }
+    </div>
+</div>
+
+@code {
+    private CreateCollaboratorRequest newCollaborator = new();
+    private List<Team> teams = new();
+    private PagedResult<Collaborator>? collaborators;
+    private string? search;
+    private string? selectedTeamId;
+    private string? createTeamId;
+    private string? formMessage;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadTeams();
+        await LoadCollaborators();
+    }
+
+    private async Task LoadTeams()
+    {
+        var result = await Api.GetTeamsAsync(null, null, null, 1, 200);
+        teams = result?.Items.ToList() ?? new List<Team>();
+    }
+
+    private async Task LoadCollaborators()
+    {
+        var filterTeamId = Guid.TryParse(selectedTeamId, out var parsedTeamId)
+            ? parsedTeamId
+            : (Guid?)null;
+        collaborators = await Api.GetCollaboratorsAsync(filterTeamId, search, 1, 20) ?? new PagedResult<Collaborator>();
+    }
+
+    private async Task CreateCollaborator()
+    {
+        formMessage = null;
+        if (!Guid.TryParse(createTeamId, out var teamId))
+        {
+            formMessage = "Selecione uma equipe.";
+            return;
+        }
+
+        if (string.IsNullOrWhiteSpace(newCollaborator.FullName))
+        {
+            formMessage = "Informe o nome completo.";
+            return;
+        }
+
+        if (string.IsNullOrWhiteSpace(newCollaborator.Email))
+        {
+            formMessage = "Informe o e-mail.";
+            return;
+        }
+
+        newCollaborator.TeamId = teamId;
+        await Api.CreateCollaboratorAsync(newCollaborator);
+        newCollaborator = new CreateCollaboratorRequest();
+        createTeamId = null;
+        await LoadCollaborators();
+        formMessage = "Colaborador criado com sucesso.";
+    }
+
+    private static string GetRoleLabel(CollaboratorRole role) => role switch
+    {
+        CollaboratorRole.Leader => "Lider",
+        _ => "Contribuidor individual"
+    };
+}
