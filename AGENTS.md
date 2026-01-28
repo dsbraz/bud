@@ -170,16 +170,25 @@ See [OrganizationsController.cs](src/Bud.Server/Controllers/OrganizationsControl
 
 - Use **xUnit**, **Moq**, and **FluentAssertions**
 - Test validators, services, and business logic in isolation
-- Mock `ApplicationDbContext` using `DbContextOptions` with InMemory provider
+- **Database Strategy:**
+  - **Validator tests**: No database needed, test FluentValidation logic directly
+  - **Service tests**: Use `ApplicationDbContext` with **InMemoryDatabase provider** (EF Core)
+    - Create context via `DbContextOptionsBuilder<ApplicationDbContext>().UseInMemoryDatabase()`
+    - Each test uses a unique database name (e.g., `Guid.NewGuid().ToString()`)
 - Every feature must include unit tests
-- Unit tests must not access external resources and should use mocks when needed
-- Example: [CreateOrganizationValidatorTests.cs](tests/Bud.Server.Tests/Validators/CreateOrganizationValidatorTests.cs)
+- Unit tests must not access external resources (except InMemoryDatabase for service tests)
+- Example validator test: [CreateOrganizationValidatorTests.cs](tests/Bud.Server.Tests/Validators/CreateOrganizationValidatorTests.cs)
+- Example service test: [TeamServiceTests.cs](tests/Bud.Server.Tests/Services/TeamServiceTests.cs)
 
 ### Integration Tests (`tests/Bud.Server.IntegrationTests`)
 
-- Use `WebApplicationFactory<Program>` to spin up the API
-- Test full request/response cycles
-- Use [CustomWebApplicationFactory.cs](tests/Bud.Server.IntegrationTests/CustomWebApplicationFactory.cs) for test setup
+- Use `WebApplicationFactory<Program>` to spin up the full API
+- Test full request/response cycles (HTTP endpoints)
+- **Database Strategy:**
+  - Use **Testcontainers.PostgreSql** to spin up real PostgreSQL container
+  - [CustomWebApplicationFactory.cs](tests/Bud.Server.IntegrationTests/CustomWebApplicationFactory.cs) configures the test container
+  - PostgreSQL 16 image with automatic migrations on startup
+  - Container lifecycle managed by xUnit's `IAsyncLifetime`
 - Example: [OrganizationsEndpointsTests.cs](tests/Bud.Server.IntegrationTests/Endpoints/OrganizationsEndpointsTests.cs)
 
 ### E2E Tests
