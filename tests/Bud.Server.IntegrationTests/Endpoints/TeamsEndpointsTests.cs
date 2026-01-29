@@ -3,6 +3,8 @@ using System.Net.Http.Json;
 using Bud.Shared.Contracts;
 using Bud.Shared.Models;
 using FluentAssertions;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
 using Xunit;
 
 namespace Bud.Server.IntegrationTests.Endpoints;
@@ -10,16 +12,64 @@ namespace Bud.Server.IntegrationTests.Endpoints;
 public class TeamsEndpointsTests : IClassFixture<CustomWebApplicationFactory>
 {
     private readonly HttpClient _client;
+    private readonly CustomWebApplicationFactory _factory;
 
     public TeamsEndpointsTests(CustomWebApplicationFactory factory)
     {
+        _factory = factory;
         _client = factory.CreateClient();
+    }
+
+    private async Task<Guid> GetOrCreateAdminLeader()
+    {
+        using var scope = _factory.Services.CreateScope();
+        var dbContext = scope.ServiceProvider.GetRequiredService<Bud.Server.Data.ApplicationDbContext>();
+
+        var existingLeader = await dbContext.Collaborators
+            .FirstOrDefaultAsync(c => c.Email == "admin");
+
+        if (existingLeader != null)
+        {
+            return existingLeader.Id;
+        }
+
+        var org = new Organization { Id = Guid.NewGuid(), Name = "Bud", OwnerId = null };
+        dbContext.Organizations.Add(org);
+
+        var workspace = new Workspace { Id = Guid.NewGuid(), Name = "Bud", OrganizationId = org.Id };
+        dbContext.Workspaces.Add(workspace);
+
+        var team = new Team { Id = Guid.NewGuid(), Name = "Bud", WorkspaceId = workspace.Id };
+        dbContext.Teams.Add(team);
+
+        var adminLeader = new Collaborator
+        {
+            Id = Guid.NewGuid(),
+            FullName = "Administrador",
+            Email = "admin",
+            Role = CollaboratorRole.Leader,
+            TeamId = team.Id
+        };
+        dbContext.Collaborators.Add(adminLeader);
+
+        await dbContext.SaveChangesAsync();
+
+        org.OwnerId = adminLeader.Id;
+        await dbContext.SaveChangesAsync();
+
+        return adminLeader.Id;
     }
 
     private async Task<(Organization org, Workspace workspace)> CreateTestHierarchy()
     {
+        var leaderId = await GetOrCreateAdminLeader();
         var orgResponse = await _client.PostAsJsonAsync("/api/organizations",
-            new CreateOrganizationRequest { Name = "Test Org" });
+            new CreateOrganizationRequest
+            {
+                Name = "Test Org",
+                OwnerId = leaderId,
+                UserEmail = "admin"
+            });
         var org = await orgResponse.Content.ReadFromJsonAsync<Organization>();
 
         var workspaceResponse = await _client.PostAsJsonAsync("/api/workspaces",
@@ -65,8 +115,14 @@ public class TeamsEndpointsTests : IClassFixture<CustomWebApplicationFactory>
     public async Task Create_WithParentInDifferentWorkspace_ReturnsBadRequest()
     {
         // Arrange: Create two workspaces
+        var leaderId = await GetOrCreateAdminLeader();
         var org = (await _client.PostAsJsonAsync("/api/organizations",
-            new CreateOrganizationRequest { Name = "Test Org" })
+            new CreateOrganizationRequest
+            {
+                Name = "Test Org",
+                OwnerId = leaderId,
+                UserEmail = "admin"
+            })
         ).Content.ReadFromJsonAsync<Organization>().Result!;
 
         var workspace1 = (await _client.PostAsJsonAsync("/api/workspaces",

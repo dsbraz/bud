@@ -26,6 +26,11 @@ public sealed class ApiClient
         return await response.Content.ReadFromJsonAsync<Organization>();
     }
 
+    public async Task<List<LeaderCollaboratorResponse>?> GetLeadersAsync()
+    {
+        return await _http.GetFromJsonAsync<List<LeaderCollaboratorResponse>>("api/collaborators/leaders");
+    }
+
     public async Task<PagedResult<Workspace>?> GetWorkspacesAsync(Guid? organizationId, string? search, int page = 1, int pageSize = 10)
     {
         var orgParam = organizationId.HasValue ? organizationId.Value.ToString() : string.Empty;

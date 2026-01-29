@@ -110,4 +110,26 @@ public sealed class CollaboratorService(ApplicationDbContext dbContext) : IColla
 
         return ServiceResult<PagedResult<Collaborator>>.Success(result);
     }
+
+    public async Task<ServiceResult<List<LeaderCollaboratorResponse>>> GetLeadersAsync(CancellationToken cancellationToken = default)
+    {
+        var leaders = await dbContext.Collaborators
+            .Include(c => c.Team)
+                .ThenInclude(t => t.Workspace)
+                    .ThenInclude(w => w.Organization)
+            .Where(c => c.Role == CollaboratorRole.Leader)
+            .OrderBy(c => c.FullName)
+            .Select(c => new LeaderCollaboratorResponse
+            {
+                Id = c.Id,
+                FullName = c.FullName,
+                Email = c.Email,
+                TeamName = c.Team.Name,
+                WorkspaceName = c.Team.Workspace.Name,
+                OrganizationName = c.Team.Workspace.Organization.Name
+            })
+            .ToListAsync(cancellationToken);
+
+        return ServiceResult<List<LeaderCollaboratorResponse>>.Success(leaders);
+    }
 }

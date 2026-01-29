@@ -3,6 +3,8 @@ using System.Net.Http.Json;
 using Bud.Shared.Contracts;
 using Bud.Shared.Models;
 using FluentAssertions;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
 using Xunit;
 
 namespace Bud.Server.IntegrationTests.Endpoints;
@@ -10,17 +12,84 @@ namespace Bud.Server.IntegrationTests.Endpoints;
 public class OrganizationsEndpointsTests : IClassFixture<CustomWebApplicationFactory>
 {
     private readonly HttpClient _client;
+    private readonly CustomWebApplicationFactory _factory;
 
     public OrganizationsEndpointsTests(CustomWebApplicationFactory factory)
     {
+        _factory = factory;
         _client = factory.CreateClient();
+    }
+
+    private async Task<Guid> GetOrCreateAdminLeader()
+    {
+        // Create bootstrap hierarchy similar to DbSeeder
+        using var scope = _factory.Services.CreateScope();
+        var dbContext = scope.ServiceProvider.GetRequiredService<Bud.Server.Data.ApplicationDbContext>();
+
+        // Check if admin leader already exists
+        var existingLeader = await dbContext.Collaborators
+            .FirstOrDefaultAsync(c => c.Email == "admin");
+
+        if (existingLeader != null)
+        {
+            return existingLeader.Id;
+        }
+
+        // Create hierarchy: Org -> Workspace -> Team -> Leader
+        var org = new Organization
+        {
+            Id = Guid.NewGuid(),
+            Name = "Bud",
+            OwnerId = null
+        };
+        dbContext.Organizations.Add(org);
+
+        var workspace = new Workspace
+        {
+            Id = Guid.NewGuid(),
+            Name = "Bud",
+            OrganizationId = org.Id
+        };
+        dbContext.Workspaces.Add(workspace);
+
+        var team = new Team
+        {
+            Id = Guid.NewGuid(),
+            Name = "Bud",
+            WorkspaceId = workspace.Id
+        };
+        dbContext.Teams.Add(team);
+
+        var adminLeader = new Collaborator
+        {
+            Id = Guid.NewGuid(),
+            FullName = "Administrador",
+            Email = "admin",
+            Role = CollaboratorRole.Leader,
+            TeamId = team.Id
+        };
+        dbContext.Collaborators.Add(adminLeader);
+
+        await dbContext.SaveChangesAsync();
+
+        // Update org with owner
+        org.OwnerId = adminLeader.Id;
+        await dbContext.SaveChangesAsync();
+
+        return adminLeader.Id;
     }
 
     [Fact]
     public async Task Create_WithValidRequest_ReturnsCreated()
     {
         // Arrange
-        var request = new CreateOrganizationRequest { Name = "Test Organization" };
+        var leaderId = await GetOrCreateAdminLeader();
+        var request = new CreateOrganizationRequest
+        {
+            Name = "Test Organization",
+            OwnerId = leaderId,
+            UserEmail = "admin"
+        };
 
         // Act
         var response = await _client.PostAsJsonAsync("/api/organizations", request);
@@ -31,13 +100,20 @@ public class OrganizationsEndpointsTests : IClassFixture<CustomWebApplicationFac
         organization.Should().NotBeNull();
         organization!.Name.Should().Be("Test Organization");
         organization.Id.Should().NotBeEmpty();
+        organization.OwnerId.Should().Be(leaderId);
     }
 
     [Fact]
     public async Task Create_WithEmptyName_ReturnsBadRequest()
     {
         // Arrange
-        var request = new CreateOrganizationRequest { Name = "" };
+        var leaderId = await GetOrCreateAdminLeader();
+        var request = new CreateOrganizationRequest
+        {
+            Name = "",
+            OwnerId = leaderId,
+            UserEmail = "admin"
+        };
 
         // Act
         var response = await _client.PostAsJsonAsync("/api/organizations", request);
@@ -50,7 +126,13 @@ public class OrganizationsEndpointsTests : IClassFixture<CustomWebApplicationFac
     public async Task GetById_WithExistingId_ReturnsOk()
     {
         // Arrange
-        var createRequest = new CreateOrganizationRequest { Name = "Test Organization for GetById" };
+        var leaderId = await GetOrCreateAdminLeader();
+        var createRequest = new CreateOrganizationRequest
+        {
+            Name = "Test Organization for GetById",
+            OwnerId = leaderId,
+            UserEmail = "admin"
+        };
         var createResponse = await _client.PostAsJsonAsync("/api/organizations", createRequest);
         var created = await createResponse.Content.ReadFromJsonAsync<Organization>();
 
@@ -82,8 +164,19 @@ public class OrganizationsEndpointsTests : IClassFixture<CustomWebApplicationFac
     public async Task GetAll_ReturnsPagedResult()
     {
         // Arrange
-        await _client.PostAsJsonAsync("/api/organizations", new CreateOrganizationRequest { Name = "Org 1" });
-        await _client.PostAsJsonAsync("/api/organizations", new CreateOrganizationRequest { Name = "Org 2" });
+        var leaderId = await GetOrCreateAdminLeader();
+        await _client.PostAsJsonAsync("/api/organizations", new CreateOrganizationRequest
+        {
+            Name = "Org 1",
+            OwnerId = leaderId,
+            UserEmail = "admin"
+        });
+        await _client.PostAsJsonAsync("/api/organizations", new CreateOrganizationRequest
+        {
+            Name = "Org 2",
+            OwnerId = leaderId,
+            UserEmail = "admin"
+        });
 
         // Act
         var response = await _client.GetAsync("/api/organizations?page=1&pageSize=10");
@@ -101,7 +194,13 @@ public class OrganizationsEndpointsTests : IClassFixture<CustomWebApplicationFac
     public async Task Update_WithValidRequest_ReturnsOk()
     {
         // Arrange
-        var createRequest = new CreateOrganizationRequest { Name = "Original Name" };
+        var leaderId = await GetOrCreateAdminLeader();
+        var createRequest = new CreateOrganizationRequest
+        {
+            Name = "Original Name",
+            OwnerId = leaderId,
+            UserEmail = "admin"
+        };
         var createResponse = await _client.PostAsJsonAsync("/api/organizations", createRequest);
         var created = await createResponse.Content.ReadFromJsonAsync<Organization>();
 
@@ -135,7 +234,13 @@ public class OrganizationsEndpointsTests : IClassFixture<CustomWebApplicationFac
     public async Task Delete_WithExistingId_ReturnsNoContent()
     {
         // Arrange
-        var createRequest = new CreateOrganizationRequest { Name = "Organization to Delete" };
+        var leaderId = await GetOrCreateAdminLeader();
+        var createRequest = new CreateOrganizationRequest
+        {
+            Name = "Organization to Delete",
+            OwnerId = leaderId,
+            UserEmail = "admin"
+        };
         var createResponse = await _client.PostAsJsonAsync("/api/organizations", createRequest);
         var created = await createResponse.Content.ReadFromJsonAsync<Organization>();
 

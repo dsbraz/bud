@@ -1,5 +1,6 @@
 @page "/organizations"
 @inject ApiClient Api
+@inject AuthState AuthState
 
 <div class="page-header">
     <div>
@@ -12,23 +13,55 @@
 <ManagementMenu />
 
 <div class="grid-2">
-    <div class="card">
-        <h2>Criar organização</h2>
-        <EditForm Model="@newOrganization" OnValidSubmit="CreateOrganization">
-            <DataAnnotationsValidator />
-            <div class="form-row">
-                <label>Nome</label>
-                <InputText class="input" @bind-Value="newOrganization.Name" />
-            </div>
-            <div class="form-actions">
-                <button class="button primary" type="submit">Salvar</button>
-            </div>
-        </EditForm>
-        @if (!string.IsNullOrWhiteSpace(formMessage))
-        {
-            <p class="form-message">@formMessage</p>
-        }
-    </div>
+    @if (AuthState.Session?.IsAdmin == true)
+    {
+        <div class="card">
+            <h2>Criar organização</h2>
+            <EditForm Model="@newOrganization" OnValidSubmit="CreateOrganization">
+                <DataAnnotationsValidator />
+                <div class="form-row">
+                    <label>Nome</label>
+                    <InputText class="input" @bind-Value="newOrganization.Name" />
+                </div>
+                <div class="form-row">
+                    <label>Líder (Proprietário) *</label>
+                    <InputSelect class="input" @bind-Value="newOrganization.OwnerId">
+                        <option value="@Guid.Empty">-- Selecione um líder --</option>
+                        @foreach (var leader in leaders)
+                        {
+                            <option value="@leader.Id">
+                                @leader.FullName - @leader.TeamName (@leader.OrganizationName)
+                            </option>
+                        }
+                    </InputSelect>
+                    <small class="form-hint">Apenas colaboradores com função de Líder podem ser proprietários.</small>
+                </div>
+                <div class="form-actions">
+                    <button class="button primary" type="submit" disabled="@isSubmitting">
+                        @if (isSubmitting)
+                        {
+                            <span>Salvando...</span>
+                        }
+                        else
+                        {
+                            <span>Salvar</span>
+                        }
+                    </button>
+                </div>
+            </EditForm>
+            @if (!string.IsNullOrWhiteSpace(formMessage))
+            {
+                <p class="form-message">@formMessage</p>
+            }
+        </div>
+    }
+    else
+    {
+        <div class="card">
+            <h2>Criar organização</h2>
+            <p class="muted">Apenas administradores podem criar organizações.</p>
+        </div>
+    }
 
     <div class="card">
         <h2>Lista</h2>
@@ -75,12 +108,29 @@
 @code {
     private CreateOrganizationRequest newOrganization = new();
     private PagedResult<Organization>? organizations;
+    private List<LeaderCollaboratorResponse> leaders = new();
     private string? search;
     private string? formMessage;
+    private bool isSubmitting = false;
 
     protected override async Task OnInitializedAsync()
     {
+        await AuthState.EnsureInitializedAsync();
+        await LoadLeaders();
         await LoadOrganizations();
+    }
+
+    private async Task LoadLeaders()
+    {
+        try
+        {
+            leaders = await Api.GetLeadersAsync() ?? new List<LeaderCollaboratorResponse>();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Erro ao carregar líderes: {ex.Message}");
+            leaders = new List<LeaderCollaboratorResponse>();
+        }
     }
 
     private async Task LoadOrganizations()
@@ -91,15 +141,46 @@
     private async Task CreateOrganization()
     {
         formMessage = null;
+
+        // Frontend validation
         if (string.IsNullOrWhiteSpace(newOrganization.Name))
         {
-            formMessage = "Informe o nome da organização.";
+            formMessage = "Por favor, informe o nome da organização.";
             return;
         }
 
-        await Api.CreateOrganizationAsync(newOrganization);
-        newOrganization = new CreateOrganizationRequest();
-        await LoadOrganizations();
-        formMessage = "Organização criada com sucesso.";
+        if (newOrganization.OwnerId == Guid.Empty)
+        {
+            formMessage = "Por favor, selecione um líder para a organização.";
+            return;
+        }
+
+        isSubmitting = true;
+
+        try
+        {
+            // Set user email from session
+            newOrganization.UserEmail = AuthState.Session?.Email ?? string.Empty;
+
+            await Api.CreateOrganizationAsync(newOrganization);
+            newOrganization = new CreateOrganizationRequest
+            {
+                UserEmail = AuthState.Session?.Email ?? string.Empty
+            };
+            await LoadOrganizations();
+            formMessage = "Organização criada com sucesso.";
+        }
+        catch (HttpRequestException ex)
+        {
+            formMessage = $"Erro ao criar organização: {ex.Message}";
+        }
+        catch (Exception ex)
+        {
+            formMessage = $"Erro inesperado: {ex.Message}";
+        }
+        finally
+        {
+            isSubmitting = false;
+        }
     }
 }

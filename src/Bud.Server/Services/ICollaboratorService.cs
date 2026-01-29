@@ -10,4 +10,5 @@ public interface ICollaboratorService
     Task<ServiceResult> DeleteAsync(Guid id, CancellationToken cancellationToken = default);
     Task<ServiceResult<Collaborator>> GetByIdAsync(Guid id, CancellationToken cancellationToken = default);
     Task<ServiceResult<PagedResult<Collaborator>>> GetAllAsync(Guid? teamId, string? search, int page, int pageSize, CancellationToken cancellationToken = default);
+    Task<ServiceResult<List<LeaderCollaboratorResponse>>> GetLeadersAsync(CancellationToken cancellationToken = default);
 }

@@ -1,0 +1,60 @@
+using Bud.Shared.Models;
+using Microsoft.EntityFrameworkCore;
+
+namespace Bud.Server.Data;
+
+public static class DbSeeder
+{
+    public static async Task SeedAsync(ApplicationDbContext context)
+    {
+        // Check if seed already exists
+        if (await context.Organizations.AnyAsync(o => o.Name == "Bud"))
+        {
+            return;
+        }
+
+        // 1. Create Organization "Bud" (without owner initially)
+        var budOrg = new Organization
+        {
+            Id = Guid.NewGuid(),
+            Name = "Bud",
+            OwnerId = null
+        };
+        context.Organizations.Add(budOrg);
+
+        // 2. Create Workspace "Bud"
+        var budWorkspace = new Workspace
+        {
+            Id = Guid.NewGuid(),
+            Name = "Bud",
+            OrganizationId = budOrg.Id
+        };
+        context.Workspaces.Add(budWorkspace);
+
+        // 3. Create Team "Bud"
+        var budTeam = new Team
+        {
+            Id = Guid.NewGuid(),
+            Name = "Bud",
+            WorkspaceId = budWorkspace.Id
+        };
+        context.Teams.Add(budTeam);
+
+        // 4. Create Admin Leader
+        var adminLeader = new Collaborator
+        {
+            Id = Guid.NewGuid(),
+            FullName = "Administrador",
+            Email = "admin",
+            Role = CollaboratorRole.Leader,
+            TeamId = budTeam.Id
+        };
+        context.Collaborators.Add(adminLeader);
+
+        await context.SaveChangesAsync();
+
+        // 5. Update Organization with Owner
+        budOrg.OwnerId = adminLeader.Id;
+        await context.SaveChangesAsync();
+    }
+}

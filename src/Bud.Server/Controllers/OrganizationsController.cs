@@ -16,6 +16,7 @@ public sealed class OrganizationsController(
     [HttpPost]
     [ProducesResponseType(typeof(Organization), StatusCodes.Status201Created)]
     [ProducesResponseType(typeof(ValidationProblemDetails), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
     public async Task<ActionResult<Organization>> Create(CreateOrganizationRequest request, CancellationToken cancellationToken)
     {
         var validationResult = await createValidator.ValidateAsync(request, cancellationToken);
@@ -27,9 +28,17 @@ public sealed class OrganizationsController(
 
         var result = await organizationService.CreateAsync(request, cancellationToken);
 
-        return result.IsSuccess
-            ? CreatedAtAction(nameof(GetById), new { id = result.Value!.Id }, result.Value)
-            : BadRequest(result.Error);
+        if (result.IsFailure)
+        {
+            return result.ErrorType switch
+            {
+                ServiceErrorType.NotFound => NotFound(new ProblemDetails { Detail = result.Error }),
+                ServiceErrorType.Validation => BadRequest(new ProblemDetails { Detail = result.Error }),
+                _ => BadRequest(new ProblemDetails { Detail = result.Error })
+            };
+        }
+
+        return CreatedAtAction(nameof(GetById), new { id = result.Value!.Id }, result.Value);
     }
 
     [HttpPut("{id:guid}")]

@@ -23,6 +23,13 @@ public sealed class ApplicationDbContext : DbContext
             .Property(o => o.Name)
             .HasMaxLength(200);
 
+        modelBuilder.Entity<Organization>()
+            .HasOne(o => o.Owner)
+            .WithMany()
+            .HasForeignKey(o => o.OwnerId)
+            .OnDelete(DeleteBehavior.Restrict)
+            .IsRequired(false);
+
         modelBuilder.Entity<Workspace>()
             .Property(w => w.Name)
             .HasMaxLength(200);

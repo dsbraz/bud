@@ -82,6 +82,12 @@ if (app.Environment.IsDevelopment())
     {
         logger.LogError("Database migration failed after {Attempts} attempts.", maxAttempts);
     }
+    else
+    {
+        // Run seed after successful migration
+        await DbSeeder.SeedAsync(dbContext);
+        logger.LogInformation("Database seed completed.");
+    }
 }
 
 app.UseExceptionHandler();

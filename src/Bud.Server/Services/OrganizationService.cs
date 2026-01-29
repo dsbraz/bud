@@ -9,14 +9,52 @@ public sealed class OrganizationService(ApplicationDbContext dbContext) : IOrgan
 {
     public async Task<ServiceResult<Organization>> CreateAsync(CreateOrganizationRequest request, CancellationToken cancellationToken = default)
     {
+        // 1. Admin Authorization Check
+        var normalizedEmail = request.UserEmail.Trim().ToLowerInvariant();
+        var isAdmin = normalizedEmail.Equals("admin", StringComparison.OrdinalIgnoreCase)
+                      || normalizedEmail.StartsWith("admin@", StringComparison.OrdinalIgnoreCase);
+
+        if (!isAdmin)
+        {
+            return ServiceResult<Organization>.Failure(
+                "Apenas administradores podem criar organizações.",
+                ServiceErrorType.Validation);
+        }
+
+        // 2. Validate Owner Exists
+        var owner = await dbContext.Collaborators
+            .FirstOrDefaultAsync(c => c.Id == request.OwnerId, cancellationToken);
+
+        if (owner == null)
+        {
+            return ServiceResult<Organization>.Failure(
+                "O líder selecionado não foi encontrado.",
+                ServiceErrorType.NotFound);
+        }
+
+        // 3. Validate Owner is Leader
+        if (owner.Role != CollaboratorRole.Leader)
+        {
+            return ServiceResult<Organization>.Failure(
+                "O proprietário da organização deve ter a função de Líder.",
+                ServiceErrorType.Validation);
+        }
+
+        // 4. Create Organization
         var organization = new Organization
         {
             Id = Guid.NewGuid(),
             Name = request.Name.Trim(),
+            OwnerId = request.OwnerId
         };
 
         dbContext.Organizations.Add(organization);
         await dbContext.SaveChangesAsync(cancellationToken);
+
+        // 5. Load Owner for Response
+        await dbContext.Entry(organization)
+            .Reference(o => o.Owner)
+            .LoadAsync(cancellationToken);
 
         return ServiceResult<Organization>.Success(organization);
     }

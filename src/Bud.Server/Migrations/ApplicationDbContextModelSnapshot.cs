@@ -141,7 +141,12 @@ namespace Bud.Server.Migrations
                         .HasMaxLength(200)
                         .HasColumnType("character varying(200)");
 
+                    b.Property<Guid?>("OwnerId")
+                        .HasColumnType("uuid");
+
                     b.HasKey("Id");
+
+                    b.HasIndex("OwnerId");
 
                     b.ToTable("Organizations");
                 });
@@ -282,6 +287,13 @@ namespace Bud.Server.Migrations
 
             modelBuilder.Entity("Bud.Shared.Models.Organization", b =>
                 {
+                    b.HasOne("Bud.Shared.Models.Collaborator", "Owner")
+                        .WithMany()
+                        .HasForeignKey("OwnerId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.Navigation("Owner");
+
                     b.Navigation("Workspaces");
                 });
 

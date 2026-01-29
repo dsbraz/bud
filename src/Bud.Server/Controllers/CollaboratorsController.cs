@@ -92,6 +92,21 @@ public sealed class CollaboratorsController(
             : NotFound(new ProblemDetails { Detail = result.Error });
     }
 
+    [HttpGet("leaders")]
+    [ProducesResponseType(typeof(List<LeaderCollaboratorResponse>), StatusCodes.Status200OK)]
+    public async Task<ActionResult<List<LeaderCollaboratorResponse>>> GetLeaders(
+        CancellationToken cancellationToken)
+    {
+        var result = await collaboratorService.GetLeadersAsync(cancellationToken);
+
+        if (result.IsFailure)
+        {
+            return BadRequest(new ProblemDetails { Detail = result.Error });
+        }
+
+        return Ok(result.Value);
+    }
+
     [HttpGet]
     [ProducesResponseType(typeof(PagedResult<Collaborator>), StatusCodes.Status200OK)]
     public async Task<ActionResult<PagedResult<Collaborator>>> GetAll(

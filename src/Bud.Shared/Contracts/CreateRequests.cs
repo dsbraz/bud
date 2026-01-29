@@ -5,6 +5,8 @@ namespace Bud.Shared.Contracts;
 public sealed class CreateOrganizationRequest
 {
     public string Name { get; set; } = string.Empty;
+    public Guid OwnerId { get; set; }
+    public string UserEmail { get; set; } = string.Empty;
 }
 
 public sealed class CreateWorkspaceRequest

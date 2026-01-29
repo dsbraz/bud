@@ -40,7 +40,13 @@ public class CustomWebApplicationFactory : WebApplicationFactory<Program>, IAsyn
             var sp = services.BuildServiceProvider();
             using var scope = sp.CreateScope();
             var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+
+            // Ensure database is deleted and recreated with latest schema
+            db.Database.EnsureDeleted();
             db.Database.Migrate();
+
+            // Seed bootstrap data
+            DbSeeder.SeedAsync(db).Wait();
         });
 
         builder.UseEnvironment("Testing");
