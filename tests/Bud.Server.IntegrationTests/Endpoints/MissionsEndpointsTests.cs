@@ -160,8 +160,9 @@ public class MissionsEndpointsTests : IClassFixture<CustomWebApplicationFactory>
     public async Task GetById_WithExistingId_ReturnsOk()
     {
         // Arrange: Create organization and mission
+        var leaderId = await GetOrCreateAdminLeader();
         var orgResponse = await _client.PostAsJsonAsync("/api/organizations",
-            new CreateOrganizationRequest { Name = "Test Org" });
+            new CreateOrganizationRequest { Name = "Test Org", OwnerId = leaderId, UserEmail = "admin" });
         var org = await orgResponse.Content.ReadFromJsonAsync<Organization>();
 
         var createRequest = new CreateMissionRequest
@@ -262,8 +263,9 @@ public class MissionsEndpointsTests : IClassFixture<CustomWebApplicationFactory>
     public async Task GetAll_WithPagination_ReturnsPagedResults()
     {
         // Arrange: Create organization and multiple missions
+        var leaderId = await GetOrCreateAdminLeader();
         var orgResponse = await _client.PostAsJsonAsync("/api/organizations",
-            new CreateOrganizationRequest { Name = "Test Org" });
+            new CreateOrganizationRequest { Name = "Test Org", OwnerId = leaderId, UserEmail = "admin" });
         var org = await orgResponse.Content.ReadFromJsonAsync<Organization>();
 
         for (int i = 1; i <= 15; i++)
@@ -299,8 +301,9 @@ public class MissionsEndpointsTests : IClassFixture<CustomWebApplicationFactory>
     public async Task GetMyMissions_WithValidCollaborator_ReturnsHierarchyMissions()
     {
         // Arrange: Create full hierarchy
+        var leaderId = await GetOrCreateAdminLeader();
         var orgResponse = await _client.PostAsJsonAsync("/api/organizations",
-            new CreateOrganizationRequest { Name = "Test Org" });
+            new CreateOrganizationRequest { Name = "Test Org", OwnerId = leaderId, UserEmail = "admin" });
         var org = await orgResponse.Content.ReadFromJsonAsync<Organization>();
 
         var workspaceResponse = await _client.PostAsJsonAsync("/api/workspaces",
@@ -362,8 +365,9 @@ public class MissionsEndpointsTests : IClassFixture<CustomWebApplicationFactory>
     public async Task Update_WithValidRequest_ReturnsOk()
     {
         // Arrange: Create organization and mission
+        var leaderId = await GetOrCreateAdminLeader();
         var orgResponse = await _client.PostAsJsonAsync("/api/organizations",
-            new CreateOrganizationRequest { Name = "Test Org" });
+            new CreateOrganizationRequest { Name = "Test Org", OwnerId = leaderId, UserEmail = "admin" });
         var org = await orgResponse.Content.ReadFromJsonAsync<Organization>();
 
         var createRequest = new CreateMissionRequest
@@ -405,8 +409,9 @@ public class MissionsEndpointsTests : IClassFixture<CustomWebApplicationFactory>
     public async Task Delete_WithExistingId_ReturnsNoContent()
     {
         // Arrange: Create organization and mission
+        var leaderId = await GetOrCreateAdminLeader();
         var orgResponse = await _client.PostAsJsonAsync("/api/organizations",
-            new CreateOrganizationRequest { Name = "Test Org" });
+            new CreateOrganizationRequest { Name = "Test Org", OwnerId = leaderId, UserEmail = "admin" });
         var org = await orgResponse.Content.ReadFromJsonAsync<Organization>();
 
         var createRequest = new CreateMissionRequest

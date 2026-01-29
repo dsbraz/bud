@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-Bud is an ASP.NET Core 8.0 application with a Blazor WebAssembly frontend, using PostgreSQL as the database. The application manages organizational hierarchies and mission tracking.
+Bud is an ASP.NET Core 10 application with a Blazor WebAssembly frontend, using PostgreSQL as the database. The application manages organizational hierarchies and mission tracking.
 
 ## Project Structure
 
@@ -69,8 +69,8 @@ Migrations are automatically applied on startup in Development mode. To manually
 ```bash
 docker run --rm -v "$(pwd)/src":/src -w /src/Bud.Server --network bud_default \
   -e ConnectionStrings__DefaultConnection="Host=db;Port=5432;Database=bud;Username=postgres;Password=postgres" \
-  mcr.microsoft.com/dotnet/sdk:8.0 \
-  bash -lc "dotnet tool install --tool-path /tmp/tools dotnet-ef --version 8.0.12 && /tmp/tools/dotnet-ef database update"
+  mcr.microsoft.com/dotnet/sdk:10.0 \
+  bash -lc "dotnet tool install --tool-path /tmp/tools dotnet-ef --version 10.0.2 && /tmp/tools/dotnet-ef database update"
 ```
 
 To create a new migration:

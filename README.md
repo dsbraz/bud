@@ -19,8 +19,8 @@ Já existe a migration inicial (`InitialCreate`). Para aplicar no banco com Dock
 ```bash
 docker run --rm -v "$(pwd)/src":/src -w /src/Bud.Server --network bud_default \
   -e ConnectionStrings__DefaultConnection="Host=db;Port=5432;Database=bud;Username=postgres;Password=postgres" \
-  mcr.microsoft.com/dotnet/sdk:8.0 \
-  bash -lc "dotnet tool install --tool-path /tmp/tools dotnet-ef --version 8.0.12 && /tmp/tools/dotnet-ef database update"
+  mcr.microsoft.com/dotnet/sdk:10.0 \
+  bash -lc "dotnet tool install --tool-path /tmp/tools dotnet-ef --version 10.0.2 && /tmp/tools/dotnet-ef database update"
 ```
 
 No ambiente Development, a API tenta aplicar migrations automaticamente no startup.
