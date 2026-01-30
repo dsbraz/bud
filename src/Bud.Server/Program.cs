@@ -1,6 +1,7 @@
 using Bud.Server.Data;
 using Bud.Server.Middleware;
 using Bud.Server.Services;
+using Bud.Server.Settings;
 using Bud.Server.Validators;
 using FluentValidation;
 using Microsoft.EntityFrameworkCore;
@@ -15,6 +16,9 @@ builder.Services.AddSwaggerGen();
 // Add ProblemDetails and exception handling
 builder.Services.AddProblemDetails();
 builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
+
+// Add Settings
+builder.Services.Configure<AdminSettings>(builder.Configuration.GetSection("AdminSettings"));
 
 // Add FluentValidation
 builder.Services.AddValidatorsFromAssemblyContaining<CreateOrganizationValidator>();

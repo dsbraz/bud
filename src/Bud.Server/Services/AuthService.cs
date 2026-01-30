@@ -1,12 +1,14 @@
 using Bud.Server.Data;
+using Bud.Server.Settings;
 using Bud.Shared.Contracts;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 
 namespace Bud.Server.Services;
 
-public sealed class AuthService(ApplicationDbContext dbContext) : IAuthService
+public sealed class AuthService(ApplicationDbContext dbContext, IOptions<AdminSettings> adminSettings) : IAuthService
 {
-    private const string AdminEmail = "admin@getbud.co";
+    private readonly string _adminEmail = adminSettings.Value.Email;
 
     public async Task<ServiceResult<AuthLoginResponse>> LoginAsync(AuthLoginRequest request, CancellationToken cancellationToken = default)
     {
@@ -47,8 +49,8 @@ public sealed class AuthService(ApplicationDbContext dbContext) : IAuthService
         });
     }
 
-    private static bool IsAdminLogin(string normalizedEmail)
+    private bool IsAdminLogin(string normalizedEmail)
     {
-        return string.Equals(normalizedEmail, AdminEmail, StringComparison.OrdinalIgnoreCase);
+        return string.Equals(normalizedEmail, _adminEmail, StringComparison.OrdinalIgnoreCase);
     }
 }

@@ -1,17 +1,21 @@
 using Bud.Server.Data;
+using Bud.Server.Settings;
 using Bud.Shared.Contracts;
 using Bud.Shared.Models;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 
 namespace Bud.Server.Services;
 
-public sealed class OrganizationService(ApplicationDbContext dbContext) : IOrganizationService
+public sealed class OrganizationService(ApplicationDbContext dbContext, IOptions<AdminSettings> adminSettings) : IOrganizationService
 {
+    private readonly string _adminEmail = adminSettings.Value.Email;
+
     public async Task<ServiceResult<Organization>> CreateAsync(CreateOrganizationRequest request, CancellationToken cancellationToken = default)
     {
-        // 1. Admin Authorization Check — only admin@getbud.co can create organizations
+        // 1. Admin Authorization Check
         var normalizedEmail = request.UserEmail.Trim().ToLowerInvariant();
-        var isAdmin = normalizedEmail.Equals("admin@getbud.co", StringComparison.OrdinalIgnoreCase);
+        var isAdmin = normalizedEmail.Equals(_adminEmail, StringComparison.OrdinalIgnoreCase);
 
         if (!isAdmin)
         {
