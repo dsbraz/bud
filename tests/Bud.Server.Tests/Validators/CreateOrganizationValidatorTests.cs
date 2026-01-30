@@ -15,9 +15,9 @@ public class CreateOrganizationValidatorTests
         // Arrange
         var request = new CreateOrganizationRequest
         {
-            Name = "Test Organization",
+            Name = "test.com",
             OwnerId = Guid.NewGuid(),
-            UserEmail = "admin@company.com"
+            UserEmail = "admin@getbud.co"
         };
 
         // Act
@@ -39,7 +39,7 @@ public class CreateOrganizationValidatorTests
         {
             Name = name!,
             OwnerId = Guid.NewGuid(),
-            UserEmail = "admin@company.com"
+            UserEmail = "admin@getbud.co"
         };
 
         // Act
@@ -53,12 +53,14 @@ public class CreateOrganizationValidatorTests
     [Fact]
     public async Task Validate_WithNameExceeding200Characters_ShouldFail()
     {
-        // Arrange
+        // Arrange — build a valid domain that exceeds 200 characters
+        // "a{197}.com" = 197 + 1 + 3 = 201 chars
+        var longLabel = new string('a', 197);
         var request = new CreateOrganizationRequest
         {
-            Name = new string('A', 201),
+            Name = $"{longLabel}.com",
             OwnerId = Guid.NewGuid(),
-            UserEmail = "admin@company.com"
+            UserEmail = "admin@getbud.co"
         };
 
         // Act
@@ -70,14 +72,16 @@ public class CreateOrganizationValidatorTests
     }
 
     [Fact]
-    public async Task Validate_WithNameExactly200Characters_ShouldPass()
+    public async Task Validate_WithDomainExactly200Characters_ShouldPass()
     {
-        // Arrange
+        // Arrange — build a valid domain that is exactly 200 characters
+        // "a{193}.com.br" = 193 + 1 + 3 + 1 + 2 = 200
+        var label = new string('a', 193);
         var request = new CreateOrganizationRequest
         {
-            Name = new string('A', 200),
+            Name = $"{label}.com.br",
             OwnerId = Guid.NewGuid(),
-            UserEmail = "admin@company.com"
+            UserEmail = "admin@getbud.co"
         };
 
         // Act
@@ -87,15 +91,65 @@ public class CreateOrganizationValidatorTests
         result.IsValid.Should().BeTrue();
     }
 
+    [Theory]
+    [InlineData("empresa.com.br")]
+    [InlineData("my-company.org")]
+    [InlineData("sub.domain.co.uk")]
+    [InlineData("getbud.co")]
+    [InlineData("example.com")]
+    public async Task Validate_WithValidDomain_ShouldPass(string domain)
+    {
+        // Arrange
+        var request = new CreateOrganizationRequest
+        {
+            Name = domain,
+            OwnerId = Guid.NewGuid(),
+            UserEmail = "admin@getbud.co"
+        };
+
+        // Act
+        var result = await _validator.ValidateAsync(request);
+
+        // Assert
+        result.IsValid.Should().BeTrue();
+    }
+
+    [Theory]
+    [InlineData("just text")]
+    [InlineData("no-dots")]
+    [InlineData("-invalid.com")]
+    [InlineData("invalid-.com")]
+    [InlineData(".leading-dot.com")]
+    [InlineData("trailing-dot.com.")]
+    [InlineData("spaces in.com")]
+    [InlineData("under_score.com")]
+    public async Task Validate_WithInvalidDomain_ShouldFail(string domain)
+    {
+        // Arrange
+        var request = new CreateOrganizationRequest
+        {
+            Name = domain,
+            OwnerId = Guid.NewGuid(),
+            UserEmail = "admin@getbud.co"
+        };
+
+        // Act
+        var result = await _validator.ValidateAsync(request);
+
+        // Assert
+        result.IsValid.Should().BeFalse();
+        result.Errors.Should().Contain(e => e.PropertyName == "Name");
+    }
+
     [Fact]
     public async Task Validate_WithEmptyOwnerId_ShouldFail()
     {
         // Arrange
         var request = new CreateOrganizationRequest
         {
-            Name = "Test Organization",
+            Name = "test.com",
             OwnerId = Guid.Empty,
-            UserEmail = "admin@company.com"
+            UserEmail = "admin@getbud.co"
         };
 
         // Act
@@ -115,7 +169,7 @@ public class CreateOrganizationValidatorTests
         // Arrange
         var request = new CreateOrganizationRequest
         {
-            Name = "Test Organization",
+            Name = "test.com",
             OwnerId = Guid.NewGuid(),
             UserEmail = userEmail!
         };

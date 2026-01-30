@@ -20,8 +20,8 @@
             <EditForm Model="@newOrganization" OnValidSubmit="CreateOrganization">
                 <DataAnnotationsValidator />
                 <div class="form-row">
-                    <label>Nome</label>
-                    <InputText class="input" @bind-Value="newOrganization.Name" />
+                    <label>Domínio</label>
+                    <InputText class="input" @bind-Value="newOrganization.Name" placeholder="empresa.com.br" />
                 </div>
                 <div class="form-row">
                     <label>Líder (Proprietário) *</label>
@@ -86,7 +86,7 @@
             <table class="table">
                 <thead>
                     <tr>
-                        <th>Nome</th>
+                        <th>Domínio</th>
                         <th>ID</th>
                     </tr>
                 </thead>
@@ -145,7 +145,7 @@
         // Frontend validation
         if (string.IsNullOrWhiteSpace(newOrganization.Name))
         {
-            formMessage = "Por favor, informe o nome da organização.";
+            formMessage = "Por favor, informe o domínio da organização.";
             return;
         }
 

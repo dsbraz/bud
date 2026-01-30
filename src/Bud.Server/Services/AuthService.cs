@@ -6,7 +6,7 @@ namespace Bud.Server.Services;
 
 public sealed class AuthService(ApplicationDbContext dbContext) : IAuthService
 {
-    private const string AdminAlias = "admin";
+    private const string AdminEmail = "admin@getbud.co";
 
     public async Task<ServiceResult<AuthLoginResponse>> LoginAsync(AuthLoginRequest request, CancellationToken cancellationToken = default)
     {
@@ -49,7 +49,6 @@ public sealed class AuthService(ApplicationDbContext dbContext) : IAuthService
 
     private static bool IsAdminLogin(string normalizedEmail)
     {
-        return string.Equals(normalizedEmail, AdminAlias, StringComparison.OrdinalIgnoreCase)
-            || normalizedEmail.StartsWith($"{AdminAlias}@", StringComparison.OrdinalIgnoreCase);
+        return string.Equals(normalizedEmail, AdminEmail, StringComparison.OrdinalIgnoreCase);
     }
 }

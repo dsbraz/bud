@@ -9,10 +9,9 @@ public sealed class OrganizationService(ApplicationDbContext dbContext) : IOrgan
 {
     public async Task<ServiceResult<Organization>> CreateAsync(CreateOrganizationRequest request, CancellationToken cancellationToken = default)
     {
-        // 1. Admin Authorization Check
+        // 1. Admin Authorization Check — only admin@getbud.co can create organizations
         var normalizedEmail = request.UserEmail.Trim().ToLowerInvariant();
-        var isAdmin = normalizedEmail.Equals("admin", StringComparison.OrdinalIgnoreCase)
-                      || normalizedEmail.StartsWith("admin@", StringComparison.OrdinalIgnoreCase);
+        var isAdmin = normalizedEmail.Equals("admin@getbud.co", StringComparison.OrdinalIgnoreCase);
 
         if (!isAdmin)
         {

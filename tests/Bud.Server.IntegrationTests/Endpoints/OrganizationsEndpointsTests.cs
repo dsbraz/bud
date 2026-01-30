@@ -28,7 +28,7 @@ public class OrganizationsEndpointsTests : IClassFixture<CustomWebApplicationFac
 
         // Check if admin leader already exists
         var existingLeader = await dbContext.Collaborators
-            .FirstOrDefaultAsync(c => c.Email == "admin");
+            .FirstOrDefaultAsync(c => c.Email == "admin@getbud.co");
 
         if (existingLeader != null)
         {
@@ -39,7 +39,7 @@ public class OrganizationsEndpointsTests : IClassFixture<CustomWebApplicationFac
         var org = new Organization
         {
             Id = Guid.NewGuid(),
-            Name = "Bud",
+            Name = "getbud.co",
             OwnerId = null
         };
         dbContext.Organizations.Add(org);
@@ -64,7 +64,7 @@ public class OrganizationsEndpointsTests : IClassFixture<CustomWebApplicationFac
         {
             Id = Guid.NewGuid(),
             FullName = "Administrador",
-            Email = "admin",
+            Email = "admin@getbud.co",
             Role = CollaboratorRole.Leader,
             TeamId = team.Id
         };
@@ -86,9 +86,9 @@ public class OrganizationsEndpointsTests : IClassFixture<CustomWebApplicationFac
         var leaderId = await GetOrCreateAdminLeader();
         var request = new CreateOrganizationRequest
         {
-            Name = "Test Organization",
+            Name = "test-org.com",
             OwnerId = leaderId,
-            UserEmail = "admin"
+            UserEmail = "admin@getbud.co"
         };
 
         // Act
@@ -98,7 +98,7 @@ public class OrganizationsEndpointsTests : IClassFixture<CustomWebApplicationFac
         response.StatusCode.Should().Be(HttpStatusCode.Created);
         var organization = await response.Content.ReadFromJsonAsync<Organization>();
         organization.Should().NotBeNull();
-        organization!.Name.Should().Be("Test Organization");
+        organization!.Name.Should().Be("test-org.com");
         organization.Id.Should().NotBeEmpty();
         organization.OwnerId.Should().Be(leaderId);
     }
@@ -112,7 +112,7 @@ public class OrganizationsEndpointsTests : IClassFixture<CustomWebApplicationFac
         {
             Name = "",
             OwnerId = leaderId,
-            UserEmail = "admin"
+            UserEmail = "admin@getbud.co"
         };
 
         // Act
@@ -129,9 +129,9 @@ public class OrganizationsEndpointsTests : IClassFixture<CustomWebApplicationFac
         var leaderId = await GetOrCreateAdminLeader();
         var createRequest = new CreateOrganizationRequest
         {
-            Name = "Test Organization for GetById",
+            Name = "getbyid-test.com",
             OwnerId = leaderId,
-            UserEmail = "admin"
+            UserEmail = "admin@getbud.co"
         };
         var createResponse = await _client.PostAsJsonAsync("/api/organizations", createRequest);
         var created = await createResponse.Content.ReadFromJsonAsync<Organization>();
@@ -144,7 +144,7 @@ public class OrganizationsEndpointsTests : IClassFixture<CustomWebApplicationFac
         var organization = await response.Content.ReadFromJsonAsync<Organization>();
         organization.Should().NotBeNull();
         organization!.Id.Should().Be(created.Id);
-        organization.Name.Should().Be("Test Organization for GetById");
+        organization.Name.Should().Be("getbyid-test.com");
     }
 
     [Fact]
@@ -167,15 +167,15 @@ public class OrganizationsEndpointsTests : IClassFixture<CustomWebApplicationFac
         var leaderId = await GetOrCreateAdminLeader();
         await _client.PostAsJsonAsync("/api/organizations", new CreateOrganizationRequest
         {
-            Name = "Org 1",
+            Name = "org1.com",
             OwnerId = leaderId,
-            UserEmail = "admin"
+            UserEmail = "admin@getbud.co"
         });
         await _client.PostAsJsonAsync("/api/organizations", new CreateOrganizationRequest
         {
-            Name = "Org 2",
+            Name = "org2.com",
             OwnerId = leaderId,
-            UserEmail = "admin"
+            UserEmail = "admin@getbud.co"
         });
 
         // Act
@@ -197,14 +197,14 @@ public class OrganizationsEndpointsTests : IClassFixture<CustomWebApplicationFac
         var leaderId = await GetOrCreateAdminLeader();
         var createRequest = new CreateOrganizationRequest
         {
-            Name = "Original Name",
+            Name = "original.com",
             OwnerId = leaderId,
-            UserEmail = "admin"
+            UserEmail = "admin@getbud.co"
         };
         var createResponse = await _client.PostAsJsonAsync("/api/organizations", createRequest);
         var created = await createResponse.Content.ReadFromJsonAsync<Organization>();
 
-        var updateRequest = new UpdateOrganizationRequest { Name = "Updated Name" };
+        var updateRequest = new UpdateOrganizationRequest { Name = "updated.com" };
 
         // Act
         var response = await _client.PutAsJsonAsync($"/api/organizations/{created!.Id}", updateRequest);
@@ -213,7 +213,7 @@ public class OrganizationsEndpointsTests : IClassFixture<CustomWebApplicationFac
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         var updated = await response.Content.ReadFromJsonAsync<Organization>();
         updated.Should().NotBeNull();
-        updated!.Name.Should().Be("Updated Name");
+        updated!.Name.Should().Be("updated.com");
     }
 
     [Fact]
@@ -221,7 +221,7 @@ public class OrganizationsEndpointsTests : IClassFixture<CustomWebApplicationFac
     {
         // Arrange
         var nonExistingId = Guid.NewGuid();
-        var updateRequest = new UpdateOrganizationRequest { Name = "Updated Name" };
+        var updateRequest = new UpdateOrganizationRequest { Name = "updated.com" };
 
         // Act
         var response = await _client.PutAsJsonAsync($"/api/organizations/{nonExistingId}", updateRequest);
@@ -237,9 +237,9 @@ public class OrganizationsEndpointsTests : IClassFixture<CustomWebApplicationFac
         var leaderId = await GetOrCreateAdminLeader();
         var createRequest = new CreateOrganizationRequest
         {
-            Name = "Organization to Delete",
+            Name = "to-delete.com",
             OwnerId = leaderId,
-            UserEmail = "admin"
+            UserEmail = "admin@getbud.co"
         };
         var createResponse = await _client.PostAsJsonAsync("/api/organizations", createRequest);
         var created = await createResponse.Content.ReadFromJsonAsync<Organization>();

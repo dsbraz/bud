@@ -1,4 +1,5 @@
 using System.Net.Http.Json;
+using System.Text.Json;
 using Bud.Shared.Contracts;
 using Bud.Shared.Models;
 
@@ -22,7 +23,13 @@ public sealed class ApiClient
     public async Task<Organization?> CreateOrganizationAsync(CreateOrganizationRequest request)
     {
         var response = await _http.PostAsJsonAsync("api/organizations", request);
-        response.EnsureSuccessStatusCode();
+
+        if (!response.IsSuccessStatusCode)
+        {
+            var errorMessage = await ExtractErrorMessageAsync(response);
+            throw new HttpRequestException(errorMessage);
+        }
+
         return await response.Content.ReadFromJsonAsync<Organization>();
     }
 
@@ -118,6 +125,50 @@ public sealed class ApiClient
         var response = await _http.PostAsJsonAsync("api/mission-metrics", request);
         response.EnsureSuccessStatusCode();
         return await response.Content.ReadFromJsonAsync<MissionMetric>();
+    }
+
+    private static async Task<string> ExtractErrorMessageAsync(HttpResponseMessage response)
+    {
+        try
+        {
+            string body = await response.Content.ReadAsStringAsync();
+            using JsonDocument doc = JsonDocument.Parse(body);
+            JsonElement root = doc.RootElement;
+
+            // ValidationProblemDetails — extract messages from "errors" dict
+            if (root.TryGetProperty("errors", out JsonElement errors))
+            {
+                List<string> messages = new();
+                foreach (JsonProperty field in errors.EnumerateObject())
+                {
+                    foreach (JsonElement msg in field.Value.EnumerateArray())
+                    {
+                        messages.Add(msg.GetString() ?? string.Empty);
+                    }
+                }
+
+                if (messages.Count > 0)
+                {
+                    return string.Join(" ", messages);
+                }
+            }
+
+            // ProblemDetails — extract "detail"
+            if (root.TryGetProperty("detail", out JsonElement detail))
+            {
+                string? detailText = detail.GetString();
+                if (!string.IsNullOrWhiteSpace(detailText))
+                {
+                    return detailText;
+                }
+            }
+        }
+        catch
+        {
+            // Fallback if response body can't be parsed
+        }
+
+        return $"Erro do servidor ({(int)response.StatusCode}).";
     }
 
     public async Task<AuthLoginResponse?> LoginAsync(AuthLoginRequest request)

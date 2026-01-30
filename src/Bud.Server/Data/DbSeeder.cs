@@ -8,7 +8,7 @@ public static class DbSeeder
     public static async Task SeedAsync(ApplicationDbContext context)
     {
         // Check if seed already exists
-        if (await context.Organizations.AnyAsync(o => o.Name == "Bud"))
+        if (await context.Organizations.AnyAsync(o => o.Name == "getbud.co"))
         {
             return;
         }
@@ -17,7 +17,7 @@ public static class DbSeeder
         var budOrg = new Organization
         {
             Id = Guid.NewGuid(),
-            Name = "Bud",
+            Name = "getbud.co",
             OwnerId = null
         };
         context.Organizations.Add(budOrg);
@@ -45,7 +45,7 @@ public static class DbSeeder
         {
             Id = Guid.NewGuid(),
             FullName = "Administrador",
-            Email = "admin",
+            Email = "admin@getbud.co",
             Role = CollaboratorRole.Leader,
             TeamId = budTeam.Id
         };

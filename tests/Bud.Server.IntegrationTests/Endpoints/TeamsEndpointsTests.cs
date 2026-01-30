@@ -26,27 +26,27 @@ public class TeamsEndpointsTests : IClassFixture<CustomWebApplicationFactory>
         var dbContext = scope.ServiceProvider.GetRequiredService<Bud.Server.Data.ApplicationDbContext>();
 
         var existingLeader = await dbContext.Collaborators
-            .FirstOrDefaultAsync(c => c.Email == "admin");
+            .FirstOrDefaultAsync(c => c.Email == "admin@getbud.co");
 
         if (existingLeader != null)
         {
             return existingLeader.Id;
         }
 
-        var org = new Organization { Id = Guid.NewGuid(), Name = "Bud", OwnerId = null };
+        var org = new Organization { Id = Guid.NewGuid(), Name = "getbud.co", OwnerId = null };
         dbContext.Organizations.Add(org);
 
-        var workspace = new Workspace { Id = Guid.NewGuid(), Name = "Bud", OrganizationId = org.Id };
+        var workspace = new Workspace { Id = Guid.NewGuid(), Name = "getbud.co", OrganizationId = org.Id };
         dbContext.Workspaces.Add(workspace);
 
-        var team = new Team { Id = Guid.NewGuid(), Name = "Bud", WorkspaceId = workspace.Id };
+        var team = new Team { Id = Guid.NewGuid(), Name = "getbud.co", WorkspaceId = workspace.Id };
         dbContext.Teams.Add(team);
 
         var adminLeader = new Collaborator
         {
             Id = Guid.NewGuid(),
             FullName = "Administrador",
-            Email = "admin",
+            Email = "admin@getbud.co",
             Role = CollaboratorRole.Leader,
             TeamId = team.Id
         };
@@ -66,9 +66,9 @@ public class TeamsEndpointsTests : IClassFixture<CustomWebApplicationFactory>
         var orgResponse = await _client.PostAsJsonAsync("/api/organizations",
             new CreateOrganizationRequest
             {
-                Name = "Test Org",
+                Name = "test-org.com",
                 OwnerId = leaderId,
-                UserEmail = "admin"
+                UserEmail = "admin@getbud.co"
             });
         var org = await orgResponse.Content.ReadFromJsonAsync<Organization>();
 
@@ -119,9 +119,9 @@ public class TeamsEndpointsTests : IClassFixture<CustomWebApplicationFactory>
         var org = (await _client.PostAsJsonAsync("/api/organizations",
             new CreateOrganizationRequest
             {
-                Name = "Test Org",
+                Name = "test-org.com",
                 OwnerId = leaderId,
-                UserEmail = "admin"
+                UserEmail = "admin@getbud.co"
             })
         ).Content.ReadFromJsonAsync<Organization>().Result!;
 

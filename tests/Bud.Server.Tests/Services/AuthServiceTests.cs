@@ -22,13 +22,10 @@ public class AuthServiceTests
     #region Admin Login Detection Tests
 
     [Theory]
-    [InlineData("admin")]
-    [InlineData("ADMIN")]
-    [InlineData("Admin")]
-    [InlineData("admin@company.com")]
-    [InlineData("ADMIN@anywhere.org")]
-    [InlineData("admin@test")]
-    public async Task Login_WithAdminAlias_ReturnsAdminUser(string email)
+    [InlineData("admin@getbud.co")]
+    [InlineData("ADMIN@GETBUD.CO")]
+    [InlineData("Admin@GetBud.Co")]
+    public async Task Login_WithAdminEmail_ReturnsAdminUser(string email)
     {
         // Arrange
         using var context = CreateInMemoryContext();
@@ -45,6 +42,26 @@ public class AuthServiceTests
         result.Value!.IsAdmin.Should().BeTrue();
         result.Value!.DisplayName.Should().Be("Administrador");
         result.Value!.Email.Should().Be(email.ToLowerInvariant());
+    }
+
+    [Theory]
+    [InlineData("admin")]
+    [InlineData("admin@company.com")]
+    [InlineData("admin@test")]
+    public async Task Login_WithNonGetbudAdminEmail_ReturnsNotFound(string email)
+    {
+        // Arrange
+        using var context = CreateInMemoryContext();
+        var service = new AuthService(context);
+
+        var request = new AuthLoginRequest { Email = email };
+
+        // Act
+        var result = await service.LoginAsync(request);
+
+        // Assert
+        result.IsSuccess.Should().BeFalse();
+        result.ErrorType.Should().Be(ServiceErrorType.NotFound);
     }
 
     #endregion

@@ -8,8 +8,10 @@ public sealed class CreateOrganizationValidator : AbstractValidator<CreateOrgani
     public CreateOrganizationValidator()
     {
         RuleFor(x => x.Name)
-            .NotEmpty().WithMessage("Name is required.")
-            .MaximumLength(200).WithMessage("Name must not exceed 200 characters.");
+            .NotEmpty().WithMessage("O domínio é obrigatório.")
+            .MaximumLength(200).WithMessage("O domínio não pode exceder 200 caracteres.")
+            .Matches(@"^([a-zA-Z0-9]([a-zA-Z0-9-]*[a-zA-Z0-9])?\.)+[a-zA-Z]{2,}$")
+            .WithMessage("O nome deve ser um domínio válido (ex: empresa.com.br).");
 
         RuleFor(x => x.OwnerId)
             .NotEmpty().WithMessage("Um líder deve ser selecionado como proprietário da organização.");
@@ -24,7 +26,9 @@ public sealed class UpdateOrganizationValidator : AbstractValidator<UpdateOrgani
     public UpdateOrganizationValidator()
     {
         RuleFor(x => x.Name)
-            .NotEmpty().WithMessage("Name is required.")
-            .MaximumLength(200).WithMessage("Name must not exceed 200 characters.");
+            .NotEmpty().WithMessage("O domínio é obrigatório.")
+            .MaximumLength(200).WithMessage("O domínio não pode exceder 200 caracteres.")
+            .Matches(@"^([a-zA-Z0-9]([a-zA-Z0-9-]*[a-zA-Z0-9])?\.)+[a-zA-Z]{2,}$")
+            .WithMessage("O nome deve ser um domínio válido (ex: empresa.com.br).");
     }
 }
