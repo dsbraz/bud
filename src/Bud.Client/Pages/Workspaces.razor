@@ -30,6 +30,14 @@
                 <label>Nome</label>
                 <InputText class="input" @bind-Value="newWorkspace.Name" />
             </div>
+            <div class="form-row">
+                <label>Visibilidade</label>
+                <select class="input" @bind="createVisibility">
+                    <option value="">Selecione</option>
+                    <option value="Public">Pública</option>
+                    <option value="Private">Privada</option>
+                </select>
+            </div>
             <div class="form-actions">
                 <button class="button primary" type="submit">Salvar</button>
             </div>
@@ -74,6 +82,7 @@
                 <thead>
                     <tr>
                         <th>Nome</th>
+                        <th>Visibilidade</th>
                         <th>Organização</th>
                         <th>ID</th>
                     </tr>
@@ -84,6 +93,7 @@
                         var org = organizations.FirstOrDefault(o => o.Id == workspace.OrganizationId);
                         <tr>
                             <td>@workspace.Name</td>
+                            <td>@(workspace.Visibility == Visibility.Public ? "Pública" : "Privada")</td>
                             <td>@(org?.Name ?? "—")</td>
                             <td class="mono">@workspace.Id</td>
                         </tr>
@@ -102,6 +112,7 @@
     private string? search;
     private string? selectedOrganizationId;
     private string? createOrganizationId;
+    private string? createVisibility;
     private string? formMessage;
 
     protected override async Task OnInitializedAsync()
@@ -139,10 +150,19 @@
             return;
         }
 
+        if (string.IsNullOrEmpty(createVisibility) ||
+            !Enum.TryParse<Visibility>(createVisibility, out var visibility))
+        {
+            formMessage = "Selecione a visibilidade do workspace.";
+            return;
+        }
+
         newWorkspace.OrganizationId = organizationId;
+        newWorkspace.Visibility = visibility;
         await Api.CreateWorkspaceAsync(newWorkspace);
         newWorkspace = new CreateWorkspaceRequest();
         createOrganizationId = null;
+        createVisibility = null;
         await LoadWorkspaces();
         formMessage = "Workspace criado com sucesso.";
     }

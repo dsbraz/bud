@@ -21,6 +21,9 @@ public sealed class ServiceResult
 
     public static ServiceResult NotFound(string error)
         => new(false, error, ServiceErrorType.NotFound);
+
+    public static ServiceResult Forbidden(string error)
+        => new(false, error, ServiceErrorType.Forbidden);
 }
 
 public sealed class ServiceResult<T>
@@ -46,6 +49,9 @@ public sealed class ServiceResult<T>
 
     public static ServiceResult<T> NotFound(string error)
         => new(false, error: error, errorType: ServiceErrorType.NotFound);
+
+    public static ServiceResult<T> Forbidden(string error)
+        => new(false, error: error, errorType: ServiceErrorType.Forbidden);
 }
 
 public enum ServiceErrorType
@@ -53,5 +59,6 @@ public enum ServiceErrorType
     None,
     Validation,
     NotFound,
-    Conflict
+    Conflict,
+    Forbidden
 }

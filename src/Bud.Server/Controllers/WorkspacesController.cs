@@ -41,6 +41,7 @@ public sealed class WorkspacesController(
     [HttpPut("{id:guid}")]
     [ProducesResponseType(typeof(Workspace), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status403Forbidden)]
     [ProducesResponseType(typeof(ValidationProblemDetails), StatusCodes.Status400BadRequest)]
     public async Task<ActionResult<Workspace>> Update(Guid id, UpdateWorkspaceRequest request, CancellationToken cancellationToken)
     {
@@ -55,9 +56,13 @@ public sealed class WorkspacesController(
 
         if (result.IsFailure)
         {
-            return result.ErrorType == ServiceErrorType.NotFound
-                ? NotFound(new ProblemDetails { Detail = result.Error })
-                : BadRequest(new ProblemDetails { Detail = result.Error });
+            return result.ErrorType switch
+            {
+                ServiceErrorType.NotFound => NotFound(new ProblemDetails { Detail = result.Error }),
+                ServiceErrorType.Forbidden => StatusCode(StatusCodes.Status403Forbidden,
+                    new ProblemDetails { Detail = result.Error }),
+                _ => BadRequest(new ProblemDetails { Detail = result.Error })
+            };
         }
 
         return Ok(result.Value);
@@ -66,15 +71,20 @@ public sealed class WorkspacesController(
     [HttpDelete("{id:guid}")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status403Forbidden)]
     public async Task<IActionResult> Delete(Guid id, CancellationToken cancellationToken)
     {
         var result = await workspaceService.DeleteAsync(id, cancellationToken);
 
         if (result.IsFailure)
         {
-            return result.ErrorType == ServiceErrorType.NotFound
-                ? NotFound(new ProblemDetails { Detail = result.Error })
-                : BadRequest(new ProblemDetails { Detail = result.Error });
+            return result.ErrorType switch
+            {
+                ServiceErrorType.NotFound => NotFound(new ProblemDetails { Detail = result.Error }),
+                ServiceErrorType.Forbidden => StatusCode(StatusCodes.Status403Forbidden,
+                    new ProblemDetails { Detail = result.Error }),
+                _ => BadRequest(new ProblemDetails { Detail = result.Error })
+            };
         }
 
         return NoContent();

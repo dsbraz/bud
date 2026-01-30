@@ -27,6 +27,7 @@ public static class DbSeeder
         {
             Id = Guid.NewGuid(),
             Name = "Bud",
+            Visibility = Visibility.Public,
             OrganizationId = budOrg.Id
         };
         context.Workspaces.Add(budWorkspace);

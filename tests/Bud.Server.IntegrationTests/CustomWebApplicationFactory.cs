@@ -64,6 +64,18 @@ public class CustomWebApplicationFactory : WebApplicationFactory<Program>, IAsyn
         return client;
     }
 
+    /// <summary>
+    /// Creates an HttpClient with tenant and collaborator headers for non-admin access.
+    /// </summary>
+    public HttpClient CreateTenantClient(Guid tenantId, string email, Guid collaboratorId)
+    {
+        var client = CreateClient();
+        client.DefaultRequestHeaders.Add("X-User-Email", email);
+        client.DefaultRequestHeaders.Add("X-Tenant-Id", tenantId.ToString());
+        client.DefaultRequestHeaders.Add("X-Collaborator-Id", collaboratorId.ToString());
+        return client;
+    }
+
     public async Task InitializeAsync()
     {
         await _postgres.StartAsync();

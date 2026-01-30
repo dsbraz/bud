@@ -18,6 +18,12 @@ public sealed class TenantDelegatingHandler(AuthState authState) : DelegatingHan
                 request.Headers.Add("X-Tenant-Id",
                     authState.Session.OrganizationId.Value.ToString());
             }
+
+            if (authState.Session.CollaboratorId.HasValue)
+            {
+                request.Headers.Add("X-Collaborator-Id",
+                    authState.Session.CollaboratorId.Value.ToString());
+            }
         }
 
         return await base.SendAsync(request, cancellationToken);

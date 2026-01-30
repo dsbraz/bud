@@ -74,7 +74,7 @@ public class TeamsEndpointsTests : IClassFixture<CustomWebApplicationFactory>
         var org = await orgResponse.Content.ReadFromJsonAsync<Organization>();
 
         var workspaceResponse = await _client.PostAsJsonAsync("/api/workspaces",
-            new CreateWorkspaceRequest { Name = "Test Workspace", OrganizationId = org!.Id });
+            new CreateWorkspaceRequest { Name = "Test Workspace", OrganizationId = org!.Id, Visibility = Visibility.Public });
         var workspace = await workspaceResponse.Content.ReadFromJsonAsync<Workspace>();
 
         return (org!, workspace!);
@@ -127,11 +127,11 @@ public class TeamsEndpointsTests : IClassFixture<CustomWebApplicationFactory>
         ).Content.ReadFromJsonAsync<Organization>().Result!;
 
         var workspace1 = (await _client.PostAsJsonAsync("/api/workspaces",
-            new CreateWorkspaceRequest { Name = "Workspace 1", OrganizationId = org.Id })
+            new CreateWorkspaceRequest { Name = "Workspace 1", OrganizationId = org.Id, Visibility = Visibility.Public })
         ).Content.ReadFromJsonAsync<Workspace>().Result!;
 
         var workspace2 = (await _client.PostAsJsonAsync("/api/workspaces",
-            new CreateWorkspaceRequest { Name = "Workspace 2", OrganizationId = org.Id })
+            new CreateWorkspaceRequest { Name = "Workspace 2", OrganizationId = org.Id, Visibility = Visibility.Public })
         ).Content.ReadFromJsonAsync<Workspace>().Result!;
 
         // Create parent team in workspace1

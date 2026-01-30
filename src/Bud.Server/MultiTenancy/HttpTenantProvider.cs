@@ -6,6 +6,7 @@ namespace Bud.Server.MultiTenancy;
 public sealed class HttpTenantProvider : ITenantProvider
 {
     public Guid? TenantId { get; }
+    public Guid? CollaboratorId { get; }
     public bool IsAdmin { get; }
 
     public HttpTenantProvider(
@@ -23,6 +24,12 @@ public sealed class HttpTenantProvider : ITenantProvider
         if (Guid.TryParse(tenantHeader, out var tenantId))
         {
             TenantId = tenantId;
+        }
+
+        var collaboratorHeader = context.Request.Headers["X-Collaborator-Id"].FirstOrDefault();
+        if (Guid.TryParse(collaboratorHeader, out var collaboratorId))
+        {
+            CollaboratorId = collaboratorId;
         }
     }
 }
