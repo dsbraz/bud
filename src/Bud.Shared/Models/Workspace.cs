@@ -1,6 +1,6 @@
 namespace Bud.Shared.Models;
 
-public sealed class Workspace
+public sealed class Workspace : ITenantEntity
 {
     public Guid Id { get; set; }
     public string Name { get; set; } = string.Empty;

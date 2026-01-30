@@ -1,5 +1,6 @@
 using Bud.Server.Data;
 using Bud.Server.Middleware;
+using Bud.Server.MultiTenancy;
 using Bud.Server.Services;
 using Bud.Server.Settings;
 using Bud.Server.Validators;
@@ -23,6 +24,11 @@ builder.Services.Configure<AdminSettings>(builder.Configuration.GetSection("Admi
 // Add FluentValidation
 builder.Services.AddValidatorsFromAssemblyContaining<CreateOrganizationValidator>();
 
+// Add Multi-Tenancy
+builder.Services.AddHttpContextAccessor();
+builder.Services.AddScoped<ITenantProvider, HttpTenantProvider>();
+builder.Services.AddScoped<TenantSaveChangesInterceptor>();
+
 // Add DbContext
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
 if (string.IsNullOrWhiteSpace(connectionString))
@@ -30,9 +36,10 @@ if (string.IsNullOrWhiteSpace(connectionString))
     throw new InvalidOperationException("Connection string 'DefaultConnection' not configured.");
 }
 
-builder.Services.AddDbContext<ApplicationDbContext>(options =>
+builder.Services.AddDbContext<ApplicationDbContext>((sp, options) =>
 {
     options.UseNpgsql(connectionString);
+    options.AddInterceptors(sp.GetRequiredService<TenantSaveChangesInterceptor>());
 });
 
 // Add Services
@@ -98,6 +105,9 @@ app.UseExceptionHandler();
 app.UseHttpsRedirection();
 app.UseBlazorFrameworkFiles();
 app.UseStaticFiles();
+
+// Multi-tenancy middleware — must be before MapControllers
+app.UseMiddleware<TenantRequiredMiddleware>();
 
 app.MapControllers();
 

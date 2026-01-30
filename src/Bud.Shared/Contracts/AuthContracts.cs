@@ -14,4 +14,5 @@ public sealed class AuthLoginResponse
     public bool IsAdmin { get; set; }
     public Guid? CollaboratorId { get; set; }
     public CollaboratorRole? Role { get; set; }
+    public Guid? OrganizationId { get; set; }
 }

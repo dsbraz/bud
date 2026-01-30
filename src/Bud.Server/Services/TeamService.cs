@@ -9,10 +9,11 @@ public sealed class TeamService(ApplicationDbContext dbContext) : ITeamService
 {
     public async Task<ServiceResult<Team>> CreateAsync(CreateTeamRequest request, CancellationToken cancellationToken = default)
     {
-        var workspaceExists = await dbContext.Workspaces
-            .AnyAsync(w => w.Id == request.WorkspaceId, cancellationToken);
+        var workspace = await dbContext.Workspaces
+            .AsNoTracking()
+            .FirstOrDefaultAsync(w => w.Id == request.WorkspaceId, cancellationToken);
 
-        if (!workspaceExists)
+        if (workspace is null)
         {
             return ServiceResult<Team>.NotFound("Workspace not found.");
         }
@@ -38,6 +39,7 @@ public sealed class TeamService(ApplicationDbContext dbContext) : ITeamService
         {
             Id = Guid.NewGuid(),
             Name = request.Name.Trim(),
+            OrganizationId = workspace.OrganizationId,
             WorkspaceId = request.WorkspaceId,
             ParentTeamId = request.ParentTeamId,
         };

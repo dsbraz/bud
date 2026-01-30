@@ -17,7 +17,7 @@ public class OrganizationsEndpointsTests : IClassFixture<CustomWebApplicationFac
     public OrganizationsEndpointsTests(CustomWebApplicationFactory factory)
     {
         _factory = factory;
-        _client = factory.CreateClient();
+        _client = factory.CreateAdminClient();
     }
 
     private async Task<Guid> GetOrCreateAdminLeader()
@@ -56,7 +56,8 @@ public class OrganizationsEndpointsTests : IClassFixture<CustomWebApplicationFac
         {
             Id = Guid.NewGuid(),
             Name = "Bud",
-            WorkspaceId = workspace.Id
+            WorkspaceId = workspace.Id,
+            OrganizationId = org.Id
         };
         dbContext.Teams.Add(team);
 
@@ -66,7 +67,8 @@ public class OrganizationsEndpointsTests : IClassFixture<CustomWebApplicationFac
             FullName = "Administrador",
             Email = "admin@getbud.co",
             Role = CollaboratorRole.Leader,
-            TeamId = team.Id
+            TeamId = team.Id,
+            OrganizationId = org.Id
         };
         dbContext.Collaborators.Add(adminLeader);
 

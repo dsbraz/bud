@@ -1,5 +1,6 @@
 using Bud.Server.Data;
 using Bud.Server.Services;
+using Bud.Server.Tests.Helpers;
 using Bud.Shared.Contracts;
 using Bud.Shared.Models;
 using FluentAssertions;
@@ -10,13 +11,15 @@ namespace Bud.Server.Tests.Services;
 
 public class TeamServiceTests
 {
+    private readonly TestTenantProvider _tenantProvider = new() { IsAdmin = true };
+
     private ApplicationDbContext CreateInMemoryContext()
     {
         var options = new DbContextOptionsBuilder<ApplicationDbContext>()
             .UseInMemoryDatabase(databaseName: Guid.NewGuid().ToString())
             .Options;
 
-        return new ApplicationDbContext(options);
+        return new ApplicationDbContext(options, _tenantProvider);
     }
 
     private async Task<(Organization org, Workspace workspace)> CreateTestHierarchy(ApplicationDbContext context)
@@ -114,6 +117,7 @@ public class TeamServiceTests
         {
             Id = Guid.NewGuid(),
             Name = "Parent Team",
+            OrganizationId = org.Id,
             WorkspaceId = workspace1.Id
         };
         context.Teams.Add(parentTeam);
@@ -142,13 +146,14 @@ public class TeamServiceTests
         // Arrange
         using var context = CreateInMemoryContext();
         var service = new TeamService(context);
-        var (_, workspace) = await CreateTestHierarchy(context);
+        var (org, workspace) = await CreateTestHierarchy(context);
 
         // Create parent team
         var parentTeam = new Team
         {
             Id = Guid.NewGuid(),
             Name = "Parent Team",
+            OrganizationId = org.Id,
             WorkspaceId = workspace.Id
         };
         context.Teams.Add(parentTeam);
@@ -170,6 +175,7 @@ public class TeamServiceTests
         result.Value.Should().NotBeNull();
         result.Value!.Name.Should().Be("Child Team");
         result.Value!.WorkspaceId.Should().Be(workspace.Id);
+        result.Value!.OrganizationId.Should().Be(org.Id);
         result.Value!.ParentTeamId.Should().Be(parentTeam.Id);
     }
 
@@ -183,13 +189,14 @@ public class TeamServiceTests
         // Arrange
         using var context = CreateInMemoryContext();
         var service = new TeamService(context);
-        var (_, workspace) = await CreateTestHierarchy(context);
+        var (org, workspace) = await CreateTestHierarchy(context);
 
         // Create team
         var team = new Team
         {
             Id = Guid.NewGuid(),
             Name = "Test Team",
+            OrganizationId = org.Id,
             WorkspaceId = workspace.Id
         };
         context.Teams.Add(team);
@@ -241,6 +248,7 @@ public class TeamServiceTests
         {
             Id = Guid.NewGuid(),
             Name = "Team 1",
+            OrganizationId = org.Id,
             WorkspaceId = workspace1.Id
         };
 
@@ -249,6 +257,7 @@ public class TeamServiceTests
         {
             Id = Guid.NewGuid(),
             Name = "Parent Team",
+            OrganizationId = org.Id,
             WorkspaceId = workspace2.Id
         };
 
@@ -277,13 +286,14 @@ public class TeamServiceTests
         // Arrange
         using var context = CreateInMemoryContext();
         var service = new TeamService(context);
-        var (_, workspace) = await CreateTestHierarchy(context);
+        var (org, workspace) = await CreateTestHierarchy(context);
 
         // Create team without parent
         var team = new Team
         {
             Id = Guid.NewGuid(),
             Name = "Original Name",
+            OrganizationId = org.Id,
             WorkspaceId = workspace.Id
         };
 
@@ -292,6 +302,7 @@ public class TeamServiceTests
         {
             Id = Guid.NewGuid(),
             Name = "Parent Team",
+            OrganizationId = org.Id,
             WorkspaceId = workspace.Id
         };
 
@@ -325,13 +336,14 @@ public class TeamServiceTests
         // Arrange
         using var context = CreateInMemoryContext();
         var service = new TeamService(context);
-        var (_, workspace) = await CreateTestHierarchy(context);
+        var (org, workspace) = await CreateTestHierarchy(context);
 
         // Create parent team
         var parentTeam = new Team
         {
             Id = Guid.NewGuid(),
             Name = "Parent Team",
+            OrganizationId = org.Id,
             WorkspaceId = workspace.Id
         };
 
@@ -340,6 +352,7 @@ public class TeamServiceTests
         {
             Id = Guid.NewGuid(),
             Name = "Sub Team",
+            OrganizationId = org.Id,
             WorkspaceId = workspace.Id,
             ParentTeamId = parentTeam.Id
         };
@@ -362,13 +375,14 @@ public class TeamServiceTests
         // Arrange
         using var context = CreateInMemoryContext();
         var service = new TeamService(context);
-        var (_, workspace) = await CreateTestHierarchy(context);
+        var (org, workspace) = await CreateTestHierarchy(context);
 
         // Create team without sub-teams
         var team = new Team
         {
             Id = Guid.NewGuid(),
             Name = "Test Team",
+            OrganizationId = org.Id,
             WorkspaceId = workspace.Id
         };
 
@@ -392,13 +406,14 @@ public class TeamServiceTests
         // Arrange
         using var context = CreateInMemoryContext();
         var service = new TeamService(context);
-        var (_, workspace) = await CreateTestHierarchy(context);
+        var (org, workspace) = await CreateTestHierarchy(context);
 
         // Create team with collaborators
         var team = new Team
         {
             Id = Guid.NewGuid(),
             Name = "Test Team",
+            OrganizationId = org.Id,
             WorkspaceId = workspace.Id
         };
 
@@ -407,6 +422,7 @@ public class TeamServiceTests
             Id = Guid.NewGuid(),
             FullName = "Test User",
             Email = "test@example.com",
+            OrganizationId = org.Id,
             TeamId = team.Id
         };
 

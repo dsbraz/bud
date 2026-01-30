@@ -1,5 +1,6 @@
 using Bud.Server.Data;
 using Bud.Server.Services;
+using Bud.Server.Tests.Helpers;
 using Bud.Shared.Contracts;
 using Bud.Shared.Models;
 using FluentAssertions;
@@ -10,13 +11,15 @@ namespace Bud.Server.Tests.Services;
 
 public class MissionMetricServiceTests
 {
+    private readonly TestTenantProvider _tenantProvider = new() { IsAdmin = true };
+
     private ApplicationDbContext CreateInMemoryContext()
     {
         var options = new DbContextOptionsBuilder<ApplicationDbContext>()
             .UseInMemoryDatabase(databaseName: Guid.NewGuid().ToString())
             .Options;
 
-        return new ApplicationDbContext(options);
+        return new ApplicationDbContext(options, _tenantProvider);
     }
 
     private async Task<Mission> CreateTestMission(ApplicationDbContext context)

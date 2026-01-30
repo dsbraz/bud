@@ -1,8 +1,10 @@
 namespace Bud.Shared.Models;
 
-public sealed class MissionMetric
+public sealed class MissionMetric : ITenantEntity
 {
     public Guid Id { get; set; }
+    public Guid OrganizationId { get; set; }
+    public Organization Organization { get; set; } = null!;
     public Guid MissionId { get; set; }
     public Mission Mission { get; set; } = null!;
 

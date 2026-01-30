@@ -32,6 +32,8 @@ public sealed class AuthService(ApplicationDbContext dbContext, IOptions<AdminSe
 
         var collaborator = await dbContext.Collaborators
             .AsNoTracking()
+            .Include(c => c.Team)
+                .ThenInclude(t => t.Workspace)
             .FirstOrDefaultAsync(c => c.Email == normalizedEmail, cancellationToken);
 
         if (collaborator is null)
@@ -45,7 +47,8 @@ public sealed class AuthService(ApplicationDbContext dbContext, IOptions<AdminSe
             DisplayName = collaborator.FullName,
             IsAdmin = false,
             CollaboratorId = collaborator.Id,
-            Role = collaborator.Role
+            Role = collaborator.Role,
+            OrganizationId = collaborator.Team.Workspace.OrganizationId
         });
     }
 

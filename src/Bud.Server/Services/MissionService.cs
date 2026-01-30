@@ -15,6 +15,12 @@ public sealed class MissionService(ApplicationDbContext dbContext) : IMissionSer
             return ServiceResult<Mission>.NotFound(scopeResult.Error ?? "Scope not found.");
         }
 
+        var organizationId = await ResolveOrganizationIdAsync(request.ScopeType, request.ScopeId, cancellationToken);
+        if (organizationId is null)
+        {
+            return ServiceResult<Mission>.NotFound("Could not resolve organization for the given scope.");
+        }
+
         var mission = new Mission
         {
             Id = Guid.NewGuid(),
@@ -22,6 +28,7 @@ public sealed class MissionService(ApplicationDbContext dbContext) : IMissionSer
             StartDate = NormalizeToUtc(request.StartDate),
             EndDate = NormalizeToUtc(request.EndDate),
             Status = request.Status,
+            OrganizationId = organizationId.Value,
         };
 
         ApplyScope(mission, request.ScopeType, request.ScopeId);
@@ -94,7 +101,12 @@ public sealed class MissionService(ApplicationDbContext dbContext) : IMissionSer
         {
             query = scopeType.Value switch
             {
-                MissionScopeType.Organization => query.Where(m => m.OrganizationId == scopeId.Value),
+                // Org-scoped missions: OrganizationId matches AND no other scope FK is set
+                MissionScopeType.Organization => query.Where(m =>
+                    m.OrganizationId == scopeId.Value &&
+                    m.WorkspaceId == null &&
+                    m.TeamId == null &&
+                    m.CollaboratorId == null),
                 MissionScopeType.Workspace => query.Where(m => m.WorkspaceId == scopeId.Value),
                 MissionScopeType.Team => query.Where(m => m.TeamId == scopeId.Value),
                 MissionScopeType.Collaborator => query.Where(m => m.CollaboratorId == scopeId.Value),
@@ -150,16 +162,17 @@ public sealed class MissionService(ApplicationDbContext dbContext) : IMissionSer
 
         var teamId = collaborator.TeamId;
         var workspaceId = collaborator.Team.WorkspaceId;
-        var organizationId = collaborator.Team.Workspace.OrganizationId;
+        var organizationId = collaborator.OrganizationId;
 
         // Buscar missões do colaborador, team, workspace ou organization
+        // Org-scoped missions: OrganizationId matches AND no other scope FK is set
         var query = dbContext.Missions
             .AsNoTracking()
             .Where(m =>
                 m.CollaboratorId == collaboratorId ||
                 m.TeamId == teamId ||
                 m.WorkspaceId == workspaceId ||
-                m.OrganizationId == organizationId);
+                (m.OrganizationId == organizationId && m.WorkspaceId == null && m.TeamId == null && m.CollaboratorId == null));
 
         // Aplicar filtro de busca por nome
         if (!string.IsNullOrWhiteSpace(search))
@@ -239,9 +252,31 @@ public sealed class MissionService(ApplicationDbContext dbContext) : IMissionSer
         return ServiceResult.Success();
     }
 
+    private async Task<Guid?> ResolveOrganizationIdAsync(MissionScopeType scopeType, Guid scopeId, CancellationToken cancellationToken)
+    {
+        return scopeType switch
+        {
+            MissionScopeType.Organization => scopeId,
+            MissionScopeType.Workspace => await dbContext.Workspaces
+                .Where(w => w.Id == scopeId)
+                .Select(w => (Guid?)w.OrganizationId)
+                .FirstOrDefaultAsync(cancellationToken),
+            MissionScopeType.Team => await dbContext.Teams
+                .Where(t => t.Id == scopeId)
+                .Select(t => (Guid?)t.OrganizationId)
+                .FirstOrDefaultAsync(cancellationToken),
+            MissionScopeType.Collaborator => await dbContext.Collaborators
+                .Where(c => c.Id == scopeId)
+                .Select(c => (Guid?)c.OrganizationId)
+                .FirstOrDefaultAsync(cancellationToken),
+            _ => null
+        };
+    }
+
     private static void ApplyScope(Mission mission, MissionScopeType scopeType, Guid scopeId)
     {
-        mission.OrganizationId = null;
+        // OrganizationId is always set as tenant discriminator (set in CreateAsync)
+        // Scope FKs indicate the mission's scope level
         mission.WorkspaceId = null;
         mission.TeamId = null;
         mission.CollaboratorId = null;
@@ -249,7 +284,7 @@ public sealed class MissionService(ApplicationDbContext dbContext) : IMissionSer
         switch (scopeType)
         {
             case MissionScopeType.Organization:
-                mission.OrganizationId = scopeId;
+                // No additional scope FK needed — OrganizationId already set
                 break;
             case MissionScopeType.Workspace:
                 mission.WorkspaceId = scopeId;

@@ -1,9 +1,11 @@
 namespace Bud.Shared.Models;
 
-public sealed class Team
+public sealed class Team : ITenantEntity
 {
     public Guid Id { get; set; }
     public string Name { get; set; } = string.Empty;
+    public Guid OrganizationId { get; set; }
+    public Organization Organization { get; set; } = null!;
     public Guid WorkspaceId { get; set; }
     public Workspace Workspace { get; set; } = null!;
     public Guid? ParentTeamId { get; set; }

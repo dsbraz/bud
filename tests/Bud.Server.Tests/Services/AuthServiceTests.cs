@@ -1,6 +1,7 @@
 using Bud.Server.Data;
 using Bud.Server.Services;
 using Bud.Server.Settings;
+using Bud.Server.Tests.Helpers;
 using Bud.Shared.Contracts;
 using Bud.Shared.Models;
 using FluentAssertions;
@@ -12,13 +13,15 @@ namespace Bud.Server.Tests.Services;
 
 public class AuthServiceTests
 {
+    private readonly TestTenantProvider _tenantProvider = new() { IsAdmin = true };
+
     private ApplicationDbContext CreateInMemoryContext()
     {
         var options = new DbContextOptionsBuilder<ApplicationDbContext>()
             .UseInMemoryDatabase(databaseName: Guid.NewGuid().ToString())
             .Options;
 
-        return new ApplicationDbContext(options);
+        return new ApplicationDbContext(options, _tenantProvider);
     }
 
     #region Admin Login Detection Tests
@@ -89,6 +92,7 @@ public class AuthServiceTests
         {
             Id = Guid.NewGuid(),
             Name = "Test Team",
+            OrganizationId = org.Id,
             WorkspaceId = workspace.Id
         };
         var collaborator = new Collaborator
@@ -97,6 +101,7 @@ public class AuthServiceTests
             FullName = "John Doe",
             Email = "john.doe@example.com",
             Role = CollaboratorRole.IndividualContributor,
+            OrganizationId = org.Id,
             TeamId = team.Id
         };
 
@@ -119,6 +124,7 @@ public class AuthServiceTests
         result.Value!.DisplayName.Should().Be("John Doe");
         result.Value!.CollaboratorId.Should().Be(collaborator.Id);
         result.Value!.Role.Should().Be(CollaboratorRole.IndividualContributor);
+        result.Value!.OrganizationId.Should().Be(org.Id);
     }
 
     [Fact]
@@ -201,6 +207,7 @@ public class AuthServiceTests
         {
             Id = Guid.NewGuid(),
             Name = "Test Team",
+            OrganizationId = org.Id,
             WorkspaceId = workspace.Id
         };
         var collaborator = new Collaborator
@@ -209,6 +216,7 @@ public class AuthServiceTests
             FullName = "Test User",
             Email = expectedEmail, // Stored in lowercase
             Role = CollaboratorRole.IndividualContributor,
+            OrganizationId = org.Id,
             TeamId = team.Id
         };
 

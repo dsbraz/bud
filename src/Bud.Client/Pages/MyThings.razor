@@ -134,7 +134,7 @@
         if (mission.CollaboratorId.HasValue) return "Pessoal";
         if (mission.TeamId.HasValue) return "Equipe";
         if (mission.WorkspaceId.HasValue) return "Workspace";
-        if (mission.OrganizationId.HasValue) return "Organização";
+        if (mission.WorkspaceId is null && mission.TeamId is null && mission.CollaboratorId is null) return "Organização";
         return "—";
     }
 

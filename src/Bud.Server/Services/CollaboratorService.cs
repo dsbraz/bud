@@ -9,10 +9,11 @@ public sealed class CollaboratorService(ApplicationDbContext dbContext) : IColla
 {
     public async Task<ServiceResult<Collaborator>> CreateAsync(CreateCollaboratorRequest request, CancellationToken cancellationToken = default)
     {
-        var teamExists = await dbContext.Teams
-            .AnyAsync(t => t.Id == request.TeamId, cancellationToken);
+        var team = await dbContext.Teams
+            .AsNoTracking()
+            .FirstOrDefaultAsync(t => t.Id == request.TeamId, cancellationToken);
 
-        if (!teamExists)
+        if (team is null)
         {
             return ServiceResult<Collaborator>.NotFound("Team not found.");
         }
@@ -23,6 +24,7 @@ public sealed class CollaboratorService(ApplicationDbContext dbContext) : IColla
             FullName = request.FullName.Trim(),
             Email = request.Email.Trim().ToLowerInvariant(),
             Role = request.Role,
+            OrganizationId = team.OrganizationId,
             TeamId = request.TeamId,
         };
 

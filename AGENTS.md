@@ -11,16 +11,18 @@ Bud is an ASP.NET Core 10 application with a Blazor WebAssembly frontend, using 
 - **Bud.Server** (`src/Bud.Server`): ASP.NET Core API hosting both the API endpoints and the Blazor WebAssembly app
   - `Controllers/`: REST endpoints for organizations, workspaces, teams, collaborators
   - `Models/`: EF Core entities
-  - `Data/`: `ApplicationDbContext` and EF Core configuration
+  - `Data/`: `ApplicationDbContext`, EF Core configuration, and `DbSeeder`
   - `Migrations/`: database migrations
   - `Services/`: business logic layer
   - `Validators/`: FluentValidation validators
   - `Middleware/`: global exception handling and other middleware
+  - `MultiTenancy/`: tenant isolation infrastructure (`ITenantProvider`, `HttpTenantProvider`, `TenantSaveChangesInterceptor`, `TenantRequiredMiddleware`)
+  - `Settings/`: configuration POCOs (`AdminSettings`)
 
 - **Bud.Client** (`src/Bud.Client`): Blazor WebAssembly SPA (compiled to static files served by Bud.Server)
   - `Pages/`: Blazor pages with routing
   - `Layout/`: Layout components (MainLayout, AuthLayout, NavMenu, ManagementMenu)
-  - `Services/`: ApiClient and AuthState
+  - `Services/`: ApiClient, AuthState, and `TenantDelegatingHandler` (attaches tenant headers to HTTP requests)
 
 - **Bud.Shared** (`src/Bud.Shared`): Shared models, contracts, and DTOs used by both Client and Server
   - `Models/`: Domain entities
@@ -113,6 +115,30 @@ Mission (can be scoped to Organization, Workspace, Team, or Collaborator)
 - SubTeams have `DeleteBehavior.Restrict` on ParentTeam to prevent orphaned hierarchies
 - All Mission relationships cascade delete
 
+### Multi-Tenancy
+
+The application uses **row-level tenant isolation** based on `OrganizationId`. Each organization (tenant) sees only its own data.
+
+**How it works:**
+
+1. **`ITenantEntity`** — marker interface implemented by all tenant-scoped entities (`Workspace`, `Team`, `Collaborator`, `Mission`, `MissionMetric`). Requires a `Guid OrganizationId` property.
+
+2. **`ITenantProvider` / `HttpTenantProvider`** — scoped service that reads `X-Tenant-Id` and `X-User-Email` headers from the HTTP request. Determines `TenantId` and `IsAdmin` (by comparing email against `AdminSettings:Email`).
+
+3. **EF Core Global Query Filters** — configured in `ApplicationDbContext.OnModelCreating()` on all tenant entities. Filter: `_isAdmin || _tenantId == null || entity.OrganizationId == _tenantId`. Admin bypasses all filters.
+
+4. **`TenantSaveChangesInterceptor`** — EF Core `SaveChangesInterceptor` that auto-sets `OrganizationId` on new `ITenantEntity` entities if it's `Guid.Empty`.
+
+5. **`TenantRequiredMiddleware`** — blocks `/api/*` requests without valid tenant headers (except `/api/auth/login` and `/api/auth/logout`). Admin can access without `X-Tenant-Id`. Returns 401 for unauthenticated requests.
+
+6. **`TenantDelegatingHandler`** (client) — `DelegatingHandler` that reads `AuthState` and attaches `X-Tenant-Id` and `X-User-Email` headers to every HTTP request from the Blazor client.
+
+**Key design decisions:**
+
+- `OrganizationId` is **denormalized** into `Team`, `Collaborator`, `Mission`, and `MissionMetric` for efficient query filtering without joins
+- `Mission.OrganizationId` is **non-nullable** (always set as tenant discriminator). Mission scope level is determined by which of `WorkspaceId`/`TeamId`/`CollaboratorId` is set; if none are set, the mission is org-scoped
+- Services must populate `OrganizationId` when creating entities (resolved from the parent entity in the hierarchy)
+
 ### Service Layer Pattern
 
 All business logic lives in services that return `ServiceResult` or `ServiceResult<T>`:
@@ -155,7 +181,8 @@ See [OrganizationsController.cs](src/Bud.Server/Controllers/OrganizationsControl
 - **Entity Framework Core** with PostgreSQL (Npgsql provider)
 - DbContext: [ApplicationDbContext.cs](src/Bud.Server/Data/ApplicationDbContext.cs)
 - All entities are in `Bud.Shared.Models`
-- All relationship configurations are in `ApplicationDbContext.OnModelCreating()`
+- All relationship configurations and **Global Query Filters** (multi-tenancy) are in `ApplicationDbContext.OnModelCreating()`
+- The DbContext accepts an optional `ITenantProvider` for tenant-aware queries (nullable for migrations and tests)
 
 ### Client Architecture
 
@@ -175,10 +202,13 @@ See [OrganizationsController.cs](src/Bud.Server/Controllers/OrganizationsControl
   - **Service tests**: Use `ApplicationDbContext` with **InMemoryDatabase provider** (EF Core)
     - Create context via `DbContextOptionsBuilder<ApplicationDbContext>().UseInMemoryDatabase()`
     - Each test uses a unique database name (e.g., `Guid.NewGuid().ToString()`)
+    - Pass a `TestTenantProvider` (with `IsAdmin = true`) to the DbContext to bypass query filters
+    - Always set `OrganizationId` on tenant entities in test data
 - Every feature must include unit tests
 - Unit tests must not access external resources (except InMemoryDatabase for service tests)
 - Example validator test: [CreateOrganizationValidatorTests.cs](tests/Bud.Server.Tests/Validators/CreateOrganizationValidatorTests.cs)
 - Example service test: [TeamServiceTests.cs](tests/Bud.Server.Tests/Services/TeamServiceTests.cs)
+- Test tenant helper: [TestTenantProvider.cs](tests/Bud.Server.Tests/Helpers/TestTenantProvider.cs)
 
 ### Integration Tests (`tests/Bud.Server.IntegrationTests`)
 
@@ -189,6 +219,9 @@ See [OrganizationsController.cs](src/Bud.Server/Controllers/OrganizationsControl
   - [CustomWebApplicationFactory.cs](tests/Bud.Server.IntegrationTests/CustomWebApplicationFactory.cs) configures the test container
   - PostgreSQL 16 image with automatic migrations on startup
   - Container lifecycle managed by xUnit's `IAsyncLifetime`
+- **Multi-tenancy in integration tests:**
+  - Use `factory.CreateAdminClient()` to create an `HttpClient` with admin headers (`X-User-Email: admin@getbud.co`), which bypasses `TenantRequiredMiddleware`
+  - When creating entities directly via DbContext (e.g., in `GetOrCreateAdminLeader`), always set `OrganizationId` on `Team` and `Collaborator`
 - Example: [OrganizationsEndpointsTests.cs](tests/Bud.Server.IntegrationTests/Endpoints/OrganizationsEndpointsTests.cs)
 
 ### E2E Tests
@@ -214,12 +247,15 @@ Enforced by `.editorconfig` and `Directory.Build.props`:
 ### Adding a New Entity
 
 1. Create the model in `src/Bud.Shared/Models/`
+   - If the entity belongs to an organization, implement `ITenantEntity` and add `Guid OrganizationId` + `Organization` nav prop
 2. Add `DbSet<TEntity>` to `ApplicationDbContext`
 3. Configure relationships in `OnModelCreating()`
+   - If tenant-scoped: add FK/index for `OrganizationId` (`DeleteBehavior.Restrict`) and add a `HasQueryFilter` following the existing pattern
 4. Create a migration: `dotnet ef migrations add AddEntityName --project src/Bud.Server`
 5. Create request/response contracts in `src/Bud.Shared/Contracts/`
 6. Create FluentValidation validators in `src/Bud.Server/Validators/`
 7. Create service interface and implementation in `src/Bud.Server/Services/`
+   - If tenant-scoped: resolve and set `OrganizationId` from the parent entity in `CreateAsync`
 8. Register service in [Program.cs](src/Bud.Server/Program.cs) DI configuration
 9. Create controller in `src/Bud.Server/Controllers/`
 10. Write unit tests in `tests/Bud.Server.Tests/`
@@ -272,3 +308,5 @@ The `docker-compose.yml` configures:
 - **Validation pattern:** [OrganizationValidators.cs](src/Bud.Server/Validators/OrganizationValidators.cs)
 - **Error handling:** [GlobalExceptionHandler.cs](src/Bud.Server/Middleware/GlobalExceptionHandler.cs)
 - **Client API calls:** [ApiClient.cs](src/Bud.Client/Services/ApiClient.cs)
+- **Multi-tenancy:** [ITenantProvider.cs](src/Bud.Server/MultiTenancy/ITenantProvider.cs), [HttpTenantProvider.cs](src/Bud.Server/MultiTenancy/HttpTenantProvider.cs), [TenantRequiredMiddleware.cs](src/Bud.Server/MultiTenancy/TenantRequiredMiddleware.cs)
+- **Tenant entity marker:** [ITenantEntity.cs](src/Bud.Shared/Models/ITenantEntity.cs)

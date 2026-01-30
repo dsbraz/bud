@@ -269,14 +269,9 @@
 
     private string GetMissionScopeName(Mission mission)
     {
-        if (mission.OrganizationId.HasValue)
+        if (mission.CollaboratorId.HasValue)
         {
-            return organizations.FirstOrDefault(o => o.Id == mission.OrganizationId.Value)?.Name ?? "—";
-        }
-
-        if (mission.WorkspaceId.HasValue)
-        {
-            return workspaces.FirstOrDefault(w => w.Id == mission.WorkspaceId.Value)?.Name ?? "—";
+            return collaborators.FirstOrDefault(c => c.Id == mission.CollaboratorId.Value)?.FullName ?? "—";
         }
 
         if (mission.TeamId.HasValue)
@@ -284,12 +279,13 @@
             return teams.FirstOrDefault(t => t.Id == mission.TeamId.Value)?.Name ?? "—";
         }
 
-        if (mission.CollaboratorId.HasValue)
+        if (mission.WorkspaceId.HasValue)
         {
-            return collaborators.FirstOrDefault(c => c.Id == mission.CollaboratorId.Value)?.FullName ?? "—";
+            return workspaces.FirstOrDefault(w => w.Id == mission.WorkspaceId.Value)?.Name ?? "—";
         }
 
-        return "—";
+        // Org-scoped: no other scope FK is set, OrganizationId is always present
+        return organizations.FirstOrDefault(o => o.Id == mission.OrganizationId)?.Name ?? "—";
     }
 
     private static string GetScopeLabel(MissionScopeType scopeType) => scopeType switch

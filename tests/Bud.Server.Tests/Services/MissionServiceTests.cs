@@ -1,5 +1,6 @@
 using Bud.Server.Data;
 using Bud.Server.Services;
+using Bud.Server.Tests.Helpers;
 using Bud.Shared.Contracts;
 using Bud.Shared.Models;
 using FluentAssertions;
@@ -10,13 +11,15 @@ namespace Bud.Server.Tests.Services;
 
 public class MissionServiceTests
 {
+    private readonly TestTenantProvider _tenantProvider = new() { IsAdmin = true };
+
     private ApplicationDbContext CreateInMemoryContext()
     {
         var options = new DbContextOptionsBuilder<ApplicationDbContext>()
             .UseInMemoryDatabase(databaseName: Guid.NewGuid().ToString())
             .Options;
 
-        return new ApplicationDbContext(options);
+        return new ApplicationDbContext(options, _tenantProvider);
     }
 
     #region ResolveScopeAsync Tests
@@ -105,7 +108,8 @@ public class MissionServiceTests
         {
             Id = Guid.NewGuid(),
             Name = "Test Team",
-            WorkspaceId = workspace.Id
+            WorkspaceId = workspace.Id,
+            OrganizationId = org.Id
         };
 
         context.Organizations.Add(org);
@@ -149,14 +153,16 @@ public class MissionServiceTests
         {
             Id = Guid.NewGuid(),
             Name = "Test Team",
-            WorkspaceId = workspace.Id
+            WorkspaceId = workspace.Id,
+            OrganizationId = org.Id
         };
         var collaborator = new Collaborator
         {
             Id = Guid.NewGuid(),
             FullName = "Test User",
             Email = "test@example.com",
-            TeamId = team.Id
+            TeamId = team.Id,
+            OrganizationId = org.Id
         };
 
         context.Organizations.Add(org);
@@ -278,7 +284,7 @@ public class MissionServiceTests
 
         // Assert
         result.IsSuccess.Should().BeTrue();
-        result.Value!.OrganizationId.Should().BeNull();
+        result.Value!.OrganizationId.Should().Be(org.Id);
         result.Value!.WorkspaceId.Should().Be(workspace.Id);
         result.Value!.TeamId.Should().BeNull();
         result.Value!.CollaboratorId.Should().BeNull();
@@ -302,7 +308,8 @@ public class MissionServiceTests
         {
             Id = Guid.NewGuid(),
             Name = "Test Team",
-            WorkspaceId = workspace.Id
+            WorkspaceId = workspace.Id,
+            OrganizationId = org.Id
         };
 
         context.Organizations.Add(org);
@@ -325,7 +332,7 @@ public class MissionServiceTests
 
         // Assert
         result.IsSuccess.Should().BeTrue();
-        result.Value!.OrganizationId.Should().BeNull();
+        result.Value!.OrganizationId.Should().Be(org.Id);
         result.Value!.WorkspaceId.Should().BeNull();
         result.Value!.TeamId.Should().Be(team.Id);
         result.Value!.CollaboratorId.Should().BeNull();
@@ -349,14 +356,16 @@ public class MissionServiceTests
         {
             Id = Guid.NewGuid(),
             Name = "Test Team",
-            WorkspaceId = workspace.Id
+            WorkspaceId = workspace.Id,
+            OrganizationId = org.Id
         };
         var collaborator = new Collaborator
         {
             Id = Guid.NewGuid(),
             FullName = "Test User",
             Email = "test@example.com",
-            TeamId = team.Id
+            TeamId = team.Id,
+            OrganizationId = org.Id
         };
 
         context.Organizations.Add(org);
@@ -380,7 +389,7 @@ public class MissionServiceTests
 
         // Assert
         result.IsSuccess.Should().BeTrue();
-        result.Value!.OrganizationId.Should().BeNull();
+        result.Value!.OrganizationId.Should().Be(org.Id);
         result.Value!.WorkspaceId.Should().BeNull();
         result.Value!.TeamId.Should().BeNull();
         result.Value!.CollaboratorId.Should().Be(collaborator.Id);
@@ -503,14 +512,16 @@ public class MissionServiceTests
         {
             Id = Guid.NewGuid(),
             Name = "Test Team",
-            WorkspaceId = workspace.Id
+            WorkspaceId = workspace.Id,
+            OrganizationId = org.Id
         };
         var collaborator = new Collaborator
         {
             Id = Guid.NewGuid(),
             FullName = "Test User",
             Email = "test@example.com",
-            TeamId = team.Id
+            TeamId = team.Id,
+            OrganizationId = org.Id
         };
 
         context.Organizations.Add(org);
@@ -536,6 +547,7 @@ public class MissionServiceTests
                 StartDate = DateTime.UtcNow,
                 EndDate = DateTime.UtcNow.AddDays(7),
                 Status = MissionStatus.Planned,
+                OrganizationId = org.Id,
                 WorkspaceId = workspace.Id
             },
             new Mission
@@ -545,6 +557,7 @@ public class MissionServiceTests
                 StartDate = DateTime.UtcNow,
                 EndDate = DateTime.UtcNow.AddDays(7),
                 Status = MissionStatus.Planned,
+                OrganizationId = org.Id,
                 TeamId = team.Id
             },
             new Mission
@@ -554,6 +567,7 @@ public class MissionServiceTests
                 StartDate = DateTime.UtcNow,
                 EndDate = DateTime.UtcNow.AddDays(7),
                 Status = MissionStatus.Planned,
+                OrganizationId = org.Id,
                 CollaboratorId = collaborator.Id
             }
         );
@@ -602,14 +616,16 @@ public class MissionServiceTests
         {
             Id = Guid.NewGuid(),
             Name = "Test Team",
-            WorkspaceId = workspace.Id
+            WorkspaceId = workspace.Id,
+            OrganizationId = org.Id
         };
         var collaborator = new Collaborator
         {
             Id = Guid.NewGuid(),
             FullName = "Test User",
             Email = "test@example.com",
-            TeamId = team.Id
+            TeamId = team.Id,
+            OrganizationId = org.Id
         };
 
         context.Organizations.Add(org);
@@ -625,6 +641,7 @@ public class MissionServiceTests
                 StartDate = DateTime.UtcNow,
                 EndDate = DateTime.UtcNow.AddDays(7),
                 Status = MissionStatus.Planned,
+                OrganizationId = org.Id,
                 CollaboratorId = collaborator.Id
             },
             new Mission
@@ -634,6 +651,7 @@ public class MissionServiceTests
                 StartDate = DateTime.UtcNow,
                 EndDate = DateTime.UtcNow.AddDays(7),
                 Status = MissionStatus.Planned,
+                OrganizationId = org.Id,
                 CollaboratorId = collaborator.Id
             }
         );
@@ -667,14 +685,16 @@ public class MissionServiceTests
         {
             Id = Guid.NewGuid(),
             Name = "Test Team",
-            WorkspaceId = workspace.Id
+            WorkspaceId = workspace.Id,
+            OrganizationId = org.Id
         };
         var collaborator = new Collaborator
         {
             Id = Guid.NewGuid(),
             FullName = "Test User",
             Email = "test@example.com",
-            TeamId = team.Id
+            TeamId = team.Id,
+            OrganizationId = org.Id
         };
 
         context.Organizations.Add(org);
@@ -692,6 +712,7 @@ public class MissionServiceTests
                 StartDate = DateTime.UtcNow.AddDays(i),
                 EndDate = DateTime.UtcNow.AddDays(i + 7),
                 Status = MissionStatus.Planned,
+                OrganizationId = org.Id,
                 CollaboratorId = collaborator.Id
             });
         }

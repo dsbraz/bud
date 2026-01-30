@@ -17,7 +17,7 @@ public class MissionMetricsEndpointsTests : IClassFixture<CustomWebApplicationFa
     public MissionMetricsEndpointsTests(CustomWebApplicationFactory factory)
     {
         _factory = factory;
-        _client = factory.CreateClient();
+        _client = factory.CreateAdminClient();
     }
 
     private async Task<Guid> GetOrCreateAdminLeader()
@@ -39,7 +39,7 @@ public class MissionMetricsEndpointsTests : IClassFixture<CustomWebApplicationFa
         var workspace = new Workspace { Id = Guid.NewGuid(), Name = "getbud.co", OrganizationId = org.Id };
         dbContext.Workspaces.Add(workspace);
 
-        var team = new Team { Id = Guid.NewGuid(), Name = "getbud.co", WorkspaceId = workspace.Id };
+        var team = new Team { Id = Guid.NewGuid(), Name = "getbud.co", WorkspaceId = workspace.Id, OrganizationId = org.Id };
         dbContext.Teams.Add(team);
 
         var adminLeader = new Collaborator
@@ -48,7 +48,8 @@ public class MissionMetricsEndpointsTests : IClassFixture<CustomWebApplicationFa
             FullName = "Administrador",
             Email = "admin@getbud.co",
             Role = CollaboratorRole.Leader,
-            TeamId = team.Id
+            TeamId = team.Id,
+            OrganizationId = org.Id
         };
         dbContext.Collaborators.Add(adminLeader);
 

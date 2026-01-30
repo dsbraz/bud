@@ -46,7 +46,8 @@ public sealed class AuthState(IJSRuntime jsRuntime)
             DisplayName = response.DisplayName,
             IsAdmin = response.IsAdmin,
             CollaboratorId = response.CollaboratorId,
-            Role = response.Role
+            Role = response.Role,
+            OrganizationId = response.OrganizationId
         };
 
         var json = JsonSerializer.Serialize(_session);
@@ -67,4 +68,5 @@ public sealed class AuthSession
     public bool IsAdmin { get; set; }
     public Guid? CollaboratorId { get; set; }
     public Bud.Shared.Models.CollaboratorRole? Role { get; set; }
+    public Guid? OrganizationId { get; set; }
 }

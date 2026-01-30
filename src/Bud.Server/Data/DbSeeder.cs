@@ -36,6 +36,7 @@ public static class DbSeeder
         {
             Id = Guid.NewGuid(),
             Name = "Bud",
+            OrganizationId = budOrg.Id,
             WorkspaceId = budWorkspace.Id
         };
         context.Teams.Add(budTeam);
@@ -47,6 +48,7 @@ public static class DbSeeder
             FullName = "Administrador",
             Email = "admin@getbud.co",
             Role = CollaboratorRole.Leader,
+            OrganizationId = budOrg.Id,
             TeamId = budTeam.Id
         };
         context.Collaborators.Add(adminLeader);

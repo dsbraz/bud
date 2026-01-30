@@ -9,10 +9,11 @@ public sealed class MissionMetricService(ApplicationDbContext dbContext) : IMiss
 {
     public async Task<ServiceResult<MissionMetric>> CreateAsync(CreateMissionMetricRequest request, CancellationToken cancellationToken = default)
     {
-        var missionExists = await dbContext.Missions
-            .AnyAsync(m => m.Id == request.MissionId, cancellationToken);
+        var mission = await dbContext.Missions
+            .AsNoTracking()
+            .FirstOrDefaultAsync(m => m.Id == request.MissionId, cancellationToken);
 
-        if (!missionExists)
+        if (mission is null)
         {
             return ServiceResult<MissionMetric>.NotFound("Mission not found.");
         }
@@ -20,6 +21,7 @@ public sealed class MissionMetricService(ApplicationDbContext dbContext) : IMiss
         var metric = new MissionMetric
         {
             Id = Guid.NewGuid(),
+            OrganizationId = mission.OrganizationId,
             MissionId = request.MissionId,
             Name = request.Name.Trim(),
             Type = request.Type,
