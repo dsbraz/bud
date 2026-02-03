@@ -17,7 +17,7 @@ public sealed class WorkspaceService(
 
         if (!organizationExists)
         {
-            return ServiceResult<Workspace>.NotFound("Organization not found.");
+            return ServiceResult<Workspace>.NotFound("Organização não encontrada.");
         }
 
         if (!tenantProvider.IsAdmin)
@@ -25,7 +25,7 @@ public sealed class WorkspaceService(
             var isOwner = await IsOrgOwnerAsync(request.OrganizationId, cancellationToken);
             if (!isOwner)
             {
-                return ServiceResult<Workspace>.Forbidden("Only the organization owner can create workspaces.");
+                return ServiceResult<Workspace>.Forbidden("Apenas o proprietário da organização pode criar workspaces.");
             }
         }
 
@@ -49,7 +49,7 @@ public sealed class WorkspaceService(
 
         if (workspace is null)
         {
-            return ServiceResult<Workspace>.NotFound("Workspace not found.");
+            return ServiceResult<Workspace>.NotFound("Workspace não encontrado.");
         }
 
         if (!tenantProvider.IsAdmin)
@@ -58,7 +58,7 @@ public sealed class WorkspaceService(
             if (!hasWriteAccess)
             {
                 return ServiceResult<Workspace>.Forbidden(
-                    "You do not have permission to update this workspace.");
+                    "Você não tem permissão para atualizar este workspace.");
             }
         }
 
@@ -75,7 +75,7 @@ public sealed class WorkspaceService(
 
         if (workspace is null)
         {
-            return ServiceResult.NotFound("Workspace not found.");
+            return ServiceResult.NotFound("Workspace não encontrado.");
         }
 
         if (!tenantProvider.IsAdmin)
@@ -84,7 +84,7 @@ public sealed class WorkspaceService(
             if (!hasWriteAccess)
             {
                 return ServiceResult.Forbidden(
-                    "You do not have permission to delete this workspace.");
+                    "Você não tem permissão para excluir este workspace.");
             }
         }
 
@@ -102,12 +102,12 @@ public sealed class WorkspaceService(
 
         if (workspace is null)
         {
-            return ServiceResult<Workspace>.NotFound("Workspace not found.");
+            return ServiceResult<Workspace>.NotFound("Workspace não encontrado.");
         }
 
         if (!await HasReadAccessAsync(workspace, cancellationToken))
         {
-            return ServiceResult<Workspace>.NotFound("Workspace not found.");
+            return ServiceResult<Workspace>.NotFound("Workspace não encontrado.");
         }
 
         return ServiceResult<Workspace>.Success(workspace);
@@ -161,12 +161,12 @@ public sealed class WorkspaceService(
 
         if (workspace is null)
         {
-            return ServiceResult<PagedResult<Team>>.NotFound("Workspace not found.");
+            return ServiceResult<PagedResult<Team>>.NotFound("Workspace não encontrado.");
         }
 
         if (!await HasReadAccessAsync(workspace, cancellationToken))
         {
-            return ServiceResult<PagedResult<Team>>.NotFound("Workspace not found.");
+            return ServiceResult<PagedResult<Team>>.NotFound("Workspace não encontrado.");
         }
 
         var query = dbContext.Teams

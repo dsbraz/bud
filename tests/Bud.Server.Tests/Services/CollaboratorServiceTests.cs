@@ -114,7 +114,7 @@ public class CollaboratorServiceTests
         // Assert
         result.IsSuccess.Should().BeFalse();
         result.ErrorType.Should().Be(ServiceErrorType.Forbidden);
-        result.Error.Should().Be("Only the organization owner can create collaborators.");
+        result.Error.Should().Be("Apenas o proprietário da organização pode criar colaboradores.");
     }
 
     [Fact]

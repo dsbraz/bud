@@ -60,7 +60,7 @@ public class TeamServiceTests
         // Assert
         result.IsSuccess.Should().BeFalse();
         result.ErrorType.Should().Be(ServiceErrorType.NotFound);
-        result.Error.Should().Be("Workspace not found.");
+        result.Error.Should().Be("Workspace não encontrado.");
     }
 
     [Fact]
@@ -84,7 +84,7 @@ public class TeamServiceTests
         // Assert
         result.IsSuccess.Should().BeFalse();
         result.ErrorType.Should().Be(ServiceErrorType.NotFound);
-        result.Error.Should().Be("Parent team not found.");
+        result.Error.Should().Be("Time pai não encontrado.");
     }
 
     [Fact]
@@ -137,7 +137,7 @@ public class TeamServiceTests
         // Assert
         result.IsSuccess.Should().BeFalse();
         result.ErrorType.Should().Be(ServiceErrorType.Validation);
-        result.Error.Should().Be("Parent team must belong to the same workspace.");
+        result.Error.Should().Be("O time pai deve pertencer ao mesmo workspace.");
     }
 
     [Fact]
@@ -232,7 +232,7 @@ public class TeamServiceTests
         // Assert
         result.IsSuccess.Should().BeFalse();
         result.ErrorType.Should().Be(ServiceErrorType.Forbidden);
-        result.Error.Should().Be("Only the organization owner can create teams.");
+        result.Error.Should().Be("Apenas o proprietário da organização pode criar times.");
     }
 
     [Fact]
@@ -319,7 +319,7 @@ public class TeamServiceTests
         // Assert
         result.IsSuccess.Should().BeFalse();
         result.ErrorType.Should().Be(ServiceErrorType.Validation);
-        result.Error.Should().Be("A team cannot be its own parent.");
+        result.Error.Should().Be("Um time não pode ser seu próprio pai.");
     }
 
     [Fact]
@@ -381,7 +381,7 @@ public class TeamServiceTests
         // Assert
         result.IsSuccess.Should().BeFalse();
         result.ErrorType.Should().Be(ServiceErrorType.Validation);
-        result.Error.Should().Be("Parent team must belong to the same workspace.");
+        result.Error.Should().Be("O time pai deve pertencer ao mesmo workspace.");
     }
 
     [Fact]
@@ -470,7 +470,7 @@ public class TeamServiceTests
         // Assert
         result.IsSuccess.Should().BeFalse();
         result.ErrorType.Should().Be(ServiceErrorType.Conflict);
-        result.Error.Should().Be("Cannot delete team with sub-teams. Delete sub-teams first.");
+        result.Error.Should().Be("Não é possível excluir um time com sub-times. Exclua os sub-times primeiro.");
     }
 
     [Fact]

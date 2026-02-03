@@ -18,7 +18,7 @@ public sealed class TeamService(
 
         if (workspace is null)
         {
-            return ServiceResult<Team>.NotFound("Workspace not found.");
+            return ServiceResult<Team>.NotFound("Workspace não encontrado.");
         }
 
         if (!tenantProvider.IsAdmin)
@@ -26,7 +26,7 @@ public sealed class TeamService(
             var isOwner = await IsOrgOwnerAsync(workspace.OrganizationId, cancellationToken);
             if (!isOwner)
             {
-                return ServiceResult<Team>.Forbidden("Only the organization owner can create teams.");
+                return ServiceResult<Team>.Forbidden("Apenas o proprietário da organização pode criar times.");
             }
         }
 
@@ -38,12 +38,12 @@ public sealed class TeamService(
 
             if (parentTeam is null)
             {
-                return ServiceResult<Team>.NotFound("Parent team not found.");
+                return ServiceResult<Team>.NotFound("Time pai não encontrado.");
             }
 
             if (parentTeam.WorkspaceId != request.WorkspaceId)
             {
-                return ServiceResult<Team>.Failure("Parent team must belong to the same workspace.");
+                return ServiceResult<Team>.Failure("O time pai deve pertencer ao mesmo workspace.");
             }
         }
 
@@ -68,14 +68,14 @@ public sealed class TeamService(
 
         if (team is null)
         {
-            return ServiceResult<Team>.NotFound("Team not found.");
+            return ServiceResult<Team>.NotFound("Time não encontrado.");
         }
 
         if (request.ParentTeamId.HasValue && request.ParentTeamId != team.ParentTeamId)
         {
             if (request.ParentTeamId == id)
             {
-                return ServiceResult<Team>.Failure("A team cannot be its own parent.");
+                return ServiceResult<Team>.Failure("Um time não pode ser seu próprio pai.");
             }
 
             var parentTeam = await dbContext.Teams
@@ -84,12 +84,12 @@ public sealed class TeamService(
 
             if (parentTeam is null)
             {
-                return ServiceResult<Team>.NotFound("Parent team not found.");
+                return ServiceResult<Team>.NotFound("Time pai não encontrado.");
             }
 
             if (parentTeam.WorkspaceId != team.WorkspaceId)
             {
-                return ServiceResult<Team>.Failure("Parent team must belong to the same workspace.");
+                return ServiceResult<Team>.Failure("O time pai deve pertencer ao mesmo workspace.");
             }
         }
 
@@ -106,13 +106,13 @@ public sealed class TeamService(
 
         if (team is null)
         {
-            return ServiceResult.NotFound("Team not found.");
+            return ServiceResult.NotFound("Time não encontrado.");
         }
 
         var hasSubTeams = await dbContext.Teams.AnyAsync(t => t.ParentTeamId == id, cancellationToken);
         if (hasSubTeams)
         {
-            return ServiceResult.Failure("Cannot delete team with sub-teams. Delete sub-teams first.", ServiceErrorType.Conflict);
+            return ServiceResult.Failure("Não é possível excluir um time com sub-times. Exclua os sub-times primeiro.", ServiceErrorType.Conflict);
         }
 
         dbContext.Teams.Remove(team);
@@ -128,7 +128,7 @@ public sealed class TeamService(
             .FirstOrDefaultAsync(t => t.Id == id, cancellationToken);
 
         return team is null
-            ? ServiceResult<Team>.NotFound("Team not found.")
+            ? ServiceResult<Team>.NotFound("Time não encontrado.")
             : ServiceResult<Team>.Success(team);
     }
 
@@ -180,7 +180,7 @@ public sealed class TeamService(
         var teamExists = await dbContext.Teams.AnyAsync(t => t.Id == id, cancellationToken);
         if (!teamExists)
         {
-            return ServiceResult<PagedResult<Team>>.NotFound("Team not found.");
+            return ServiceResult<PagedResult<Team>>.NotFound("Time não encontrado.");
         }
 
         var query = dbContext.Teams
@@ -213,7 +213,7 @@ public sealed class TeamService(
         var teamExists = await dbContext.Teams.AnyAsync(t => t.Id == id, cancellationToken);
         if (!teamExists)
         {
-            return ServiceResult<PagedResult<Collaborator>>.NotFound("Team not found.");
+            return ServiceResult<PagedResult<Collaborator>>.NotFound("Time não encontrado.");
         }
 
         var query = dbContext.Collaborators

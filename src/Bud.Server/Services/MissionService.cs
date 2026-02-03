@@ -12,13 +12,13 @@ public sealed class MissionService(ApplicationDbContext dbContext) : IMissionSer
         var scopeResult = await ResolveScopeAsync(request.ScopeType, request.ScopeId, cancellationToken);
         if (scopeResult.IsFailure)
         {
-            return ServiceResult<Mission>.NotFound(scopeResult.Error ?? "Scope not found.");
+            return ServiceResult<Mission>.NotFound(scopeResult.Error ?? "Escopo não encontrado.");
         }
 
         var organizationId = await ResolveOrganizationIdAsync(request.ScopeType, request.ScopeId, cancellationToken);
         if (organizationId is null)
         {
-            return ServiceResult<Mission>.NotFound("Could not resolve organization for the given scope.");
+            return ServiceResult<Mission>.NotFound("Não foi possível determinar a organização para o escopo fornecido.");
         }
 
         var mission = new Mission
@@ -45,7 +45,7 @@ public sealed class MissionService(ApplicationDbContext dbContext) : IMissionSer
 
         if (mission is null)
         {
-            return ServiceResult<Mission>.NotFound("Mission not found.");
+            return ServiceResult<Mission>.NotFound("Missão não encontrada.");
         }
 
         mission.Name = request.Name.Trim();
@@ -64,7 +64,7 @@ public sealed class MissionService(ApplicationDbContext dbContext) : IMissionSer
 
         if (mission is null)
         {
-            return ServiceResult.NotFound("Mission not found.");
+            return ServiceResult.NotFound("Missão não encontrada.");
         }
 
         dbContext.Missions.Remove(mission);
@@ -80,7 +80,7 @@ public sealed class MissionService(ApplicationDbContext dbContext) : IMissionSer
             .FirstOrDefaultAsync(m => m.Id == id, cancellationToken);
 
         return mission is null
-            ? ServiceResult<Mission>.NotFound("Mission not found.")
+            ? ServiceResult<Mission>.NotFound("Missão não encontrada.")
             : ServiceResult<Mission>.Success(mission);
     }
 
@@ -157,7 +157,7 @@ public sealed class MissionService(ApplicationDbContext dbContext) : IMissionSer
 
         if (collaborator is null)
         {
-            return ServiceResult<PagedResult<Mission>>.NotFound("Collaborator not found.");
+            return ServiceResult<PagedResult<Mission>>.NotFound("Colaborador não encontrado.");
         }
 
         var teamId = collaborator.TeamId;
@@ -208,7 +208,7 @@ public sealed class MissionService(ApplicationDbContext dbContext) : IMissionSer
         var missionExists = await dbContext.Missions.AnyAsync(m => m.Id == id, cancellationToken);
         if (!missionExists)
         {
-            return ServiceResult<PagedResult<MissionMetric>>.NotFound("Mission not found.");
+            return ServiceResult<PagedResult<MissionMetric>>.NotFound("Missão não encontrada.");
         }
 
         var query = dbContext.MissionMetrics

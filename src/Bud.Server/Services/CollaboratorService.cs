@@ -18,7 +18,7 @@ public sealed class CollaboratorService(
 
         if (team is null)
         {
-            return ServiceResult<Collaborator>.NotFound("Team not found.");
+            return ServiceResult<Collaborator>.NotFound("Time não encontrado.");
         }
 
         if (!tenantProvider.IsAdmin)
@@ -26,7 +26,7 @@ public sealed class CollaboratorService(
             var isOwner = await IsOrgOwnerAsync(team.OrganizationId, cancellationToken);
             if (!isOwner)
             {
-                return ServiceResult<Collaborator>.Forbidden("Only the organization owner can create collaborators.");
+                return ServiceResult<Collaborator>.Forbidden("Apenas o proprietário da organização pode criar colaboradores.");
             }
         }
 
@@ -53,7 +53,7 @@ public sealed class CollaboratorService(
 
         if (collaborator is null)
         {
-            return ServiceResult<Collaborator>.NotFound("Collaborator not found.");
+            return ServiceResult<Collaborator>.NotFound("Colaborador não encontrado.");
         }
 
         var normalizedEmail = request.Email.Trim().ToLowerInvariant();
@@ -64,7 +64,7 @@ public sealed class CollaboratorService(
 
             if (emailExists)
             {
-                return ServiceResult<Collaborator>.Failure("Email is already in use.", ServiceErrorType.Validation);
+                return ServiceResult<Collaborator>.Failure("O email já está em uso.", ServiceErrorType.Validation);
             }
         }
 
@@ -76,17 +76,17 @@ public sealed class CollaboratorService(
 
             if (leader is null)
             {
-                return ServiceResult<Collaborator>.NotFound("Leader not found.");
+                return ServiceResult<Collaborator>.NotFound("Líder não encontrado.");
             }
 
             if (leader.OrganizationId != collaborator.OrganizationId)
             {
-                return ServiceResult<Collaborator>.Failure("Leader must belong to the same organization.", ServiceErrorType.Validation);
+                return ServiceResult<Collaborator>.Failure("O líder deve pertencer à mesma organização.", ServiceErrorType.Validation);
             }
 
             if (leader.Role != CollaboratorRole.Leader)
             {
-                return ServiceResult<Collaborator>.Failure("The selected collaborator is not a leader.", ServiceErrorType.Validation);
+                return ServiceResult<Collaborator>.Failure("O colaborador selecionado não é um líder.", ServiceErrorType.Validation);
             }
         }
 
@@ -105,7 +105,7 @@ public sealed class CollaboratorService(
 
         if (collaborator is null)
         {
-            return ServiceResult.NotFound("Collaborator not found.");
+            return ServiceResult.NotFound("Colaborador não encontrado.");
         }
 
         dbContext.Collaborators.Remove(collaborator);
@@ -121,7 +121,7 @@ public sealed class CollaboratorService(
             .FirstOrDefaultAsync(c => c.Id == id, cancellationToken);
 
         return collaborator is null
-            ? ServiceResult<Collaborator>.NotFound("Collaborator not found.")
+            ? ServiceResult<Collaborator>.NotFound("Colaborador não encontrado.")
             : ServiceResult<Collaborator>.Success(collaborator);
     }
 
