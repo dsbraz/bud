@@ -16,5 +16,6 @@ builder.Services.AddScoped(sp =>
     return new HttpClient(handler) { BaseAddress = new Uri(builder.HostEnvironment.BaseAddress) };
 });
 builder.Services.AddScoped<ApiClient>();
+builder.Services.AddSingleton<ToastService>();
 
 await builder.Build().RunAsync();

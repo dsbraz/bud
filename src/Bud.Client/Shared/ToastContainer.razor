@@ -1,0 +1,41 @@
+@using Bud.Client.Services
+@inject ToastService ToastService
+@implements IDisposable
+
+<div class="toast-container">
+    @foreach (var toast in toasts)
+    {
+        <Toast Title="@toast.Title"
+               Message="@toast.Message"
+               Type="@toast.Type"
+               ShowCloseButton="@toast.ShowCloseButton"
+               DurationMs="@toast.DurationMs"
+               OnClosed="@(() => RemoveToast(toast))" />
+    }
+</div>
+
+@code {
+    private List<ToastMessage> toasts = new();
+
+    protected override void OnInitialized()
+    {
+        ToastService.OnToastAdded += AddToast;
+    }
+
+    private void AddToast(ToastMessage toast)
+    {
+        toasts.Add(toast);
+        InvokeAsync(StateHasChanged);
+    }
+
+    private void RemoveToast(ToastMessage toast)
+    {
+        toasts.Remove(toast);
+        StateHasChanged();
+    }
+
+    public void Dispose()
+    {
+        ToastService.OnToastAdded -= AddToast;
+    }
+}

@@ -1,5 +1,6 @@
 @page "/teams"
 @inject ApiClient Api
+@inject ToastService ToastService
 
 <ManagementMenu />
 
@@ -100,10 +101,6 @@
                 <label>Nome</label>
                 <InputText class="input" @bind-Value="newTeam.Name" />
             </div>
-            @if (!string.IsNullOrWhiteSpace(formMessage))
-            {
-                <p class="form-message @(formMessage.Contains("sucesso") ? "" : "error")">@formMessage</p>
-            }
             <div class="form-actions">
                 <button class="button tertiary" type="button" @onclick="CloseModal">Cancelar</button>
                 <button class="button primary" type="submit">Salvar</button>
@@ -122,7 +119,6 @@
     private string? selectedWorkspaceId;
     private string? createWorkspaceId;
     private string? createParentTeamId;
-    private string? formMessage;
     private bool isModalOpen = false;
 
     protected override async Task OnInitializedAsync()
@@ -167,28 +163,25 @@
         createWorkspaceId = null;
         createParentTeamId = null;
         parentTeams.Clear();
-        formMessage = null;
         isModalOpen = true;
     }
 
     private void CloseModal()
     {
         isModalOpen = false;
-        formMessage = null;
     }
 
     private async Task CreateTeam()
     {
-        formMessage = null;
         if (!Guid.TryParse(createWorkspaceId, out var workspaceId))
         {
-            formMessage = "Selecione um workspace.";
+            ToastService.ShowError("Erro ao criar equipe", "Selecione um workspace.");
             return;
         }
 
         if (string.IsNullOrWhiteSpace(newTeam.Name))
         {
-            formMessage = "Informe o nome da equipe.";
+            ToastService.ShowError("Erro ao criar equipe", "Informe o nome da equipe.");
             return;
         }
 
@@ -196,15 +189,14 @@
         newTeam.ParentTeamId = Guid.TryParse(createParentTeamId, out var parentId) ? parentId : null;
 
         await Api.CreateTeamAsync(newTeam);
+        var createdTeamName = newTeam.Name;
         newTeam = new CreateTeamRequest();
         createWorkspaceId = null;
         createParentTeamId = null;
         parentTeams.Clear();
         await LoadTeams();
-        formMessage = "Equipe criada com sucesso.";
 
-        // Auto-close modal after 1.5 seconds on success
-        await Task.Delay(1500);
+        ToastService.ShowSuccess("Equipe criada com sucesso!", $"A equipe '{createdTeamName}' foi criada.");
         CloseModal();
     }
 }

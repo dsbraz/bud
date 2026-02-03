@@ -1,6 +1,7 @@
 @page "/organizations"
 @inject ApiClient Api
 @inject AuthState AuthState
+@inject ToastService ToastService
 
 <ManagementMenu />
 
@@ -85,10 +86,6 @@
                     </InputSelect>
                     <small class="form-hint">Apenas colaboradores com função de Líder podem ser proprietários.</small>
                 </div>
-                @if (!string.IsNullOrWhiteSpace(formMessage))
-                {
-                    <p class="form-message @(formMessage.Contains("sucesso") ? "" : "error")">@formMessage</p>
-                }
                 <div class="form-actions">
                     <button class="button tertiary" type="button" @onclick="CloseModal">Cancelar</button>
                     <button class="button primary" type="submit" disabled="@isSubmitting">
@@ -116,7 +113,6 @@
     private PagedResult<Organization>? organizations;
     private List<LeaderCollaboratorResponse> leaders = new();
     private string? search;
-    private string? formMessage;
     private bool isSubmitting = false;
     private bool isModalOpen = false;
 
@@ -151,30 +147,26 @@
         {
             UserEmail = AuthState.Session?.Email ?? string.Empty
         };
-        formMessage = null;
         isModalOpen = true;
     }
 
     private void CloseModal()
     {
         isModalOpen = false;
-        formMessage = null;
     }
 
     private async Task CreateOrganization()
     {
-        formMessage = null;
-
         // Frontend validation
         if (string.IsNullOrWhiteSpace(newOrganization.Name))
         {
-            formMessage = "Por favor, informe o domínio da organização.";
+            ToastService.ShowError("Erro ao criar organização", "Por favor, informe o domínio da organização.");
             return;
         }
 
         if (newOrganization.OwnerId == Guid.Empty)
         {
-            formMessage = "Por favor, selecione um líder para a organização.";
+            ToastService.ShowError("Erro ao criar organização", "Por favor, selecione um líder para a organização.");
             return;
         }
 
@@ -191,19 +183,17 @@
                 UserEmail = AuthState.Session?.Email ?? string.Empty
             };
             await LoadOrganizations();
-            formMessage = "Organização criada com sucesso.";
 
-            // Auto-close modal after 1.5 seconds on success
-            await Task.Delay(1500);
+            ToastService.ShowSuccess("Organização criada com sucesso!", "A organização foi criada e está disponível.");
             CloseModal();
         }
         catch (HttpRequestException ex)
         {
-            formMessage = $"Erro ao criar organização: {ex.Message}";
+            ToastService.ShowError("Erro ao criar organização", ex.Message);
         }
         catch (Exception ex)
         {
-            formMessage = $"Erro inesperado: {ex.Message}";
+            ToastService.ShowError("Erro inesperado", ex.Message);
         }
         finally
         {

@@ -1,5 +1,6 @@
 @page "/workspaces"
 @inject ApiClient Api
+@inject ToastService ToastService
 
 <ManagementMenu />
 
@@ -99,10 +100,6 @@
                     <option value="Private">Privada</option>
                 </select>
             </div>
-            @if (!string.IsNullOrWhiteSpace(formMessage))
-            {
-                <p class="form-message @(formMessage.Contains("sucesso") ? "" : "error")">@formMessage</p>
-            }
             <div class="form-actions">
                 <button class="button tertiary" type="button" @onclick="CloseModal">Cancelar</button>
                 <button class="button primary" type="submit">Salvar</button>
@@ -119,7 +116,6 @@
     private string? selectedOrganizationId;
     private string? createOrganizationId;
     private string? createVisibility;
-    private string? formMessage;
     private bool isModalOpen = false;
 
     protected override async Task OnInitializedAsync()
@@ -147,35 +143,32 @@
         newWorkspace = new CreateWorkspaceRequest();
         createOrganizationId = null;
         createVisibility = null;
-        formMessage = null;
         isModalOpen = true;
     }
 
     private void CloseModal()
     {
         isModalOpen = false;
-        formMessage = null;
     }
 
     private async Task CreateWorkspace()
     {
-        formMessage = null;
         if (!Guid.TryParse(createOrganizationId, out var organizationId))
         {
-            formMessage = "Selecione uma organização.";
+            ToastService.ShowError("Erro ao criar workspace", "Selecione uma organização.");
             return;
         }
 
         if (string.IsNullOrWhiteSpace(newWorkspace.Name))
         {
-            formMessage = "Informe o nome do workspace.";
+            ToastService.ShowError("Erro ao criar workspace", "Informe o nome do workspace.");
             return;
         }
 
         if (string.IsNullOrEmpty(createVisibility) ||
             !Enum.TryParse<Visibility>(createVisibility, out var visibility))
         {
-            formMessage = "Selecione a visibilidade do workspace.";
+            ToastService.ShowError("Erro ao criar workspace", "Selecione a visibilidade do workspace.");
             return;
         }
 
@@ -186,10 +179,8 @@
         createOrganizationId = null;
         createVisibility = null;
         await LoadWorkspaces();
-        formMessage = "Workspace criado com sucesso.";
 
-        // Auto-close modal after 1.5 seconds on success
-        await Task.Delay(1500);
+        ToastService.ShowSuccess("Workspace criado com sucesso!", $"O workspace '{newWorkspace.Name}' foi criado.");
         CloseModal();
     }
 }

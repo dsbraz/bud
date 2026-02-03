@@ -1,5 +1,6 @@
 @page "/mission-metrics"
 @inject ApiClient Api
+@inject ToastService ToastService
 
 <MissionsMenu />
 
@@ -155,10 +156,6 @@
                     </select>
                 </div>
             }
-            @if (!string.IsNullOrWhiteSpace(formMessage))
-            {
-                <p class="form-message @(formMessage.Contains("sucesso") ? "" : "error")">@formMessage</p>
-            }
             <div class="form-actions">
                 <button class="button tertiary" type="button" @onclick="CloseModal">Cancelar</button>
                 <button class="button primary" type="submit">Salvar</button>
@@ -177,7 +174,6 @@
     private string? createMetricUnitValue;
     private string? filterMissionId;
     private string? search;
-    private string? formMessage;
     private bool isModalOpen = false;
 
     protected override async Task OnInitializedAsync()
@@ -220,35 +216,31 @@
         createMetricTypeValue = null;
         createQuantitativeTypeValue = null;
         createMetricUnitValue = null;
-        formMessage = null;
         isModalOpen = true;
     }
 
     private void CloseModal()
     {
         isModalOpen = false;
-        formMessage = null;
     }
 
     private async Task CreateMetric()
     {
-        formMessage = null;
-
         if (!Guid.TryParse(createMissionId, out var missionId))
         {
-            formMessage = "Selecione uma missão.";
+            ToastService.ShowError("Erro ao criar métrica", "Selecione uma missão.");
             return;
         }
 
         if (string.IsNullOrWhiteSpace(newMetric.Name))
         {
-            formMessage = "Informe o nome da métrica.";
+            ToastService.ShowError("Erro ao criar métrica", "Informe o nome da métrica.");
             return;
         }
 
         if (!Enum.TryParse<MetricType>(createMetricTypeValue, out var metricType))
         {
-            formMessage = "Selecione o tipo da metrica.";
+            ToastService.ShowError("Erro ao criar métrica", "Selecione o tipo da metrica.");
             return;
         }
 
@@ -259,7 +251,7 @@
         {
             if (string.IsNullOrWhiteSpace(newMetric.TargetText))
             {
-                formMessage = "Informe o texto alvo.";
+                ToastService.ShowError("Erro ao criar métrica", "Informe o texto alvo.");
                 return;
             }
         }
@@ -267,7 +259,7 @@
         {
             if (!Enum.TryParse<QuantitativeMetricType>(createQuantitativeTypeValue, out var quantitativeType))
             {
-                formMessage = "Selecione o tipo de métrica quantitativa.";
+                ToastService.ShowError("Erro ao criar métrica", "Selecione o tipo de métrica quantitativa.");
                 return;
             }
 
@@ -275,13 +267,13 @@
 
             if (quantitativeType == QuantitativeMetricType.KeepAbove && newMetric.MinValue is null)
             {
-                formMessage = "Informe o valor mínimo.";
+                ToastService.ShowError("Erro ao criar métrica", "Informe o valor mínimo.");
                 return;
             }
 
             if (quantitativeType == QuantitativeMetricType.KeepBelow && newMetric.MaxValue is null)
             {
-                formMessage = "Informe o valor máximo.";
+                ToastService.ShowError("Erro ao criar métrica", "Informe o valor máximo.");
                 return;
             }
 
@@ -289,20 +281,20 @@
             {
                 if (newMetric.MinValue is null || newMetric.MaxValue is null)
                 {
-                    formMessage = "Informe os valores mínimo e máximo.";
+                    ToastService.ShowError("Erro ao criar métrica", "Informe os valores mínimo e máximo.");
                     return;
                 }
 
                 if (newMetric.MinValue >= newMetric.MaxValue)
                 {
-                    formMessage = "O valor mínimo deve ser menor que o valor máximo.";
+                    ToastService.ShowError("Erro ao criar métrica", "O valor mínimo deve ser menor que o valor máximo.");
                     return;
                 }
             }
 
             if (!Enum.TryParse<MetricUnit>(createMetricUnitValue, out var metricUnit))
             {
-                formMessage = "Selecione a unidade.";
+                ToastService.ShowError("Erro ao criar métrica", "Selecione a unidade.");
                 return;
             }
 
@@ -310,16 +302,15 @@
         }
 
         await Api.CreateMissionMetricAsync(newMetric);
+        var createdMetricName = newMetric.Name;
         newMetric = new CreateMissionMetricRequest();
         createMissionId = null;
         createMetricTypeValue = null;
         createQuantitativeTypeValue = null;
         createMetricUnitValue = null;
         await LoadMetrics();
-        formMessage = "Métrica criada com sucesso.";
 
-        // Auto-close modal after 1.5 seconds on success
-        await Task.Delay(1500);
+        ToastService.ShowSuccess("Métrica criada com sucesso!", $"A métrica '{createdMetricName}' foi criada.");
         CloseModal();
     }
 

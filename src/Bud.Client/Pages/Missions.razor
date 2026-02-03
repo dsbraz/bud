@@ -1,5 +1,6 @@
 @page "/missions"
 @inject ApiClient Api
+@inject ToastService ToastService
 
 <MissionsMenu />
 
@@ -247,11 +248,6 @@
                         </div>
                     }
                 </div>
-
-                @if (!string.IsNullOrWhiteSpace(formMessage))
-                {
-                    <p class="form-message @(formMessage.Contains("sucesso") ? "" : "error")">@formMessage</p>
-                }
             </EditForm>
         </ChildContent>
         <Footer>
@@ -286,7 +282,6 @@
     private string? filterScopeTypeValue;
     private string? filterScopeId;
     private string? search;
-    private string? formMessage;
     private bool isModalOpen = false;
     private bool showResponsibleSelector = false;
     private bool showPeriodSelector = false;
@@ -363,7 +358,6 @@
         };
         createScopeTypeValue = null;
         createScopeId = null;
-        formMessage = null;
         missionDescription = null;
         showResponsibleSelector = false;
         showPeriodSelector = false;
@@ -376,7 +370,6 @@
     private void CloseModal()
     {
         isModalOpen = false;
-        formMessage = null;
     }
 
     private string GetSelectedOrganizationName()
@@ -408,29 +401,27 @@
 
     private async Task SaveDraft()
     {
-        formMessage = null;
-
         if (!Enum.TryParse<MissionScopeType>(createScopeTypeValue, out var scopeType))
         {
-            formMessage = "Selecione o escopo.";
+            ToastService.ShowError("Erro ao salvar rascunho", "Selecione o escopo.");
             return;
         }
 
         if (!Guid.TryParse(createScopeId, out var scopeId))
         {
-            formMessage = "Selecione a referência do escopo.";
+            ToastService.ShowError("Erro ao salvar rascunho", "Selecione a referência do escopo.");
             return;
         }
 
         if (string.IsNullOrWhiteSpace(newMission.Name))
         {
-            formMessage = "Informe o nome da missão.";
+            ToastService.ShowError("Erro ao salvar rascunho", "Informe o nome da missão.");
             return;
         }
 
         if (newMission.EndDate < newMission.StartDate)
         {
-            formMessage = "A data de fim precisa ser igual ou maior que a data de início.";
+            ToastService.ShowError("Erro ao salvar rascunho", "A data de fim precisa ser igual ou maior que a data de início.");
             return;
         }
 
@@ -484,9 +475,8 @@
         createScopeTypeValue = null;
         createScopeId = null;
         await LoadMissions();
-        formMessage = "Rascunho salvo com sucesso.";
 
-        await Task.Delay(1500);
+        ToastService.ShowSuccess("Rascunho salvo com sucesso!", "A missão foi salva como rascunho.");
         CloseModal();
     }
 
@@ -565,29 +555,27 @@
 
     private async Task CreateMission()
     {
-        formMessage = null;
-
         if (!Enum.TryParse<MissionScopeType>(createScopeTypeValue, out var scopeType))
         {
-            formMessage = "Selecione o escopo.";
+            ToastService.ShowError("Erro ao criar missão", "Selecione o escopo.");
             return;
         }
 
         if (!Guid.TryParse(createScopeId, out var scopeId))
         {
-            formMessage = "Selecione a referência do escopo.";
+            ToastService.ShowError("Erro ao criar missão", "Selecione a referência do escopo.");
             return;
         }
 
         if (string.IsNullOrWhiteSpace(newMission.Name))
         {
-            formMessage = "Informe o nome da missão.";
+            ToastService.ShowError("Erro ao criar missão", "Informe o nome da missão.");
             return;
         }
 
         if (newMission.EndDate < newMission.StartDate)
         {
-            formMessage = "A data de fim precisa ser igual ou maior que a data de início.";
+            ToastService.ShowError("Erro ao criar missão", "A data de fim precisa ser igual ou maior que a data de início.");
             return;
         }
 
@@ -641,10 +629,8 @@
         createScopeTypeValue = null;
         createScopeId = null;
         await LoadMissions();
-        formMessage = "Missão criada com sucesso.";
 
-        // Auto-close modal after 1.5 seconds on success
-        await Task.Delay(1500);
+        ToastService.ShowSuccess("Missão criada com sucesso!", $"A missão '{createdMission?.Name}' foi criada e está ativa.");
         CloseModal();
     }
 

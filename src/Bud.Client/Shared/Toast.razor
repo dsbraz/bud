@@ -1,0 +1,86 @@
+@using Bud.Client.Services
+@implements IDisposable
+
+@if (IsVisible)
+{
+    <div class="toast toast-@Type.ToString().ToLower() @(IsClosing ? "toast-closing" : "")"
+         style="display: block; visibility: visible; opacity: 1; position: relative;">
+        <div class="toast-header">
+            <svg class="toast-icon" width="32" height="32" viewBox="0 0 256 256" fill="currentColor">
+                @if (Type == ToastType.Success)
+                {
+                    <path d="M173.66,98.34a8,8,0,0,1,0,11.32l-56,56a8,8,0,0,1-11.32,0l-24-24a8,8,0,0,1,11.32-11.32L112,148.69l50.34-50.35A8,8,0,0,1,173.66,98.34ZM232,128A104,104,0,1,1,128,24,104.11,104.11,0,0,1,232,128Zm-16,0a88,88,0,1,0-88,88A88.1,88.1,0,0,0,216,128Z"/>
+                }
+                else if (Type == ToastType.Error)
+                {
+                    <path d="M165.66,101.66,139.31,128l26.35,26.34a8,8,0,0,1-11.32,11.32L128,139.31l-26.34,26.35a8,8,0,0,1-11.32-11.32L116.69,128,90.34,101.66a8,8,0,0,1,11.32-11.32L128,116.69l26.34-26.35a8,8,0,0,1,11.32,11.32ZM232,128A104,104,0,1,1,128,24,104.11,104.11,0,0,1,232,128Zm-16,0a88,88,0,1,0-88,88A88.1,88.1,0,0,0,216,128Z"/>
+                }
+                else if (Type == ToastType.Warning)
+                {
+                    <path d="M128,24A104,104,0,1,0,232,128,104.11,104.11,0,0,0,128,24Zm-8,56a8,8,0,0,1,16,0v56a8,8,0,0,1-16,0Zm8,104a12,12,0,1,1,12-12A12,12,0,0,1,128,184Z"/>
+                }
+                else if (Type == ToastType.Info)
+                {
+                    <path d="M128,24A104,104,0,1,0,232,128,104.11,104.11,0,0,0,128,24Zm-4,48a12,12,0,1,1-12,12A12,12,0,0,1,124,72Zm12,112a16,16,0,0,1-16-16V128a8,8,0,0,1,0-16,16,16,0,0,1,16,16v40a8,8,0,0,1,0,16Z"/>
+                }
+                else
+                {
+                    <path d="M128,24A104,104,0,1,0,232,128,104.11,104.11,0,0,0,128,24Zm-8,56a8,8,0,0,1,16,0v56a8,8,0,0,1-16,0Zm8,104a12,12,0,1,1,12-12A12,12,0,0,1,128,184Z"/>
+                }
+            </svg>
+            <div class="toast-title">@Title</div>
+            @if (ShowCloseButton)
+            {
+                <button class="toast-close" @onclick="Close">
+                    <svg width="32" height="32" viewBox="0 0 256 256" fill="currentColor">
+                        <path d="M205.66,194.34a8,8,0,0,1-11.32,11.32L128,139.31,61.66,205.66a8,8,0,0,1-11.32-11.32L116.69,128,50.34,61.66A8,8,0,0,1,61.66,50.34L128,116.69l66.34-66.35a8,8,0,0,1,11.32,11.32L139.31,128Z"/>
+                    </svg>
+                </button>
+            }
+        </div>
+        @if (!string.IsNullOrWhiteSpace(Message))
+        {
+            <div class="toast-body">
+                <p>@Message</p>
+            </div>
+        }
+    </div>
+}
+
+@code {
+    [Parameter] public string Title { get; set; } = string.Empty;
+    [Parameter] public string? Message { get; set; }
+    [Parameter] public ToastType Type { get; set; } = ToastType.Info;
+    [Parameter] public bool ShowCloseButton { get; set; } = true;
+    [Parameter] public int DurationMs { get; set; } = 5000;
+    [Parameter] public EventCallback OnClosed { get; set; }
+
+    private bool IsVisible = true;
+    private bool IsClosing = false;
+    private System.Threading.Timer? autoCloseTimer;
+
+    protected override void OnInitialized()
+    {
+        if (DurationMs > 0)
+        {
+            autoCloseTimer = new System.Threading.Timer(_ => InvokeAsync(Close), null, DurationMs, Timeout.Infinite);
+        }
+    }
+
+    private async Task Close()
+    {
+        IsClosing = true;
+        StateHasChanged();
+
+        await Task.Delay(300); // Wait for animation
+
+        IsVisible = false;
+        autoCloseTimer?.Dispose();
+        await OnClosed.InvokeAsync();
+    }
+
+    public void Dispose()
+    {
+        autoCloseTimer?.Dispose();
+    }
+}
