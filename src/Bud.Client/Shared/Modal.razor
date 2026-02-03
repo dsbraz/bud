@@ -5,7 +5,7 @@
     {
         <div class="modal-backdrop" @onclick="Close"></div>
     }
-    <div class="modal-dialog modal-@Size" @onclick="OnDialogClick">
+    <div class="modal-dialog modal-@Size @(isExpanded ? "modal-expanded" : "")" @onclick="OnDialogClick">
         <div class="modal-header">
             <div class="modal-header-content">
                 @if (!string.IsNullOrEmpty(Breadcrumb))
@@ -23,10 +23,23 @@
                 }
             </div>
             <div class="modal-header-actions">
-                <button type="button" class="modal-action-btn" aria-label="Expandir">
-                    <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <path d="M13 3h4v4M7 17H3v-4M17 7l-5 5M3 13l5-5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                    </svg>
+                <button type="button" class="modal-action-btn" @onclick="ToggleExpand" aria-label="@(isExpanded ? "Recolher" : "Expandir")">
+                    @if (isExpanded)
+                    {
+                        @* Restore/Minimize icon - two overlapping squares *@
+                        <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <rect x="4" y="6" width="9" height="9" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                            <path d="M8 6V5C8 4.44772 8.44772 4 9 4H15C15.5523 4 16 4.44772 16 5V11C16 11.5523 15.5523 12 15 12H14" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                    }
+                    else
+                    {
+                        @* Maximize icon - arrow pointing outward *@
+                        <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M9 4L4 4L4 9M11 16L16 16L16 11" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                            <path d="M4 4L9 9M16 16L11 11" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                        </svg>
+                    }
                 </button>
                 <button type="button" class="modal-close" @onclick="Close" aria-label="Fechar">
                     <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -91,11 +104,24 @@
     public bool CloseOnOverlayClick { get; set; } = true;
 
     /// <summary>
+    /// Internal state to track if modal is expanded
+    /// </summary>
+    private bool isExpanded = false;
+
+    /// <summary>
     /// Close the modal
     /// </summary>
     private async Task Close()
     {
         await OnClose.InvokeAsync();
+    }
+
+    /// <summary>
+    /// Toggle expanded/collapsed state
+    /// </summary>
+    private void ToggleExpand()
+    {
+        isExpanded = !isExpanded;
     }
 
     private void OnDialogClick()
