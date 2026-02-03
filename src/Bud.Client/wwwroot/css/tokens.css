@@ -1,0 +1,380 @@
+/**
+ * Design Tokens - Bud 2.0
+ * Source: Figma Style Guide
+ * URL: https://www.figma.com/design/j3n8YHBusCH8KEHvheGeF8/-ASSETS--Style-Guide
+ * Last updated: 2026-02-02
+ *
+ * This file contains all design tokens extracted from the Figma Style Guide.
+ * Colors, typography, spacing, and other design values are defined here as CSS custom properties.
+ */
+
+:root {
+  /* ========================================
+     PRIMITIVE COLORS
+     Based on Figma Primitives page
+     ======================================== */
+
+  /* Orange - Primary Brand Color */
+  --orange-50: #FFF4ED;
+  --orange-100: #FFE6D5;
+  --orange-200: #FFC9A1;
+  --orange-300: #FFA76B;
+  --orange-400: #FF8642;
+  --orange-500: #FF6B35;  /* Primary Orange */
+  --orange-600: #E8501A;
+  --orange-700: #C33A0F;
+  --orange-800: #9C2D0C;
+  --orange-900: #7A2409;
+  --orange-950: #4A1505;
+
+  /* Wine - Secondary Brand Color */
+  --wine-50: #FDF3F8;
+  --wine-100: #FCE7F3;
+  --wine-200: #FBC7E5;
+  --wine-300: #F99FD4;
+  --wine-400: #F568BC;
+  --wine-500: #E838A3;  /* Primary Wine */
+  --wine-600: #C71F82;
+  --wine-700: #A11568;
+  --wine-800: #7D1152;
+  --wine-900: #600D3E;
+  --wine-950: #3A0824;
+
+  /* Caramel - Tertiary/Accent Color */
+  --caramel-50: #FAF8F3;
+  --caramel-100: #F5F0E5;
+  --caramel-200: #E8DCC4;
+  --caramel-300: #D6C299;
+  --caramel-400: #C0A36D;
+  --caramel-500: #A8864B;  /* Primary Caramel */
+  --caramel-600: #8B6C3A;
+  --caramel-700: #6F5530;
+  --caramel-800: #574227;
+  --caramel-900: #42331F;
+  --caramel-950: #281E12;
+
+  /* Neutral - Grayscale */
+  --neutral-50: #FAFAFA;
+  --neutral-100: #F5F5F5;
+  --neutral-200: #E5E5E5;
+  --neutral-300: #D4D4D4;
+  --neutral-400: #A3A3A3;
+  --neutral-500: #737373;
+  --neutral-600: #525252;
+  --neutral-700: #404040;
+  --neutral-800: #262626;
+  --neutral-900: #171717;
+  --neutral-950: #0A0A0A;
+
+  /* Red - Error/Danger States */
+  --red-50: #FEF2F2;
+  --red-100: #FEE2E2;
+  --red-200: #FECACA;
+  --red-300: #FCA5A5;
+  --red-400: #F87171;
+  --red-500: #EF4444;  /* Primary Red */
+  --red-600: #DC2626;
+  --red-700: #B91C1C;
+  --red-800: #991B1B;
+  --red-900: #7F1D1D;
+  --red-950: #450A0A;
+
+  /* Green - Success States */
+  --green-50: #F0FDF4;
+  --green-100: #DCFCE7;
+  --green-200: #BBF7D0;
+  --green-300: #86EFAC;
+  --green-400: #4ADE80;
+  --green-500: #22C55E;  /* Primary Green */
+  --green-600: #16A34A;
+  --green-700: #15803D;
+  --green-800: #166534;
+  --green-900: #14532D;
+  --green-950: #052E16;
+
+  /* Yellow - Warning States */
+  --yellow-50: #FEFCE8;
+  --yellow-100: #FEF9C3;
+  --yellow-200: #FEF08A;
+  --yellow-300: #FDE047;
+  --yellow-400: #FACC15;
+  --yellow-500: #EAB308;  /* Primary Yellow */
+  --yellow-600: #CA8A04;
+  --yellow-700: #A16207;
+  --yellow-800: #854D0E;
+  --yellow-900: #713F12;
+  --yellow-950: #422006;
+
+  /* ========================================
+     SEMANTIC COLORS
+     Mapped from primitives to use cases
+     ======================================== */
+
+  /* Brand Colors */
+  --color-brand-primary: var(--orange-500);
+  --color-brand-primary-hover: var(--orange-600);
+  --color-brand-primary-active: var(--orange-700);
+  --color-brand-secondary: var(--wine-500);
+  --color-brand-secondary-hover: var(--wine-600);
+  --color-brand-secondary-active: var(--wine-700);
+
+  /* Background Colors */
+  --color-background: var(--neutral-50);
+  --color-background-alt: var(--neutral-100);
+  --color-surface: #FFFFFF;
+  --color-surface-hover: var(--neutral-50);
+  --color-overlay: rgba(0, 0, 0, 0.5);
+
+  /* Text Colors */
+  --color-text-primary: var(--neutral-900);
+  --color-text-secondary: var(--neutral-700);
+  --color-text-muted: var(--neutral-500);
+  --color-text-disabled: var(--neutral-400);
+  --color-text-inverse: #FFFFFF;
+  --color-text-link: var(--orange-600);
+  --color-text-link-hover: var(--orange-700);
+
+  /* Border Colors */
+  --color-border: var(--neutral-300);
+  --color-border-light: var(--neutral-200);
+  --color-border-dark: var(--neutral-400);
+  --color-border-focus: var(--orange-500);
+
+  /* State Colors */
+  --color-success: var(--green-500);
+  --color-success-bg: var(--green-50);
+  --color-success-border: var(--green-300);
+  --color-warning: var(--yellow-500);
+  --color-warning-bg: var(--yellow-50);
+  --color-warning-border: var(--yellow-300);
+  --color-error: var(--red-500);
+  --color-error-bg: var(--red-50);
+  --color-error-border: var(--red-300);
+  --color-info: var(--wine-500);
+  --color-info-bg: var(--wine-50);
+  --color-info-border: var(--wine-300);
+
+  /* Interactive States */
+  --color-hover: var(--neutral-100);
+  --color-active: var(--neutral-200);
+  --color-selected: var(--orange-50);
+  --color-selected-border: var(--orange-500);
+  --color-disabled-bg: var(--neutral-100);
+  --color-disabled-text: var(--neutral-400);
+
+  /* ========================================
+     TYPOGRAPHY
+     Based on Figma Typography page
+     ======================================== */
+
+  /* Font Families */
+  --font-family-display: 'Crimson Pro', Georgia, 'Times New Roman', serif;
+  --font-family-body: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  --font-family-mono: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+
+  /* Font Sizes - Display */
+  --font-size-display-xl: 64px;      /* Display Extra Large */
+  --font-size-display-lg: 52px;      /* Display Large */
+  --font-size-display-md: 44px;      /* Display Medium */
+  --font-size-display-sm: 36px;      /* Display Small */
+
+  /* Font Sizes - Title */
+  --font-size-title-xl: 32px;        /* Title Extra Large */
+  --font-size-title-lg: 28px;        /* Title Large */
+  --font-size-title-md: 24px;        /* Title Medium */
+  --font-size-title-sm: 20px;        /* Title Small */
+  --font-size-title-xs: 18px;        /* Title Extra Small */
+
+  /* Font Sizes - Paragraph */
+  --font-size-paragraph-xl: 20px;    /* Paragraph Extra Large */
+  --font-size-paragraph-lg: 18px;    /* Paragraph Large */
+  --font-size-paragraph-md: 16px;    /* Paragraph Medium */
+  --font-size-paragraph-sm: 14px;    /* Paragraph Small */
+
+  /* Font Sizes - Label */
+  --font-size-label-lg: 14px;        /* Label Large */
+  --font-size-label-md: 13px;        /* Label Medium */
+  --font-size-label-sm: 12px;        /* Label Small */
+
+  /* Font Sizes - Utility */
+  --font-size-xs: 10px;
+  --font-size-sm: 12px;
+  --font-size-base: 14px;
+  --font-size-md: 16px;
+  --font-size-lg: 18px;
+  --font-size-xl: 20px;
+  --font-size-2xl: 24px;
+  --font-size-3xl: 28px;
+  --font-size-4xl: 32px;
+  --font-size-5xl: 36px;
+
+  /* Font Weights */
+  --font-weight-light: 300;
+  --font-weight-regular: 400;
+  --font-weight-medium: 500;
+  --font-weight-semibold: 600;
+  --font-weight-bold: 700;
+  --font-weight-extrabold: 800;
+
+  /* Line Heights */
+  --line-height-none: 1;
+  --line-height-tight: 1.25;
+  --line-height-snug: 1.375;
+  --line-height-normal: 1.5;
+  --line-height-relaxed: 1.625;
+  --line-height-loose: 2;
+
+  /* Letter Spacing */
+  --letter-spacing-tighter: -0.05em;
+  --letter-spacing-tight: -0.025em;
+  --letter-spacing-normal: 0;
+  --letter-spacing-wide: 0.025em;
+  --letter-spacing-wider: 0.05em;
+  --letter-spacing-widest: 0.1em;
+
+  /* ========================================
+     SPACING
+     8px base unit scale
+     ======================================== */
+
+  --spacing-0: 0;
+  --spacing-1: 4px;      /* 0.25rem */
+  --spacing-2: 8px;      /* 0.5rem */
+  --spacing-3: 12px;     /* 0.75rem */
+  --spacing-4: 16px;     /* 1rem */
+  --spacing-5: 20px;     /* 1.25rem */
+  --spacing-6: 24px;     /* 1.5rem */
+  --spacing-7: 28px;     /* 1.75rem */
+  --spacing-8: 32px;     /* 2rem */
+  --spacing-9: 36px;     /* 2.25rem */
+  --spacing-10: 40px;    /* 2.5rem */
+  --spacing-12: 48px;    /* 3rem */
+  --spacing-14: 56px;    /* 3.5rem */
+  --spacing-16: 64px;    /* 4rem */
+  --spacing-20: 80px;    /* 5rem */
+  --spacing-24: 96px;    /* 6rem */
+  --spacing-28: 112px;   /* 7rem */
+  --spacing-32: 128px;   /* 8rem */
+
+  /* Semantic Spacing Aliases */
+  --spacing-xs: var(--spacing-1);
+  --spacing-sm: var(--spacing-2);
+  --spacing-md: var(--spacing-4);
+  --spacing-lg: var(--spacing-6);
+  --spacing-xl: var(--spacing-8);
+  --spacing-2xl: var(--spacing-10);
+  --spacing-3xl: var(--spacing-12);
+
+  /* ========================================
+     BORDER RADIUS
+     ======================================== */
+
+  --radius-none: 0;
+  --radius-sm: 4px;
+  --radius-base: 6px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-xl: 16px;
+  --radius-2xl: 20px;
+  --radius-3xl: 24px;
+  --radius-full: 9999px;  /* Pill shape */
+  --radius-circle: 50%;
+
+  /* ========================================
+     SHADOWS
+     ======================================== */
+
+  --shadow-xs: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  --shadow-sm: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+  --shadow-base: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  --shadow-md: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+  --shadow-lg: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  --shadow-xl: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+  --shadow-2xl: 0 30px 60px -15px rgba(0, 0, 0, 0.3);
+  --shadow-inner: inset 0 2px 4px 0 rgba(0, 0, 0, 0.06);
+  --shadow-none: none;
+
+  /* Component-specific shadows */
+  --shadow-card: var(--shadow-sm);
+  --shadow-card-hover: var(--shadow-md);
+  --shadow-dropdown: var(--shadow-lg);
+  --shadow-modal: var(--shadow-2xl);
+
+  /* ========================================
+     LAYOUT
+     ======================================== */
+
+  /* Container Widths */
+  --container-xs: 480px;
+  --container-sm: 640px;
+  --container-md: 768px;
+  --container-lg: 1024px;
+  --container-xl: 1280px;
+  --container-2xl: 1536px;
+
+  /* Sidebar */
+  --sidebar-width: 280px;
+  --sidebar-width-collapsed: 80px;
+
+  /* Header */
+  --header-height: 64px;
+
+  /* Grid */
+  --grid-gap: 24px;
+  --grid-column-min-width: 280px;
+
+  /* ========================================
+     Z-INDEX
+     ======================================== */
+
+  --z-index-dropdown: 1000;
+  --z-index-sticky: 1020;
+  --z-index-fixed: 1030;
+  --z-index-modal-backdrop: 1040;
+  --z-index-modal: 1050;
+  --z-index-popover: 1060;
+  --z-index-tooltip: 1070;
+
+  /* ========================================
+     TRANSITIONS
+     ======================================== */
+
+  --transition-fast: 100ms ease;
+  --transition-base: 200ms ease;
+  --transition-slow: 300ms ease;
+  --transition-slower: 500ms ease;
+
+  /* Easing Functions */
+  --ease-in: cubic-bezier(0.4, 0, 1, 1);
+  --ease-out: cubic-bezier(0, 0, 0.2, 1);
+  --ease-in-out: cubic-bezier(0.4, 0, 0.2, 1);
+
+  /* ========================================
+     BREAKPOINTS (for reference in media queries)
+     Not directly usable in CSS, but documented here
+     ======================================== */
+
+  /*
+  --breakpoint-sm: 640px;
+  --breakpoint-md: 768px;
+  --breakpoint-lg: 1024px;
+  --breakpoint-xl: 1280px;
+  --breakpoint-2xl: 1536px;
+  */
+}
+
+/* ========================================
+   DARK MODE (Future Enhancement)
+   ======================================== */
+
+/*
+@media (prefers-color-scheme: dark) {
+  :root {
+    --color-background: var(--neutral-900);
+    --color-surface: var(--neutral-800);
+    --color-text-primary: var(--neutral-50);
+    --color-text-secondary: var(--neutral-300);
+    --color-text-muted: var(--neutral-400);
+  }
+}
+*/

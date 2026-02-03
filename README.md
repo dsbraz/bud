@@ -12,6 +12,42 @@ docker compose up --build
 - App (UI + API): `http://localhost:8080`
 - Swagger (ambiente Development): `http://localhost:8080/swagger`
 
+## Design System & Tokens
+
+Bud 2.0 uses a comprehensive design token system based on the [Figma Style Guide](https://www.figma.com/design/j3n8YHBusCH8KEHvheGeF8/-ASSETS--Style-Guide).
+
+### Brand Colors
+
+- **Primary**: Orange (#FF6B35) - CTAs, active states, primary actions
+- **Secondary**: Wine (#E838A3) - Accents, highlights, secondary actions
+
+### Typography
+
+- **Crimson Pro**: Serif font for headings and display text
+- **Plus Jakarta Sans**: Sans-serif for body text and UI components
+
+### Design Tokens
+
+All design values (colors, typography, spacing, shadows) are defined as CSS custom properties in [`src/Bud.Client/wwwroot/css/tokens.css`](src/Bud.Client/wwwroot/css/tokens.css).
+
+**Usage example:**
+```css
+.button {
+    background: var(--color-brand-primary);
+    padding: var(--spacing-3) var(--spacing-4);
+    border-radius: var(--radius-md);
+    font-size: var(--font-size-base);
+}
+```
+
+### Updating Design Tokens
+
+See [DESIGN_TOKENS.md](DESIGN_TOKENS.md) for:
+- Complete token reference
+- How to update tokens from Figma
+- Token naming conventions
+- Best practices
+
 ## Migrations (EF Core)
 
 Já existe a migration inicial (`InitialCreate`). Para aplicar no banco com Docker rodando:
