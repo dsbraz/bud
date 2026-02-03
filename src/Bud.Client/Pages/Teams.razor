@@ -188,15 +188,26 @@
         newTeam.WorkspaceId = workspaceId;
         newTeam.ParentTeamId = Guid.TryParse(createParentTeamId, out var parentId) ? parentId : null;
 
-        await Api.CreateTeamAsync(newTeam);
-        var createdTeamName = newTeam.Name;
-        newTeam = new CreateTeamRequest();
-        createWorkspaceId = null;
-        createParentTeamId = null;
-        parentTeams.Clear();
-        await LoadTeams();
+        try
+        {
+            await Api.CreateTeamAsync(newTeam);
+            var createdTeamName = newTeam.Name;
+            newTeam = new CreateTeamRequest();
+            createWorkspaceId = null;
+            createParentTeamId = null;
+            parentTeams.Clear();
+            await LoadTeams();
 
-        ToastService.ShowSuccess("Equipe criada com sucesso!", $"A equipe '{createdTeamName}' foi criada.");
-        CloseModal();
+            ToastService.ShowSuccess("Equipe criada com sucesso!", $"A equipe '{createdTeamName}' foi criada.");
+            CloseModal();
+        }
+        catch (HttpRequestException ex)
+        {
+            ToastService.ShowError("Erro ao criar equipe", ex.Message);
+        }
+        catch (Exception ex)
+        {
+            ToastService.ShowError("Erro inesperado", ex.Message);
+        }
     }
 }

@@ -10,4 +10,6 @@ public sealed class Collaborator : ITenantEntity
     public Organization Organization { get; set; } = null!;
     public Guid TeamId { get; set; }
     public Team Team { get; set; } = null!;
+    public Guid? LeaderId { get; set; }
+    public Collaborator? Leader { get; set; }
 }

@@ -20,6 +20,15 @@ public sealed class WorkspaceService(
             return ServiceResult<Workspace>.NotFound("Organization not found.");
         }
 
+        if (!tenantProvider.IsAdmin)
+        {
+            var isOwner = await IsOrgOwnerAsync(request.OrganizationId, cancellationToken);
+            if (!isOwner)
+            {
+                return ServiceResult<Workspace>.Forbidden("Only the organization owner can create workspaces.");
+            }
+        }
+
         var workspace = new Workspace
         {
             Id = Guid.NewGuid(),

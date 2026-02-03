@@ -1,11 +1,14 @@
 using Bud.Server.Data;
+using Bud.Server.MultiTenancy;
 using Bud.Shared.Contracts;
 using Bud.Shared.Models;
 using Microsoft.EntityFrameworkCore;
 
 namespace Bud.Server.Services;
 
-public sealed class CollaboratorService(ApplicationDbContext dbContext) : ICollaboratorService
+public sealed class CollaboratorService(
+    ApplicationDbContext dbContext,
+    ITenantProvider tenantProvider) : ICollaboratorService
 {
     public async Task<ServiceResult<Collaborator>> CreateAsync(CreateCollaboratorRequest request, CancellationToken cancellationToken = default)
     {
@@ -18,6 +21,15 @@ public sealed class CollaboratorService(ApplicationDbContext dbContext) : IColla
             return ServiceResult<Collaborator>.NotFound("Team not found.");
         }
 
+        if (!tenantProvider.IsAdmin)
+        {
+            var isOwner = await IsOrgOwnerAsync(team.OrganizationId, cancellationToken);
+            if (!isOwner)
+            {
+                return ServiceResult<Collaborator>.Forbidden("Only the organization owner can create collaborators.");
+            }
+        }
+
         var collaborator = new Collaborator
         {
             Id = Guid.NewGuid(),
@@ -26,6 +38,7 @@ public sealed class CollaboratorService(ApplicationDbContext dbContext) : IColla
             Role = request.Role,
             OrganizationId = team.OrganizationId,
             TeamId = request.TeamId,
+            LeaderId = request.LeaderId,
         };
 
         dbContext.Collaborators.Add(collaborator);
@@ -43,9 +56,44 @@ public sealed class CollaboratorService(ApplicationDbContext dbContext) : IColla
             return ServiceResult<Collaborator>.NotFound("Collaborator not found.");
         }
 
+        var normalizedEmail = request.Email.Trim().ToLowerInvariant();
+        if (collaborator.Email != normalizedEmail)
+        {
+            var emailExists = await dbContext.Collaborators
+                .AnyAsync(c => c.Email == normalizedEmail && c.Id != id, cancellationToken);
+
+            if (emailExists)
+            {
+                return ServiceResult<Collaborator>.Failure("Email is already in use.", ServiceErrorType.Validation);
+            }
+        }
+
+        if (request.LeaderId.HasValue)
+        {
+            var leader = await dbContext.Collaborators
+                .AsNoTracking()
+                .FirstOrDefaultAsync(c => c.Id == request.LeaderId.Value, cancellationToken);
+
+            if (leader is null)
+            {
+                return ServiceResult<Collaborator>.NotFound("Leader not found.");
+            }
+
+            if (leader.OrganizationId != collaborator.OrganizationId)
+            {
+                return ServiceResult<Collaborator>.Failure("Leader must belong to the same organization.", ServiceErrorType.Validation);
+            }
+
+            if (leader.Role != CollaboratorRole.Leader)
+            {
+                return ServiceResult<Collaborator>.Failure("The selected collaborator is not a leader.", ServiceErrorType.Validation);
+            }
+        }
+
         collaborator.FullName = request.FullName.Trim();
-        collaborator.Email = request.Email.Trim().ToLowerInvariant();
+        collaborator.Email = normalizedEmail;
         collaborator.Role = request.Role;
+        collaborator.LeaderId = request.LeaderId;
         await dbContext.SaveChangesAsync(cancellationToken);
 
         return ServiceResult<Collaborator>.Success(collaborator);
@@ -133,5 +181,18 @@ public sealed class CollaboratorService(ApplicationDbContext dbContext) : IColla
             .ToListAsync(cancellationToken);
 
         return ServiceResult<List<LeaderCollaboratorResponse>>.Success(leaders);
+    }
+
+    private async Task<bool> IsOrgOwnerAsync(Guid organizationId, CancellationToken cancellationToken)
+    {
+        if (tenantProvider.CollaboratorId is null)
+            return false;
+
+        return await dbContext.Organizations
+            .AsNoTracking()
+            .AnyAsync(o =>
+                o.Id == organizationId &&
+                o.OwnerId == tenantProvider.CollaboratorId.Value,
+                cancellationToken);
     }
 }

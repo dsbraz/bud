@@ -174,13 +174,26 @@
 
         newWorkspace.OrganizationId = organizationId;
         newWorkspace.Visibility = visibility;
-        await Api.CreateWorkspaceAsync(newWorkspace);
-        newWorkspace = new CreateWorkspaceRequest();
-        createOrganizationId = null;
-        createVisibility = null;
-        await LoadWorkspaces();
 
-        ToastService.ShowSuccess("Workspace criado com sucesso!", $"O workspace '{newWorkspace.Name}' foi criado.");
-        CloseModal();
+        try
+        {
+            await Api.CreateWorkspaceAsync(newWorkspace);
+            var workspaceName = newWorkspace.Name;
+            newWorkspace = new CreateWorkspaceRequest();
+            createOrganizationId = null;
+            createVisibility = null;
+            await LoadWorkspaces();
+
+            ToastService.ShowSuccess("Workspace criado com sucesso!", $"O workspace '{workspaceName}' foi criado.");
+            CloseModal();
+        }
+        catch (HttpRequestException ex)
+        {
+            ToastService.ShowError("Erro ao criar workspace", ex.Message);
+        }
+        catch (Exception ex)
+        {
+            ToastService.ShowError("Erro inesperado", ex.Message);
+        }
     }
 }

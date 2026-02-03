@@ -132,6 +132,96 @@ public class WorkspaceServiceTests
         result.Value!.Visibility.Should().Be(Visibility.Private);
     }
 
+    [Fact]
+    public async Task CreateWorkspace_AsNonOwner_ReturnsForbidden()
+    {
+        // Arrange
+        var org = new Organization { Id = Guid.NewGuid(), Name = "Test Org" };
+        var owner = new Collaborator
+        {
+            Id = Guid.NewGuid(),
+            FullName = "Owner",
+            Email = "owner@test.com",
+            OrganizationId = org.Id
+        };
+        org.OwnerId = owner.Id;
+
+        var regularCollaborator = new Collaborator
+        {
+            Id = Guid.NewGuid(),
+            FullName = "Regular User",
+            Email = "user@test.com",
+            OrganizationId = org.Id
+        };
+
+        _tenantProvider.IsAdmin = false;
+        _tenantProvider.TenantId = org.Id;
+        _tenantProvider.CollaboratorId = regularCollaborator.Id;
+
+        using var context = CreateInMemoryContext();
+        context.Organizations.Add(org);
+        context.Collaborators.AddRange(owner, regularCollaborator);
+        await context.SaveChangesAsync();
+
+        var service = new WorkspaceService(context, _tenantProvider);
+
+        var request = new CreateWorkspaceRequest
+        {
+            Name = "New Workspace",
+            OrganizationId = org.Id,
+            Visibility = Visibility.Public
+        };
+
+        // Act
+        var result = await service.CreateAsync(request);
+
+        // Assert
+        result.IsSuccess.Should().BeFalse();
+        result.ErrorType.Should().Be(ServiceErrorType.Forbidden);
+        result.Error.Should().Be("Only the organization owner can create workspaces.");
+    }
+
+    [Fact]
+    public async Task CreateWorkspace_AsOwner_CreatesSuccessfully()
+    {
+        // Arrange
+        var org = new Organization { Id = Guid.NewGuid(), Name = "Test Org" };
+        var owner = new Collaborator
+        {
+            Id = Guid.NewGuid(),
+            FullName = "Owner",
+            Email = "owner@test.com",
+            OrganizationId = org.Id
+        };
+        org.OwnerId = owner.Id;
+
+        _tenantProvider.IsAdmin = false;
+        _tenantProvider.TenantId = org.Id;
+        _tenantProvider.CollaboratorId = owner.Id;
+
+        using var context = CreateInMemoryContext();
+        context.Organizations.Add(org);
+        context.Collaborators.Add(owner);
+        await context.SaveChangesAsync();
+
+        var service = new WorkspaceService(context, _tenantProvider);
+
+        var request = new CreateWorkspaceRequest
+        {
+            Name = "New Workspace",
+            OrganizationId = org.Id,
+            Visibility = Visibility.Public
+        };
+
+        // Act
+        var result = await service.CreateAsync(request);
+
+        // Assert
+        result.IsSuccess.Should().BeTrue();
+        result.Value.Should().NotBeNull();
+        result.Value!.Name.Should().Be("New Workspace");
+    }
+
     #endregion
 
     #region GetAllAsync Visibility Tests

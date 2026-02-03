@@ -53,7 +53,13 @@ public sealed class ApiClient
     public async Task<Workspace?> CreateWorkspaceAsync(CreateWorkspaceRequest request)
     {
         var response = await _http.PostAsJsonAsync("api/workspaces", request);
-        response.EnsureSuccessStatusCode();
+
+        if (!response.IsSuccessStatusCode)
+        {
+            var errorMessage = await ExtractErrorMessageAsync(response);
+            throw new HttpRequestException(errorMessage);
+        }
+
         return await response.Content.ReadFromJsonAsync<Workspace>();
     }
 
@@ -68,7 +74,13 @@ public sealed class ApiClient
     public async Task<Team?> CreateTeamAsync(CreateTeamRequest request)
     {
         var response = await _http.PostAsJsonAsync("api/teams", request);
-        response.EnsureSuccessStatusCode();
+
+        if (!response.IsSuccessStatusCode)
+        {
+            var errorMessage = await ExtractErrorMessageAsync(response);
+            throw new HttpRequestException(errorMessage);
+        }
+
         return await response.Content.ReadFromJsonAsync<Team>();
     }
 
@@ -82,7 +94,13 @@ public sealed class ApiClient
     public async Task<Collaborator?> CreateCollaboratorAsync(CreateCollaboratorRequest request)
     {
         var response = await _http.PostAsJsonAsync("api/collaborators", request);
-        response.EnsureSuccessStatusCode();
+
+        if (!response.IsSuccessStatusCode)
+        {
+            var errorMessage = await ExtractErrorMessageAsync(response);
+            throw new HttpRequestException(errorMessage);
+        }
+
         return await response.Content.ReadFromJsonAsync<Collaborator>();
     }
 

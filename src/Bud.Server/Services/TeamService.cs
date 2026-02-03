@@ -1,11 +1,14 @@
 using Bud.Server.Data;
+using Bud.Server.MultiTenancy;
 using Bud.Shared.Contracts;
 using Bud.Shared.Models;
 using Microsoft.EntityFrameworkCore;
 
 namespace Bud.Server.Services;
 
-public sealed class TeamService(ApplicationDbContext dbContext) : ITeamService
+public sealed class TeamService(
+    ApplicationDbContext dbContext,
+    ITenantProvider tenantProvider) : ITeamService
 {
     public async Task<ServiceResult<Team>> CreateAsync(CreateTeamRequest request, CancellationToken cancellationToken = default)
     {
@@ -16,6 +19,15 @@ public sealed class TeamService(ApplicationDbContext dbContext) : ITeamService
         if (workspace is null)
         {
             return ServiceResult<Team>.NotFound("Workspace not found.");
+        }
+
+        if (!tenantProvider.IsAdmin)
+        {
+            var isOwner = await IsOrgOwnerAsync(workspace.OrganizationId, cancellationToken);
+            if (!isOwner)
+            {
+                return ServiceResult<Team>.Forbidden("Only the organization owner can create teams.");
+            }
         }
 
         if (request.ParentTeamId.HasValue)
@@ -224,5 +236,18 @@ public sealed class TeamService(ApplicationDbContext dbContext) : ITeamService
         };
 
         return ServiceResult<PagedResult<Collaborator>>.Success(result);
+    }
+
+    private async Task<bool> IsOrgOwnerAsync(Guid organizationId, CancellationToken cancellationToken)
+    {
+        if (tenantProvider.CollaboratorId is null)
+            return false;
+
+        return await dbContext.Organizations
+            .AsNoTracking()
+            .AnyAsync(o =>
+                o.Id == organizationId &&
+                o.OwnerId == tenantProvider.CollaboratorId.Value,
+                cancellationToken);
     }
 }

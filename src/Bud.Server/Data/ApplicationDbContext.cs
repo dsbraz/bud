@@ -107,6 +107,17 @@ public sealed class ApplicationDbContext : DbContext
             .HasForeignKey(c => c.TeamId)
             .OnDelete(DeleteBehavior.Cascade);
 
+        modelBuilder.Entity<Collaborator>()
+            .HasOne(c => c.Leader)
+            .WithMany()
+            .HasForeignKey(c => c.LeaderId)
+            .OnDelete(DeleteBehavior.Restrict)
+            .IsRequired(false);
+
+        modelBuilder.Entity<Collaborator>()
+            .HasIndex(c => c.Email)
+            .IsUnique();
+
         // Mission
         modelBuilder.Entity<Mission>()
             .Property(m => m.Name)

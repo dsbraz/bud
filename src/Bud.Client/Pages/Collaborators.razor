@@ -53,6 +53,7 @@
                     <th>Nome</th>
                     <th>E-mail</th>
                     <th>Perfil</th>
+                    <th>Líder</th>
                     <th>Equipe</th>
                 </tr>
             </thead>
@@ -60,10 +61,14 @@
                 @foreach (var collaborator in collaborators.Items)
                 {
                     var team = teams.FirstOrDefault(t => t.Id == collaborator.TeamId);
+                    var leader = collaborator.LeaderId.HasValue
+                        ? allCollaborators.FirstOrDefault(c => c.Id == collaborator.LeaderId.Value)
+                        : null;
                     <tr>
                         <td>@collaborator.FullName</td>
                         <td>@collaborator.Email</td>
                         <td>@GetRoleLabel(collaborator.Role)</td>
+                        <td>@(leader?.FullName ?? "—")</td>
                         <td>@(team?.Name ?? "—")</td>
                     </tr>
                 }
@@ -103,6 +108,16 @@
                     <option value="@CollaboratorRole.Leader">Lider</option>
                 </InputSelect>
             </div>
+            <div class="form-row">
+                <label>Líder (opcional)</label>
+                <select class="input" @bind="createLeaderId">
+                    <option value="">Nenhum</option>
+                    @foreach (var leader in leaders)
+                    {
+                        <option value="@leader.Id">@leader.FullName - @leader.TeamName</option>
+                    }
+                </select>
+            </div>
             <div class="form-actions">
                 <button class="button tertiary" type="button" @onclick="CloseModal">Cancelar</button>
                 <button class="button primary" type="submit">Salvar</button>
@@ -114,22 +129,38 @@
 @code {
     private CreateCollaboratorRequest newCollaborator = new();
     private List<Team> teams = new();
+    private List<LeaderCollaboratorResponse> leaders = new();
+    private List<Collaborator> allCollaborators = new();
     private PagedResult<Collaborator>? collaborators;
     private string? search;
     private string? selectedTeamId;
     private string? createTeamId;
+    private string? createLeaderId;
     private bool isModalOpen = false;
 
     protected override async Task OnInitializedAsync()
     {
         await LoadTeams();
+        await LoadLeaders();
         await LoadCollaborators();
+        await LoadAllCollaborators();
     }
 
     private async Task LoadTeams()
     {
         var result = await Api.GetTeamsAsync(null, null, null, 1, 200);
         teams = result?.Items.ToList() ?? new List<Team>();
+    }
+
+    private async Task LoadLeaders()
+    {
+        leaders = await Api.GetLeadersAsync() ?? new List<LeaderCollaboratorResponse>();
+    }
+
+    private async Task LoadAllCollaborators()
+    {
+        var result = await Api.GetCollaboratorsAsync(null, null, 1, 1000);
+        allCollaborators = result?.Items.ToList() ?? new List<Collaborator>();
     }
 
     private async Task LoadCollaborators()
@@ -144,6 +175,7 @@
     {
         newCollaborator = new CreateCollaboratorRequest();
         createTeamId = null;
+        createLeaderId = null;
         isModalOpen = true;
     }
 
@@ -173,14 +205,29 @@
         }
 
         newCollaborator.TeamId = teamId;
-        await Api.CreateCollaboratorAsync(newCollaborator);
-        var createdCollaboratorName = newCollaborator.FullName;
-        newCollaborator = new CreateCollaboratorRequest();
-        createTeamId = null;
-        await LoadCollaborators();
+        newCollaborator.LeaderId = Guid.TryParse(createLeaderId, out var leaderId) ? leaderId : null;
 
-        ToastService.ShowSuccess("Colaborador criado com sucesso!", $"O colaborador '{createdCollaboratorName}' foi criado.");
-        CloseModal();
+        try
+        {
+            await Api.CreateCollaboratorAsync(newCollaborator);
+            var createdCollaboratorName = newCollaborator.FullName;
+            newCollaborator = new CreateCollaboratorRequest();
+            createTeamId = null;
+            createLeaderId = null;
+            await LoadCollaborators();
+            await LoadAllCollaborators();
+
+            ToastService.ShowSuccess("Colaborador criado com sucesso!", $"O colaborador '{createdCollaboratorName}' foi criado.");
+            CloseModal();
+        }
+        catch (HttpRequestException ex)
+        {
+            ToastService.ShowError("Erro ao criar colaborador", ex.Message);
+        }
+        catch (Exception ex)
+        {
+            ToastService.ShowError("Erro inesperado", ex.Message);
+        }
     }
 
     private static string GetRoleLabel(CollaboratorRole role) => role switch
