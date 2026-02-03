@@ -533,3 +533,193 @@ a {
         display: none;
     }
 }
+
+/* ========================================
+   MODAL - Modern Dialog Component
+   ======================================== */
+
+/* Modal Overlay - Full-screen backdrop */
+.modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: var(--z-index-modal);
+    padding: var(--spacing-4);
+    animation: modalFadeIn var(--transition-fast) ease-out;
+}
+
+/* Modal Dialog - Content Container */
+.modal-dialog {
+    background: var(--color-surface);
+    border-radius: var(--radius-xl);
+    box-shadow: var(--shadow-modal);
+    width: 100%;
+    max-height: 90vh;
+    display: flex;
+    flex-direction: column;
+    animation: modalSlideUp var(--transition-base) ease-out;
+}
+
+/* Modal Sizes */
+.modal-dialog.modal-sm {
+    max-width: 400px;
+}
+
+.modal-dialog.modal-md {
+    max-width: 540px;
+}
+
+.modal-dialog.modal-lg {
+    max-width: 720px;
+}
+
+.modal-dialog.modal-xl {
+    max-width: 960px;
+}
+
+/* Modal Header */
+.modal-header {
+    padding: var(--spacing-6) var(--spacing-6) var(--spacing-4);
+    border-bottom: 1px solid var(--color-border-light);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--spacing-4);
+    flex-shrink: 0;
+}
+
+.modal-title {
+    margin: 0;
+    font-size: var(--font-size-lg);
+    font-weight: var(--font-weight-semibold);
+    color: var(--color-text-primary);
+}
+
+/* Modal Close Button */
+.modal-close {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    padding: 0;
+    border: none;
+    border-radius: var(--radius-circle);
+    background: transparent;
+    color: var(--color-text-muted);
+    cursor: pointer;
+    transition: all var(--transition-fast);
+    flex-shrink: 0;
+}
+
+.modal-close:hover {
+    background: var(--color-hover);
+    color: var(--color-text-primary);
+}
+
+.modal-close:active {
+    transform: scale(0.95);
+}
+
+/* Modal Body - Scrollable Content */
+.modal-body {
+    padding: var(--spacing-6);
+    overflow-y: auto;
+    flex: 1;
+    min-height: 0;
+}
+
+/* Modal Footer (Optional) */
+.modal-footer {
+    padding: var(--spacing-4) var(--spacing-6) var(--spacing-6);
+    border-top: 1px solid var(--color-border-light);
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: var(--spacing-3);
+    flex-shrink: 0;
+}
+
+/* Modal Animations */
+@keyframes modalFadeIn {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+}
+
+@keyframes modalSlideUp {
+    from {
+        opacity: 0;
+        transform: translateY(24px) scale(0.98);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+/* Responsive Modal */
+@media (max-width: 640px) {
+    .modal-overlay {
+        padding: 0;
+        align-items: flex-end;
+    }
+
+    .modal-dialog {
+        max-height: 95vh;
+        border-bottom-left-radius: 0;
+        border-bottom-right-radius: 0;
+        animation: modalSlideUpMobile var(--transition-base) ease-out;
+    }
+
+    .modal-dialog.modal-sm,
+    .modal-dialog.modal-md,
+    .modal-dialog.modal-lg,
+    .modal-dialog.modal-xl {
+        max-width: 100%;
+    }
+
+    @keyframes modalSlideUpMobile {
+        from {
+            transform: translateY(100%);
+        }
+        to {
+            transform: translateY(0);
+        }
+    }
+}
+
+/* Card Filters - For better list layouts */
+.card-filters {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--spacing-3);
+    margin-bottom: var(--spacing-4);
+    padding-bottom: var(--spacing-4);
+    border-bottom: 1px solid var(--color-border-light);
+}
+
+.card-filters .form-row {
+    flex: 1;
+    min-width: 200px;
+    margin-bottom: 0;
+}
+
+/* Page Header with Action Button */
+.page-header .button {
+    white-space: nowrap;
+}
+
+.button-icon-text {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--spacing-2);
+    font-size: var(--font-size-lg);
+    font-weight: var(--font-weight-normal);
+}

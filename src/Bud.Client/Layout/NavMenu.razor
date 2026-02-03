@@ -1,5 +1,38 @@
+@implements IDisposable
+@inject NavigationManager Navigation
+
 <nav class="sidebar-nav">
     <NavLink class="nav-item" href="my-things">Minhas Coisas</NavLink>
-    <NavLink class="nav-item" href="organizations">Gestão</NavLink>
-    <NavLink class="nav-item" href="missions">Missões</NavLink>
+    <a class="nav-item @GetGestaoActiveClass()" href="organizations">Gestão</a>
+    <a class="nav-item @GetMissoesActiveClass()" href="missions">Missões</a>
 </nav>
+
+@code {
+    private string GetGestaoActiveClass()
+    {
+        var uri = Navigation.Uri;
+        var gestaoRoutes = new[] { "/organizations", "/workspaces", "/teams", "/collaborators" };
+        return gestaoRoutes.Any(route => uri.Contains(route, StringComparison.OrdinalIgnoreCase))
+            ? "active"
+            : "";
+    }
+
+    private string GetMissoesActiveClass()
+    {
+        var uri = Navigation.Uri;
+        var missoesRoutes = new[] { "/missions", "/mission-metrics" };
+        return missoesRoutes.Any(route => uri.Contains(route, StringComparison.OrdinalIgnoreCase))
+            ? "active"
+            : "";
+    }
+
+    protected override void OnInitialized()
+    {
+        Navigation.LocationChanged += (s, e) => StateHasChanged();
+    }
+
+    public void Dispose()
+    {
+        Navigation.LocationChanged -= (s, e) => StateHasChanged();
+    }
+}

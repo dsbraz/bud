@@ -1,19 +1,79 @@
 @page "/mission-metrics"
 @inject ApiClient Api
 
+<MissionsMenu />
+
 <div class="page-header">
     <div>
         <div class="page-kicker">Gestão</div>
         <h1>Métricas</h1>
         <p class="page-subtitle">Defina métricas para suas missões.</p>
     </div>
+    <button class="button primary" @onclick="OpenCreateModal">
+        <span class="button-icon-text">+</span>
+        Nova métrica
+    </button>
 </div>
 
-<MissionsMenu />
+<div class="card">
+    <div class="card-filters">
+        <div class="form-row">
+            <label>Missão</label>
+            <select class="input" @bind="filterMissionId" @bind:after="LoadMetrics">
+                <option value="">Todas</option>
+                @foreach (var mission in missions)
+                {
+                    <option value="@mission.Id">@mission.Name</option>
+                }
+            </select>
+        </div>
+        <div class="form-row">
+            <label>Busca</label>
+            <InputText class="input" @bind-Value="search" />
+        </div>
+        <div class="form-row" style="align-self: flex-end;">
+            <button class="button" @onclick="LoadMetrics">Atualizar</button>
+        </div>
+    </div>
 
-<div class="grid-2">
-    <div class="card">
-        <h2>Criar métrica</h2>
+    @if (metrics is null)
+    {
+        <p class="muted">Carregando...</p>
+    }
+    else if (metrics.Items.Count == 0)
+    {
+        <p class="muted">Nenhuma métrica encontrada.</p>
+    }
+    else
+    {
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Nome</th>
+                    <th>Tipo</th>
+                    <th>Alvo</th>
+                    <th>Missão</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var metric in metrics.Items)
+                {
+                    <tr>
+                        <td>@metric.Name</td>
+                        <td>@GetMetricTypeLabel(metric.Type)</td>
+                        <td>@GetTargetLabel(metric)</td>
+                        <td>@GetMissionName(metric.MissionId)</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+        <p class="muted" style="margin-top: var(--spacing-4);">Total: @metrics.Total</p>
+    }
+</div>
+
+@if (isModalOpen)
+{
+    <Modal Title="Criar métrica" OnClose="CloseModal">
         <EditForm Model="@newMetric" OnValidSubmit="CreateMetric">
             <DataAnnotationsValidator />
             <div class="form-row">
@@ -64,71 +124,17 @@
                     </select>
                 </div>
             }
+            @if (!string.IsNullOrWhiteSpace(formMessage))
+            {
+                <p class="form-message @(formMessage.Contains("sucesso") ? "" : "error")">@formMessage</p>
+            }
             <div class="form-actions">
+                <button class="button tertiary" type="button" @onclick="CloseModal">Cancelar</button>
                 <button class="button primary" type="submit">Salvar</button>
             </div>
         </EditForm>
-        @if (!string.IsNullOrWhiteSpace(formMessage))
-        {
-            <p class="form-message">@formMessage</p>
-        }
-    </div>
-
-    <div class="card">
-        <h2>Lista</h2>
-        <div class="form-row">
-            <label>Missão</label>
-            <select class="input" @bind="filterMissionId">
-                <option value="">Todas</option>
-                @foreach (var mission in missions)
-                {
-                    <option value="@mission.Id">@mission.Name</option>
-                }
-            </select>
-        </div>
-        <div class="form-row">
-            <label>Busca</label>
-            <InputText class="input" @bind-Value="search" />
-        </div>
-        <div class="form-actions">
-            <button class="button" @onclick="LoadMetrics">Atualizar</button>
-        </div>
-
-        @if (metrics is null)
-        {
-            <p class="muted">Carregando...</p>
-        }
-        else if (metrics.Items.Count == 0)
-        {
-            <p class="muted">Nenhuma métrica encontrada.</p>
-        }
-        else
-        {
-            <table class="table">
-                <thead>
-                    <tr>
-                        <th>Nome</th>
-                        <th>Tipo</th>
-                        <th>Alvo</th>
-                        <th>Missão</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @foreach (var metric in metrics.Items)
-                    {
-                        <tr>
-                            <td>@metric.Name</td>
-                            <td>@GetMetricTypeLabel(metric.Type)</td>
-                            <td>@GetTargetLabel(metric)</td>
-                            <td>@GetMissionName(metric.MissionId)</td>
-                        </tr>
-                    }
-                </tbody>
-            </table>
-            <p class="muted">Total: @metrics.Total</p>
-        }
-    </div>
-</div>
+    </Modal>
+}
 
 @code {
     private CreateMissionMetricRequest newMetric = new();
@@ -140,6 +146,7 @@
     private string? filterMissionId;
     private string? search;
     private string? formMessage;
+    private bool isModalOpen = false;
 
     protected override async Task OnInitializedAsync()
     {
@@ -169,6 +176,22 @@
         newMetric.TargetValue = null;
         createMetricUnitValue = null;
         await InvokeAsync(StateHasChanged);
+    }
+
+    private void OpenCreateModal()
+    {
+        newMetric = new CreateMissionMetricRequest();
+        createMissionId = null;
+        createMetricTypeValue = null;
+        createMetricUnitValue = null;
+        formMessage = null;
+        isModalOpen = true;
+    }
+
+    private void CloseModal()
+    {
+        isModalOpen = false;
+        formMessage = null;
     }
 
     private async Task CreateMetric()
@@ -228,6 +251,10 @@
         createMetricUnitValue = null;
         await LoadMetrics();
         formMessage = "Métrica criada com sucesso.";
+
+        // Auto-close modal after 1.5 seconds on success
+        await Task.Delay(1500);
+        CloseModal();
     }
 
     private string GetMissionName(Guid missionId)

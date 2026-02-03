@@ -1,19 +1,79 @@
 @page "/teams"
 @inject ApiClient Api
 
+<ManagementMenu />
+
 <div class="page-header">
     <div>
         <div class="page-kicker">Gestão</div>
         <h1>Equipes</h1>
         <p class="page-subtitle">Crie equipes e subequipes por workspace.</p>
     </div>
+    <button class="button primary" @onclick="OpenCreateModal">
+        <span class="button-icon-text">+</span>
+        Nova equipe
+    </button>
 </div>
 
-<ManagementMenu />
+<div class="card">
+    <div class="card-filters">
+        <div class="form-row">
+            <label>Workspace</label>
+            <select class="input" @bind="selectedWorkspaceId" @bind:after="LoadTeams">
+                <option value="">Todos</option>
+                @foreach (var workspace in workspaces)
+                {
+                    <option value="@workspace.Id">@workspace.Name</option>
+                }
+            </select>
+        </div>
+        <div class="form-row">
+            <label>Busca</label>
+            <InputText class="input" @bind-Value="search" />
+        </div>
+        <div class="form-row" style="align-self: flex-end;">
+            <button class="button" @onclick="LoadTeams">Atualizar</button>
+        </div>
+    </div>
 
-<div class="grid-2">
-    <div class="card">
-        <h2>Criar equipe</h2>
+    @if (teams is null)
+    {
+        <p class="muted">Carregando...</p>
+    }
+    else if (teams.Items.Count == 0)
+    {
+        <p class="muted">Nenhuma equipe encontrada.</p>
+    }
+    else
+    {
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Nome</th>
+                    <th>Workspace</th>
+                    <th>Equipe pai</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var team in teams.Items)
+                {
+                    var workspace = workspaces.FirstOrDefault(w => w.Id == team.WorkspaceId);
+                    var parent = allTeams.FirstOrDefault(t => t.Id == team.ParentTeamId);
+                    <tr>
+                        <td>@team.Name</td>
+                        <td>@(workspace?.Name ?? "—")</td>
+                        <td>@(parent?.Name ?? "—")</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+        <p class="muted" style="margin-top: var(--spacing-4);">Total: @teams.Total</p>
+    }
+</div>
+
+@if (isModalOpen)
+{
+    <Modal Title="Criar equipe" OnClose="CloseModal">
         <EditForm Model="@newTeam" OnValidSubmit="CreateTeam">
             <DataAnnotationsValidator />
             <div class="form-row">
@@ -40,71 +100,17 @@
                 <label>Nome</label>
                 <InputText class="input" @bind-Value="newTeam.Name" />
             </div>
+            @if (!string.IsNullOrWhiteSpace(formMessage))
+            {
+                <p class="form-message @(formMessage.Contains("sucesso") ? "" : "error")">@formMessage</p>
+            }
             <div class="form-actions">
+                <button class="button tertiary" type="button" @onclick="CloseModal">Cancelar</button>
                 <button class="button primary" type="submit">Salvar</button>
             </div>
         </EditForm>
-        @if (!string.IsNullOrWhiteSpace(formMessage))
-        {
-            <p class="form-message">@formMessage</p>
-        }
-    </div>
-
-    <div class="card">
-        <h2>Lista</h2>
-        <div class="form-row">
-            <label>Workspace</label>
-            <select class="input" @bind="selectedWorkspaceId">
-                <option value="">Todos</option>
-                @foreach (var workspace in workspaces)
-                {
-                    <option value="@workspace.Id">@workspace.Name</option>
-                }
-            </select>
-        </div>
-        <div class="form-row">
-            <label>Busca</label>
-            <InputText class="input" @bind-Value="search" />
-        </div>
-        <div class="form-actions">
-            <button class="button" @onclick="LoadTeams">Atualizar</button>
-        </div>
-
-        @if (teams is null)
-        {
-            <p class="muted">Carregando...</p>
-        }
-        else if (teams.Items.Count == 0)
-        {
-            <p class="muted">Nenhuma equipe encontrada.</p>
-        }
-        else
-        {
-            <table class="table">
-                <thead>
-                    <tr>
-                        <th>Nome</th>
-                        <th>Workspace</th>
-                        <th>Equipe pai</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @foreach (var team in teams.Items)
-                    {
-                        var workspace = workspaces.FirstOrDefault(w => w.Id == team.WorkspaceId);
-                        var parent = allTeams.FirstOrDefault(t => t.Id == team.ParentTeamId);
-                        <tr>
-                            <td>@team.Name</td>
-                            <td>@(workspace?.Name ?? "—")</td>
-                            <td>@(parent?.Name ?? "—")</td>
-                        </tr>
-                    }
-                </tbody>
-            </table>
-            <p class="muted">Total: @teams.Total</p>
-        }
-    </div>
-</div>
+    </Modal>
+}
 
 @code {
     private CreateTeamRequest newTeam = new();
@@ -117,6 +123,7 @@
     private string? createWorkspaceId;
     private string? createParentTeamId;
     private string? formMessage;
+    private bool isModalOpen = false;
 
     protected override async Task OnInitializedAsync()
     {
@@ -154,6 +161,22 @@
         }
     }
 
+    private void OpenCreateModal()
+    {
+        newTeam = new CreateTeamRequest();
+        createWorkspaceId = null;
+        createParentTeamId = null;
+        parentTeams.Clear();
+        formMessage = null;
+        isModalOpen = true;
+    }
+
+    private void CloseModal()
+    {
+        isModalOpen = false;
+        formMessage = null;
+    }
+
     private async Task CreateTeam()
     {
         formMessage = null;
@@ -179,5 +202,9 @@
         parentTeams.Clear();
         await LoadTeams();
         formMessage = "Equipe criada com sucesso.";
+
+        // Auto-close modal after 1.5 seconds on success
+        await Task.Delay(1500);
+        CloseModal();
     }
 }

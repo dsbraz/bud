@@ -1,30 +1,91 @@
 @page "/workspaces"
 @inject ApiClient Api
 
+<ManagementMenu />
+
 <div class="page-header">
     <div>
         <div class="page-kicker">Gestão</div>
         <h1>Workspaces</h1>
         <p class="page-subtitle">Crie workspaces vinculados às organizações.</p>
     </div>
+    <button class="button primary" @onclick="OpenCreateModal">
+        <span class="button-icon-text">+</span>
+        Novo workspace
+    </button>
 </div>
 
-<ManagementMenu />
-
-<div class="grid-2">
-    <div class="card">
-        <h2>Criar workspace</h2>
-        <EditForm Model="@newWorkspace" OnValidSubmit="CreateWorkspace">
-            <DataAnnotationsValidator />
-            <div class="form-row">
-                <label>Organização</label>
-            <select class="input" @bind="createOrganizationId">
-                <option value="">Selecione</option>
+<div class="card">
+    <div class="card-filters">
+        <div class="form-row">
+            <label>Organização</label>
+            <select class="input" @bind="selectedOrganizationId" @bind:after="LoadWorkspaces">
+                <option value="">Todas</option>
                 @foreach (var org in organizations)
                 {
                     <option value="@org.Id">@org.Name</option>
                 }
             </select>
+        </div>
+        <div class="form-row">
+            <label>Busca</label>
+            <InputText class="input" @bind-Value="search" />
+        </div>
+        <div class="form-row" style="align-self: flex-end;">
+            <button class="button" @onclick="LoadWorkspaces">Atualizar</button>
+        </div>
+    </div>
+
+    @if (workspaces is null)
+    {
+        <p class="muted">Carregando...</p>
+    }
+    else if (workspaces.Items.Count == 0)
+    {
+        <p class="muted">Nenhum workspace encontrado.</p>
+    }
+    else
+    {
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Nome</th>
+                    <th>Visibilidade</th>
+                    <th>Organização</th>
+                    <th>ID</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var workspace in workspaces.Items)
+                {
+                    var org = organizations.FirstOrDefault(o => o.Id == workspace.OrganizationId);
+                    <tr>
+                        <td>@workspace.Name</td>
+                        <td>@(workspace.Visibility == Visibility.Public ? "Pública" : "Privada")</td>
+                        <td>@(org?.Name ?? "—")</td>
+                        <td class="mono">@workspace.Id</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+        <p class="muted" style="margin-top: var(--spacing-4);">Total: @workspaces.Total</p>
+    }
+</div>
+
+@if (isModalOpen)
+{
+    <Modal Title="Criar workspace" OnClose="CloseModal">
+        <EditForm Model="@newWorkspace" OnValidSubmit="CreateWorkspace">
+            <DataAnnotationsValidator />
+            <div class="form-row">
+                <label>Organização</label>
+                <select class="input" @bind="createOrganizationId">
+                    <option value="">Selecione</option>
+                    @foreach (var org in organizations)
+                    {
+                        <option value="@org.Id">@org.Name</option>
+                    }
+                </select>
             </div>
             <div class="form-row">
                 <label>Nome</label>
@@ -38,72 +99,17 @@
                     <option value="Private">Privada</option>
                 </select>
             </div>
+            @if (!string.IsNullOrWhiteSpace(formMessage))
+            {
+                <p class="form-message @(formMessage.Contains("sucesso") ? "" : "error")">@formMessage</p>
+            }
             <div class="form-actions">
+                <button class="button tertiary" type="button" @onclick="CloseModal">Cancelar</button>
                 <button class="button primary" type="submit">Salvar</button>
             </div>
         </EditForm>
-        @if (!string.IsNullOrWhiteSpace(formMessage))
-        {
-            <p class="form-message">@formMessage</p>
-        }
-    </div>
-
-    <div class="card">
-        <h2>Lista</h2>
-        <div class="form-row">
-            <label>Organização</label>
-            <select class="input" @bind="selectedOrganizationId">
-                <option value="">Todas</option>
-                @foreach (var org in organizations)
-                {
-                    <option value="@org.Id">@org.Name</option>
-                }
-            </select>
-        </div>
-        <div class="form-row">
-            <label>Busca</label>
-            <InputText class="input" @bind-Value="search" />
-        </div>
-        <div class="form-actions">
-            <button class="button" @onclick="LoadWorkspaces">Atualizar</button>
-        </div>
-
-        @if (workspaces is null)
-        {
-            <p class="muted">Carregando...</p>
-        }
-        else if (workspaces.Items.Count == 0)
-        {
-            <p class="muted">Nenhum workspace encontrado.</p>
-        }
-        else
-        {
-            <table class="table">
-                <thead>
-                    <tr>
-                        <th>Nome</th>
-                        <th>Visibilidade</th>
-                        <th>Organização</th>
-                        <th>ID</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @foreach (var workspace in workspaces.Items)
-                    {
-                        var org = organizations.FirstOrDefault(o => o.Id == workspace.OrganizationId);
-                        <tr>
-                            <td>@workspace.Name</td>
-                            <td>@(workspace.Visibility == Visibility.Public ? "Pública" : "Privada")</td>
-                            <td>@(org?.Name ?? "—")</td>
-                            <td class="mono">@workspace.Id</td>
-                        </tr>
-                    }
-                </tbody>
-            </table>
-            <p class="muted">Total: @workspaces.Total</p>
-        }
-    </div>
-</div>
+    </Modal>
+}
 
 @code {
     private CreateWorkspaceRequest newWorkspace = new();
@@ -114,6 +120,7 @@
     private string? createOrganizationId;
     private string? createVisibility;
     private string? formMessage;
+    private bool isModalOpen = false;
 
     protected override async Task OnInitializedAsync()
     {
@@ -133,6 +140,21 @@
             ? parsedOrgId
             : (Guid?)null;
         workspaces = await Api.GetWorkspacesAsync(filterOrgId, search, 1, 20) ?? new PagedResult<Workspace>();
+    }
+
+    private void OpenCreateModal()
+    {
+        newWorkspace = new CreateWorkspaceRequest();
+        createOrganizationId = null;
+        createVisibility = null;
+        formMessage = null;
+        isModalOpen = true;
+    }
+
+    private void CloseModal()
+    {
+        isModalOpen = false;
+        formMessage = null;
     }
 
     private async Task CreateWorkspace()
@@ -165,5 +187,9 @@
         createVisibility = null;
         await LoadWorkspaces();
         formMessage = "Workspace criado com sucesso.";
+
+        // Auto-close modal after 1.5 seconds on success
+        await Task.Delay(1500);
+        CloseModal();
     }
 }

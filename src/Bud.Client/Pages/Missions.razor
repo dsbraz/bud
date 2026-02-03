@@ -1,19 +1,89 @@
 @page "/missions"
 @inject ApiClient Api
 
+<MissionsMenu />
+
 <div class="page-header">
     <div>
         <div class="page-kicker">Gestão</div>
         <h1>Missões</h1>
         <p class="page-subtitle">Defina missões por escopo e acompanhe status.</p>
     </div>
+    <button class="button primary" @onclick="OpenCreateModal">
+        <span class="button-icon-text">+</span>
+        Nova missão
+    </button>
 </div>
 
-<MissionsMenu />
+<div class="card">
+    <div class="card-filters">
+        <div class="form-row">
+            <label>Escopo</label>
+            <select class="input" value="@filterScopeTypeValue" @onchange="OnFilterScopeTypeChanged">
+                <option value="">Todos</option>
+                @foreach (var scopeType in Enum.GetValues<MissionScopeType>())
+                {
+                    <option value="@scopeType">@GetScopeLabel(scopeType)</option>
+                }
+            </select>
+        </div>
+        <div class="form-row">
+            <label>Referência</label>
+            <select class="input" @bind="filterScopeId" @bind:after="LoadMissions">
+                <option value="">Todas</option>
+                @foreach (var option in GetScopeOptions(filterScopeTypeValue))
+                {
+                    <option value="@option.Id">@option.Name</option>
+                }
+            </select>
+        </div>
+        <div class="form-row">
+            <label>Busca</label>
+            <InputText class="input" @bind-Value="search" />
+        </div>
+        <div class="form-row" style="align-self: flex-end;">
+            <button class="button" @onclick="LoadMissions">Atualizar</button>
+        </div>
+    </div>
 
-<div class="grid-2">
-    <div class="card">
-        <h2>Criar missão</h2>
+    @if (missions is null)
+    {
+        <p class="muted">Carregando...</p>
+    }
+    else if (missions.Items.Count == 0)
+    {
+        <p class="muted">Nenhuma missão encontrada.</p>
+    }
+    else
+    {
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Nome</th>
+                    <th>Escopo</th>
+                    <th>Período</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var mission in missions.Items)
+                {
+                    <tr>
+                        <td>@mission.Name</td>
+                        <td>@GetMissionScopeName(mission)</td>
+                        <td>@mission.StartDate.ToString("yyyy-MM-dd") - @mission.EndDate.ToString("yyyy-MM-dd")</td>
+                        <td>@GetStatusLabel(mission.Status)</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+        <p class="muted" style="margin-top: var(--spacing-4);">Total: @missions.Total</p>
+    }
+</div>
+
+@if (isModalOpen)
+{
+    <Modal Title="Criar missão" Size="lg" OnClose="CloseModal">
         <EditForm Model="@newMission" OnValidSubmit="CreateMission">
             <DataAnnotationsValidator />
             <div class="form-row">
@@ -57,81 +127,17 @@
                     }
                 </InputSelect>
             </div>
+            @if (!string.IsNullOrWhiteSpace(formMessage))
+            {
+                <p class="form-message @(formMessage.Contains("sucesso") ? "" : "error")">@formMessage</p>
+            }
             <div class="form-actions">
+                <button class="button tertiary" type="button" @onclick="CloseModal">Cancelar</button>
                 <button class="button primary" type="submit">Salvar</button>
             </div>
         </EditForm>
-        @if (!string.IsNullOrWhiteSpace(formMessage))
-        {
-            <p class="form-message">@formMessage</p>
-        }
-    </div>
-
-    <div class="card">
-        <h2>Lista</h2>
-        <div class="form-row">
-            <label>Escopo</label>
-            <select class="input" value="@filterScopeTypeValue" @onchange="OnFilterScopeTypeChanged">
-                <option value="">Todos</option>
-                @foreach (var scopeType in Enum.GetValues<MissionScopeType>())
-                {
-                    <option value="@scopeType">@GetScopeLabel(scopeType)</option>
-                }
-            </select>
-        </div>
-        <div class="form-row">
-            <label>Referência</label>
-            <select class="input" @bind="filterScopeId">
-                <option value="">Todas</option>
-                @foreach (var option in GetScopeOptions(filterScopeTypeValue))
-                {
-                    <option value="@option.Id">@option.Name</option>
-                }
-            </select>
-        </div>
-        <div class="form-row">
-            <label>Busca</label>
-            <InputText class="input" @bind-Value="search" />
-        </div>
-        <div class="form-actions">
-            <button class="button" @onclick="LoadMissions">Atualizar</button>
-        </div>
-
-        @if (missions is null)
-        {
-            <p class="muted">Carregando...</p>
-        }
-        else if (missions.Items.Count == 0)
-        {
-            <p class="muted">Nenhuma missão encontrada.</p>
-        }
-        else
-        {
-            <table class="table">
-                <thead>
-                    <tr>
-                        <th>Nome</th>
-                        <th>Escopo</th>
-                        <th>Período</th>
-                        <th>Status</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @foreach (var mission in missions.Items)
-                    {
-                        <tr>
-                            <td>@mission.Name</td>
-                            <td>@GetMissionScopeName(mission)</td>
-                            <td>@mission.StartDate.ToString("yyyy-MM-dd") - @mission.EndDate.ToString("yyyy-MM-dd")</td>
-                            <td>@GetStatusLabel(mission.Status)</td>
-                        </tr>
-                    }
-                </tbody>
-            </table>
-            <p class="muted">Total: @missions.Total</p>
-        }
-    </div>
-</div>
+    </Modal>
+}
 
 @code {
     private sealed record ScopeOption(string Id, string Name);
@@ -148,6 +154,7 @@
     private string? filterScopeId;
     private string? search;
     private string? formMessage;
+    private bool isModalOpen = false;
 
     protected override async Task OnInitializedAsync()
     {
@@ -201,6 +208,26 @@
         await InvokeAsync(StateHasChanged);
     }
 
+    private void OpenCreateModal()
+    {
+        newMission = new CreateMissionRequest
+        {
+            StartDate = DateTime.Today,
+            EndDate = DateTime.Today.AddDays(7),
+            Status = MissionStatus.Planned
+        };
+        createScopeTypeValue = null;
+        createScopeId = null;
+        formMessage = null;
+        isModalOpen = true;
+    }
+
+    private void CloseModal()
+    {
+        isModalOpen = false;
+        formMessage = null;
+    }
+
     private async Task CreateMission()
     {
         formMessage = null;
@@ -243,6 +270,10 @@
         createScopeId = null;
         await LoadMissions();
         formMessage = "Missão criada com sucesso.";
+
+        // Auto-close modal after 1.5 seconds on success
+        await Task.Delay(1500);
+        CloseModal();
     }
 
     private IEnumerable<ScopeOption> GetScopeOptions(string? scopeTypeValue)

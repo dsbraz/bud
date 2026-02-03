@@ -1,19 +1,80 @@
 @page "/collaborators"
 @inject ApiClient Api
 
+<ManagementMenu />
+
 <div class="page-header">
     <div>
         <div class="page-kicker">Gestão</div>
         <h1>Colaboradores</h1>
         <p class="page-subtitle">Cadastre colaboradores vinculados às equipes.</p>
     </div>
+    <button class="button primary" @onclick="OpenCreateModal">
+        <span class="button-icon-text">+</span>
+        Novo colaborador
+    </button>
 </div>
 
-<ManagementMenu />
+<div class="card">
+    <div class="card-filters">
+        <div class="form-row">
+            <label>Equipe</label>
+            <select class="input" @bind="selectedTeamId" @bind:after="LoadCollaborators">
+                <option value="">Todas</option>
+                @foreach (var team in teams)
+                {
+                    <option value="@team.Id">@team.Name</option>
+                }
+            </select>
+        </div>
+        <div class="form-row">
+            <label>Busca</label>
+            <InputText class="input" @bind-Value="search" />
+        </div>
+        <div class="form-row" style="align-self: flex-end;">
+            <button class="button" @onclick="LoadCollaborators">Atualizar</button>
+        </div>
+    </div>
 
-<div class="grid-2">
-    <div class="card">
-        <h2>Criar colaborador</h2>
+    @if (collaborators is null)
+    {
+        <p class="muted">Carregando...</p>
+    }
+    else if (collaborators.Items.Count == 0)
+    {
+        <p class="muted">Nenhum colaborador encontrado.</p>
+    }
+    else
+    {
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Nome</th>
+                    <th>E-mail</th>
+                    <th>Perfil</th>
+                    <th>Equipe</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var collaborator in collaborators.Items)
+                {
+                    var team = teams.FirstOrDefault(t => t.Id == collaborator.TeamId);
+                    <tr>
+                        <td>@collaborator.FullName</td>
+                        <td>@collaborator.Email</td>
+                        <td>@GetRoleLabel(collaborator.Role)</td>
+                        <td>@(team?.Name ?? "—")</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+        <p class="muted" style="margin-top: var(--spacing-4);">Total: @collaborators.Total</p>
+    }
+</div>
+
+@if (isModalOpen)
+{
+    <Modal Title="Criar colaborador" OnClose="CloseModal">
         <EditForm Model="@newCollaborator" OnValidSubmit="CreateCollaborator">
             <DataAnnotationsValidator />
             <div class="form-row">
@@ -41,72 +102,17 @@
                     <option value="@CollaboratorRole.Leader">Lider</option>
                 </InputSelect>
             </div>
+            @if (!string.IsNullOrWhiteSpace(formMessage))
+            {
+                <p class="form-message @(formMessage.Contains("sucesso") ? "" : "error")">@formMessage</p>
+            }
             <div class="form-actions">
+                <button class="button tertiary" type="button" @onclick="CloseModal">Cancelar</button>
                 <button class="button primary" type="submit">Salvar</button>
             </div>
         </EditForm>
-        @if (!string.IsNullOrWhiteSpace(formMessage))
-        {
-            <p class="form-message">@formMessage</p>
-        }
-    </div>
-
-    <div class="card">
-        <h2>Lista</h2>
-        <div class="form-row">
-            <label>Equipe</label>
-            <select class="input" @bind="selectedTeamId">
-                <option value="">Todas</option>
-                @foreach (var team in teams)
-                {
-                    <option value="@team.Id">@team.Name</option>
-                }
-            </select>
-        </div>
-        <div class="form-row">
-            <label>Busca</label>
-            <InputText class="input" @bind-Value="search" />
-        </div>
-        <div class="form-actions">
-            <button class="button" @onclick="LoadCollaborators">Atualizar</button>
-        </div>
-
-        @if (collaborators is null)
-        {
-            <p class="muted">Carregando...</p>
-        }
-        else if (collaborators.Items.Count == 0)
-        {
-            <p class="muted">Nenhum colaborador encontrado.</p>
-        }
-        else
-        {
-            <table class="table">
-                <thead>
-                    <tr>
-                        <th>Nome</th>
-                        <th>E-mail</th>
-                        <th>Perfil</th>
-                        <th>Equipe</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @foreach (var collaborator in collaborators.Items)
-                    {
-                        var team = teams.FirstOrDefault(t => t.Id == collaborator.TeamId);
-                        <tr>
-                            <td>@collaborator.FullName</td>
-                            <td>@collaborator.Email</td>
-                            <td>@GetRoleLabel(collaborator.Role)</td>
-                            <td>@(team?.Name ?? "—")</td>
-                        </tr>
-                    }
-                </tbody>
-            </table>
-            <p class="muted">Total: @collaborators.Total</p>
-        }
-    </div>
-</div>
+    </Modal>
+}
 
 @code {
     private CreateCollaboratorRequest newCollaborator = new();
@@ -116,6 +122,7 @@
     private string? selectedTeamId;
     private string? createTeamId;
     private string? formMessage;
+    private bool isModalOpen = false;
 
     protected override async Task OnInitializedAsync()
     {
@@ -135,6 +142,20 @@
             ? parsedTeamId
             : (Guid?)null;
         collaborators = await Api.GetCollaboratorsAsync(filterTeamId, search, 1, 20) ?? new PagedResult<Collaborator>();
+    }
+
+    private void OpenCreateModal()
+    {
+        newCollaborator = new CreateCollaboratorRequest();
+        createTeamId = null;
+        formMessage = null;
+        isModalOpen = true;
+    }
+
+    private void CloseModal()
+    {
+        isModalOpen = false;
+        formMessage = null;
     }
 
     private async Task CreateCollaborator()
@@ -164,6 +185,10 @@
         createTeamId = null;
         await LoadCollaborators();
         formMessage = "Colaborador criado com sucesso.";
+
+        // Auto-close modal after 1.5 seconds on success
+        await Task.Delay(1500);
+        CloseModal();
     }
 
     private static string GetRoleLabel(CollaboratorRole role) => role switch

@@ -2,21 +2,70 @@
 @inject ApiClient Api
 @inject AuthState AuthState
 
+<ManagementMenu />
+
 <div class="page-header">
     <div>
         <div class="page-kicker">Gestão</div>
         <h1>Organizações</h1>
         <p class="page-subtitle">Crie e liste organizações cadastradas.</p>
     </div>
-</div>
-
-<ManagementMenu />
-
-<div class="grid-2">
     @if (AuthState.Session?.IsAdmin == true)
     {
-        <div class="card">
-            <h2>Criar organização</h2>
+        <button class="button primary" @onclick="OpenCreateModal">
+            <span class="button-icon-text">+</span>
+            Nova organização
+        </button>
+    }
+</div>
+
+<div class="card">
+    <div class="card-filters">
+        <div class="form-row">
+            <label>Busca</label>
+            <InputText class="input" @bind-Value="search" />
+        </div>
+        <div class="form-row" style="align-self: flex-end;">
+            <button class="button" @onclick="LoadOrganizations">Atualizar</button>
+        </div>
+    </div>
+
+    @if (organizations is null)
+    {
+        <p class="muted">Carregando...</p>
+    }
+    else if (organizations.Items.Count == 0)
+    {
+        <p class="muted">Nenhuma organização encontrada.</p>
+    }
+    else
+    {
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Domínio</th>
+                    <th>ID</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var org in organizations.Items)
+                {
+                    <tr>
+                        <td>@org.Name</td>
+                        <td class="mono">@org.Id</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+        <p class="muted" style="margin-top: var(--spacing-4);">Total: @organizations.Total</p>
+    }
+</div>
+
+@if (isModalOpen)
+{
+    <Modal Title="Criar organização" OnClose="CloseModal">
+        @if (AuthState.Session?.IsAdmin == true)
+        {
             <EditForm Model="@newOrganization" OnValidSubmit="CreateOrganization">
                 <DataAnnotationsValidator />
                 <div class="form-row">
@@ -36,7 +85,12 @@
                     </InputSelect>
                     <small class="form-hint">Apenas colaboradores com função de Líder podem ser proprietários.</small>
                 </div>
+                @if (!string.IsNullOrWhiteSpace(formMessage))
+                {
+                    <p class="form-message @(formMessage.Contains("sucesso") ? "" : "error")">@formMessage</p>
+                }
                 <div class="form-actions">
+                    <button class="button tertiary" type="button" @onclick="CloseModal">Cancelar</button>
                     <button class="button primary" type="submit" disabled="@isSubmitting">
                         @if (isSubmitting)
                         {
@@ -49,61 +103,13 @@
                     </button>
                 </div>
             </EditForm>
-            @if (!string.IsNullOrWhiteSpace(formMessage))
-            {
-                <p class="form-message">@formMessage</p>
-            }
-        </div>
-    }
-    else
-    {
-        <div class="card">
-            <h2>Criar organização</h2>
-            <p class="muted">Apenas administradores podem criar organizações.</p>
-        </div>
-    }
-
-    <div class="card">
-        <h2>Lista</h2>
-        <div class="form-row">
-            <label>Busca</label>
-            <InputText class="input" @bind-Value="search" />
-        </div>
-        <div class="form-actions">
-            <button class="button" @onclick="LoadOrganizations">Atualizar</button>
-        </div>
-
-        @if (organizations is null)
-        {
-            <p class="muted">Carregando...</p>
-        }
-        else if (organizations.Items.Count == 0)
-        {
-            <p class="muted">Nenhuma organização encontrada.</p>
         }
         else
         {
-            <table class="table">
-                <thead>
-                    <tr>
-                        <th>Domínio</th>
-                        <th>ID</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @foreach (var org in organizations.Items)
-                    {
-                        <tr>
-                            <td>@org.Name</td>
-                            <td class="mono">@org.Id</td>
-                        </tr>
-                    }
-                </tbody>
-            </table>
-            <p class="muted">Total: @organizations.Total</p>
+            <p class="muted">Apenas administradores podem criar organizações.</p>
         }
-    </div>
-</div>
+    </Modal>
+}
 
 @code {
     private CreateOrganizationRequest newOrganization = new();
@@ -112,6 +118,7 @@
     private string? search;
     private string? formMessage;
     private bool isSubmitting = false;
+    private bool isModalOpen = false;
 
     protected override async Task OnInitializedAsync()
     {
@@ -136,6 +143,22 @@
     private async Task LoadOrganizations()
     {
         organizations = await Api.GetOrganizationsAsync(search, 1, 20) ?? new PagedResult<Organization>();
+    }
+
+    private void OpenCreateModal()
+    {
+        newOrganization = new CreateOrganizationRequest
+        {
+            UserEmail = AuthState.Session?.Email ?? string.Empty
+        };
+        formMessage = null;
+        isModalOpen = true;
+    }
+
+    private void CloseModal()
+    {
+        isModalOpen = false;
+        formMessage = null;
     }
 
     private async Task CreateOrganization()
@@ -169,6 +192,10 @@
             };
             await LoadOrganizations();
             formMessage = "Organização criada com sucesso.";
+
+            // Auto-close modal after 1.5 seconds on success
+            await Task.Delay(1500);
+            CloseModal();
         }
         catch (HttpRequestException ex)
         {
