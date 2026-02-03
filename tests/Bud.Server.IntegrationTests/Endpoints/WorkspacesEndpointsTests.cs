@@ -17,7 +17,7 @@ public class WorkspacesEndpointsTests : IClassFixture<CustomWebApplicationFactor
     public WorkspacesEndpointsTests(CustomWebApplicationFactory factory)
     {
         _factory = factory;
-        _adminClient = factory.CreateAdminClient();
+        _adminClient = factory.CreateGlobalAdminClient();
     }
 
     private async Task<Guid> GetOrCreateAdminLeader()

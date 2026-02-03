@@ -55,9 +55,9 @@ public class CustomWebApplicationFactory : WebApplicationFactory<Program>, IAsyn
     }
 
     /// <summary>
-    /// Creates an HttpClient with admin headers (bypasses TenantRequiredMiddleware).
+    /// Creates an HttpClient with global admin headers (bypasses TenantRequiredMiddleware).
     /// </summary>
-    public HttpClient CreateAdminClient()
+    public HttpClient CreateGlobalAdminClient()
     {
         var client = CreateClient();
         client.DefaultRequestHeaders.Add("X-User-Email", "admin@getbud.co");
@@ -65,7 +65,7 @@ public class CustomWebApplicationFactory : WebApplicationFactory<Program>, IAsyn
     }
 
     /// <summary>
-    /// Creates an HttpClient with tenant and collaborator headers for non-admin access.
+    /// Creates an HttpClient with tenant and collaborator headers for non-global admin access.
     /// </summary>
     public HttpClient CreateTenantClient(Guid tenantId, string email, Guid collaboratorId)
     {

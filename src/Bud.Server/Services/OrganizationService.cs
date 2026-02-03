@@ -10,21 +10,21 @@ namespace Bud.Server.Services;
 
 public sealed class OrganizationService(
     ApplicationDbContext dbContext,
-    IOptions<AdminSettings> adminSettings,
+    IOptions<GlobalAdminSettings> globalAdminSettings,
     ITenantProvider tenantProvider) : IOrganizationService
 {
-    private readonly string _adminEmail = adminSettings.Value.Email;
+    private readonly string _globalAdminEmail = globalAdminSettings.Value.Email;
 
     public async Task<ServiceResult<Organization>> CreateAsync(CreateOrganizationRequest request, CancellationToken cancellationToken = default)
     {
-        // 1. Admin Authorization Check
+        // 1. Global Admin Authorization Check
         var normalizedEmail = request.UserEmail.Trim().ToLowerInvariant();
-        var isAdmin = normalizedEmail.Equals(_adminEmail, StringComparison.OrdinalIgnoreCase);
+        var isGlobalAdmin = normalizedEmail.Equals(_globalAdminEmail, StringComparison.OrdinalIgnoreCase);
 
-        if (!isAdmin)
+        if (!isGlobalAdmin)
         {
             return ServiceResult<Organization>.Failure(
-                "Apenas administradores podem criar organizações.",
+                "Apenas administradores globais podem criar organizações.",
                 ServiceErrorType.Validation);
         }
 
@@ -153,7 +153,7 @@ public sealed class OrganizationService(
             .Where(w => w.OrganizationId == id);
 
         // Visibility filtering
-        if (!tenantProvider.IsAdmin && tenantProvider.CollaboratorId.HasValue)
+        if (!tenantProvider.IsGlobalAdmin && tenantProvider.CollaboratorId.HasValue)
         {
             var collaboratorId = tenantProvider.CollaboratorId.Value;
             var isOrgOwner = await dbContext.Organizations

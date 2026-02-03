@@ -44,7 +44,7 @@ public sealed class AuthState(IJSRuntime jsRuntime)
         {
             Email = response.Email,
             DisplayName = response.DisplayName,
-            IsAdmin = response.IsAdmin,
+            IsGlobalAdmin = response.IsGlobalAdmin,
             CollaboratorId = response.CollaboratorId,
             Role = response.Role,
             OrganizationId = response.OrganizationId
@@ -65,7 +65,7 @@ public sealed class AuthSession
 {
     public string Email { get; set; } = string.Empty;
     public string DisplayName { get; set; } = string.Empty;
-    public bool IsAdmin { get; set; }
+    public bool IsGlobalAdmin { get; set; }
     public Guid? CollaboratorId { get; set; }
     public Bud.Shared.Models.CollaboratorRole? Role { get; set; }
     public Guid? OrganizationId { get; set; }

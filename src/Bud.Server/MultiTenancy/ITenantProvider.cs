@@ -4,6 +4,6 @@ public interface ITenantProvider
 {
     Guid? TenantId { get; }
     Guid? CollaboratorId { get; }
-    bool IsAdmin { get; }
+    bool IsGlobalAdmin { get; }
     string? UserEmail { get; }
 }

@@ -4,7 +4,7 @@
 @inject ToastService ToastService
 @inject NavigationManager Navigation
 
-@if (AuthState.Session?.IsAdmin != true)
+@if (AuthState.Session?.IsGlobalAdmin != true)
 {
     <div class="card">
         <p class="muted">Você não tem permissão para acessar esta página. Apenas administradores podem gerenciar organizações.</p>
@@ -20,7 +20,7 @@ else
         <h1>Organizações</h1>
         <p class="page-subtitle">Crie e liste organizações cadastradas.</p>
     </div>
-    @if (AuthState.Session?.IsAdmin == true)
+    @if (AuthState.Session?.IsGlobalAdmin == true)
     {
         <button class="button primary" @onclick="OpenCreateModal">
             <span class="button-icon-text">+</span>
@@ -74,7 +74,7 @@ else
 @if (isModalOpen)
 {
     <Modal Title="Criar organização" OnClose="CloseModal">
-        @if (AuthState.Session?.IsAdmin == true)
+        @if (AuthState.Session?.IsGlobalAdmin == true)
         {
             <EditForm Model="@newOrganization" OnValidSubmit="CreateOrganization">
                 <DataAnnotationsValidator />

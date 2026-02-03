@@ -13,7 +13,7 @@ namespace Bud.Server.Tests.Services;
 
 public class AuthServiceTests
 {
-    private readonly TestTenantProvider _tenantProvider = new() { IsAdmin = true };
+    private readonly TestTenantProvider _tenantProvider = new() { IsGlobalAdmin = true };
 
     private ApplicationDbContext CreateInMemoryContext()
     {
@@ -24,17 +24,17 @@ public class AuthServiceTests
         return new ApplicationDbContext(options, _tenantProvider);
     }
 
-    #region Admin Login Detection Tests
+    #region Global Admin Login Detection Tests
 
     [Theory]
     [InlineData("admin@getbud.co")]
     [InlineData("ADMIN@GETBUD.CO")]
     [InlineData("Admin@GetBud.Co")]
-    public async Task Login_WithAdminEmail_ReturnsAdminUser(string email)
+    public async Task Login_WithGlobalAdminEmail_ReturnsGlobalAdminUser(string email)
     {
         // Arrange
         using var context = CreateInMemoryContext();
-        var service = new AuthService(context, Options.Create(new AdminSettings { Email = "admin@getbud.co" }));
+        var service = new AuthService(context, Options.Create(new GlobalAdminSettings { Email = "admin@getbud.co" }));
 
         var request = new AuthLoginRequest { Email = email };
 
@@ -44,8 +44,8 @@ public class AuthServiceTests
         // Assert
         result.IsSuccess.Should().BeTrue();
         result.Value.Should().NotBeNull();
-        result.Value!.IsAdmin.Should().BeTrue();
-        result.Value!.DisplayName.Should().Be("Administrador");
+        result.Value!.IsGlobalAdmin.Should().BeTrue();
+        result.Value!.DisplayName.Should().Be("Administrador Global");
         result.Value!.Email.Should().Be(email.ToLowerInvariant());
     }
 
@@ -53,11 +53,11 @@ public class AuthServiceTests
     [InlineData("admin")]
     [InlineData("admin@company.com")]
     [InlineData("admin@test")]
-    public async Task Login_WithNonGetbudAdminEmail_ReturnsNotFound(string email)
+    public async Task Login_WithNonGetbudGlobalAdminEmail_ReturnsNotFound(string email)
     {
         // Arrange
         using var context = CreateInMemoryContext();
-        var service = new AuthService(context, Options.Create(new AdminSettings { Email = "admin@getbud.co" }));
+        var service = new AuthService(context, Options.Create(new GlobalAdminSettings { Email = "admin@getbud.co" }));
 
         var request = new AuthLoginRequest { Email = email };
 
@@ -78,7 +78,7 @@ public class AuthServiceTests
     {
         // Arrange
         using var context = CreateInMemoryContext();
-        var service = new AuthService(context, Options.Create(new AdminSettings { Email = "admin@getbud.co" }));
+        var service = new AuthService(context, Options.Create(new GlobalAdminSettings { Email = "admin@getbud.co" }));
 
         // Create test hierarchy
         var org = new Organization { Id = Guid.NewGuid(), Name = "Test Org" };
@@ -119,7 +119,7 @@ public class AuthServiceTests
         // Assert
         result.IsSuccess.Should().BeTrue();
         result.Value.Should().NotBeNull();
-        result.Value!.IsAdmin.Should().BeFalse();
+        result.Value!.IsGlobalAdmin.Should().BeFalse();
         result.Value!.Email.Should().Be("john.doe@example.com");
         result.Value!.DisplayName.Should().Be("John Doe");
         result.Value!.CollaboratorId.Should().Be(collaborator.Id);
@@ -132,7 +132,7 @@ public class AuthServiceTests
     {
         // Arrange
         using var context = CreateInMemoryContext();
-        var service = new AuthService(context, Options.Create(new AdminSettings { Email = "admin@getbud.co" }));
+        var service = new AuthService(context, Options.Create(new GlobalAdminSettings { Email = "admin@getbud.co" }));
 
         var request = new AuthLoginRequest { Email = "nonexistent@example.com" };
 
@@ -150,7 +150,7 @@ public class AuthServiceTests
     {
         // Arrange
         using var context = CreateInMemoryContext();
-        var service = new AuthService(context, Options.Create(new AdminSettings { Email = "admin@getbud.co" }));
+        var service = new AuthService(context, Options.Create(new GlobalAdminSettings { Email = "admin@getbud.co" }));
 
         var request = new AuthLoginRequest { Email = "" };
 
@@ -168,7 +168,7 @@ public class AuthServiceTests
     {
         // Arrange
         using var context = CreateInMemoryContext();
-        var service = new AuthService(context, Options.Create(new AdminSettings { Email = "admin@getbud.co" }));
+        var service = new AuthService(context, Options.Create(new GlobalAdminSettings { Email = "admin@getbud.co" }));
 
         var request = new AuthLoginRequest { Email = "   " };
 
@@ -193,7 +193,7 @@ public class AuthServiceTests
     {
         // Arrange
         using var context = CreateInMemoryContext();
-        var service = new AuthService(context, Options.Create(new AdminSettings { Email = "admin@getbud.co" }));
+        var service = new AuthService(context, Options.Create(new GlobalAdminSettings { Email = "admin@getbud.co" }));
 
         // Create test hierarchy
         var org = new Organization { Id = Guid.NewGuid(), Name = "Test Org" };

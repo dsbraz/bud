@@ -11,7 +11,7 @@ namespace Bud.Server.Tests.Services;
 
 public class WorkspaceServiceTests
 {
-    private readonly TestTenantProvider _tenantProvider = new() { IsAdmin = true };
+    private readonly TestTenantProvider _tenantProvider = new() { IsGlobalAdmin = true };
 
     private ApplicationDbContext CreateInMemoryContext()
     {
@@ -154,7 +154,7 @@ public class WorkspaceServiceTests
             OrganizationId = org.Id
         };
 
-        _tenantProvider.IsAdmin = false;
+        _tenantProvider.IsGlobalAdmin = false;
         _tenantProvider.TenantId = org.Id;
         _tenantProvider.CollaboratorId = regularCollaborator.Id;
 
@@ -195,7 +195,7 @@ public class WorkspaceServiceTests
         };
         org.OwnerId = owner.Id;
 
-        _tenantProvider.IsAdmin = false;
+        _tenantProvider.IsGlobalAdmin = false;
         _tenantProvider.TenantId = org.Id;
         _tenantProvider.CollaboratorId = owner.Id;
 
@@ -230,7 +230,7 @@ public class WorkspaceServiceTests
     public async Task GetAllAsync_AsAdmin_ReturnsAllWorkspaces()
     {
         // Arrange
-        _tenantProvider.IsAdmin = true;
+        _tenantProvider.IsGlobalAdmin = true;
         using var context = CreateInMemoryContext();
         var (org, _, _, _, _) = await CreateVisibilityTestHierarchy(context);
         var service = new WorkspaceService(context, _tenantProvider);
@@ -247,7 +247,7 @@ public class WorkspaceServiceTests
     public async Task GetAllAsync_AsOrgOwner_ReturnsAllWorkspaces()
     {
         // Arrange
-        _tenantProvider.IsAdmin = false;
+        _tenantProvider.IsGlobalAdmin = false;
         _tenantProvider.UserEmail = "user@test.com";
         using var context = CreateInMemoryContext();
         var (org, _, _, _, collaborator) = await CreateVisibilityTestHierarchy(context);
@@ -273,7 +273,7 @@ public class WorkspaceServiceTests
     public async Task GetAllAsync_AsRegularCollaborator_ReturnsPublicAndMemberPrivateWorkspaces()
     {
         // Arrange
-        _tenantProvider.IsAdmin = false;
+        _tenantProvider.IsGlobalAdmin = false;
         _tenantProvider.UserEmail = "user@test.com";
         using var context = CreateInMemoryContext();
         var (org, publicWs, privateWsMember, privateWsNonMember, collaborator) =
@@ -303,7 +303,7 @@ public class WorkspaceServiceTests
     public async Task GetByIdAsync_PublicWorkspace_ReturnsSuccess()
     {
         // Arrange
-        _tenantProvider.IsAdmin = false;
+        _tenantProvider.IsGlobalAdmin = false;
         _tenantProvider.UserEmail = "user@test.com";
         using var context = CreateInMemoryContext();
         var (org, publicWs, _, _, collaborator) = await CreateVisibilityTestHierarchy(context);
@@ -325,7 +325,7 @@ public class WorkspaceServiceTests
     public async Task GetByIdAsync_PrivateWorkspace_AsMember_ReturnsSuccess()
     {
         // Arrange
-        _tenantProvider.IsAdmin = false;
+        _tenantProvider.IsGlobalAdmin = false;
         _tenantProvider.UserEmail = "user@test.com";
         using var context = CreateInMemoryContext();
         var (org, _, privateWsMember, _, collaborator) = await CreateVisibilityTestHierarchy(context);
@@ -347,7 +347,7 @@ public class WorkspaceServiceTests
     public async Task GetByIdAsync_PrivateWorkspace_AsNonMember_ReturnsNotFound()
     {
         // Arrange
-        _tenantProvider.IsAdmin = false;
+        _tenantProvider.IsGlobalAdmin = false;
         using var context = CreateInMemoryContext();
         var (org, _, _, privateWsNonMember, collaborator) = await CreateVisibilityTestHierarchy(context);
 
@@ -368,7 +368,7 @@ public class WorkspaceServiceTests
     public async Task GetByIdAsync_PrivateWorkspace_AsOrgOwner_ReturnsSuccess()
     {
         // Arrange
-        _tenantProvider.IsAdmin = false;
+        _tenantProvider.IsGlobalAdmin = false;
         _tenantProvider.UserEmail = "user@test.com";
         using var context = CreateInMemoryContext();
         var (org, _, _, privateWsNonMember, collaborator) = await CreateVisibilityTestHierarchy(context);
@@ -398,7 +398,7 @@ public class WorkspaceServiceTests
     public async Task UpdateAsync_AsNonMember_ReturnsForbidden()
     {
         // Arrange
-        _tenantProvider.IsAdmin = false;
+        _tenantProvider.IsGlobalAdmin = false;
         using var context = CreateInMemoryContext();
         var (org, _, _, privateWsNonMember, collaborator) = await CreateVisibilityTestHierarchy(context);
 
@@ -425,7 +425,7 @@ public class WorkspaceServiceTests
     public async Task UpdateAsync_AsMember_ReturnsSuccess()
     {
         // Arrange
-        _tenantProvider.IsAdmin = false;
+        _tenantProvider.IsGlobalAdmin = false;
         _tenantProvider.UserEmail = "user@test.com";
         using var context = CreateInMemoryContext();
         var (org, _, privateWsMember, _, collaborator) = await CreateVisibilityTestHierarchy(context);
@@ -453,7 +453,7 @@ public class WorkspaceServiceTests
     public async Task UpdateAsync_AsOrgOwner_ReturnsSuccess()
     {
         // Arrange
-        _tenantProvider.IsAdmin = false;
+        _tenantProvider.IsGlobalAdmin = false;
         _tenantProvider.UserEmail = "user@test.com";
         using var context = CreateInMemoryContext();
         var (org, _, _, privateWsNonMember, collaborator) = await CreateVisibilityTestHierarchy(context);
@@ -490,7 +490,7 @@ public class WorkspaceServiceTests
     public async Task DeleteAsync_AsNonMember_ReturnsForbidden()
     {
         // Arrange
-        _tenantProvider.IsAdmin = false;
+        _tenantProvider.IsGlobalAdmin = false;
         using var context = CreateInMemoryContext();
         var (org, publicWs, _, _, collaborator) = await CreateVisibilityTestHierarchy(context);
 
@@ -511,7 +511,7 @@ public class WorkspaceServiceTests
     public async Task DeleteAsync_AsMember_ReturnsSuccess()
     {
         // Arrange
-        _tenantProvider.IsAdmin = false;
+        _tenantProvider.IsGlobalAdmin = false;
         _tenantProvider.UserEmail = "user@test.com";
         using var context = CreateInMemoryContext();
         var (org, _, privateWsMember, _, collaborator) = await CreateVisibilityTestHierarchy(context);
@@ -532,7 +532,7 @@ public class WorkspaceServiceTests
     public async Task DeleteAsync_AsOrgOwner_ReturnsSuccess()
     {
         // Arrange
-        _tenantProvider.IsAdmin = false;
+        _tenantProvider.IsGlobalAdmin = false;
         _tenantProvider.UserEmail = "user@test.com";
         using var context = CreateInMemoryContext();
         var (org, publicWs, _, _, collaborator) = await CreateVisibilityTestHierarchy(context);
@@ -561,7 +561,7 @@ public class WorkspaceServiceTests
     public async Task GetTeamsAsync_PrivateWorkspace_AsNonMember_ReturnsNotFound()
     {
         // Arrange
-        _tenantProvider.IsAdmin = false;
+        _tenantProvider.IsGlobalAdmin = false;
         using var context = CreateInMemoryContext();
         var (org, _, _, privateWsNonMember, collaborator) = await CreateVisibilityTestHierarchy(context);
 

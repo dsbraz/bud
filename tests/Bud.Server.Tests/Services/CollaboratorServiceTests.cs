@@ -11,7 +11,7 @@ namespace Bud.Server.Tests.Services;
 
 public class CollaboratorServiceTests
 {
-    private readonly TestTenantProvider _tenantProvider = new() { IsAdmin = true };
+    private readonly TestTenantProvider _tenantProvider = new() { IsGlobalAdmin = true };
 
     private ApplicationDbContext CreateInMemoryContext()
     {
@@ -87,7 +87,7 @@ public class CollaboratorServiceTests
             TeamId = team.Id
         };
 
-        _tenantProvider.IsAdmin = false;
+        _tenantProvider.IsGlobalAdmin = false;
         _tenantProvider.TenantId = org.Id;
         _tenantProvider.CollaboratorId = regularCollaborator.Id;
 
@@ -146,7 +146,7 @@ public class CollaboratorServiceTests
         };
         org.OwnerId = owner.Id;
 
-        _tenantProvider.IsAdmin = false;
+        _tenantProvider.IsGlobalAdmin = false;
         _tenantProvider.TenantId = org.Id;
         _tenantProvider.CollaboratorId = owner.Id;
 
@@ -181,7 +181,7 @@ public class CollaboratorServiceTests
     public async Task CreateCollaborator_AsAdmin_CreatesSuccessfully()
     {
         // Arrange
-        _tenantProvider.IsAdmin = true;
+        _tenantProvider.IsGlobalAdmin = true;
         using var context = CreateInMemoryContext();
         var (org, _, team) = await CreateTestHierarchy(context);
 

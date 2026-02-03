@@ -6,9 +6,9 @@ using Microsoft.Extensions.Options;
 
 namespace Bud.Server.Services;
 
-public sealed class AuthService(ApplicationDbContext dbContext, IOptions<AdminSettings> adminSettings) : IAuthService
+public sealed class AuthService(ApplicationDbContext dbContext, IOptions<GlobalAdminSettings> globalAdminSettings) : IAuthService
 {
-    private readonly string _adminEmail = adminSettings.Value.Email;
+    private readonly string _globalAdminEmail = globalAdminSettings.Value.Email;
 
     public async Task<ServiceResult<AuthLoginResponse>> LoginAsync(AuthLoginRequest request, CancellationToken cancellationToken = default)
     {
@@ -20,13 +20,13 @@ public sealed class AuthService(ApplicationDbContext dbContext, IOptions<AdminSe
 
         var normalizedEmail = email.ToLowerInvariant();
 
-        if (IsAdminLogin(normalizedEmail))
+        if (IsGlobalAdminLogin(normalizedEmail))
         {
             return ServiceResult<AuthLoginResponse>.Success(new AuthLoginResponse
             {
                 Email = normalizedEmail,
-                DisplayName = "Administrador",
-                IsAdmin = true
+                DisplayName = "Administrador Global",
+                IsGlobalAdmin = true
             });
         }
 
@@ -46,7 +46,7 @@ public sealed class AuthService(ApplicationDbContext dbContext, IOptions<AdminSe
         {
             Email = collaborator.Email,
             DisplayName = collaborator.FullName,
-            IsAdmin = false,
+            IsGlobalAdmin = false,
             CollaboratorId = collaborator.Id,
             Role = collaborator.Role,
             OrganizationId = collaborator.Team.Workspace.OrganizationId
@@ -61,12 +61,12 @@ public sealed class AuthService(ApplicationDbContext dbContext, IOptions<AdminSe
             return ServiceResult<List<OrganizationSummaryDto>>.Failure("Email is required.");
         }
 
-        // Admin can see all organizations
-        if (IsAdminLogin(normalizedEmail))
+        // Global admin can see all organizations
+        if (IsGlobalAdminLogin(normalizedEmail))
         {
             var allOrgs = await dbContext.Organizations
                 .AsNoTracking()
-                .IgnoreQueryFilters() // Admin needs to see all orgs to populate dropdown
+                .IgnoreQueryFilters() // Global admin needs to see all orgs to populate dropdown
                 .OrderBy(o => o.Name)
                 .Select(o => new OrganizationSummaryDto
                 {
@@ -118,8 +118,8 @@ public sealed class AuthService(ApplicationDbContext dbContext, IOptions<AdminSe
         return ServiceResult<List<OrganizationSummaryDto>>.Success(organizations);
     }
 
-    private bool IsAdminLogin(string normalizedEmail)
+    private bool IsGlobalAdminLogin(string normalizedEmail)
     {
-        return string.Equals(normalizedEmail, _adminEmail, StringComparison.OrdinalIgnoreCase);
+        return string.Equals(normalizedEmail, _globalAdminEmail, StringComparison.OrdinalIgnoreCase);
     }
 }

@@ -21,7 +21,7 @@ public sealed class CollaboratorService(
             return ServiceResult<Collaborator>.NotFound("Time não encontrado.");
         }
 
-        if (!tenantProvider.IsAdmin)
+        if (!tenantProvider.IsGlobalAdmin)
         {
             var isOwner = await IsOrgOwnerAsync(team.OrganizationId, cancellationToken);
             if (!isOwner)

@@ -43,11 +43,11 @@ public static class DbSeeder
         };
         context.Teams.Add(budTeam);
 
-        // 4. Create Admin Leader
+        // 4. Create Global Admin Leader
         var adminLeader = new Collaborator
         {
             Id = Guid.NewGuid(),
-            FullName = "Administrador",
+            FullName = "Administrador Global",
             Email = "admin@getbud.co",
             Role = CollaboratorRole.Leader,
             OrganizationId = budOrg.Id,

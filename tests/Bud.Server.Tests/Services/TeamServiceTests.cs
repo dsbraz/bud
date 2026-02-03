@@ -11,7 +11,7 @@ namespace Bud.Server.Tests.Services;
 
 public class TeamServiceTests
 {
-    private readonly TestTenantProvider _tenantProvider = new() { IsAdmin = true };
+    private readonly TestTenantProvider _tenantProvider = new() { IsGlobalAdmin = true };
 
     private ApplicationDbContext CreateInMemoryContext()
     {
@@ -208,7 +208,7 @@ public class TeamServiceTests
             OrganizationId = org.Id
         };
 
-        _tenantProvider.IsAdmin = false;
+        _tenantProvider.IsGlobalAdmin = false;
         _tenantProvider.TenantId = org.Id;
         _tenantProvider.CollaboratorId = regularCollaborator.Id;
 
@@ -256,7 +256,7 @@ public class TeamServiceTests
         };
         org.OwnerId = owner.Id;
 
-        _tenantProvider.IsAdmin = false;
+        _tenantProvider.IsGlobalAdmin = false;
         _tenantProvider.TenantId = org.Id;
         _tenantProvider.CollaboratorId = owner.Id;
 

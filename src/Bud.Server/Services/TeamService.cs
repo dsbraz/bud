@@ -21,7 +21,7 @@ public sealed class TeamService(
             return ServiceResult<Team>.NotFound("Workspace não encontrado.");
         }
 
-        if (!tenantProvider.IsAdmin)
+        if (!tenantProvider.IsGlobalAdmin)
         {
             var isOwner = await IsOrgOwnerAsync(workspace.OrganizationId, cancellationToken);
             if (!isOwner)

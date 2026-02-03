@@ -22,15 +22,15 @@ public sealed class OrganizationsController(
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status403Forbidden)]
     public async Task<ActionResult<Organization>> Create(CreateOrganizationRequest request, CancellationToken cancellationToken)
     {
-        // Apenas administradores podem criar organizações
-        if (!tenantProvider.IsAdmin)
+        // Apenas administradores globais podem criar organizações
+        if (!tenantProvider.IsGlobalAdmin)
         {
             return StatusCode(StatusCodes.Status403Forbidden,
                 new ProblemDetails
                 {
                     Status = StatusCodes.Status403Forbidden,
                     Title = "Acesso negado",
-                    Detail = "Apenas administradores podem criar organizações."
+                    Detail = "Apenas administradores globais podem criar organizações."
                 });
         }
 
@@ -63,15 +63,15 @@ public sealed class OrganizationsController(
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status403Forbidden)]
     public async Task<ActionResult<Organization>> Update(Guid id, UpdateOrganizationRequest request, CancellationToken cancellationToken)
     {
-        // Apenas administradores podem atualizar organizações
-        if (!tenantProvider.IsAdmin)
+        // Apenas administradores globais podem atualizar organizações
+        if (!tenantProvider.IsGlobalAdmin)
         {
             return StatusCode(StatusCodes.Status403Forbidden,
                 new ProblemDetails
                 {
                     Status = StatusCodes.Status403Forbidden,
                     Title = "Acesso negado",
-                    Detail = "Apenas administradores podem atualizar organizações."
+                    Detail = "Apenas administradores globais podem atualizar organizações."
                 });
         }
 
@@ -100,15 +100,15 @@ public sealed class OrganizationsController(
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status403Forbidden)]
     public async Task<IActionResult> Delete(Guid id, CancellationToken cancellationToken)
     {
-        // Apenas administradores podem deletar organizações
-        if (!tenantProvider.IsAdmin)
+        // Apenas administradores globais podem deletar organizações
+        if (!tenantProvider.IsGlobalAdmin)
         {
             return StatusCode(StatusCodes.Status403Forbidden,
                 new ProblemDetails
                 {
                     Status = StatusCodes.Status403Forbidden,
                     Title = "Acesso negado",
-                    Detail = "Apenas administradores podem deletar organizações."
+                    Detail = "Apenas administradores globais podem deletar organizações."
                 });
         }
 

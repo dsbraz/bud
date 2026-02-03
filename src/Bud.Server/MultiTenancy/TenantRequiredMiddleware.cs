@@ -27,9 +27,9 @@ public sealed class TenantRequiredMiddleware(RequestDelegate next)
         var userEmail = context.Request.Headers["X-User-Email"].FirstOrDefault();
         var isAuthenticated = !string.IsNullOrWhiteSpace(userEmail);
 
-        // Allow access if user is authenticated (has email) or is admin
+        // Allow access if user is authenticated (has email) or is global admin
         // This allows "TODOS" mode (no tenant ID) for authenticated users
-        if (isAuthenticated || tenantProvider.IsAdmin)
+        if (isAuthenticated || tenantProvider.IsGlobalAdmin)
         {
             await next(context);
             return;

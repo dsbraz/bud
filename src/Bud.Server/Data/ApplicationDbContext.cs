@@ -7,7 +7,7 @@ namespace Bud.Server.Data;
 public sealed class ApplicationDbContext : DbContext
 {
     private readonly Guid? _tenantId;
-    private readonly bool _isAdmin;
+    private readonly bool _isGlobalAdmin;
     private readonly string? _userEmail;
 
     public ApplicationDbContext(
@@ -16,7 +16,7 @@ public sealed class ApplicationDbContext : DbContext
         : base(options)
     {
         _tenantId = tenantProvider?.TenantId;
-        _isAdmin = tenantProvider?.IsAdmin ?? false;
+        _isGlobalAdmin = tenantProvider?.IsGlobalAdmin ?? false;
         _userEmail = tenantProvider?.UserEmail;
     }
 
@@ -179,12 +179,12 @@ public sealed class ApplicationDbContext : DbContext
         // SECURITY: When _tenantId is null (TODOS mode), only show organizations the user has access to
         modelBuilder.Entity<Organization>()
             .HasQueryFilter(o =>
-                // If specific tenant is selected, show only that tenant (for both admin and regular users)
+                // If specific tenant is selected, show only that tenant (for both global admin and regular users)
                 (_tenantId != null && o.Id == _tenantId) ||
                 // If no tenant selected (TODOS mode)
                 (_tenantId == null && (
-                    // Admin sees everything
-                    _isAdmin ||
+                    // Global admin sees everything
+                    _isGlobalAdmin ||
                     // Regular user sees only organizations they have access to
                     (_userEmail != null && (
                         // User is owner of the organization
@@ -199,7 +199,7 @@ public sealed class ApplicationDbContext : DbContext
             .HasQueryFilter(w =>
                 (_tenantId != null && w.OrganizationId == _tenantId) ||
                 (_tenantId == null && (
-                    _isAdmin ||
+                    _isGlobalAdmin ||
                     (_userEmail != null &&
                         Collaborators.Any(c => c.Email == _userEmail && c.OrganizationId == w.OrganizationId)
                     )
@@ -210,7 +210,7 @@ public sealed class ApplicationDbContext : DbContext
             .HasQueryFilter(t =>
                 (_tenantId != null && t.OrganizationId == _tenantId) ||
                 (_tenantId == null && (
-                    _isAdmin ||
+                    _isGlobalAdmin ||
                     (_userEmail != null &&
                         Collaborators.Any(c => c.Email == _userEmail && c.OrganizationId == t.OrganizationId)
                     )
@@ -221,7 +221,7 @@ public sealed class ApplicationDbContext : DbContext
             .HasQueryFilter(c =>
                 (_tenantId != null && c.OrganizationId == _tenantId) ||
                 (_tenantId == null && (
-                    _isAdmin ||
+                    _isGlobalAdmin ||
                     (_userEmail != null &&
                         Collaborators.Any(collab => collab.Email == _userEmail && collab.OrganizationId == c.OrganizationId)
                     )
@@ -232,7 +232,7 @@ public sealed class ApplicationDbContext : DbContext
             .HasQueryFilter(m =>
                 (_tenantId != null && m.OrganizationId == _tenantId) ||
                 (_tenantId == null && (
-                    _isAdmin ||
+                    _isGlobalAdmin ||
                     (_userEmail != null &&
                         Collaborators.Any(c => c.Email == _userEmail && c.OrganizationId == m.OrganizationId)
                     )
@@ -243,7 +243,7 @@ public sealed class ApplicationDbContext : DbContext
             .HasQueryFilter(mm =>
                 (_tenantId != null && mm.OrganizationId == _tenantId) ||
                 (_tenantId == null && (
-                    _isAdmin ||
+                    _isGlobalAdmin ||
                     (_userEmail != null &&
                         Collaborators.Any(c => c.Email == _userEmail && c.OrganizationId == mm.OrganizationId)
                     )

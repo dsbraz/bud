@@ -29,7 +29,7 @@ Bud is an ASP.NET Core 10 application with a Blazor WebAssembly frontend, using 
   - `Validators/`: FluentValidation validators
   - `Middleware/`: global exception handling and other middleware
   - `MultiTenancy/`: tenant isolation infrastructure (`ITenantProvider`, `HttpTenantProvider`, `TenantSaveChangesInterceptor`, `TenantRequiredMiddleware`)
-  - `Settings/`: configuration POCOs (`AdminSettings`)
+  - `Settings/`: configuration POCOs (`GlobalAdminSettings`)
 
 - **Bud.Client** (`src/Bud.Client`): Blazor WebAssembly SPA (compiled to static files served by Bud.Server)
   - `Pages/`: Blazor pages with routing
@@ -135,13 +135,13 @@ The application uses **row-level tenant isolation** based on `OrganizationId`. E
 
 1. **`ITenantEntity`** — marker interface implemented by all tenant-scoped entities (`Workspace`, `Team`, `Collaborator`, `Mission`, `MissionMetric`). Requires a `Guid OrganizationId` property.
 
-2. **`ITenantProvider` / `HttpTenantProvider`** — scoped service that reads `X-Tenant-Id` and `X-User-Email` headers from the HTTP request. Determines `TenantId` and `IsAdmin` (by comparing email against `AdminSettings:Email`).
+2. **`ITenantProvider` / `HttpTenantProvider`** — scoped service that reads `X-Tenant-Id` and `X-User-Email` headers from the HTTP request. Determines `TenantId` and `IsGlobalAdmin` (by comparing email against `GlobalAdminSettings:Email`).
 
-3. **EF Core Global Query Filters** — configured in `ApplicationDbContext.OnModelCreating()` on all tenant entities. Filter: `_isAdmin || _tenantId == null || entity.OrganizationId == _tenantId`. Admin bypasses all filters.
+3. **EF Core Global Query Filters** — configured in `ApplicationDbContext.OnModelCreating()` on all tenant entities. Filter: `_isGlobalAdmin || _tenantId == null || entity.OrganizationId == _tenantId`. Global admin bypasses all filters.
 
 4. **`TenantSaveChangesInterceptor`** — EF Core `SaveChangesInterceptor` that auto-sets `OrganizationId` on new `ITenantEntity` entities if it's `Guid.Empty`.
 
-5. **`TenantRequiredMiddleware`** — blocks `/api/*` requests without valid tenant headers (except `/api/auth/login` and `/api/auth/logout`). Admin can access without `X-Tenant-Id`. Returns 401 for unauthenticated requests.
+5. **`TenantRequiredMiddleware`** — blocks `/api/*` requests without valid tenant headers (except `/api/auth/login` and `/api/auth/logout`). Global admin can access without `X-Tenant-Id`. Returns 401 for unauthenticated requests.
 
 6. **`TenantDelegatingHandler`** (client) — `DelegatingHandler` that reads `AuthState` and attaches `X-Tenant-Id` and `X-User-Email` headers to every HTTP request from the Blazor client.
 
@@ -246,7 +246,7 @@ See [OrganizationsController.cs](src/Bud.Server/Controllers/OrganizationsControl
   - **Service tests**: Use `ApplicationDbContext` with **InMemoryDatabase provider** (EF Core)
     - Create context via `DbContextOptionsBuilder<ApplicationDbContext>().UseInMemoryDatabase()`
     - Each test uses a unique database name (e.g., `Guid.NewGuid().ToString()`)
-    - Pass a `TestTenantProvider` (with `IsAdmin = true`) to the DbContext to bypass query filters
+    - Pass a `TestTenantProvider` (with `IsGlobalAdmin = true`) to the DbContext to bypass query filters
     - Always set `OrganizationId` on tenant entities in test data
 - Every feature must include unit tests
 - Unit tests must not access external resources (except InMemoryDatabase for service tests)

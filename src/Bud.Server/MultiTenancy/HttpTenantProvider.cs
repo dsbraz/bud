@@ -7,20 +7,20 @@ public sealed class HttpTenantProvider : ITenantProvider
 {
     public Guid? TenantId { get; }
     public Guid? CollaboratorId { get; }
-    public bool IsAdmin { get; }
+    public bool IsGlobalAdmin { get; }
     public string? UserEmail { get; }
 
     public HttpTenantProvider(
         IHttpContextAccessor httpContextAccessor,
-        IOptions<AdminSettings> adminSettings)
+        IOptions<GlobalAdminSettings> globalAdminSettings)
     {
         var context = httpContextAccessor.HttpContext;
         if (context is null) return;
 
         var email = context.Request.Headers["X-User-Email"].FirstOrDefault();
         UserEmail = email;
-        IsAdmin = !string.IsNullOrEmpty(email) &&
-            string.Equals(email, adminSettings.Value.Email, StringComparison.OrdinalIgnoreCase);
+        IsGlobalAdmin = !string.IsNullOrEmpty(email) &&
+            string.Equals(email, globalAdminSettings.Value.Email, StringComparison.OrdinalIgnoreCase);
 
         var tenantHeader = context.Request.Headers["X-Tenant-Id"].FirstOrDefault();
         if (Guid.TryParse(tenantHeader, out var tenantId))

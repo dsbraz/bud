@@ -11,7 +11,7 @@ namespace Bud.Server.Tests.Services;
 
 public class MissionServiceTests
 {
-    private readonly TestTenantProvider _tenantProvider = new() { IsAdmin = true };
+    private readonly TestTenantProvider _tenantProvider = new() { IsGlobalAdmin = true };
 
     private ApplicationDbContext CreateInMemoryContext()
     {

@@ -19,7 +19,7 @@ builder.Services.AddProblemDetails();
 builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
 
 // Add Settings
-builder.Services.Configure<AdminSettings>(builder.Configuration.GetSection("AdminSettings"));
+builder.Services.Configure<GlobalAdminSettings>(builder.Configuration.GetSection("GlobalAdminSettings"));
 
 // Add FluentValidation
 builder.Services.AddValidatorsFromAssemblyContaining<CreateOrganizationValidator>();

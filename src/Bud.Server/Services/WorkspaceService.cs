@@ -20,7 +20,7 @@ public sealed class WorkspaceService(
             return ServiceResult<Workspace>.NotFound("Organização não encontrada.");
         }
 
-        if (!tenantProvider.IsAdmin)
+        if (!tenantProvider.IsGlobalAdmin)
         {
             var isOwner = await IsOrgOwnerAsync(request.OrganizationId, cancellationToken);
             if (!isOwner)
@@ -52,7 +52,7 @@ public sealed class WorkspaceService(
             return ServiceResult<Workspace>.NotFound("Workspace não encontrado.");
         }
 
-        if (!tenantProvider.IsAdmin)
+        if (!tenantProvider.IsGlobalAdmin)
         {
             var hasWriteAccess = await HasWriteAccessAsync(workspace.OrganizationId, id, cancellationToken);
             if (!hasWriteAccess)
@@ -78,7 +78,7 @@ public sealed class WorkspaceService(
             return ServiceResult.NotFound("Workspace não encontrado.");
         }
 
-        if (!tenantProvider.IsAdmin)
+        if (!tenantProvider.IsGlobalAdmin)
         {
             var hasWriteAccess = await HasWriteAccessAsync(workspace.OrganizationId, id, cancellationToken);
             if (!hasWriteAccess)
@@ -193,7 +193,7 @@ public sealed class WorkspaceService(
 
     private async Task<bool> HasReadAccessAsync(Workspace workspace, CancellationToken cancellationToken)
     {
-        if (tenantProvider.IsAdmin)
+        if (tenantProvider.IsGlobalAdmin)
             return true;
 
         if (workspace.Visibility == Visibility.Public)
@@ -242,7 +242,7 @@ public sealed class WorkspaceService(
     private async Task<IQueryable<Workspace>> ApplyVisibilityFilterAsync(
         IQueryable<Workspace> query, CancellationToken cancellationToken)
     {
-        if (tenantProvider.IsAdmin || tenantProvider.CollaboratorId is null)
+        if (tenantProvider.IsGlobalAdmin || tenantProvider.CollaboratorId is null)
             return query;
 
         var collaboratorId = tenantProvider.CollaboratorId.Value;
