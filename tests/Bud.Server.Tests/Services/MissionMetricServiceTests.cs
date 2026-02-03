@@ -68,7 +68,9 @@ public class MissionMetricServiceTests
         result.IsSuccess.Should().BeTrue();
         result.Value.Should().NotBeNull();
         result.Value!.TargetText.Should().Be("Complete all requirements");
-        result.Value!.TargetValue.Should().BeNull();
+        result.Value!.QuantitativeType.Should().BeNull();
+        result.Value!.MinValue.Should().BeNull();
+        result.Value!.MaxValue.Should().BeNull();
         result.Value!.Unit.Should().BeNull();
     }
 
@@ -86,7 +88,8 @@ public class MissionMetricServiceTests
             Name = "Qualitative Metric",
             Type = MetricType.Qualitative,
             TargetText = "Description",
-            TargetValue = 100m, // Should be ignored
+            QuantitativeType = QuantitativeMetricType.KeepAbove, // Should be ignored
+            MinValue = 100m, // Should be ignored
             Unit = MetricUnit.Integer // Should be ignored
         };
 
@@ -96,12 +99,14 @@ public class MissionMetricServiceTests
         // Assert
         result.IsSuccess.Should().BeTrue();
         result.Value!.TargetText.Should().Be("Description");
-        result.Value!.TargetValue.Should().BeNull(); // Nulled out
+        result.Value!.QuantitativeType.Should().BeNull(); // Nulled out
+        result.Value!.MinValue.Should().BeNull(); // Nulled out
+        result.Value!.MaxValue.Should().BeNull(); // Nulled out
         result.Value!.Unit.Should().BeNull(); // Nulled out
     }
 
     [Fact]
-    public async Task ApplyMetricTarget_WithQuantitativeType_SetsTargetValueAndUnit()
+    public async Task ApplyMetricTarget_WithKeepAbove_SetsMinValueAndUnit()
     {
         // Arrange
         using var context = CreateInMemoryContext();
@@ -111,9 +116,73 @@ public class MissionMetricServiceTests
         var request = new CreateMissionMetricRequest
         {
             MissionId = mission.Id,
-            Name = "Quantitative Metric",
+            Name = "Story Points",
             Type = MetricType.Quantitative,
-            TargetValue = 100m,
+            QuantitativeType = QuantitativeMetricType.KeepAbove,
+            MinValue = 100m,
+            Unit = MetricUnit.Points
+        };
+
+        // Act
+        var result = await service.CreateAsync(request);
+
+        // Assert
+        result.IsSuccess.Should().BeTrue();
+        result.Value.Should().NotBeNull();
+        result.Value!.QuantitativeType.Should().Be(QuantitativeMetricType.KeepAbove);
+        result.Value!.MinValue.Should().Be(100m);
+        result.Value!.MaxValue.Should().BeNull();
+        result.Value!.Unit.Should().Be(MetricUnit.Points);
+        result.Value!.TargetText.Should().BeNull();
+    }
+
+    [Fact]
+    public async Task ApplyMetricTarget_WithKeepBelow_SetsMaxValueAndUnit()
+    {
+        // Arrange
+        using var context = CreateInMemoryContext();
+        var service = new MissionMetricService(context);
+        var mission = await CreateTestMission(context);
+
+        var request = new CreateMissionMetricRequest
+        {
+            MissionId = mission.Id,
+            Name = "Error Rate",
+            Type = MetricType.Quantitative,
+            QuantitativeType = QuantitativeMetricType.KeepBelow,
+            MaxValue = 5m,
+            Unit = MetricUnit.Percentage
+        };
+
+        // Act
+        var result = await service.CreateAsync(request);
+
+        // Assert
+        result.IsSuccess.Should().BeTrue();
+        result.Value.Should().NotBeNull();
+        result.Value!.QuantitativeType.Should().Be(QuantitativeMetricType.KeepBelow);
+        result.Value!.MinValue.Should().BeNull();
+        result.Value!.MaxValue.Should().Be(5m);
+        result.Value!.Unit.Should().Be(MetricUnit.Percentage);
+        result.Value!.TargetText.Should().BeNull();
+    }
+
+    [Fact]
+    public async Task ApplyMetricTarget_WithKeepBetween_SetsBothValuesAndUnit()
+    {
+        // Arrange
+        using var context = CreateInMemoryContext();
+        var service = new MissionMetricService(context);
+        var mission = await CreateTestMission(context);
+
+        var request = new CreateMissionMetricRequest
+        {
+            MissionId = mission.Id,
+            Name = "Response Time",
+            Type = MetricType.Quantitative,
+            QuantitativeType = QuantitativeMetricType.KeepBetween,
+            MinValue = 100m,
+            MaxValue = 500m,
             Unit = MetricUnit.Integer
         };
 
@@ -123,7 +192,9 @@ public class MissionMetricServiceTests
         // Assert
         result.IsSuccess.Should().BeTrue();
         result.Value.Should().NotBeNull();
-        result.Value!.TargetValue.Should().Be(100m);
+        result.Value!.QuantitativeType.Should().Be(QuantitativeMetricType.KeepBetween);
+        result.Value!.MinValue.Should().Be(100m);
+        result.Value!.MaxValue.Should().Be(500m);
         result.Value!.Unit.Should().Be(MetricUnit.Integer);
         result.Value!.TargetText.Should().BeNull();
     }
@@ -141,7 +212,8 @@ public class MissionMetricServiceTests
             MissionId = mission.Id,
             Name = "Quantitative Metric",
             Type = MetricType.Quantitative,
-            TargetValue = 85m,
+            QuantitativeType = QuantitativeMetricType.KeepAbove,
+            MinValue = 85m,
             Unit = MetricUnit.Percentage,
             TargetText = "This should be ignored" // Should be ignored
         };
@@ -151,7 +223,8 @@ public class MissionMetricServiceTests
 
         // Assert
         result.IsSuccess.Should().BeTrue();
-        result.Value!.TargetValue.Should().Be(85m);
+        result.Value!.QuantitativeType.Should().Be(QuantitativeMetricType.KeepAbove);
+        result.Value!.MinValue.Should().Be(85m);
         result.Value!.Unit.Should().Be(MetricUnit.Percentage);
         result.Value!.TargetText.Should().BeNull(); // Nulled out
     }
@@ -226,7 +299,8 @@ public class MissionMetricServiceTests
             MissionId = mission.Id,
             Name = "Story Points",
             Type = MetricType.Quantitative,
-            TargetValue = 50m,
+            QuantitativeType = QuantitativeMetricType.KeepAbove,
+            MinValue = 50m,
             Unit = MetricUnit.Points
         };
 
@@ -240,7 +314,8 @@ public class MissionMetricServiceTests
         result.Value!.MissionId.Should().Be(mission.Id);
         result.Value!.Name.Should().Be("Story Points");
         result.Value!.Type.Should().Be(MetricType.Quantitative);
-        result.Value!.TargetValue.Should().Be(50m);
+        result.Value!.QuantitativeType.Should().Be(QuantitativeMetricType.KeepAbove);
+        result.Value!.MinValue.Should().Be(50m);
         result.Value!.Unit.Should().Be(MetricUnit.Points);
     }
 
@@ -273,7 +348,8 @@ public class MissionMetricServiceTests
         {
             Name = "Updated Metric",
             Type = MetricType.Quantitative,
-            TargetValue = 75m,
+            QuantitativeType = QuantitativeMetricType.KeepBelow,
+            MaxValue = 75m,
             Unit = MetricUnit.Percentage
         };
 
@@ -282,7 +358,8 @@ public class MissionMetricServiceTests
         // Assert
         updateResult.IsSuccess.Should().BeTrue();
         updateResult.Value!.Type.Should().Be(MetricType.Quantitative);
-        updateResult.Value!.TargetValue.Should().Be(75m);
+        updateResult.Value!.QuantitativeType.Should().Be(QuantitativeMetricType.KeepBelow);
+        updateResult.Value!.MaxValue.Should().Be(75m);
         updateResult.Value!.Unit.Should().Be(MetricUnit.Percentage);
         updateResult.Value!.TargetText.Should().BeNull(); // Cleared when changed to quantitative
     }

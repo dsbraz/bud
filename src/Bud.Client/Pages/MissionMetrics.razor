@@ -110,9 +110,40 @@
             @if (createMetricTypeValue == nameof(MetricType.Quantitative))
             {
                 <div class="form-row">
-                    <label>Valor alvo</label>
-                    <InputNumber class="input" @bind-Value="newMetric.TargetValue" />
+                    <label>Tipo de métrica</label>
+                    <select class="input" @bind="createQuantitativeTypeValue">
+                        <option value="">Selecione</option>
+                        @foreach (var qType in Enum.GetValues<QuantitativeMetricType>())
+                        {
+                            <option value="@qType">@GetQuantitativeTypeLabel(qType)</option>
+                        }
+                    </select>
                 </div>
+                @if (createQuantitativeTypeValue == nameof(QuantitativeMetricType.KeepAbove))
+                {
+                    <div class="form-row">
+                        <label>Valor mínimo</label>
+                        <InputNumber class="input" @bind-Value="newMetric.MinValue" />
+                    </div>
+                }
+                @if (createQuantitativeTypeValue == nameof(QuantitativeMetricType.KeepBelow))
+                {
+                    <div class="form-row">
+                        <label>Valor máximo</label>
+                        <InputNumber class="input" @bind-Value="newMetric.MaxValue" />
+                    </div>
+                }
+                @if (createQuantitativeTypeValue == nameof(QuantitativeMetricType.KeepBetween))
+                {
+                    <div class="form-row">
+                        <label>Valor mínimo</label>
+                        <InputNumber class="input" @bind-Value="newMetric.MinValue" />
+                    </div>
+                    <div class="form-row">
+                        <label>Valor máximo</label>
+                        <InputNumber class="input" @bind-Value="newMetric.MaxValue" />
+                    </div>
+                }
                 <div class="form-row">
                     <label>Unidade</label>
                     <select class="input" @bind="createMetricUnitValue">
@@ -142,6 +173,7 @@
     private List<Mission> missions = new();
     private string? createMissionId;
     private string? createMetricTypeValue;
+    private string? createQuantitativeTypeValue;
     private string? createMetricUnitValue;
     private string? filterMissionId;
     private string? search;
@@ -173,7 +205,10 @@
     {
         createMetricTypeValue = e.Value?.ToString();
         newMetric.TargetText = null;
-        newMetric.TargetValue = null;
+        newMetric.MinValue = null;
+        newMetric.MaxValue = null;
+        newMetric.QuantitativeType = null;
+        createQuantitativeTypeValue = null;
         createMetricUnitValue = null;
         await InvokeAsync(StateHasChanged);
     }
@@ -183,6 +218,7 @@
         newMetric = new CreateMissionMetricRequest();
         createMissionId = null;
         createMetricTypeValue = null;
+        createQuantitativeTypeValue = null;
         createMetricUnitValue = null;
         formMessage = null;
         isModalOpen = true;
@@ -229,10 +265,39 @@
         }
         else
         {
-            if (newMetric.TargetValue is null)
+            if (!Enum.TryParse<QuantitativeMetricType>(createQuantitativeTypeValue, out var quantitativeType))
             {
-                formMessage = "Informe o valor alvo.";
+                formMessage = "Selecione o tipo de métrica quantitativa.";
                 return;
+            }
+
+            newMetric.QuantitativeType = quantitativeType;
+
+            if (quantitativeType == QuantitativeMetricType.KeepAbove && newMetric.MinValue is null)
+            {
+                formMessage = "Informe o valor mínimo.";
+                return;
+            }
+
+            if (quantitativeType == QuantitativeMetricType.KeepBelow && newMetric.MaxValue is null)
+            {
+                formMessage = "Informe o valor máximo.";
+                return;
+            }
+
+            if (quantitativeType == QuantitativeMetricType.KeepBetween)
+            {
+                if (newMetric.MinValue is null || newMetric.MaxValue is null)
+                {
+                    formMessage = "Informe os valores mínimo e máximo.";
+                    return;
+                }
+
+                if (newMetric.MinValue >= newMetric.MaxValue)
+                {
+                    formMessage = "O valor mínimo deve ser menor que o valor máximo.";
+                    return;
+                }
             }
 
             if (!Enum.TryParse<MetricUnit>(createMetricUnitValue, out var metricUnit))
@@ -248,6 +313,7 @@
         newMetric = new CreateMissionMetricRequest();
         createMissionId = null;
         createMetricTypeValue = null;
+        createQuantitativeTypeValue = null;
         createMetricUnitValue = null;
         await LoadMetrics();
         formMessage = "Métrica criada com sucesso.";
@@ -269,6 +335,14 @@
         _ => type.ToString()
     };
 
+    private static string GetQuantitativeTypeLabel(QuantitativeMetricType type) => type switch
+    {
+        QuantitativeMetricType.KeepAbove => "Manter acima",
+        QuantitativeMetricType.KeepBelow => "Manter abaixo",
+        QuantitativeMetricType.KeepBetween => "Manter entre",
+        _ => type.ToString()
+    };
+
     private static string GetUnitLabel(MetricUnit unit) => unit switch
     {
         MetricUnit.Integer => "Inteiro",
@@ -286,8 +360,15 @@
             return metric.TargetText ?? "—";
         }
 
-        var value = metric.TargetValue?.ToString() ?? "—";
-        var unit = metric.Unit.HasValue ? GetUnitLabel(metric.Unit.Value) : "—";
-        return $"{value} {unit}";
+        var unit = metric.Unit.HasValue ? GetUnitLabel(metric.Unit.Value) : "";
+        var quantType = metric.QuantitativeType.HasValue ? GetQuantitativeTypeLabel(metric.QuantitativeType.Value) : "—";
+
+        return metric.QuantitativeType switch
+        {
+            QuantitativeMetricType.KeepAbove => $"{quantType} {metric.MinValue} {unit}",
+            QuantitativeMetricType.KeepBelow => $"{quantType} {metric.MaxValue} {unit}",
+            QuantitativeMetricType.KeepBetween => $"{quantType} {metric.MinValue} e {metric.MaxValue} {unit}",
+            _ => "—"
+        };
     }
 }

@@ -10,7 +10,13 @@ public sealed class MissionMetric : ITenantEntity
 
     public string Name { get; set; } = string.Empty;
     public MetricType Type { get; set; }
-    public decimal? TargetValue { get; set; }
+
+    // Quantitative metric fields
+    public QuantitativeMetricType? QuantitativeType { get; set; }
+    public decimal? MinValue { get; set; }
+    public decimal? MaxValue { get; set; }
     public MetricUnit? Unit { get; set; }
+
+    // Qualitative metric fields
     public string? TargetText { get; set; }
 }

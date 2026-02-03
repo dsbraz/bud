@@ -27,7 +27,7 @@ public sealed class MissionMetricService(ApplicationDbContext dbContext) : IMiss
             Type = request.Type,
         };
 
-        ApplyMetricTarget(metric, request.Type, request.TargetValue, request.Unit, request.TargetText);
+        ApplyMetricTarget(metric, request.Type, request.QuantitativeType, request.MinValue, request.MaxValue, request.Unit, request.TargetText);
 
         dbContext.MissionMetrics.Add(metric);
         await dbContext.SaveChangesAsync(cancellationToken);
@@ -46,7 +46,7 @@ public sealed class MissionMetricService(ApplicationDbContext dbContext) : IMiss
 
         metric.Name = request.Name.Trim();
         metric.Type = request.Type;
-        ApplyMetricTarget(metric, request.Type, request.TargetValue, request.Unit, request.TargetText);
+        ApplyMetricTarget(metric, request.Type, request.QuantitativeType, request.MinValue, request.MaxValue, request.Unit, request.TargetText);
 
         await dbContext.SaveChangesAsync(cancellationToken);
 
@@ -114,17 +114,21 @@ public sealed class MissionMetricService(ApplicationDbContext dbContext) : IMiss
         return ServiceResult<PagedResult<MissionMetric>>.Success(result);
     }
 
-    private static void ApplyMetricTarget(MissionMetric metric, MetricType type, decimal? targetValue, MetricUnit? unit, string? targetText)
+    private static void ApplyMetricTarget(MissionMetric metric, MetricType type, QuantitativeMetricType? quantitativeType, decimal? minValue, decimal? maxValue, MetricUnit? unit, string? targetText)
     {
         if (type == MetricType.Qualitative)
         {
             metric.TargetText = targetText?.Trim();
-            metric.TargetValue = null;
+            metric.QuantitativeType = null;
+            metric.MinValue = null;
+            metric.MaxValue = null;
             metric.Unit = null;
             return;
         }
 
-        metric.TargetValue = targetValue;
+        metric.QuantitativeType = quantitativeType;
+        metric.MinValue = minValue;
+        metric.MaxValue = maxValue;
         metric.Unit = unit;
         metric.TargetText = null;
     }

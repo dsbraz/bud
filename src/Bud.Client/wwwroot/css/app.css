@@ -753,21 +753,34 @@ a {
    MODAL - Modern Dialog Component
    ======================================== */
 
-/* Modal Overlay - Full-screen backdrop */
+/* Modal Overlay - Layout container */
 .modal-overlay {
     position: fixed;
     inset: 0;
-    background: rgba(0, 0, 0, 0.5);
     display: flex;
     align-items: center;
     justify-content: center;
     z-index: var(--z-index-modal);
     padding: var(--spacing-4);
+    pointer-events: none;
+}
+
+/* Modal Backdrop - Dark clickable background */
+.modal-backdrop {
+    position: absolute;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 1;
+    pointer-events: auto;
+    cursor: pointer;
     animation: modalFadeIn var(--transition-fast) ease-out;
 }
 
 /* Modal Dialog - Content Container */
 .modal-dialog {
+    position: relative;
+    z-index: 2;
+    pointer-events: auto;
     background: var(--color-surface);
     border-radius: var(--radius-xl);
     box-shadow: var(--shadow-modal);
@@ -797,7 +810,7 @@ a {
 
 /* Modal Header */
 .modal-header {
-    padding: var(--spacing-6) var(--spacing-6) var(--spacing-4);
+    padding: var(--spacing-5) var(--spacing-6);
     border-bottom: 1px solid var(--color-border-light);
     display: flex;
     align-items: center;
@@ -806,11 +819,75 @@ a {
     flex-shrink: 0;
 }
 
+.modal-header-content {
+    flex: 1;
+    min-width: 0;
+}
+
+.modal-header-actions {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-2);
+    flex-shrink: 0;
+}
+
 .modal-title {
     margin: 0;
     font-size: var(--font-size-lg);
     font-weight: var(--font-weight-semibold);
     color: var(--color-text-primary);
+}
+
+/* Modal Breadcrumb */
+.modal-breadcrumb {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-2);
+    font-size: var(--font-size-sm);
+}
+
+.modal-breadcrumb-icon {
+    font-size: var(--font-size-lg);
+}
+
+.modal-breadcrumb-text {
+    color: var(--color-text-muted);
+    font-weight: var(--font-weight-medium);
+}
+
+.modal-breadcrumb-separator {
+    color: var(--color-text-muted);
+}
+
+.modal-breadcrumb-current {
+    color: var(--color-text-primary);
+    font-weight: var(--font-weight-semibold);
+}
+
+/* Modal Action Button */
+.modal-action-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    padding: 0;
+    border: none;
+    border-radius: var(--radius-circle);
+    background: transparent;
+    color: var(--color-text-muted);
+    cursor: pointer;
+    transition: all var(--transition-fast);
+    flex-shrink: 0;
+}
+
+.modal-action-btn:hover {
+    background: var(--color-hover);
+    color: var(--color-text-primary);
+}
+
+.modal-action-btn:active {
+    transform: scale(0.95);
 }
 
 /* Modal Close Button */
@@ -937,4 +1014,202 @@ a {
     gap: var(--spacing-2);
     font-size: var(--font-size-lg);
     font-weight: var(--font-weight-normal);
+}
+
+/* ========================================
+   CHIPS/PILLS - Metadata Tags
+   ======================================== */
+
+.chips-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--spacing-2);
+    margin-bottom: var(--spacing-4);
+}
+
+.chip {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--spacing-2);
+    padding: var(--spacing-2) var(--spacing-3);
+    border-radius: var(--radius-full);
+    font-size: var(--font-size-sm);
+    font-weight: var(--font-weight-medium);
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    color: var(--color-text-primary);
+    cursor: pointer;
+    transition: all var(--transition-fast);
+    white-space: nowrap;
+}
+
+.chip:hover {
+    background: var(--color-hover);
+    border-color: var(--color-border-dark);
+}
+
+.chip-icon {
+    width: 16px;
+    height: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.chip-more {
+    width: 36px;
+    height: 36px;
+    padding: 0;
+    justify-content: center;
+    border-radius: var(--radius-circle);
+}
+
+/* ========================================
+   MISSION MODAL - Specific Styles
+   ======================================== */
+
+.mission-header {
+    margin-bottom: var(--spacing-6);
+}
+
+.mission-title-input {
+    font-size: var(--font-size-title-lg);
+    font-weight: var(--font-weight-semibold);
+    color: var(--color-text-primary);
+    border: none;
+    background: transparent;
+    padding: 0;
+    margin-bottom: var(--spacing-2);
+    width: 100%;
+    outline: none;
+}
+
+.mission-title-input::placeholder {
+    color: var(--color-text-muted);
+}
+
+.mission-subtitle-input {
+    font-size: var(--font-size-base);
+    color: var(--color-text-muted);
+    border: none;
+    background: transparent;
+    padding: 0;
+    width: 100%;
+    outline: none;
+}
+
+.mission-subtitle-input::placeholder {
+    color: var(--color-text-muted);
+}
+
+/* Mission Metrics Section */
+.mission-metrics-section {
+    margin-top: var(--spacing-6);
+    padding-top: var(--spacing-6);
+    border-top: 1px solid var(--color-border-light);
+}
+
+.metrics-add-button {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    padding: var(--spacing-4);
+    border-radius: var(--radius-md);
+    border: 1px solid var(--color-border-light);
+    background: var(--color-surface);
+    color: var(--color-text-primary);
+    font-size: var(--font-size-base);
+    font-weight: var(--font-weight-medium);
+    cursor: pointer;
+    transition: all var(--transition-fast);
+}
+
+.metrics-add-button:hover {
+    background: var(--color-hover);
+    border-color: var(--color-border);
+}
+
+.metrics-add-icon {
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: var(--radius-circle);
+    background: var(--color-brand-primary);
+    color: var(--color-text-inverse);
+    font-size: var(--font-size-lg);
+    font-weight: var(--font-weight-bold);
+}
+
+.metrics-list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-3);
+    margin-top: var(--spacing-4);
+}
+
+.metric-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: var(--spacing-3);
+    border-radius: var(--radius-md);
+    border: 1px solid var(--color-border-light);
+    background: var(--color-surface);
+}
+
+.metric-info {
+    flex: 1;
+}
+
+.metric-name {
+    font-size: var(--font-size-base);
+    font-weight: var(--font-weight-medium);
+    color: var(--color-text-primary);
+    margin-bottom: var(--spacing-1);
+}
+
+.metric-details {
+    font-size: var(--font-size-sm);
+    color: var(--color-text-muted);
+}
+
+.metric-remove {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    padding: 0;
+    border: none;
+    border-radius: var(--radius-circle);
+    background: transparent;
+    color: var(--color-text-muted);
+    cursor: pointer;
+    transition: all var(--transition-fast);
+}
+
+.metric-remove:hover {
+    background: var(--color-error-bg);
+    color: var(--color-error);
+}
+
+/* Modal Footer Actions */
+.modal-footer-actions {
+    display: flex;
+    gap: var(--spacing-3);
+    width: 100%;
+    justify-content: space-between;
+}
+
+.modal-footer-secondary {
+    display: flex;
+    gap: var(--spacing-3);
+}
+
+.modal-footer-primary {
+    display: flex;
+    gap: var(--spacing-3);
 }

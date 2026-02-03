@@ -1,14 +1,39 @@
 @* Modal Component - Reusable modal dialog following modern UX patterns *@
 
-<div class="modal-overlay" @onclick="OnOverlayClick">
-    <div class="modal-dialog modal-@Size" @onclick:stopPropagation>
+<div class="modal-overlay">
+    @if (CloseOnOverlayClick)
+    {
+        <div class="modal-backdrop" @onclick="Close"></div>
+    }
+    <div class="modal-dialog modal-@Size" @onclick="OnDialogClick">
         <div class="modal-header">
-            <h2 class="modal-title">@Title</h2>
-            <button type="button" class="modal-close" @onclick="Close" aria-label="Fechar">
-                <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M15 5L5 15M5 5L15 15" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-                </svg>
-            </button>
+            <div class="modal-header-content">
+                @if (!string.IsNullOrEmpty(Breadcrumb))
+                {
+                    <div class="modal-breadcrumb">
+                        <span class="modal-breadcrumb-icon">📦</span>
+                        <span class="modal-breadcrumb-text">@Breadcrumb</span>
+                        <span class="modal-breadcrumb-separator">›</span>
+                        <span class="modal-breadcrumb-current">@Title</span>
+                    </div>
+                }
+                else
+                {
+                    <h2 class="modal-title">@Title</h2>
+                }
+            </div>
+            <div class="modal-header-actions">
+                <button type="button" class="modal-action-btn" aria-label="Expandir">
+                    <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M13 3h4v4M7 17H3v-4M17 7l-5 5M3 13l5-5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                </button>
+                <button type="button" class="modal-close" @onclick="Close" aria-label="Fechar">
+                    <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M15 5L5 15M5 5L15 15" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                    </svg>
+                </button>
+            </div>
         </div>
         <div class="modal-body">
             @ChildContent
@@ -28,6 +53,12 @@
     /// </summary>
     [Parameter]
     public string Title { get; set; } = "";
+
+    /// <summary>
+    /// Optional breadcrumb text to show before the title
+    /// </summary>
+    [Parameter]
+    public string? Breadcrumb { get; set; }
 
     /// <summary>
     /// Modal size: sm (400px), md (540px), lg (720px), xl (960px)
@@ -67,15 +98,9 @@
         await OnClose.InvokeAsync();
     }
 
-    /// <summary>
-    /// Handle overlay click
-    /// </summary>
-    private async Task OnOverlayClick()
+    private void OnDialogClick()
     {
-        if (CloseOnOverlayClick)
-        {
-            await Close();
-        }
+        // Prevents event propagation to backdrop
     }
 
     protected override void OnInitialized()

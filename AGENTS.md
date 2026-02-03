@@ -193,6 +193,34 @@ See [OrganizationsController.cs](src/Bud.Server/Controllers/OrganizationsControl
 
 ## Testing Guidelines
 
+### Test-Driven Development (TDD) - MANDATORY
+
+**This project follows TDD as the standard development approach.**
+
+**CRITICAL RULES:**
+
+1. **Write tests BEFORE implementing or changing code** - This is non-negotiable
+2. **Every code change requires test adjustments** - Either modify existing tests or create new ones
+3. **No code changes without corresponding tests** - Production code and test code must evolve together
+
+**TDD Workflow:**
+
+```
+1. Write/Update Test (Red) → 2. Implement/Change Code (Green) → 3. Refactor (if needed)
+```
+
+**When making changes:**
+- **New feature?** Write new tests first, then implement
+- **Bug fix?** Write a failing test that reproduces the bug, then fix it
+- **Refactoring?** Ensure existing tests pass, add tests for edge cases if needed
+- **Changing behavior?** Update tests to reflect new expected behavior, then change code
+
+**Test coverage expectations:**
+- All services must have unit tests
+- All validators must have unit tests
+- All API endpoints must have integration tests
+- All business logic must be tested
+
 ### Unit Tests (`tests/Bud.Server.Tests`)
 
 - Use **xUnit**, **Moq**, and **FluentAssertions**

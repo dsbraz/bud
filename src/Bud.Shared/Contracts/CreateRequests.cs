@@ -34,6 +34,7 @@ public sealed class CreateCollaboratorRequest
 public sealed class CreateMissionRequest
 {
     public string Name { get; set; } = string.Empty;
+    public string? Description { get; set; }
     public DateTime StartDate { get; set; }
     public DateTime EndDate { get; set; }
     public MissionStatus Status { get; set; }
@@ -46,7 +47,13 @@ public sealed class CreateMissionMetricRequest
     public Guid MissionId { get; set; }
     public string Name { get; set; } = string.Empty;
     public MetricType Type { get; set; }
-    public decimal? TargetValue { get; set; }
+
+    // Quantitative metric fields
+    public QuantitativeMetricType? QuantitativeType { get; set; }
+    public decimal? MinValue { get; set; }
+    public decimal? MaxValue { get; set; }
     public MetricUnit? Unit { get; set; }
+
+    // Qualitative metric fields
     public string? TargetText { get; set; }
 }

@@ -22,6 +22,13 @@ public enum MetricType
     Quantitative = 1
 }
 
+public enum QuantitativeMetricType
+{
+    KeepAbove = 0,
+    KeepBelow = 1,
+    KeepBetween = 2
+}
+
 public enum MetricUnit
 {
     Integer = 0,

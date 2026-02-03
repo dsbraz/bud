@@ -83,64 +83,197 @@
 
 @if (isModalOpen)
 {
-    <Modal Title="Criar missão" Size="lg" OnClose="CloseModal">
-        <EditForm Model="@newMission" OnValidSubmit="CreateMission">
-            <DataAnnotationsValidator />
-            <div class="form-row">
-                <label>Escopo</label>
-                <select class="input" value="@createScopeTypeValue" @onchange="OnCreateScopeTypeChanged">
-                    <option value="">Selecione</option>
-                    @foreach (var scopeType in Enum.GetValues<MissionScopeType>())
+    <Modal Title="Criar missão" Breadcrumb="@GetSelectedOrganizationName()" Size="lg" OnClose="CloseModal">
+        <ChildContent>
+            <EditForm Model="@newMission" OnValidSubmit="CreateMission">
+                <DataAnnotationsValidator />
+
+                @* Header Section - Mission Title & Description *@
+                <div class="mission-header">
+                    <InputText class="mission-title-input" @bind-Value="newMission.Name" placeholder="Nome da missão" />
+                    <input type="text" class="mission-subtitle-input" @bind="missionDescription" placeholder="Adicionar breve descrição" />
+                </div>
+
+                @* Metadata Chips *@
+                <div class="chips-container">
+                    <div class="chip" @onclick="() => showResponsibleSelector = !showResponsibleSelector">
+                        <span class="chip-icon">👤</span>
+                        <span>@GetResponsibleLabel()</span>
+                    </div>
+                    <div class="chip" @onclick="() => showPeriodSelector = !showPeriodSelector">
+                        <span class="chip-icon">📅</span>
+                        <span>@GetPeriodLabel()</span>
+                    </div>
+                    <div class="chip chip-more">
+                        <span>⋯</span>
+                    </div>
+                </div>
+
+                @* Responsible Selector (hidden by default) *@
+                @if (showResponsibleSelector)
+                {
+                    <div class="form-row">
+                        <label>Escopo</label>
+                        <select class="input" value="@createScopeTypeValue" @onchange="OnCreateScopeTypeChanged">
+                            <option value="">Selecione</option>
+                            @foreach (var scopeType in Enum.GetValues<MissionScopeType>())
+                            {
+                                <option value="@scopeType">@GetScopeLabel(scopeType)</option>
+                            }
+                        </select>
+                    </div>
+                    <div class="form-row">
+                        <label>Referência</label>
+                        <select class="input" @bind="createScopeId">
+                            <option value="">Selecione</option>
+                            @foreach (var option in GetScopeOptions(createScopeTypeValue))
+                            {
+                                <option value="@option.Id">@option.Name</option>
+                            }
+                        </select>
+                    </div>
+                }
+
+                @* Period Selector (hidden by default) *@
+                @if (showPeriodSelector)
+                {
+                    <div class="form-row">
+                        <label>Data de início</label>
+                        <InputDate class="input" @bind-Value="newMission.StartDate" />
+                    </div>
+                    <div class="form-row">
+                        <label>Data de fim</label>
+                        <InputDate class="input" @bind-Value="newMission.EndDate" />
+                    </div>
+                }
+
+                @* Metrics Section *@
+                <div class="mission-metrics-section">
+                    <button type="button" class="metrics-add-button" @onclick="AddMetricOrOpenForm">
+                        <span>@(showMetricForm ? "Adicionar item" : "Adicionar item")</span>
+                        <span class="metrics-add-icon">+</span>
+                    </button>
+
+                    @if (showMetricForm)
                     {
-                        <option value="@scopeType">@GetScopeLabel(scopeType)</option>
+                        <div style="margin-top: var(--spacing-4);">
+                            <div class="form-row">
+                                <label>Nome da métrica</label>
+                                <input type="text" class="input" @bind="newMetricName" placeholder="Ex: Vendas mensais" />
+                            </div>
+                            <div class="form-row">
+                                <label>Tipo</label>
+                                <select class="input" @bind="newMetricType">
+                                    <option value="">Selecione</option>
+                                    <option value="Quantitative">Quantitativa</option>
+                                    <option value="Qualitative">Qualitativa</option>
+                                </select>
+                            </div>
+                            @if (newMetricType == "Quantitative")
+                            {
+                                <div class="form-row">
+                                    <label>Tipo</label>
+                                    <select class="input" @bind="newMetricQuantitativeType">
+                                        <option value="">Selecione</option>
+                                        <option value="KeepAbove">Manter acima</option>
+                                        <option value="KeepBelow">Manter abaixo</option>
+                                        <option value="KeepBetween">Manter entre</option>
+                                    </select>
+                                </div>
+                                @if (newMetricQuantitativeType == "KeepAbove")
+                                {
+                                    <div class="form-row">
+                                        <label>Valor mínimo</label>
+                                        <input type="number" class="input" @bind="newMetricMinValue" placeholder="Ex: 1000" />
+                                    </div>
+                                }
+                                @if (newMetricQuantitativeType == "KeepBelow")
+                                {
+                                    <div class="form-row">
+                                        <label>Valor máximo</label>
+                                        <input type="number" class="input" @bind="newMetricMaxValue" placeholder="Ex: 1000" />
+                                    </div>
+                                }
+                                @if (newMetricQuantitativeType == "KeepBetween")
+                                {
+                                    <div class="form-row">
+                                        <label>Valor mínimo</label>
+                                        <input type="number" class="input" @bind="newMetricMinValue" placeholder="Ex: 100" />
+                                    </div>
+                                    <div class="form-row">
+                                        <label>Valor máximo</label>
+                                        <input type="number" class="input" @bind="newMetricMaxValue" placeholder="Ex: 1000" />
+                                    </div>
+                                }
+                                <div class="form-row">
+                                    <label>Unidade</label>
+                                    <select class="input" @bind="newMetricUnit">
+                                        <option value="">Selecione</option>
+                                        <option value="Integer">Inteiro</option>
+                                        <option value="Decimal">Decimal</option>
+                                        <option value="Percentage">Percentual</option>
+                                        <option value="Hours">Horas</option>
+                                        <option value="Points">Pontos</option>
+                                    </select>
+                                </div>
+                            }
+                            @if (newMetricType == "Qualitative")
+                            {
+                                <div class="form-row">
+                                    <label>Texto alvo</label>
+                                    <input type="text" class="input" @bind="newMetricTargetText" placeholder="Ex: Muito satisfeito" />
+                                </div>
+                            }
+                        </div>
                     }
-                </select>
-            </div>
-            <div class="form-row">
-                <label>Referência</label>
-                <select class="input" @bind="createScopeId">
-                    <option value="">Selecione</option>
-                    @foreach (var option in GetScopeOptions(createScopeTypeValue))
+
+                    @if (tempMetrics.Any())
                     {
-                        <option value="@option.Id">@option.Name</option>
+                        <div class="metrics-list">
+                            @foreach (var metric in tempMetrics)
+                            {
+                                <div class="metric-item">
+                                    <div class="metric-info">
+                                        <div class="metric-name">@metric.Name</div>
+                                        <div class="metric-details">@metric.Details</div>
+                                    </div>
+                                    <button type="button" class="metric-remove" @onclick="() => RemoveMetric(metric)">
+                                        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                            <path d="M12 4L4 12M4 4L12 12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                                        </svg>
+                                    </button>
+                                </div>
+                            }
+                        </div>
                     }
-                </select>
+                </div>
+
+                @if (!string.IsNullOrWhiteSpace(formMessage))
+                {
+                    <p class="form-message @(formMessage.Contains("sucesso") ? "" : "error")">@formMessage</p>
+                }
+            </EditForm>
+        </ChildContent>
+        <Footer>
+            <div class="modal-footer-actions">
+                <div class="modal-footer-secondary">
+                    <button class="button tertiary" type="button" @onclick="CloseModal">Cancelar</button>
+                </div>
+                <div class="modal-footer-primary">
+                    <button class="button secondary" type="button" @onclick="SaveDraft">
+                        <span class="chip-icon">💾</span>
+                        Salvar rascunho
+                    </button>
+                    <button class="button primary" type="button" @onclick="CreateMission">Criar missão</button>
+                </div>
             </div>
-            <div class="form-row">
-                <label>Nome</label>
-                <InputText class="input" @bind-Value="newMission.Name" />
-            </div>
-            <div class="form-row">
-                <label>Início</label>
-                <InputDate class="input" @bind-Value="newMission.StartDate" />
-            </div>
-            <div class="form-row">
-                <label>Fim</label>
-                <InputDate class="input" @bind-Value="newMission.EndDate" />
-            </div>
-            <div class="form-row">
-                <label>Status</label>
-                <InputSelect class="input" @bind-Value="newMission.Status">
-                    @foreach (var status in Enum.GetValues<MissionStatus>())
-                    {
-                        <option value="@status">@GetStatusLabel(status)</option>
-                    }
-                </InputSelect>
-            </div>
-            @if (!string.IsNullOrWhiteSpace(formMessage))
-            {
-                <p class="form-message @(formMessage.Contains("sucesso") ? "" : "error")">@formMessage</p>
-            }
-            <div class="form-actions">
-                <button class="button tertiary" type="button" @onclick="CloseModal">Cancelar</button>
-                <button class="button primary" type="submit">Salvar</button>
-            </div>
-        </EditForm>
+        </Footer>
     </Modal>
 }
 
 @code {
     private sealed record ScopeOption(string Id, string Name);
+    private sealed record TempMetric(string Name, string Type, string Details, string? QuantitativeType = null, decimal? MinValue = null, decimal? MaxValue = null, string? TargetText = null, string? Unit = null);
 
     private CreateMissionRequest newMission = new();
     private PagedResult<Mission>? missions;
@@ -155,6 +288,18 @@
     private string? search;
     private string? formMessage;
     private bool isModalOpen = false;
+    private bool showResponsibleSelector = false;
+    private bool showPeriodSelector = false;
+    private string? missionDescription;
+    private bool showMetricForm = false;
+    private string? newMetricName;
+    private string? newMetricType;
+    private string? newMetricQuantitativeType;
+    private decimal? newMetricMinValue;
+    private decimal? newMetricMaxValue;
+    private string? newMetricTargetText;
+    private string? newMetricUnit;
+    private List<TempMetric> tempMetrics = new();
 
     protected override async Task OnInitializedAsync()
     {
@@ -219,6 +364,12 @@
         createScopeTypeValue = null;
         createScopeId = null;
         formMessage = null;
+        missionDescription = null;
+        showResponsibleSelector = false;
+        showPeriodSelector = false;
+        showMetricForm = false;
+        tempMetrics.Clear();
+        ClearMetricForm();
         isModalOpen = true;
     }
 
@@ -227,6 +378,190 @@
         isModalOpen = false;
         formMessage = null;
     }
+
+    private string GetSelectedOrganizationName()
+    {
+        return organizations.FirstOrDefault()?.Name ?? "Organização";
+    }
+
+    private string GetResponsibleLabel()
+    {
+        if (!string.IsNullOrEmpty(createScopeId) && Enum.TryParse<MissionScopeType>(createScopeTypeValue, out var scopeType))
+        {
+            var option = GetScopeOptions(createScopeTypeValue).FirstOrDefault(o => o.Id == createScopeId);
+            if (option != null)
+            {
+                return $"Responsável: {option.Name}";
+            }
+        }
+        return "Responsável";
+    }
+
+    private string GetPeriodLabel()
+    {
+        if (newMission.StartDate != DateTime.MinValue && newMission.EndDate != DateTime.MinValue)
+        {
+            return $"Período de início e fim: {newMission.StartDate:dd/MM/yyyy} - {newMission.EndDate:dd/MM/yyyy}";
+        }
+        return "Período de início e fim";
+    }
+
+    private async Task SaveDraft()
+    {
+        formMessage = null;
+
+        if (!Enum.TryParse<MissionScopeType>(createScopeTypeValue, out var scopeType))
+        {
+            formMessage = "Selecione o escopo.";
+            return;
+        }
+
+        if (!Guid.TryParse(createScopeId, out var scopeId))
+        {
+            formMessage = "Selecione a referência do escopo.";
+            return;
+        }
+
+        if (string.IsNullOrWhiteSpace(newMission.Name))
+        {
+            formMessage = "Informe o nome da missão.";
+            return;
+        }
+
+        if (newMission.EndDate < newMission.StartDate)
+        {
+            formMessage = "A data de fim precisa ser igual ou maior que a data de início.";
+            return;
+        }
+
+        newMission.ScopeType = scopeType;
+        newMission.ScopeId = scopeId;
+        newMission.Description = missionDescription;
+        newMission.Status = MissionStatus.Planned;
+
+        var createdMission = await Api.CreateMissionAsync(newMission);
+
+        // Create metrics for the mission
+        if (createdMission != null && tempMetrics.Any())
+        {
+            foreach (var tempMetric in tempMetrics)
+            {
+                var metricRequest = new CreateMissionMetricRequest
+                {
+                    MissionId = createdMission.Id,
+                    Name = tempMetric.Name,
+                    Type = Enum.Parse<MetricType>(tempMetric.Type)
+                };
+
+                if (tempMetric.Type == "Quantitative")
+                {
+                    if (!string.IsNullOrEmpty(tempMetric.QuantitativeType))
+                    {
+                        metricRequest.QuantitativeType = Enum.Parse<QuantitativeMetricType>(tempMetric.QuantitativeType);
+                    }
+                    metricRequest.MinValue = tempMetric.MinValue;
+                    metricRequest.MaxValue = tempMetric.MaxValue;
+                    if (!string.IsNullOrEmpty(tempMetric.Unit))
+                    {
+                        metricRequest.Unit = Enum.Parse<MetricUnit>(tempMetric.Unit);
+                    }
+                }
+                else
+                {
+                    metricRequest.TargetText = tempMetric.TargetText;
+                }
+
+                await Api.CreateMissionMetricAsync(metricRequest);
+            }
+        }
+
+        newMission = new CreateMissionRequest
+        {
+            StartDate = DateTime.Today,
+            EndDate = DateTime.Today.AddDays(7),
+            Status = MissionStatus.Planned
+        };
+        createScopeTypeValue = null;
+        createScopeId = null;
+        await LoadMissions();
+        formMessage = "Rascunho salvo com sucesso.";
+
+        await Task.Delay(1500);
+        CloseModal();
+    }
+
+    private void AddMetricOrOpenForm()
+    {
+        // Se o formulário não está aberto, apenas abre
+        if (!showMetricForm)
+        {
+            showMetricForm = true;
+            return;
+        }
+
+        // Se o formulário está aberto mas não preenchido, não faz nada
+        if (string.IsNullOrWhiteSpace(newMetricName) || string.IsNullOrWhiteSpace(newMetricType))
+        {
+            return;
+        }
+
+        // Se o formulário está aberto e preenchido, adiciona a métrica
+        var details = newMetricType == "Quantitative"
+            ? BuildQuantitativeDetails()
+            : newMetricTargetText ?? "";
+
+        tempMetrics.Add(new TempMetric(
+            newMetricName,
+            newMetricType,
+            details,
+            newMetricQuantitativeType,
+            newMetricMinValue,
+            newMetricMaxValue,
+            newMetricTargetText,
+            newMetricUnit
+        ));
+
+        // Limpa o formulário mas mantém aberto para adicionar mais métricas
+        ClearMetricForm();
+    }
+
+    private void RemoveMetric(TempMetric metric)
+    {
+        tempMetrics.Remove(metric);
+    }
+
+    private void ClearMetricForm()
+    {
+        newMetricName = null;
+        newMetricType = null;
+        newMetricQuantitativeType = null;
+        newMetricMinValue = null;
+        newMetricMaxValue = null;
+        newMetricTargetText = null;
+        newMetricUnit = null;
+    }
+
+    private string BuildQuantitativeDetails()
+    {
+        var unit = GetUnitLabelShort(newMetricUnit);
+        return newMetricQuantitativeType switch
+        {
+            "KeepAbove" => $"Acima de {newMetricMinValue} {unit}",
+            "KeepBelow" => $"Abaixo de {newMetricMaxValue} {unit}",
+            "KeepBetween" => $"Entre {newMetricMinValue} e {newMetricMaxValue} {unit}",
+            _ => ""
+        };
+    }
+
+    private string GetUnitLabelShort(string? unit) => unit switch
+    {
+        "Integer" => "un",
+        "Decimal" => "un",
+        "Percentage" => "%",
+        "Hours" => "h",
+        "Points" => "pts",
+        _ => ""
+    };
 
     private async Task CreateMission()
     {
@@ -258,8 +593,45 @@
 
         newMission.ScopeType = scopeType;
         newMission.ScopeId = scopeId;
+        newMission.Description = missionDescription;
+        newMission.Status = MissionStatus.Active;
 
-        await Api.CreateMissionAsync(newMission);
+        var createdMission = await Api.CreateMissionAsync(newMission);
+
+        // Create metrics for the mission
+        if (createdMission != null && tempMetrics.Any())
+        {
+            foreach (var tempMetric in tempMetrics)
+            {
+                var metricRequest = new CreateMissionMetricRequest
+                {
+                    MissionId = createdMission.Id,
+                    Name = tempMetric.Name,
+                    Type = Enum.Parse<MetricType>(tempMetric.Type)
+                };
+
+                if (tempMetric.Type == "Quantitative")
+                {
+                    if (!string.IsNullOrEmpty(tempMetric.QuantitativeType))
+                    {
+                        metricRequest.QuantitativeType = Enum.Parse<QuantitativeMetricType>(tempMetric.QuantitativeType);
+                    }
+                    metricRequest.MinValue = tempMetric.MinValue;
+                    metricRequest.MaxValue = tempMetric.MaxValue;
+                    if (!string.IsNullOrEmpty(tempMetric.Unit))
+                    {
+                        metricRequest.Unit = Enum.Parse<MetricUnit>(tempMetric.Unit);
+                    }
+                }
+                else
+                {
+                    metricRequest.TargetText = tempMetric.TargetText;
+                }
+
+                await Api.CreateMissionMetricAsync(metricRequest);
+            }
+        }
+
         newMission = new CreateMissionRequest
         {
             StartDate = DateTime.Today,

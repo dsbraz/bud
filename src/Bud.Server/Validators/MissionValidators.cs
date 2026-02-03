@@ -12,6 +12,10 @@ public sealed class CreateMissionValidator : AbstractValidator<CreateMissionRequ
             .NotEmpty().WithMessage("Name is required.")
             .MaximumLength(200).WithMessage("Name must not exceed 200 characters.");
 
+        RuleFor(x => x.Description)
+            .MaximumLength(1000).WithMessage("Description must not exceed 1000 characters.")
+            .When(x => !string.IsNullOrEmpty(x.Description));
+
         RuleFor(x => x.StartDate)
             .NotEmpty().WithMessage("StartDate is required.");
 
@@ -78,13 +82,42 @@ public sealed class CreateMissionMetricValidator : AbstractValidator<CreateMissi
 
         When(x => x.Type == MetricType.Quantitative, () =>
         {
-            RuleFor(x => x.TargetValue)
-                .NotNull().WithMessage("TargetValue is required for quantitative metrics.")
-                .GreaterThanOrEqualTo(0).WithMessage("TargetValue must be greater than or equal to 0.");
+            RuleFor(x => x.QuantitativeType)
+                .NotNull().WithMessage("QuantitativeType is required for quantitative metrics.")
+                .IsInEnum().WithMessage("QuantitativeType is invalid.");
 
             RuleFor(x => x.Unit)
                 .NotNull().WithMessage("Unit is required for quantitative metrics.")
                 .IsInEnum().WithMessage("Unit is invalid.");
+
+            // KeepAbove: requires MinValue
+            When(x => x.QuantitativeType == QuantitativeMetricType.KeepAbove, () =>
+            {
+                RuleFor(x => x.MinValue)
+                    .NotNull().WithMessage("MinValue is required for KeepAbove metrics.")
+                    .GreaterThanOrEqualTo(0).WithMessage("MinValue must be greater than or equal to 0.");
+            });
+
+            // KeepBelow: requires MaxValue
+            When(x => x.QuantitativeType == QuantitativeMetricType.KeepBelow, () =>
+            {
+                RuleFor(x => x.MaxValue)
+                    .NotNull().WithMessage("MaxValue is required for KeepBelow metrics.")
+                    .GreaterThanOrEqualTo(0).WithMessage("MaxValue must be greater than or equal to 0.");
+            });
+
+            // KeepBetween: requires both MinValue and MaxValue, with MinValue < MaxValue
+            When(x => x.QuantitativeType == QuantitativeMetricType.KeepBetween, () =>
+            {
+                RuleFor(x => x.MinValue)
+                    .NotNull().WithMessage("MinValue is required for KeepBetween metrics.")
+                    .GreaterThanOrEqualTo(0).WithMessage("MinValue must be greater than or equal to 0.");
+
+                RuleFor(x => x.MaxValue)
+                    .NotNull().WithMessage("MaxValue is required for KeepBetween metrics.")
+                    .GreaterThanOrEqualTo(0).WithMessage("MaxValue must be greater than or equal to 0.")
+                    .GreaterThan(x => x.MinValue ?? 0).WithMessage("MaxValue must be greater than MinValue.");
+            });
         });
     }
 }
@@ -109,13 +142,42 @@ public sealed class UpdateMissionMetricValidator : AbstractValidator<UpdateMissi
 
         When(x => x.Type == MetricType.Quantitative, () =>
         {
-            RuleFor(x => x.TargetValue)
-                .NotNull().WithMessage("TargetValue is required for quantitative metrics.")
-                .GreaterThanOrEqualTo(0).WithMessage("TargetValue must be greater than or equal to 0.");
+            RuleFor(x => x.QuantitativeType)
+                .NotNull().WithMessage("QuantitativeType is required for quantitative metrics.")
+                .IsInEnum().WithMessage("QuantitativeType is invalid.");
 
             RuleFor(x => x.Unit)
                 .NotNull().WithMessage("Unit is required for quantitative metrics.")
                 .IsInEnum().WithMessage("Unit is invalid.");
+
+            // KeepAbove: requires MinValue
+            When(x => x.QuantitativeType == QuantitativeMetricType.KeepAbove, () =>
+            {
+                RuleFor(x => x.MinValue)
+                    .NotNull().WithMessage("MinValue is required for KeepAbove metrics.")
+                    .GreaterThanOrEqualTo(0).WithMessage("MinValue must be greater than or equal to 0.");
+            });
+
+            // KeepBelow: requires MaxValue
+            When(x => x.QuantitativeType == QuantitativeMetricType.KeepBelow, () =>
+            {
+                RuleFor(x => x.MaxValue)
+                    .NotNull().WithMessage("MaxValue is required for KeepBelow metrics.")
+                    .GreaterThanOrEqualTo(0).WithMessage("MaxValue must be greater than or equal to 0.");
+            });
+
+            // KeepBetween: requires both MinValue and MaxValue, with MinValue < MaxValue
+            When(x => x.QuantitativeType == QuantitativeMetricType.KeepBetween, () =>
+            {
+                RuleFor(x => x.MinValue)
+                    .NotNull().WithMessage("MinValue is required for KeepBetween metrics.")
+                    .GreaterThanOrEqualTo(0).WithMessage("MinValue must be greater than or equal to 0.");
+
+                RuleFor(x => x.MaxValue)
+                    .NotNull().WithMessage("MaxValue is required for KeepBetween metrics.")
+                    .GreaterThanOrEqualTo(0).WithMessage("MaxValue must be greater than or equal to 0.")
+                    .GreaterThan(x => x.MinValue ?? 0).WithMessage("MaxValue must be greater than MinValue.");
+            });
         });
     }
 }
