@@ -29,6 +29,14 @@ public sealed class WorkspaceService(
             }
         }
 
+        var nameExists = await dbContext.Workspaces
+            .AnyAsync(w => w.OrganizationId == request.OrganizationId && w.Name == request.Name.Trim(), cancellationToken);
+
+        if (nameExists)
+        {
+            return ServiceResult<Workspace>.BadRequest("Já existe um workspace com este nome nesta organização.");
+        }
+
         var workspace = new Workspace
         {
             Id = Guid.NewGuid(),
@@ -60,6 +68,14 @@ public sealed class WorkspaceService(
                 return ServiceResult<Workspace>.Forbidden(
                     "Você não tem permissão para atualizar este workspace.");
             }
+        }
+
+        var nameExists = await dbContext.Workspaces
+            .AnyAsync(w => w.OrganizationId == workspace.OrganizationId && w.Name == request.Name.Trim() && w.Id != id, cancellationToken);
+
+        if (nameExists)
+        {
+            return ServiceResult<Workspace>.BadRequest("Já existe um workspace com este nome nesta organização.");
         }
 
         workspace.Name = request.Name.Trim();
