@@ -162,6 +162,18 @@
   --color-disabled-bg: var(--neutral-100);
   --color-disabled-text: var(--neutral-400);
 
+  /* Sidebar Specific Colors */
+  --color-sidebar-bg: var(--caramel-50);
+  --color-sidebar-border: var(--caramel-200);
+  --color-sidebar-hover: var(--caramel-100);
+  --color-nav-active-bg: var(--caramel-200);
+  --color-nav-active-border: var(--caramel-300);
+
+  /* Assistant/AI Specific Colors */
+  --color-assistant-accent: var(--wine-600);
+  --color-assistant-bg: var(--wine-50);
+  --color-assistant-border: var(--wine-600);
+
   /* ========================================
      TYPOGRAPHY
      Based on Figma Typography page
@@ -313,7 +325,7 @@
   --container-2xl: 1536px;
 
   /* Sidebar */
-  --sidebar-width: 280px;
+  --sidebar-width: 240px;
   --sidebar-width-collapsed: 80px;
 
   /* Header */

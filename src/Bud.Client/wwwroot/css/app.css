@@ -15,17 +15,21 @@ a {
 
 .app-shell {
     display: grid;
-    grid-template-columns: 260px 1fr;
+    grid-template-columns: 240px 1fr;
     min-height: 100vh;
 }
 
 .app-sidebar {
-    background: var(--color-surface);
-    border-right: 1px solid var(--color-border-light);
-    padding: var(--spacing-6) var(--spacing-4);
+    background: var(--color-sidebar-bg);
+    border-right: 1px solid var(--color-sidebar-border);
+    padding: var(--spacing-3) var(--spacing-3);
     display: flex;
     flex-direction: column;
-    gap: var(--spacing-6);
+    gap: var(--spacing-3);
+}
+
+.sidebar-header {
+    padding: var(--spacing-3) 0;
 }
 
 .sidebar-header .brand {
@@ -35,12 +39,121 @@ a {
     color: var(--color-brand-primary);
     font-family: var(--font-family-body);
     text-transform: lowercase;
+    line-height: 1;
 }
 
 .sidebar-header .brand-subtitle {
     font-size: var(--font-size-label-md);
     color: var(--color-text-muted);
     margin-top: var(--spacing-1);
+}
+
+/* Workspace Selector */
+.workspace-selector {
+    background: var(--color-surface);
+    border: 1px solid var(--color-sidebar-border);
+    border-radius: var(--radius-base);
+    padding: var(--spacing-1);
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-2);
+    cursor: pointer;
+    transition: all var(--transition-fast);
+}
+
+.workspace-selector:hover {
+    background: var(--color-sidebar-hover);
+}
+
+.workspace-icon {
+    width: 24px;
+    height: 24px;
+    background: var(--color-brand-primary);
+    border-radius: var(--radius-sm);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--color-text-inverse);
+    font-size: var(--font-size-xs);
+    font-weight: var(--font-weight-bold);
+    flex-shrink: 0;
+}
+
+.workspace-name {
+    flex: 1;
+    font-size: var(--font-size-xs);
+    font-weight: var(--font-weight-semibold);
+    color: var(--color-text-primary);
+}
+
+.workspace-chevron {
+    width: 16px;
+    height: 16px;
+    color: var(--color-text-muted);
+    flex-shrink: 0;
+}
+
+/* User Profile in Sidebar */
+.sidebar-user {
+    margin-top: auto;
+    padding: var(--spacing-3) var(--spacing-2);
+    border-top: 1px solid var(--color-sidebar-border);
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-2);
+}
+
+.sidebar-user-avatar {
+    width: 32px;
+    height: 32px;
+    border-radius: var(--radius-lg);
+    background: var(--color-brand-primary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--color-text-inverse);
+    font-size: var(--font-size-xs);
+    font-weight: var(--font-weight-bold);
+    flex-shrink: 0;
+}
+
+.sidebar-user-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.sidebar-user-name {
+    font-size: var(--font-size-sm);
+    font-weight: var(--font-weight-semibold);
+    color: var(--color-text-primary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.sidebar-user-role {
+    font-size: var(--font-size-xs);
+    color: var(--color-text-muted);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.sidebar-user-menu {
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--color-text-muted);
+    cursor: pointer;
+    border-radius: var(--radius-sm);
+    transition: all var(--transition-fast);
+}
+
+.sidebar-user-menu:hover {
+    background: var(--color-sidebar-hover);
+    color: var(--color-text-primary);
 }
 
 .sidebar-nav {
@@ -50,15 +163,40 @@ a {
 }
 
 .sidebar-nav .nav-item {
-    padding: var(--spacing-3) var(--spacing-3);
-    border-radius: var(--radius-md);
+    padding: var(--spacing-2) var(--spacing-2);
+    border-radius: var(--radius-base);
     color: var(--color-text-primary);
     font-weight: var(--font-weight-medium);
+    font-size: var(--font-size-sm);
+    border: 1px solid transparent;
+    transition: all var(--transition-fast);
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-2);
+}
+
+.sidebar-nav .nav-item:hover {
+    background: var(--color-sidebar-hover);
 }
 
 .sidebar-nav .nav-item.active {
-    background: var(--color-brand-primary);
-    color: var(--color-text-inverse);
+    background: var(--color-nav-active-bg);
+    border-color: var(--color-nav-active-border);
+    color: var(--color-text-primary);
+}
+
+.sidebar-section {
+    margin-top: var(--spacing-6);
+}
+
+.sidebar-section-title {
+    font-size: var(--font-size-xs);
+    font-weight: var(--font-weight-semibold);
+    color: var(--color-text-muted);
+    text-transform: uppercase;
+    letter-spacing: var(--letter-spacing-wide);
+    padding: 0 var(--spacing-2);
+    margin-bottom: var(--spacing-2);
 }
 
 .app-main {
@@ -71,9 +209,16 @@ a {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: var(--spacing-5) var(--spacing-8);
+    padding: var(--spacing-4) var(--spacing-4);
     border-bottom: 1px solid var(--color-border-light);
-    background: var(--color-background);
+    background: var(--color-surface);
+    min-height: 50px;
+}
+
+.topbar-greeting {
+    font-size: var(--font-size-sm);
+    font-weight: var(--font-weight-semibold);
+    color: var(--color-text-primary);
 }
 
 .topbar-title {
@@ -315,6 +460,58 @@ a {
     margin-left: var(--spacing-1);
 }
 
+/* ========================================
+   BADGES - Figma Style Guide Implementation
+   ======================================== */
+
+.badge {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--spacing-1);
+    padding: var(--spacing-1) var(--spacing-2);
+    border-radius: var(--radius-full);
+    font-size: var(--font-size-xs);
+    font-weight: var(--font-weight-medium);
+    line-height: var(--line-height-tight);
+    white-space: nowrap;
+}
+
+/* Badge Variants */
+.badge-neutral {
+    background: var(--neutral-100);
+    color: var(--neutral-700);
+}
+
+.badge-primary {
+    background: var(--orange-50);
+    color: var(--orange-700);
+}
+
+.badge-secondary {
+    background: var(--caramel-100);
+    color: var(--caramel-800);
+}
+
+.badge-wine {
+    background: var(--color-assistant-bg);
+    color: var(--color-assistant-accent);
+}
+
+.badge-success {
+    background: var(--color-success-bg);
+    color: var(--green-700);
+}
+
+.badge-warning {
+    background: var(--color-warning-bg);
+    color: var(--yellow-700);
+}
+
+.badge-error {
+    background: var(--color-error-bg);
+    color: var(--red-700);
+}
+
 .form-message {
     margin-top: var(--spacing-3);
     color: var(--color-success);
@@ -512,12 +709,30 @@ a {
 .topbar-actions {
     display: flex;
     align-items: center;
-    gap: var(--spacing-3);
+    gap: var(--spacing-1);
 }
 
 .topbar-user {
     font-size: var(--font-size-label-md);
     color: var(--color-text-muted);
+}
+
+.topbar-icon-btn {
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: none;
+    background: transparent;
+    color: var(--color-text-primary);
+    cursor: pointer;
+    border-radius: var(--radius-base);
+    transition: all var(--transition-fast);
+}
+
+.topbar-icon-btn:hover {
+    background: var(--color-hover);
 }
 
 .button.ghost {
