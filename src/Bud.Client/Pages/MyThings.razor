@@ -1,3 +1,4 @@
+@page "/"
 @page "/my-things"
 @inject ApiClient Api
 @inject AuthState AuthState
@@ -84,20 +85,13 @@
     protected override async Task OnInitializedAsync()
     {
         await AuthState.EnsureInitializedAsync();
-
-        if (!AuthState.IsAuthenticated || !AuthState.Session?.CollaboratorId.HasValue == true)
-        {
-            Navigation.NavigateTo("/login");
-            return;
-        }
-
         isInitialized = true;
         await LoadMyMissions();
     }
 
     private async Task LoadMyMissions()
     {
-        if (!AuthState.Session?.CollaboratorId.HasValue == true)
+        if (AuthState.Session?.CollaboratorId.HasValue != true)
         {
             return;
         }
