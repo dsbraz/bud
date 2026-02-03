@@ -1,3 +1,4 @@
+using Bud.Server.MultiTenancy;
 using Bud.Server.Services;
 using Bud.Shared.Contracts;
 using Bud.Shared.Models;
@@ -11,14 +12,28 @@ namespace Bud.Server.Controllers;
 public sealed class OrganizationsController(
     IOrganizationService organizationService,
     IValidator<CreateOrganizationRequest> createValidator,
-    IValidator<UpdateOrganizationRequest> updateValidator) : ControllerBase
+    IValidator<UpdateOrganizationRequest> updateValidator,
+    ITenantProvider tenantProvider) : ControllerBase
 {
     [HttpPost]
     [ProducesResponseType(typeof(Organization), StatusCodes.Status201Created)]
     [ProducesResponseType(typeof(ValidationProblemDetails), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status403Forbidden)]
     public async Task<ActionResult<Organization>> Create(CreateOrganizationRequest request, CancellationToken cancellationToken)
     {
+        // Apenas administradores podem criar organizações
+        if (!tenantProvider.IsAdmin)
+        {
+            return StatusCode(StatusCodes.Status403Forbidden,
+                new ProblemDetails
+                {
+                    Status = StatusCodes.Status403Forbidden,
+                    Title = "Acesso negado",
+                    Detail = "Apenas administradores podem criar organizações."
+                });
+        }
+
         var validationResult = await createValidator.ValidateAsync(request, cancellationToken);
         if (!validationResult.IsValid)
         {
@@ -45,8 +60,21 @@ public sealed class OrganizationsController(
     [ProducesResponseType(typeof(Organization), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
     [ProducesResponseType(typeof(ValidationProblemDetails), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status403Forbidden)]
     public async Task<ActionResult<Organization>> Update(Guid id, UpdateOrganizationRequest request, CancellationToken cancellationToken)
     {
+        // Apenas administradores podem atualizar organizações
+        if (!tenantProvider.IsAdmin)
+        {
+            return StatusCode(StatusCodes.Status403Forbidden,
+                new ProblemDetails
+                {
+                    Status = StatusCodes.Status403Forbidden,
+                    Title = "Acesso negado",
+                    Detail = "Apenas administradores podem atualizar organizações."
+                });
+        }
+
         var validationResult = await updateValidator.ValidateAsync(request, cancellationToken);
         if (!validationResult.IsValid)
         {
@@ -69,8 +97,21 @@ public sealed class OrganizationsController(
     [HttpDelete("{id:guid}")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status403Forbidden)]
     public async Task<IActionResult> Delete(Guid id, CancellationToken cancellationToken)
     {
+        // Apenas administradores podem deletar organizações
+        if (!tenantProvider.IsAdmin)
+        {
+            return StatusCode(StatusCodes.Status403Forbidden,
+                new ProblemDetails
+                {
+                    Status = StatusCodes.Status403Forbidden,
+                    Title = "Acesso negado",
+                    Detail = "Apenas administradores podem deletar organizações."
+                });
+        }
+
         var result = await organizationService.DeleteAsync(id, cancellationToken);
 
         if (result.IsFailure)

@@ -26,8 +26,9 @@ public class OrganizationsEndpointsTests : IClassFixture<CustomWebApplicationFac
         using var scope = _factory.Services.CreateScope();
         var dbContext = scope.ServiceProvider.GetRequiredService<Bud.Server.Data.ApplicationDbContext>();
 
-        // Check if admin leader already exists
+        // Check if admin leader already exists (ignore query filters like DbSeeder does)
         var existingLeader = await dbContext.Collaborators
+            .IgnoreQueryFilters()
             .FirstOrDefaultAsync(c => c.Email == "admin@getbud.co");
 
         if (existingLeader != null)
@@ -268,5 +269,125 @@ public class OrganizationsEndpointsTests : IClassFixture<CustomWebApplicationFac
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.NotFound);
+    }
+
+    [Fact]
+    public async Task Create_WithNonAdminUser_ReturnsForbidden()
+    {
+        // Arrange
+        var leaderId = await GetOrCreateAdminLeader();
+
+        // Create a non-admin collaborator for testing
+        using var scope = _factory.Services.CreateScope();
+        var dbContext = scope.ServiceProvider.GetRequiredService<Bud.Server.Data.ApplicationDbContext>();
+
+        var org = await dbContext.Organizations.IgnoreQueryFilters().FirstAsync();
+        var team = await dbContext.Teams.IgnoreQueryFilters().FirstAsync();
+
+        var nonAdminCollaborator = new Collaborator
+        {
+            Id = Guid.NewGuid(),
+            FullName = "Usuário Regular",
+            Email = $"user-create-{Guid.NewGuid()}@test.com",
+            Role = CollaboratorRole.IndividualContributor,
+            OrganizationId = org.Id,
+            TeamId = team.Id
+        };
+        dbContext.Collaborators.Add(nonAdminCollaborator);
+        await dbContext.SaveChangesAsync();
+
+        var nonAdminClient = _factory.CreateTenantClient(
+            org.Id,
+            nonAdminCollaborator.Email,
+            nonAdminCollaborator.Id);
+
+        var request = new CreateOrganizationRequest
+        {
+            Name = "unauthorized-org.com",
+            OwnerId = leaderId,
+            UserEmail = nonAdminCollaborator.Email
+        };
+
+        // Act
+        var response = await nonAdminClient.PostAsJsonAsync("/api/organizations", request);
+
+        // Assert
+        response.StatusCode.Should().Be(HttpStatusCode.Forbidden);
+    }
+
+    [Fact]
+    public async Task Update_WithNonAdminUser_ReturnsForbidden()
+    {
+        // Arrange
+        await GetOrCreateAdminLeader();
+
+        // Create a non-admin collaborator
+        using var scope = _factory.Services.CreateScope();
+        var dbContext = scope.ServiceProvider.GetRequiredService<Bud.Server.Data.ApplicationDbContext>();
+
+        var org = await dbContext.Organizations.IgnoreQueryFilters().FirstAsync();
+        var team = await dbContext.Teams.IgnoreQueryFilters().FirstAsync();
+
+        var nonAdminCollaborator = new Collaborator
+        {
+            Id = Guid.NewGuid(),
+            FullName = "Usuário Regular",
+            Email = $"user-update-{Guid.NewGuid()}@test.com",
+            Role = CollaboratorRole.IndividualContributor,
+            OrganizationId = org.Id,
+            TeamId = team.Id
+        };
+        dbContext.Collaborators.Add(nonAdminCollaborator);
+        await dbContext.SaveChangesAsync();
+
+        var nonAdminClient = _factory.CreateTenantClient(
+            org.Id,
+            nonAdminCollaborator.Email,
+            nonAdminCollaborator.Id);
+
+        var request = new UpdateOrganizationRequest { Name = "updated.com" };
+
+        // Act
+        var response = await nonAdminClient.PutAsJsonAsync($"/api/organizations/{org.Id}", request);
+
+        // Assert
+        response.StatusCode.Should().Be(HttpStatusCode.Forbidden);
+    }
+
+    [Fact]
+    public async Task Delete_WithNonAdminUser_ReturnsForbidden()
+    {
+        // Arrange
+        await GetOrCreateAdminLeader();
+
+        // Create a non-admin collaborator
+        using var scope = _factory.Services.CreateScope();
+        var dbContext = scope.ServiceProvider.GetRequiredService<Bud.Server.Data.ApplicationDbContext>();
+
+        var org = await dbContext.Organizations.IgnoreQueryFilters().FirstAsync();
+        var team = await dbContext.Teams.IgnoreQueryFilters().FirstAsync();
+
+        var nonAdminCollaborator = new Collaborator
+        {
+            Id = Guid.NewGuid(),
+            FullName = "Usuário Regular",
+            Email = $"user-delete-{Guid.NewGuid()}@test.com",
+            Role = CollaboratorRole.IndividualContributor,
+            OrganizationId = org.Id,
+            TeamId = team.Id
+        };
+        dbContext.Collaborators.Add(nonAdminCollaborator);
+        await dbContext.SaveChangesAsync();
+
+        var nonAdminClient = _factory.CreateTenantClient(
+            org.Id,
+            nonAdminCollaborator.Email,
+            nonAdminCollaborator.Id);
+
+        // Act
+        var response = await nonAdminClient.DeleteAsync($"/api/organizations/{org.Id}");
+
+        // Assert
+        response.StatusCode.Should().Be(HttpStatusCode.Forbidden);
     }
 }

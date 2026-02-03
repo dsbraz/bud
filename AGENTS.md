@@ -2,6 +2,18 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## Language Requirements
+
+**IMPORTANT: All user-facing messages, error messages, validation messages, and any text displayed to end users MUST be in Brazilian Portuguese (pt-BR).**
+
+This includes:
+- Error messages in controllers and services
+- Validation error messages in FluentValidation validators
+- API response messages (ProblemDetails, error responses)
+- UI text in Blazor components
+- Log messages that may be displayed to users
+- Comments in code should remain in English for maintainability
+
 ## Project Overview
 
 Bud is an ASP.NET Core 10 application with a Blazor WebAssembly frontend, using PostgreSQL as the database. The application manages organizational hierarchies and mission tracking.
@@ -153,10 +165,12 @@ public sealed class ServiceResult<T>
 }
 ```
 
-**Important:** Controllers must check `result.ErrorType` to return appropriate HTTP status codes:
-- `NotFound` → 404
-- `Validation` → 400
-- `Conflict` → 409
+**Important:**
+- Controllers must check `result.ErrorType` to return appropriate HTTP status codes:
+  - `NotFound` → 404
+  - `Validation` → 400
+  - `Conflict` → 409
+- **All error messages in `ServiceResult.Error` MUST be in Brazilian Portuguese (pt-BR)**
 
 ### Controller Pattern
 
@@ -166,6 +180,7 @@ Controllers use primary constructors and follow this pattern:
 2. Validate the request using FluentValidation
 3. Call the service method
 4. Map `ServiceResult` to appropriate HTTP responses
+5. **All error messages in `ProblemDetails` MUST be in Brazilian Portuguese (pt-BR)**
 
 See [OrganizationsController.cs](src/Bud.Server/Controllers/OrganizationsController.cs) as the reference implementation.
 
@@ -175,6 +190,7 @@ See [OrganizationsController.cs](src/Bud.Server/Controllers/OrganizationsControl
 - Validators are in `src/Bud.Server/Validators/`
 - Each validator must be registered in DI (see [Program.cs](src/Bud.Server/Program.cs))
 - Controllers validate requests before calling services
+- **All validation error messages MUST be in Brazilian Portuguese (pt-BR)**
 
 ### Data Access
 

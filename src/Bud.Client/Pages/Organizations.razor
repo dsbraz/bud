@@ -2,10 +2,19 @@
 @inject ApiClient Api
 @inject AuthState AuthState
 @inject ToastService ToastService
+@inject NavigationManager Navigation
 
-<ManagementMenu />
+@if (AuthState.Session?.IsAdmin != true)
+{
+    <div class="card">
+        <p class="muted">Você não tem permissão para acessar esta página. Apenas administradores podem gerenciar organizações.</p>
+    </div>
+}
+else
+{
+    <ManagementMenu />
 
-<div class="page-header">
+    <div class="page-header">
     <div>
         <div class="page-kicker">Gestão</div>
         <h1>Organizações</h1>
@@ -106,6 +115,7 @@
             <p class="muted">Apenas administradores podem criar organizações.</p>
         }
     </Modal>
+}
 }
 
 @code {
