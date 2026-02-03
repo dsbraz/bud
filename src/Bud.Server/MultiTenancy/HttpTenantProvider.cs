@@ -8,6 +8,7 @@ public sealed class HttpTenantProvider : ITenantProvider
     public Guid? TenantId { get; }
     public Guid? CollaboratorId { get; }
     public bool IsAdmin { get; }
+    public string? UserEmail { get; }
 
     public HttpTenantProvider(
         IHttpContextAccessor httpContextAccessor,
@@ -17,6 +18,7 @@ public sealed class HttpTenantProvider : ITenantProvider
         if (context is null) return;
 
         var email = context.Request.Headers["X-User-Email"].FirstOrDefault();
+        UserEmail = email;
         IsAdmin = !string.IsNullOrEmpty(email) &&
             string.Equals(email, adminSettings.Value.Email, StringComparison.OrdinalIgnoreCase);
 

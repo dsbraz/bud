@@ -2,7 +2,9 @@ using System.Net.Http;
 
 namespace Bud.Client.Services;
 
-public sealed class TenantDelegatingHandler(AuthState authState) : DelegatingHandler
+public sealed class TenantDelegatingHandler(
+    AuthState authState,
+    OrganizationContext orgContext) : DelegatingHandler
 {
     protected override async Task<HttpResponseMessage> SendAsync(
         HttpRequestMessage request, CancellationToken cancellationToken)
@@ -13,10 +15,12 @@ public sealed class TenantDelegatingHandler(AuthState authState) : DelegatingHan
         {
             request.Headers.Add("X-User-Email", authState.Session.Email);
 
-            if (authState.Session.OrganizationId.HasValue)
+            // Use the selected organization from OrganizationContext
+            // If null (TODOS selected), don't send X-Tenant-Id to see all orgs
+            if (orgContext.SelectedOrganizationId.HasValue)
             {
                 request.Headers.Add("X-Tenant-Id",
-                    authState.Session.OrganizationId.Value.ToString());
+                    orgContext.SelectedOrganizationId.Value.ToString());
             }
 
             if (authState.Session.CollaboratorId.HasValue)

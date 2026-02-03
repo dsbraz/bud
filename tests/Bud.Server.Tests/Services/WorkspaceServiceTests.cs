@@ -158,6 +158,7 @@ public class WorkspaceServiceTests
     {
         // Arrange
         _tenantProvider.IsAdmin = false;
+        _tenantProvider.UserEmail = "user@test.com";
         using var context = CreateInMemoryContext();
         var (org, _, _, _, collaborator) = await CreateVisibilityTestHierarchy(context);
 
@@ -183,6 +184,7 @@ public class WorkspaceServiceTests
     {
         // Arrange
         _tenantProvider.IsAdmin = false;
+        _tenantProvider.UserEmail = "user@test.com";
         using var context = CreateInMemoryContext();
         var (org, publicWs, privateWsMember, privateWsNonMember, collaborator) =
             await CreateVisibilityTestHierarchy(context);
@@ -212,6 +214,7 @@ public class WorkspaceServiceTests
     {
         // Arrange
         _tenantProvider.IsAdmin = false;
+        _tenantProvider.UserEmail = "user@test.com";
         using var context = CreateInMemoryContext();
         var (org, publicWs, _, _, collaborator) = await CreateVisibilityTestHierarchy(context);
 
@@ -233,6 +236,7 @@ public class WorkspaceServiceTests
     {
         // Arrange
         _tenantProvider.IsAdmin = false;
+        _tenantProvider.UserEmail = "user@test.com";
         using var context = CreateInMemoryContext();
         var (org, _, privateWsMember, _, collaborator) = await CreateVisibilityTestHierarchy(context);
 
@@ -275,6 +279,7 @@ public class WorkspaceServiceTests
     {
         // Arrange
         _tenantProvider.IsAdmin = false;
+        _tenantProvider.UserEmail = "user@test.com";
         using var context = CreateInMemoryContext();
         var (org, _, _, privateWsNonMember, collaborator) = await CreateVisibilityTestHierarchy(context);
 
@@ -331,6 +336,7 @@ public class WorkspaceServiceTests
     {
         // Arrange
         _tenantProvider.IsAdmin = false;
+        _tenantProvider.UserEmail = "user@test.com";
         using var context = CreateInMemoryContext();
         var (org, _, privateWsMember, _, collaborator) = await CreateVisibilityTestHierarchy(context);
 
@@ -358,6 +364,7 @@ public class WorkspaceServiceTests
     {
         // Arrange
         _tenantProvider.IsAdmin = false;
+        _tenantProvider.UserEmail = "user@test.com";
         using var context = CreateInMemoryContext();
         var (org, _, _, privateWsNonMember, collaborator) = await CreateVisibilityTestHierarchy(context);
 
@@ -415,6 +422,7 @@ public class WorkspaceServiceTests
     {
         // Arrange
         _tenantProvider.IsAdmin = false;
+        _tenantProvider.UserEmail = "user@test.com";
         using var context = CreateInMemoryContext();
         var (org, _, privateWsMember, _, collaborator) = await CreateVisibilityTestHierarchy(context);
 
@@ -435,6 +443,7 @@ public class WorkspaceServiceTests
     {
         // Arrange
         _tenantProvider.IsAdmin = false;
+        _tenantProvider.UserEmail = "user@test.com";
         using var context = CreateInMemoryContext();
         var (org, publicWs, _, _, collaborator) = await CreateVisibilityTestHierarchy(context);
 

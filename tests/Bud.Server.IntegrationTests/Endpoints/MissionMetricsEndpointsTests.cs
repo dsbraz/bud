@@ -235,6 +235,70 @@ public class MissionMetricsEndpointsTests : IClassFixture<CustomWebApplicationFa
         response.StatusCode.Should().Be(HttpStatusCode.NotFound);
     }
 
+    [Fact]
+    public async Task Create_WithQuantitativeMetricAchieve_ReturnsCreated()
+    {
+        // Arrange
+        var mission = await CreateTestMission();
+
+        var request = new CreateMissionMetricRequest
+        {
+            MissionId = mission.Id,
+            Name = "Sales Target",
+            Type = MetricType.Quantitative,
+            QuantitativeType = QuantitativeMetricType.Achieve,
+            MaxValue = 100m,
+            Unit = MetricUnit.Integer
+        };
+
+        // Act
+        var response = await _client.PostAsJsonAsync("/api/mission-metrics", request);
+
+        // Assert
+        response.StatusCode.Should().Be(HttpStatusCode.Created);
+        var metric = await response.Content.ReadFromJsonAsync<MissionMetric>();
+        metric.Should().NotBeNull();
+        metric!.Name.Should().Be("Sales Target");
+        metric.Type.Should().Be(MetricType.Quantitative);
+        metric.QuantitativeType.Should().Be(QuantitativeMetricType.Achieve);
+        metric.MinValue.Should().BeNull();
+        metric.MaxValue.Should().Be(100m);
+        metric.Unit.Should().Be(MetricUnit.Integer);
+        metric.TargetText.Should().BeNull();
+    }
+
+    [Fact]
+    public async Task Create_WithQuantitativeMetricReduce_ReturnsCreated()
+    {
+        // Arrange
+        var mission = await CreateTestMission();
+
+        var request = new CreateMissionMetricRequest
+        {
+            MissionId = mission.Id,
+            Name = "Cost Reduction",
+            Type = MetricType.Quantitative,
+            QuantitativeType = QuantitativeMetricType.Reduce,
+            MaxValue = 50m,
+            Unit = MetricUnit.Percentage
+        };
+
+        // Act
+        var response = await _client.PostAsJsonAsync("/api/mission-metrics", request);
+
+        // Assert
+        response.StatusCode.Should().Be(HttpStatusCode.Created);
+        var metric = await response.Content.ReadFromJsonAsync<MissionMetric>();
+        metric.Should().NotBeNull();
+        metric!.Name.Should().Be("Cost Reduction");
+        metric.Type.Should().Be(MetricType.Quantitative);
+        metric.QuantitativeType.Should().Be(QuantitativeMetricType.Reduce);
+        metric.MinValue.Should().BeNull();
+        metric.MaxValue.Should().Be(50m);
+        metric.Unit.Should().Be(MetricUnit.Percentage);
+        metric.TargetText.Should().BeNull();
+    }
+
     #endregion
 
     #region Update Tests

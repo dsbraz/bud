@@ -118,6 +118,22 @@ public sealed class CreateMissionMetricValidator : AbstractValidator<CreateMissi
                     .GreaterThanOrEqualTo(0).WithMessage("MaxValue must be greater than or equal to 0.")
                     .GreaterThan(x => x.MinValue ?? 0).WithMessage("MaxValue must be greater than MinValue.");
             });
+
+            // Achieve: requires MaxValue (target to achieve)
+            When(x => x.QuantitativeType == QuantitativeMetricType.Achieve, () =>
+            {
+                RuleFor(x => x.MaxValue)
+                    .NotNull().WithMessage("MaxValue is required for Achieve metrics.")
+                    .GreaterThanOrEqualTo(0).WithMessage("MaxValue must be greater than or equal to 0.");
+            });
+
+            // Reduce: requires MaxValue (target to reduce to)
+            When(x => x.QuantitativeType == QuantitativeMetricType.Reduce, () =>
+            {
+                RuleFor(x => x.MaxValue)
+                    .NotNull().WithMessage("MaxValue is required for Reduce metrics.")
+                    .GreaterThanOrEqualTo(0).WithMessage("MaxValue must be greater than or equal to 0.");
+            });
         });
     }
 }
@@ -177,6 +193,22 @@ public sealed class UpdateMissionMetricValidator : AbstractValidator<UpdateMissi
                     .NotNull().WithMessage("MaxValue is required for KeepBetween metrics.")
                     .GreaterThanOrEqualTo(0).WithMessage("MaxValue must be greater than or equal to 0.")
                     .GreaterThan(x => x.MinValue ?? 0).WithMessage("MaxValue must be greater than MinValue.");
+            });
+
+            // Achieve: requires MaxValue (target to achieve)
+            When(x => x.QuantitativeType == QuantitativeMetricType.Achieve, () =>
+            {
+                RuleFor(x => x.MaxValue)
+                    .NotNull().WithMessage("MaxValue is required for Achieve metrics.")
+                    .GreaterThanOrEqualTo(0).WithMessage("MaxValue must be greater than or equal to 0.");
+            });
+
+            // Reduce: requires MaxValue (target to reduce to)
+            When(x => x.QuantitativeType == QuantitativeMetricType.Reduce, () =>
+            {
+                RuleFor(x => x.MaxValue)
+                    .NotNull().WithMessage("MaxValue is required for Reduce metrics.")
+                    .GreaterThanOrEqualTo(0).WithMessage("MaxValue must be greater than or equal to 0.");
             });
         });
     }

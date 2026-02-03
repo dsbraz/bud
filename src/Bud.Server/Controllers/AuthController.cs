@@ -39,4 +39,21 @@ public sealed class AuthController(IAuthService authService, IValidator<AuthLogi
     {
         return NoContent();
     }
+
+    [HttpGet("my-organizations")]
+    [ProducesResponseType(typeof(List<OrganizationSummaryDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
+    public async Task<ActionResult<List<OrganizationSummaryDto>>> GetMyOrganizations(
+        [FromHeader(Name = "X-User-Email")] string email,
+        CancellationToken cancellationToken)
+    {
+        var result = await authService.GetMyOrganizationsAsync(email, cancellationToken);
+
+        if (result.IsFailure)
+        {
+            return BadRequest(new ProblemDetails { Detail = result.Error });
+        }
+
+        return Ok(result.Value);
+    }
 }

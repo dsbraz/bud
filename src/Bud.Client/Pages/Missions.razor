@@ -1,6 +1,8 @@
 @page "/missions"
 @inject ApiClient Api
+@inject OrganizationContext OrgContext
 @inject ToastService ToastService
+@implements IDisposable
 
 <MissionsMenu />
 
@@ -151,78 +153,100 @@
                 @* Metrics Section *@
                 <div class="mission-metrics-section">
                     <button type="button" class="metrics-add-button" @onclick="AddMetricOrOpenForm">
-                        <span>@(showMetricForm ? "Adicionar item" : "Adicionar item")</span>
-                        <span class="metrics-add-icon">+</span>
+                        <span>Adicionar item</span>
+                        @if (showMetricForm)
+                        {
+                            <svg class="metrics-add-icon" width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <path d="M13.3333 4L6 11.3333L2.66667 8" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                            </svg>
+                        }
+                        else
+                        {
+                            <span class="metrics-add-icon">+</span>
+                        }
                     </button>
 
                     @if (showMetricForm)
                     {
-                        <div style="margin-top: var(--spacing-4);">
-                            <div class="form-row">
-                                <label>Nome da métrica</label>
-                                <input type="text" class="input" @bind="newMetricName" placeholder="Ex: Vendas mensais" />
-                            </div>
-                            <div class="form-row">
-                                <label>Tipo</label>
-                                <select class="input" @bind="newMetricType">
-                                    <option value="">Selecione</option>
-                                    <option value="Quantitative">Quantitativa</option>
-                                    <option value="Qualitative">Qualitativa</option>
-                                </select>
-                            </div>
-                            @if (newMetricType == "Quantitative")
-                            {
+                        <div class="metrics-form-container" style="margin-top: var(--spacing-4);">
+                            <div class="metrics-form-header">
                                 <div class="form-row">
-                                    <label>Tipo</label>
-                                    <select class="input" @bind="newMetricQuantitativeType">
-                                        <option value="">Selecione</option>
-                                        <option value="KeepAbove">Manter acima</option>
-                                        <option value="KeepBelow">Manter abaixo</option>
-                                        <option value="KeepBetween">Manter entre</option>
-                                    </select>
+                                    <label>Nome da métrica</label>
+                                    <input type="text" class="input" @bind="newMetricName" placeholder="Ex: Taxa de conversão, NPS, etc." />
                                 </div>
-                                @if (newMetricQuantitativeType == "KeepAbove")
-                                {
-                                    <div class="form-row">
-                                        <label>Valor mínimo</label>
-                                        <input type="number" class="input" @bind="newMetricMinValue" placeholder="Ex: 1000" />
-                                    </div>
-                                }
-                                @if (newMetricQuantitativeType == "KeepBelow")
-                                {
-                                    <div class="form-row">
-                                        <label>Valor máximo</label>
-                                        <input type="number" class="input" @bind="newMetricMaxValue" placeholder="Ex: 1000" />
-                                    </div>
-                                }
-                                @if (newMetricQuantitativeType == "KeepBetween")
-                                {
-                                    <div class="form-row">
-                                        <label>Valor mínimo</label>
-                                        <input type="number" class="input" @bind="newMetricMinValue" placeholder="Ex: 100" />
-                                    </div>
-                                    <div class="form-row">
-                                        <label>Valor máximo</label>
-                                        <input type="number" class="input" @bind="newMetricMaxValue" placeholder="Ex: 1000" />
-                                    </div>
-                                }
-                                <div class="form-row">
-                                    <label>Unidade</label>
-                                    <select class="input" @bind="newMetricUnit">
-                                        <option value="">Selecione</option>
-                                        <option value="Integer">Inteiro</option>
-                                        <option value="Decimal">Decimal</option>
-                                        <option value="Percentage">Percentual</option>
-                                        <option value="Hours">Horas</option>
-                                        <option value="Points">Pontos</option>
+                            </div>
+
+                            <div class="metrics-form-selectors">
+                                <div class="metrics-selector-btn">
+                                    <svg class="metrics-selector-icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2">
+                                        <path d="M4 6h12M4 10h12M4 14h12" stroke-linecap="round"/>
+                                    </svg>
+                                    <select @bind="newMetricType">
+                                        <option value="">Tipo de métrica</option>
+                                        <option value="Quantitative">Quantitativa</option>
+                                        <option value="Qualitative">Qualitativa</option>
                                     </select>
+                                    <svg class="metrics-selector-icon" viewBox="0 0 20 20" fill="currentColor">
+                                        <path d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"/>
+                                    </svg>
                                 </div>
-                            }
+
+                                @if (newMetricType == "Quantitative")
+                                {
+                                    <div class="metrics-selector-btn">
+                                        <svg class="metrics-selector-icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2">
+                                            <path d="M3 10h14M10 3v14" stroke-linecap="round"/>
+                                        </svg>
+                                        <select @bind="newMetricQuantitativeType">
+                                            <option value="">Modo de mensuração</option>
+                                            <option value="KeepAbove">↑ Manter acima</option>
+                                            <option value="KeepBelow">↓ Manter abaixo</option>
+                                            <option value="KeepBetween">↕ Manter entre</option>
+                                            <option value="Achieve">→ Atingir</option>
+                                            <option value="Reduce">↘ Reduzir</option>
+                                        </select>
+                                        <svg class="metrics-selector-icon" viewBox="0 0 20 20" fill="currentColor">
+                                            <path d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"/>
+                                        </svg>
+                                    </div>
+                                }
+                            </div>
+
                             @if (newMetricType == "Qualitative")
                             {
                                 <div class="form-row">
-                                    <label>Texto alvo</label>
-                                    <input type="text" class="input" @bind="newMetricTargetText" placeholder="Ex: Muito satisfeito" />
+                                    <label>Descrição do objetivo</label>
+                                    <input type="text" class="input" @bind="newMetricTargetText" placeholder="Descreva o objetivo qualitativo desta métrica" />
+                                </div>
+                            }
+
+                            @if (newMetricType == "Quantitative" && !string.IsNullOrEmpty(newMetricQuantitativeType))
+                            {
+                                <div class="metrics-form-inputs">
+                                    <div class="metrics-input-field">
+                                        <select @bind="newMetricUnit">
+                                            <option value="">Unidade de medida</option>
+                                            <option value="Integer">Inteiro</option>
+                                            <option value="Decimal">Decimal</option>
+                                            <option value="Percentage">Percentual</option>
+                                            <option value="Hours">Horas</option>
+                                            <option value="Points">Pontos</option>
+                                        </select>
+                                    </div>
+
+                                    @if (newMetricQuantitativeType == "KeepAbove" || newMetricQuantitativeType == "KeepBetween")
+                                    {
+                                        <div class="metrics-input-field">
+                                            <input type="number" @bind="newMetricMinValue" placeholder="Valor mínimo" />
+                                        </div>
+                                    }
+
+                                    @if (newMetricQuantitativeType == "KeepBelow" || newMetricQuantitativeType == "KeepBetween" || newMetricQuantitativeType == "Achieve" || newMetricQuantitativeType == "Reduce")
+                                    {
+                                        <div class="metrics-input-field">
+                                            <input type="number" @bind="newMetricMaxValue" placeholder="@GetMaxValuePlaceholder(newMetricQuantitativeType)" />
+                                        </div>
+                                    }
                                 </div>
                             }
                         </div>
@@ -305,8 +329,25 @@
             Status = MissionStatus.Planned
         };
 
+        // Subscribe to organization changes
+        OrgContext.OnOrganizationChanged += HandleOrganizationChanged;
+
         await LoadReferenceData();
         await LoadMissions();
+    }
+
+    private async void HandleOrganizationChanged()
+    {
+        await InvokeAsync(async () =>
+        {
+            await LoadMissions();
+            StateHasChanged();
+        });
+    }
+
+    public void Dispose()
+    {
+        OrgContext.OnOrganizationChanged -= HandleOrganizationChanged;
     }
 
     private async Task LoadReferenceData()
@@ -539,6 +580,8 @@
             "KeepAbove" => $"Acima de {newMetricMinValue} {unit}",
             "KeepBelow" => $"Abaixo de {newMetricMaxValue} {unit}",
             "KeepBetween" => $"Entre {newMetricMinValue} e {newMetricMaxValue} {unit}",
+            "Achieve" => $"Atingir {newMetricMaxValue} {unit}",
+            "Reduce" => $"Reduzir para {newMetricMaxValue} {unit}",
             _ => ""
         };
     }
@@ -693,5 +736,14 @@
         MissionStatus.Completed => "Concluída",
         MissionStatus.Cancelled => "Cancelada",
         _ => status.ToString()
+    };
+
+    private static string GetMaxValuePlaceholder(string? quantitativeType) => quantitativeType switch
+    {
+        "KeepBelow" => "Valor máximo",
+        "KeepBetween" => "Valor máximo",
+        "Achieve" => "Valor alvo",
+        "Reduce" => "Valor alvo",
+        _ => "Valor máximo"
     };
 }

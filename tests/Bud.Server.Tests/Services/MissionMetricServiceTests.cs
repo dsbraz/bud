@@ -319,6 +319,74 @@ public class MissionMetricServiceTests
         result.Value!.Unit.Should().Be(MetricUnit.Points);
     }
 
+    [Fact]
+    public async Task CreateMetric_WithValidAchieveMetric_CreatesCorrectly()
+    {
+        // Arrange
+        using var context = CreateInMemoryContext();
+        var service = new MissionMetricService(context);
+        var mission = await CreateTestMission(context);
+
+        var request = new CreateMissionMetricRequest
+        {
+            MissionId = mission.Id,
+            Name = "Sales Target",
+            Type = MetricType.Quantitative,
+            QuantitativeType = QuantitativeMetricType.Achieve,
+            MaxValue = 100m,
+            Unit = MetricUnit.Integer
+        };
+
+        // Act
+        var result = await service.CreateAsync(request);
+
+        // Assert
+        result.IsSuccess.Should().BeTrue();
+        result.Value.Should().NotBeNull();
+        result.Value!.Id.Should().NotBeEmpty();
+        result.Value!.MissionId.Should().Be(mission.Id);
+        result.Value!.Name.Should().Be("Sales Target");
+        result.Value!.Type.Should().Be(MetricType.Quantitative);
+        result.Value!.QuantitativeType.Should().Be(QuantitativeMetricType.Achieve);
+        result.Value!.MaxValue.Should().Be(100m);
+        result.Value!.MinValue.Should().BeNull();
+        result.Value!.Unit.Should().Be(MetricUnit.Integer);
+    }
+
+    [Fact]
+    public async Task CreateMetric_WithValidReduceMetric_CreatesCorrectly()
+    {
+        // Arrange
+        using var context = CreateInMemoryContext();
+        var service = new MissionMetricService(context);
+        var mission = await CreateTestMission(context);
+
+        var request = new CreateMissionMetricRequest
+        {
+            MissionId = mission.Id,
+            Name = "Cost Reduction",
+            Type = MetricType.Quantitative,
+            QuantitativeType = QuantitativeMetricType.Reduce,
+            MaxValue = 50m,
+            Unit = MetricUnit.Percentage
+        };
+
+        // Act
+        var result = await service.CreateAsync(request);
+
+        // Assert
+        result.IsSuccess.Should().BeTrue();
+        result.Value.Should().NotBeNull();
+        result.Value!.Id.Should().NotBeEmpty();
+        result.Value!.MissionId.Should().Be(mission.Id);
+        result.Value!.Name.Should().Be("Cost Reduction");
+        result.Value!.Type.Should().Be(MetricType.Quantitative);
+        result.Value!.QuantitativeType.Should().Be(QuantitativeMetricType.Reduce);
+        result.Value!.MaxValue.Should().Be(50m);
+        result.Value!.MinValue.Should().BeNull();
+        result.Value!.Unit.Should().Be(MetricUnit.Percentage);
+    }
+
     #endregion
 
     #region UpdateAsync Tests

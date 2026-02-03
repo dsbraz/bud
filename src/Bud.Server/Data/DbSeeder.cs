@@ -8,7 +8,8 @@ public static class DbSeeder
     public static async Task SeedAsync(ApplicationDbContext context)
     {
         // Check if seed already exists
-        if (await context.Organizations.AnyAsync(o => o.Name == "getbud.co"))
+        // Must ignore query filters since we're seeding without tenant context
+        if (await context.Organizations.IgnoreQueryFilters().AnyAsync(o => o.Name == "getbud.co"))
         {
             return;
         }

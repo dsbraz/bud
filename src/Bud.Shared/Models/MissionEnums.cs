@@ -26,7 +26,9 @@ public enum QuantitativeMetricType
 {
     KeepAbove = 0,
     KeepBelow = 1,
-    KeepBetween = 2
+    KeepBetween = 2,
+    Achieve = 3,
+    Reduce = 4
 }
 
 public enum MetricUnit

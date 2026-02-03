@@ -1,5 +1,6 @@
 ﻿@inherits LayoutComponentBase
 @inject AuthState AuthState
+@inject OrganizationContext OrgContext
 @inject ApiClient Api
 @inject NavigationManager Nav
 <div class="app-shell">
@@ -8,13 +9,32 @@
             <div class="brand">bud</div>
         </div>
 
-        @* Workspace Selector *@
-        <div class="workspace-selector">
-            <div class="workspace-icon">AC</div>
-            <div class="workspace-name">ACME LTDA</div>
+        @* Organization Selector *@
+        <div class="workspace-selector @(isDropdownOpen ? "open" : "")" @onclick="ToggleDropdown">
+            <div class="workspace-icon">@GetOrganizationInitials()</div>
+            <div class="workspace-name">@OrgContext.GetSelectedOrganizationName()</div>
             <svg class="workspace-chevron" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
             </svg>
+            @if (isDropdownOpen)
+            {
+                <div class="workspace-dropdown" @onclick:stopPropagation="true">
+                    <div class="workspace-dropdown-item @(OrgContext.ShowAllOrganizations ? "selected" : "")"
+                         @onclick="() => SelectOrganization(null)">
+                        <div class="workspace-icon">TD</div>
+                        <div class="workspace-item-name">TODOS</div>
+                    </div>
+                    @foreach (var org in OrgContext.AvailableOrganizations)
+                    {
+                        var isSelected = OrgContext.SelectedOrganizationId == org.Id;
+                        <div class="workspace-dropdown-item @(isSelected ? "selected" : "")"
+                             @onclick="() => SelectOrganization(org.Id)">
+                            <div class="workspace-icon">@GetInitials(org.Name)</div>
+                            <div class="workspace-item-name">@org.Name</div>
+                        </div>
+                    }
+                </div>
+            }
         </div>
 
         <NavMenu />
@@ -65,6 +85,8 @@
 <ToastContainer />
 
 @code {
+    private bool isDropdownOpen = false;
+
     private string UserLabel => AuthState.Session is null
         ? "Sistema interno"
         : $"{AuthState.Session.DisplayName} · {AuthState.Session.Email}";
@@ -72,6 +94,52 @@
     protected override async Task OnInitializedAsync()
     {
         await AuthState.EnsureInitializedAsync();
+
+        try
+        {
+            var organizations = await Api.GetMyOrganizationsAsync();
+            if (organizations != null)
+            {
+                await OrgContext.InitializeAsync(organizations);
+            }
+        }
+        catch (Exception)
+        {
+            // Silent fail - user might not have access to any organizations yet
+        }
+    }
+
+    private void ToggleDropdown()
+    {
+        isDropdownOpen = !isDropdownOpen;
+    }
+
+    private async Task SelectOrganization(Guid? orgId)
+    {
+        await OrgContext.SelectOrganizationAsync(orgId);
+        isDropdownOpen = false;
+    }
+
+    private string GetOrganizationInitials()
+    {
+        if (OrgContext.ShowAllOrganizations)
+        {
+            return "TD";
+        }
+
+        return GetInitials(OrgContext.GetSelectedOrganizationName());
+    }
+
+    private string GetInitials(string name)
+    {
+        if (string.IsNullOrWhiteSpace(name))
+            return "??";
+
+        var words = name.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+        if (words.Length == 1)
+            return words[0].Substring(0, Math.Min(2, words[0].Length)).ToUpper();
+
+        return $"{words[0][0]}{words[^1][0]}".ToUpper();
     }
 
     private async Task HandleLogout()

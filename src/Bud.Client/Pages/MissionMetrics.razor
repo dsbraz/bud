@@ -74,91 +74,109 @@
 
 @if (isModalOpen)
 {
-    <Modal Title="Criar métrica" OnClose="CloseModal">
+    <Modal Title="Nova métrica" OnClose="CloseModal" Size="lg">
         <EditForm Model="@newMetric" OnValidSubmit="CreateMetric">
             <DataAnnotationsValidator />
-            <div class="form-row">
-                <label>Missão</label>
-                <select class="input" @bind="createMissionId">
-                    <option value="">Selecione</option>
-                    @foreach (var mission in missions)
+            <div class="metrics-form-container">
+                <div class="metrics-form-header">
+                    <div class="form-row">
+                        <label>Missão</label>
+                        <select class="input" @bind="createMissionId">
+                            <option value="">Selecione uma missão</option>
+                            @foreach (var mission in missions)
+                            {
+                                <option value="@mission.Id">@mission.Name</option>
+                            }
+                        </select>
+                    </div>
+                    <div class="form-row">
+                        <label>Nome da métrica</label>
+                        <InputText class="input" placeholder="Ex: Taxa de conversão, NPS, etc." @bind-Value="newMetric.Name" />
+                    </div>
+                </div>
+
+                <div class="metrics-form-selectors">
+                    <div class="metrics-selector-btn">
+                        <svg class="metrics-selector-icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M4 6h12M4 10h12M4 14h12" stroke-linecap="round"/>
+                        </svg>
+                        <select value="@createMetricTypeValue" @onchange="OnMetricTypeChanged">
+                            <option value="">Tipo de métrica</option>
+                            @foreach (var metricType in Enum.GetValues<MetricType>())
+                            {
+                                <option value="@metricType">@GetMetricTypeLabel(metricType)</option>
+                            }
+                        </select>
+                        <svg class="metrics-selector-icon" viewBox="0 0 20 20" fill="currentColor">
+                            <path d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"/>
+                        </svg>
+                    </div>
+
+                    @if (createMetricTypeValue == nameof(MetricType.Quantitative))
                     {
-                        <option value="@mission.Id">@mission.Name</option>
+                        <div class="metrics-selector-btn">
+                            <svg class="metrics-selector-icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M3 10h14M10 3v14" stroke-linecap="round"/>
+                            </svg>
+                            <select @bind="createQuantitativeTypeValue">
+                                <option value="">Modo de mensuração</option>
+                                @foreach (var qType in Enum.GetValues<QuantitativeMetricType>())
+                                {
+                                    <option value="@qType">@GetQuantitativeTypeIcon(qType) @GetQuantitativeTypeLabel(qType)</option>
+                                }
+                            </select>
+                            <svg class="metrics-selector-icon" viewBox="0 0 20 20" fill="currentColor">
+                                <path d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"/>
+                            </svg>
+                        </div>
                     }
-                </select>
-            </div>
-            <div class="form-row">
-                <label>Nome</label>
-                <InputText class="input" @bind-Value="newMetric.Name" />
-            </div>
-            <div class="form-row">
-                <label>Tipo</label>
-                <select class="input" value="@createMetricTypeValue" @onchange="OnMetricTypeChanged">
-                    <option value="">Selecione</option>
-                    @foreach (var metricType in Enum.GetValues<MetricType>())
-                    {
-                        <option value="@metricType">@GetMetricTypeLabel(metricType)</option>
-                    }
-                </select>
-            </div>
-            @if (createMetricTypeValue == nameof(MetricType.Qualitative))
-            {
-                <div class="form-row">
-                    <label>Texto alvo</label>
-                    <InputText class="input" @bind-Value="newMetric.TargetText" />
                 </div>
-            }
-            @if (createMetricTypeValue == nameof(MetricType.Quantitative))
-            {
-                <div class="form-row">
-                    <label>Tipo de métrica</label>
-                    <select class="input" @bind="createQuantitativeTypeValue">
-                        <option value="">Selecione</option>
-                        @foreach (var qType in Enum.GetValues<QuantitativeMetricType>())
+
+                @if (createMetricTypeValue == nameof(MetricType.Qualitative))
+                {
+                    <div class="form-row">
+                        <label>Descrição do objetivo</label>
+                        <InputText class="input" placeholder="Descreva o objetivo qualitativo desta métrica" @bind-Value="newMetric.TargetText" />
+                    </div>
+                }
+
+                @if (createMetricTypeValue == nameof(MetricType.Quantitative) && !string.IsNullOrEmpty(createQuantitativeTypeValue))
+                {
+                    <div class="metrics-form-inputs">
+                        <div class="metrics-input-field">
+                            <select @bind="createMetricUnitValue">
+                                <option value="">Unidade de medida</option>
+                                @foreach (var unit in Enum.GetValues<MetricUnit>())
+                                {
+                                    <option value="@unit">@GetUnitLabel(unit)</option>
+                                }
+                            </select>
+                        </div>
+
+                        @if (createQuantitativeTypeValue == nameof(QuantitativeMetricType.KeepAbove) ||
+                             createQuantitativeTypeValue == nameof(QuantitativeMetricType.KeepBetween))
                         {
-                            <option value="@qType">@GetQuantitativeTypeLabel(qType)</option>
+                            <div class="metrics-input-field">
+                                <InputNumber placeholder="Valor mínimo" @bind-Value="newMetric.MinValue" />
+                            </div>
                         }
-                    </select>
-                </div>
-                @if (createQuantitativeTypeValue == nameof(QuantitativeMetricType.KeepAbove))
-                {
-                    <div class="form-row">
-                        <label>Valor mínimo</label>
-                        <InputNumber class="input" @bind-Value="newMetric.MinValue" />
-                    </div>
-                }
-                @if (createQuantitativeTypeValue == nameof(QuantitativeMetricType.KeepBelow))
-                {
-                    <div class="form-row">
-                        <label>Valor máximo</label>
-                        <InputNumber class="input" @bind-Value="newMetric.MaxValue" />
-                    </div>
-                }
-                @if (createQuantitativeTypeValue == nameof(QuantitativeMetricType.KeepBetween))
-                {
-                    <div class="form-row">
-                        <label>Valor mínimo</label>
-                        <InputNumber class="input" @bind-Value="newMetric.MinValue" />
-                    </div>
-                    <div class="form-row">
-                        <label>Valor máximo</label>
-                        <InputNumber class="input" @bind-Value="newMetric.MaxValue" />
-                    </div>
-                }
-                <div class="form-row">
-                    <label>Unidade</label>
-                    <select class="input" @bind="createMetricUnitValue">
-                        <option value="">Selecione</option>
-                        @foreach (var unit in Enum.GetValues<MetricUnit>())
+
+                        @if (createQuantitativeTypeValue == nameof(QuantitativeMetricType.KeepBelow) ||
+                             createQuantitativeTypeValue == nameof(QuantitativeMetricType.KeepBetween) ||
+                             createQuantitativeTypeValue == nameof(QuantitativeMetricType.Achieve) ||
+                             createQuantitativeTypeValue == nameof(QuantitativeMetricType.Reduce))
                         {
-                            <option value="@unit">@GetUnitLabel(unit)</option>
+                            <div class="metrics-input-field">
+                                <InputNumber placeholder="@GetMaxValuePlaceholderForMetrics(createQuantitativeTypeValue)" @bind-Value="newMetric.MaxValue" />
+                            </div>
                         }
-                    </select>
-                </div>
-            }
-            <div class="form-actions">
+                    </div>
+                }
+            </div>
+
+            <div class="form-actions" style="margin-top: var(--spacing-6);">
                 <button class="button tertiary" type="button" @onclick="CloseModal">Cancelar</button>
-                <button class="button primary" type="submit">Salvar</button>
+                <button class="button primary" type="submit">Criar métrica</button>
             </div>
         </EditForm>
     </Modal>
@@ -292,6 +310,18 @@
                 }
             }
 
+            if (quantitativeType == QuantitativeMetricType.Achieve && newMetric.MaxValue is null)
+            {
+                ToastService.ShowError("Erro ao criar métrica", "Informe o valor alvo.");
+                return;
+            }
+
+            if (quantitativeType == QuantitativeMetricType.Reduce && newMetric.MaxValue is null)
+            {
+                ToastService.ShowError("Erro ao criar métrica", "Informe o valor alvo.");
+                return;
+            }
+
             if (!Enum.TryParse<MetricUnit>(createMetricUnitValue, out var metricUnit))
             {
                 ToastService.ShowError("Erro ao criar métrica", "Selecione a unidade.");
@@ -331,7 +361,19 @@
         QuantitativeMetricType.KeepAbove => "Manter acima",
         QuantitativeMetricType.KeepBelow => "Manter abaixo",
         QuantitativeMetricType.KeepBetween => "Manter entre",
+        QuantitativeMetricType.Achieve => "Atingir",
+        QuantitativeMetricType.Reduce => "Reduzir",
         _ => type.ToString()
+    };
+
+    private static string GetQuantitativeTypeIcon(QuantitativeMetricType type) => type switch
+    {
+        QuantitativeMetricType.KeepAbove => "↑",
+        QuantitativeMetricType.KeepBelow => "↓",
+        QuantitativeMetricType.KeepBetween => "↕",
+        QuantitativeMetricType.Achieve => "→",
+        QuantitativeMetricType.Reduce => "↘",
+        _ => ""
     };
 
     private static string GetUnitLabel(MetricUnit unit) => unit switch
@@ -359,7 +401,18 @@
             QuantitativeMetricType.KeepAbove => $"{quantType} {metric.MinValue} {unit}",
             QuantitativeMetricType.KeepBelow => $"{quantType} {metric.MaxValue} {unit}",
             QuantitativeMetricType.KeepBetween => $"{quantType} {metric.MinValue} e {metric.MaxValue} {unit}",
+            QuantitativeMetricType.Achieve => $"{quantType} {metric.MaxValue} {unit}",
+            QuantitativeMetricType.Reduce => $"{quantType} para {metric.MaxValue} {unit}",
             _ => "—"
         };
     }
+
+    private static string GetMaxValuePlaceholderForMetrics(string? quantitativeType) => quantitativeType switch
+    {
+        nameof(QuantitativeMetricType.KeepBelow) => "Valor máximo",
+        nameof(QuantitativeMetricType.KeepBetween) => "Valor máximo",
+        nameof(QuantitativeMetricType.Achieve) => "Valor alvo",
+        nameof(QuantitativeMetricType.Reduce) => "Valor alvo",
+        _ => "Valor máximo"
+    };
 }

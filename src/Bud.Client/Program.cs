@@ -8,6 +8,7 @@ builder.RootComponents.Add<App>("#app");
 builder.RootComponents.Add<HeadOutlet>("head::after");
 
 builder.Services.AddScoped<AuthState>();
+builder.Services.AddScoped<OrganizationContext>();
 builder.Services.AddScoped<TenantDelegatingHandler>();
 builder.Services.AddScoped(sp =>
 {

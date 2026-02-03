@@ -472,6 +472,154 @@ public class CreateMissionMetricValidatorTests
 
     #endregion
 
+    #region Achieve Tests
+
+    [Fact]
+    public async Task Validate_AchieveWithValidMaxValue_Passes()
+    {
+        // Arrange
+        var request = new CreateMissionMetricRequest
+        {
+            MissionId = Guid.NewGuid(),
+            Name = "Sales Target",
+            Type = MetricType.Quantitative,
+            QuantitativeType = QuantitativeMetricType.Achieve,
+            MaxValue = 100m,
+            Unit = MetricUnit.Integer
+        };
+
+        // Act
+        var result = await _validator.ValidateAsync(request);
+
+        // Assert
+        result.IsValid.Should().BeTrue();
+        result.Errors.Should().BeEmpty();
+    }
+
+    [Fact]
+    public async Task Validate_AchieveWithoutMaxValue_Fails()
+    {
+        // Arrange
+        var request = new CreateMissionMetricRequest
+        {
+            MissionId = Guid.NewGuid(),
+            Name = "Sales Target",
+            Type = MetricType.Quantitative,
+            QuantitativeType = QuantitativeMetricType.Achieve,
+            MaxValue = null, // Missing MaxValue
+            Unit = MetricUnit.Integer
+        };
+
+        // Act
+        var result = await _validator.ValidateAsync(request);
+
+        // Assert
+        result.IsValid.Should().BeFalse();
+        result.Errors.Should().ContainSingle(e =>
+            e.PropertyName == "MaxValue" &&
+            e.ErrorMessage.Contains("Achieve"));
+    }
+
+    [Fact]
+    public async Task Validate_AchieveWithNegativeMaxValue_Fails()
+    {
+        // Arrange
+        var request = new CreateMissionMetricRequest
+        {
+            MissionId = Guid.NewGuid(),
+            Name = "Sales Target",
+            Type = MetricType.Quantitative,
+            QuantitativeType = QuantitativeMetricType.Achieve,
+            MaxValue = -50m, // Negative value
+            Unit = MetricUnit.Integer
+        };
+
+        // Act
+        var result = await _validator.ValidateAsync(request);
+
+        // Assert
+        result.IsValid.Should().BeFalse();
+        result.Errors.Should().ContainSingle(e =>
+            e.PropertyName == "MaxValue" &&
+            e.ErrorMessage.Contains("greater than or equal to 0"));
+    }
+
+    #endregion
+
+    #region Reduce Tests
+
+    [Fact]
+    public async Task Validate_ReduceWithValidMaxValue_Passes()
+    {
+        // Arrange
+        var request = new CreateMissionMetricRequest
+        {
+            MissionId = Guid.NewGuid(),
+            Name = "Cost Reduction",
+            Type = MetricType.Quantitative,
+            QuantitativeType = QuantitativeMetricType.Reduce,
+            MaxValue = 50m,
+            Unit = MetricUnit.Percentage
+        };
+
+        // Act
+        var result = await _validator.ValidateAsync(request);
+
+        // Assert
+        result.IsValid.Should().BeTrue();
+        result.Errors.Should().BeEmpty();
+    }
+
+    [Fact]
+    public async Task Validate_ReduceWithoutMaxValue_Fails()
+    {
+        // Arrange
+        var request = new CreateMissionMetricRequest
+        {
+            MissionId = Guid.NewGuid(),
+            Name = "Cost Reduction",
+            Type = MetricType.Quantitative,
+            QuantitativeType = QuantitativeMetricType.Reduce,
+            MaxValue = null, // Missing MaxValue
+            Unit = MetricUnit.Percentage
+        };
+
+        // Act
+        var result = await _validator.ValidateAsync(request);
+
+        // Assert
+        result.IsValid.Should().BeFalse();
+        result.Errors.Should().ContainSingle(e =>
+            e.PropertyName == "MaxValue" &&
+            e.ErrorMessage.Contains("Reduce"));
+    }
+
+    [Fact]
+    public async Task Validate_ReduceWithNegativeMaxValue_Fails()
+    {
+        // Arrange
+        var request = new CreateMissionMetricRequest
+        {
+            MissionId = Guid.NewGuid(),
+            Name = "Cost Reduction",
+            Type = MetricType.Quantitative,
+            QuantitativeType = QuantitativeMetricType.Reduce,
+            MaxValue = -10m, // Negative value
+            Unit = MetricUnit.Percentage
+        };
+
+        // Act
+        var result = await _validator.ValidateAsync(request);
+
+        // Assert
+        result.IsValid.Should().BeFalse();
+        result.Errors.Should().ContainSingle(e =>
+            e.PropertyName == "MaxValue" &&
+            e.ErrorMessage.Contains("greater than or equal to 0"));
+    }
+
+    #endregion
+
     #endregion
 
     #region General Validation Tests

@@ -32,6 +32,7 @@ public sealed class AuthService(ApplicationDbContext dbContext, IOptions<AdminSe
 
         var collaborator = await dbContext.Collaborators
             .AsNoTracking()
+            .IgnoreQueryFilters() // During login, we need to bypass tenant filters
             .Include(c => c.Team)
                 .ThenInclude(t => t.Workspace)
             .FirstOrDefaultAsync(c => c.Email == normalizedEmail, cancellationToken);
@@ -50,6 +51,71 @@ public sealed class AuthService(ApplicationDbContext dbContext, IOptions<AdminSe
             Role = collaborator.Role,
             OrganizationId = collaborator.Team.Workspace.OrganizationId
         });
+    }
+
+    public async Task<ServiceResult<List<OrganizationSummaryDto>>> GetMyOrganizationsAsync(string email, CancellationToken cancellationToken = default)
+    {
+        var normalizedEmail = email?.Trim().ToLowerInvariant();
+        if (string.IsNullOrWhiteSpace(normalizedEmail))
+        {
+            return ServiceResult<List<OrganizationSummaryDto>>.Failure("Email is required.");
+        }
+
+        // Admin can see all organizations
+        if (IsAdminLogin(normalizedEmail))
+        {
+            var allOrgs = await dbContext.Organizations
+                .AsNoTracking()
+                .IgnoreQueryFilters() // Admin needs to see all orgs to populate dropdown
+                .OrderBy(o => o.Name)
+                .Select(o => new OrganizationSummaryDto
+                {
+                    Id = o.Id,
+                    Name = o.Name
+                })
+                .ToListAsync(cancellationToken);
+
+            return ServiceResult<List<OrganizationSummaryDto>>.Success(allOrgs);
+        }
+
+        // Regular users: get organizations from two sources:
+        // 1. Organizations where they are members (via Collaborator → Team → Workspace)
+        // 2. Organizations where they are the Owner
+
+        var orgsFromMembership = await dbContext.Collaborators
+            .AsNoTracking()
+            .IgnoreQueryFilters() // Need to bypass filters to discover user's organizations
+            .Where(c => c.Email == normalizedEmail)
+            .Include(c => c.Team)
+                .ThenInclude(t => t.Workspace)
+                    .ThenInclude(w => w.Organization)
+            .Select(c => new OrganizationSummaryDto
+            {
+                Id = c.Team.Workspace.Organization.Id,
+                Name = c.Team.Workspace.Organization.Name
+            })
+            .ToListAsync(cancellationToken);
+
+        var orgsFromOwnership = await dbContext.Organizations
+            .AsNoTracking()
+            .IgnoreQueryFilters() // Need to bypass filters to discover owned organizations
+            .Where(o => o.Owner != null && o.Owner.Email == normalizedEmail)
+            .Select(o => new OrganizationSummaryDto
+            {
+                Id = o.Id,
+                Name = o.Name
+            })
+            .ToListAsync(cancellationToken);
+
+        // Combine and deduplicate
+        var organizations = orgsFromMembership
+            .Concat(orgsFromOwnership)
+            .GroupBy(o => o.Id)
+            .Select(g => g.First())
+            .OrderBy(o => o.Name)
+            .ToList();
+
+        return ServiceResult<List<OrganizationSummaryDto>>.Success(organizations);
     }
 
     private bool IsAdminLogin(string normalizedEmail)

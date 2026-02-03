@@ -59,10 +59,53 @@ a {
     gap: var(--spacing-2);
     cursor: pointer;
     transition: all var(--transition-fast);
+    position: relative;
 }
 
 .workspace-selector:hover {
     background: var(--color-sidebar-hover);
+}
+
+.workspace-selector.open {
+    background: var(--color-sidebar-hover);
+}
+
+.workspace-dropdown {
+    position: absolute;
+    top: calc(100% + 4px);
+    left: 0;
+    right: 0;
+    background: var(--color-surface);
+    border: 1px solid var(--color-sidebar-border);
+    border-radius: var(--radius-base);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    max-height: 300px;
+    overflow-y: auto;
+    z-index: 1000;
+}
+
+.workspace-dropdown-item {
+    padding: var(--spacing-2);
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-2);
+    cursor: pointer;
+    transition: all var(--transition-fast);
+}
+
+.workspace-dropdown-item:hover {
+    background: var(--color-sidebar-hover);
+}
+
+.workspace-dropdown-item.selected {
+    background: var(--color-sidebar-active);
+}
+
+.workspace-item-name {
+    flex: 1;
+    font-size: var(--font-size-xs);
+    font-weight: var(--font-weight-medium);
+    color: var(--color-text-primary);
 }
 
 .workspace-icon {
@@ -1241,6 +1284,134 @@ a {
 .modal-footer-primary {
     display: flex;
     gap: var(--spacing-3);
+}
+
+/* Mission Metrics Form - Figma-inspired layout */
+.metrics-form-container {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-3);
+}
+
+.metrics-form-container .form-row {
+    margin-bottom: 0;
+}
+
+.metrics-form-container .form-row label {
+    font-size: var(--font-size-label-sm);
+    font-weight: var(--font-weight-medium);
+    color: var(--neutral-500);
+    margin-bottom: var(--spacing-1);
+}
+
+.metrics-form-container .input {
+    font-size: var(--font-size-label-sm);
+    border-color: var(--caramel-300);
+}
+
+.metrics-form-container .input:focus {
+    border-color: var(--orange-500);
+}
+
+.metrics-form-header {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-2);
+}
+
+.metrics-form-title {
+    font-size: var(--font-size-paragraph-md);
+    font-weight: var(--font-weight-medium);
+    color: var(--neutral-500);
+}
+
+.metrics-form-subtitle {
+    font-size: var(--font-size-label-sm);
+    font-weight: var(--font-weight-medium);
+    color: var(--neutral-500);
+}
+
+/* Horizontal button-like selects */
+.metrics-form-selectors {
+    display: flex;
+    gap: var(--spacing-2);
+    flex-wrap: wrap;
+}
+
+.metrics-selector-btn {
+    background: white;
+    border: 1px solid var(--caramel-300);
+    border-radius: var(--radius-base);
+    padding: var(--spacing-2);
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-1);
+    min-width: 180px;
+    flex: 1;
+    cursor: pointer;
+    transition: all var(--transition-fast);
+}
+
+.metrics-selector-btn:hover {
+    background: var(--caramel-50);
+}
+
+.metrics-selector-btn select {
+    border: none;
+    background: transparent;
+    flex: 1;
+    font-size: var(--font-size-label-sm);
+    font-weight: var(--font-weight-medium);
+    color: var(--neutral-950);
+    cursor: pointer;
+    padding: 0;
+    appearance: none;
+}
+
+.metrics-selector-btn select:focus {
+    outline: none;
+}
+
+.metrics-selector-icon {
+    width: 16px;
+    height: 16px;
+    color: var(--neutral-500);
+}
+
+/* Horizontal input fields */
+.metrics-form-inputs {
+    display: flex;
+    gap: var(--spacing-4);
+    flex-wrap: wrap;
+}
+
+.metrics-input-field {
+    background: white;
+    border: 1px solid var(--caramel-300);
+    border-radius: var(--radius-base);
+    padding: var(--spacing-2);
+    flex: 1;
+    min-width: 150px;
+}
+
+.metrics-input-field input,
+.metrics-input-field select {
+    border: none;
+    background: transparent;
+    width: 100%;
+    font-size: var(--font-size-label-sm);
+    font-weight: var(--font-weight-medium);
+    color: var(--neutral-950);
+    padding: 0;
+}
+
+.metrics-input-field input::placeholder {
+    color: var(--neutral-500);
+}
+
+.metrics-input-field input:focus,
+.metrics-input-field select:focus {
+    outline: none;
 }
 
 /* Toast Notifications */

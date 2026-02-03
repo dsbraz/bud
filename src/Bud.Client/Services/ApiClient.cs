@@ -14,6 +14,11 @@ public sealed class ApiClient
         _http = http;
     }
 
+    public async Task<List<OrganizationSummaryDto>?> GetMyOrganizationsAsync()
+    {
+        return await _http.GetFromJsonAsync<List<OrganizationSummaryDto>>("api/auth/my-organizations");
+    }
+
     public async Task<PagedResult<Organization>?> GetOrganizationsAsync(string? search, int page = 1, int pageSize = 10)
     {
         var url = $"api/organizations?search={Uri.EscapeDataString(search ?? string.Empty)}&page={page}&pageSize={pageSize}";

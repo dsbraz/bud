@@ -5,4 +5,5 @@ namespace Bud.Server.Services;
 public interface IAuthService
 {
     Task<ServiceResult<AuthLoginResponse>> LoginAsync(AuthLoginRequest request, CancellationToken cancellationToken = default);
+    Task<ServiceResult<List<OrganizationSummaryDto>>> GetMyOrganizationsAsync(string email, CancellationToken cancellationToken = default);
 }
