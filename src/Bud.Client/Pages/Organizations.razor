@@ -242,10 +242,7 @@ else
     {
         modalMode = "create";
         editingOrganizationId = null;
-        newOrganization = new CreateOrganizationRequest
-        {
-            UserEmail = AuthState.Session?.Email ?? string.Empty
-        };
+        newOrganization = new CreateOrganizationRequest();
         // Load leaders based on selected tenant context
         // If a specific org is selected, show only its leaders
         // If "TODOS" is selected (null), show all leaders
@@ -306,14 +303,8 @@ else
 
         try
         {
-            // Set user email from session
-            newOrganization.UserEmail = AuthState.Session?.Email ?? string.Empty;
-
             await Api.CreateOrganizationAsync(newOrganization);
-            newOrganization = new CreateOrganizationRequest
-            {
-                UserEmail = AuthState.Session?.Email ?? string.Empty
-            };
+            newOrganization = new CreateOrganizationRequest();
             await LoadOrganizations();
 
             ToastService.ShowSuccess("Organização criada com sucesso!", "A organização foi criada e está disponível.");

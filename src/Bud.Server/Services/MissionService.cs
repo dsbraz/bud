@@ -1,11 +1,14 @@
 using Bud.Server.Data;
+using Bud.Server.MultiTenancy;
 using Bud.Shared.Contracts;
 using Bud.Shared.Models;
 using Microsoft.EntityFrameworkCore;
 
 namespace Bud.Server.Services;
 
-public sealed class MissionService(ApplicationDbContext dbContext) : IMissionService
+public sealed class MissionService(
+    ApplicationDbContext dbContext,
+    ITenantProvider tenantProvider) : IMissionService
 {
     public async Task<ServiceResult<Mission>> CreateAsync(CreateMissionRequest request, CancellationToken cancellationToken = default)
     {
@@ -19,6 +22,12 @@ public sealed class MissionService(ApplicationDbContext dbContext) : IMissionSer
         if (organizationId is null)
         {
             return ServiceResult<Mission>.NotFound("Não foi possível determinar a organização para o escopo fornecido.");
+        }
+
+        // Validar acesso ao tenant
+        if (!tenantProvider.IsGlobalAdmin && tenantProvider.TenantId != organizationId.Value)
+        {
+            return ServiceResult<Mission>.Forbidden("Você não tem permissão para criar missões nesta organização.");
         }
 
         var mission = new Mission
@@ -48,6 +57,12 @@ public sealed class MissionService(ApplicationDbContext dbContext) : IMissionSer
             return ServiceResult<Mission>.NotFound("Missão não encontrada.");
         }
 
+        // Validar acesso ao tenant
+        if (!tenantProvider.IsGlobalAdmin && tenantProvider.TenantId != mission.OrganizationId)
+        {
+            return ServiceResult<Mission>.Forbidden("Você não tem permissão para atualizar missões nesta organização.");
+        }
+
         mission.Name = request.Name.Trim();
         mission.StartDate = NormalizeToUtc(request.StartDate);
         mission.EndDate = NormalizeToUtc(request.EndDate);
@@ -65,6 +80,12 @@ public sealed class MissionService(ApplicationDbContext dbContext) : IMissionSer
         if (mission is null)
         {
             return ServiceResult.NotFound("Missão não encontrada.");
+        }
+
+        // Validar acesso ao tenant
+        if (!tenantProvider.IsGlobalAdmin && tenantProvider.TenantId != mission.OrganizationId)
+        {
+            return ServiceResult.Forbidden("Você não tem permissão para excluir missões nesta organização.");
         }
 
         dbContext.Missions.Remove(mission);

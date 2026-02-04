@@ -176,79 +176,49 @@ public sealed class ApplicationDbContext : DbContext
             .HasForeignKey(metric => metric.MissionId)
             .OnDelete(DeleteBehavior.Cascade);
 
-        // Global Query Filters for multi-tenancy
-        // SECURITY: When _tenantId is null (TODOS mode), only show organizations the user has access to
+        // Global Query Filters for multi-tenancy (simplified for performance)
+        // SECURITY: Tenant ownership validation is now done in TenantRequiredMiddleware
+        // These filters provide basic data isolation only
         modelBuilder.Entity<Organization>()
             .HasQueryFilter(o =>
-                // If specific tenant is selected, show only that tenant (for both global admin and regular users)
-                (_tenantId != null && o.Id == _tenantId) ||
-                // If no tenant selected (TODOS mode)
-                (_tenantId == null && (
-                    // Global admin sees everything
-                    _isGlobalAdmin ||
-                    // Regular user sees only organizations they have access to
-                    (_userEmail != null && (
-                        // User is owner of the organization
-                        (o.Owner != null && o.Owner.Email == _userEmail) ||
-                        // User is a collaborator in the organization
-                        Collaborators.Any(c => c.Email == _userEmail && c.OrganizationId == o.Id)
-                    ))
-                ))
+                _tenantId == null ||  // TODOS mode (no filter if null)
+                _isGlobalAdmin ||     // Global admin sees all
+                o.Id == _tenantId     // Filter by specific tenant
             );
 
         modelBuilder.Entity<Workspace>()
             .HasQueryFilter(w =>
-                (_tenantId != null && w.OrganizationId == _tenantId) ||
-                (_tenantId == null && (
-                    _isGlobalAdmin ||
-                    (_userEmail != null &&
-                        Collaborators.Any(c => c.Email == _userEmail && c.OrganizationId == w.OrganizationId)
-                    )
-                ))
+                _tenantId == null ||
+                _isGlobalAdmin ||
+                w.OrganizationId == _tenantId
             );
 
         modelBuilder.Entity<Team>()
             .HasQueryFilter(t =>
-                (_tenantId != null && t.OrganizationId == _tenantId) ||
-                (_tenantId == null && (
-                    _isGlobalAdmin ||
-                    (_userEmail != null &&
-                        Collaborators.Any(c => c.Email == _userEmail && c.OrganizationId == t.OrganizationId)
-                    )
-                ))
+                _tenantId == null ||
+                _isGlobalAdmin ||
+                t.OrganizationId == _tenantId
             );
 
         modelBuilder.Entity<Collaborator>()
             .HasQueryFilter(c =>
-                (_tenantId != null && c.OrganizationId == _tenantId) ||
-                (_tenantId == null && (
-                    _isGlobalAdmin ||
-                    (_userEmail != null &&
-                        Collaborators.Any(collab => collab.Email == _userEmail && collab.OrganizationId == c.OrganizationId)
-                    )
-                ))
+                _tenantId == null ||
+                _isGlobalAdmin ||
+                c.OrganizationId == _tenantId
             );
 
         modelBuilder.Entity<Mission>()
             .HasQueryFilter(m =>
-                (_tenantId != null && m.OrganizationId == _tenantId) ||
-                (_tenantId == null && (
-                    _isGlobalAdmin ||
-                    (_userEmail != null &&
-                        Collaborators.Any(c => c.Email == _userEmail && c.OrganizationId == m.OrganizationId)
-                    )
-                ))
+                _tenantId == null ||
+                _isGlobalAdmin ||
+                m.OrganizationId == _tenantId
             );
 
         modelBuilder.Entity<MissionMetric>()
             .HasQueryFilter(mm =>
-                (_tenantId != null && mm.OrganizationId == _tenantId) ||
-                (_tenantId == null && (
-                    _isGlobalAdmin ||
-                    (_userEmail != null &&
-                        Collaborators.Any(c => c.Email == _userEmail && c.OrganizationId == mm.OrganizationId)
-                    )
-                ))
+                _tenantId == null ||
+                _isGlobalAdmin ||
+                mm.OrganizationId == _tenantId
             );
     }
 }

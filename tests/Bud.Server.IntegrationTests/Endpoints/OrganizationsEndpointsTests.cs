@@ -91,7 +91,6 @@ public class OrganizationsEndpointsTests : IClassFixture<CustomWebApplicationFac
         {
             Name = "test-org.com",
             OwnerId = leaderId,
-            UserEmail = "admin@getbud.co"
         };
 
         // Act
@@ -115,7 +114,6 @@ public class OrganizationsEndpointsTests : IClassFixture<CustomWebApplicationFac
         {
             Name = "",
             OwnerId = leaderId,
-            UserEmail = "admin@getbud.co"
         };
 
         // Act
@@ -134,7 +132,6 @@ public class OrganizationsEndpointsTests : IClassFixture<CustomWebApplicationFac
         {
             Name = "getbyid-test.com",
             OwnerId = leaderId,
-            UserEmail = "admin@getbud.co"
         };
         var createResponse = await _client.PostAsJsonAsync("/api/organizations", createRequest);
         var created = await createResponse.Content.ReadFromJsonAsync<Organization>();
@@ -172,13 +169,11 @@ public class OrganizationsEndpointsTests : IClassFixture<CustomWebApplicationFac
         {
             Name = "org1.com",
             OwnerId = leaderId,
-            UserEmail = "admin@getbud.co"
         });
         await _client.PostAsJsonAsync("/api/organizations", new CreateOrganizationRequest
         {
             Name = "org2.com",
             OwnerId = leaderId,
-            UserEmail = "admin@getbud.co"
         });
 
         // Act
@@ -202,7 +197,6 @@ public class OrganizationsEndpointsTests : IClassFixture<CustomWebApplicationFac
         {
             Name = "original.com",
             OwnerId = leaderId,
-            UserEmail = "admin@getbud.co"
         };
         var createResponse = await _client.PostAsJsonAsync("/api/organizations", createRequest);
         var created = await createResponse.Content.ReadFromJsonAsync<Organization>();
@@ -242,7 +236,6 @@ public class OrganizationsEndpointsTests : IClassFixture<CustomWebApplicationFac
         {
             Name = "to-delete.com",
             OwnerId = leaderId,
-            UserEmail = "admin@getbud.co"
         };
         var createResponse = await _client.PostAsJsonAsync("/api/organizations", createRequest);
         var created = await createResponse.Content.ReadFromJsonAsync<Organization>();
@@ -305,7 +298,6 @@ public class OrganizationsEndpointsTests : IClassFixture<CustomWebApplicationFac
         {
             Name = "unauthorized-org.com",
             OwnerId = leaderId,
-            UserEmail = nonAdminCollaborator.Email
         };
 
         // Act

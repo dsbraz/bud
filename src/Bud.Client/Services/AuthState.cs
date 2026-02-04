@@ -42,6 +42,7 @@ public sealed class AuthState(IJSRuntime jsRuntime)
     {
         _session = new AuthSession
         {
+            Token = response.Token,
             Email = response.Email,
             DisplayName = response.DisplayName,
             IsGlobalAdmin = response.IsGlobalAdmin,
@@ -63,6 +64,7 @@ public sealed class AuthState(IJSRuntime jsRuntime)
 
 public sealed class AuthSession
 {
+    public string Token { get; set; } = string.Empty;
     public string Email { get; set; } = string.Empty;
     public string DisplayName { get; set; } = string.Empty;
     public bool IsGlobalAdmin { get; set; }

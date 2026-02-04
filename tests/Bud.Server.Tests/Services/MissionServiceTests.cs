@@ -29,7 +29,7 @@ public class MissionServiceTests
     {
         // Arrange
         using var context = CreateInMemoryContext();
-        var service = new MissionService(context);
+        var service = new MissionService(context, _tenantProvider);
 
         var org = new Organization { Id = Guid.NewGuid(), Name = "Test Org" };
         context.Organizations.Add(org);
@@ -58,7 +58,7 @@ public class MissionServiceTests
     {
         // Arrange
         using var context = CreateInMemoryContext();
-        var service = new MissionService(context);
+        var service = new MissionService(context, _tenantProvider);
 
         var org = new Organization { Id = Guid.NewGuid(), Name = "Test Org" };
         var workspace = new Workspace
@@ -95,7 +95,7 @@ public class MissionServiceTests
     {
         // Arrange
         using var context = CreateInMemoryContext();
-        var service = new MissionService(context);
+        var service = new MissionService(context, _tenantProvider);
 
         var org = new Organization { Id = Guid.NewGuid(), Name = "Test Org" };
         var workspace = new Workspace
@@ -140,7 +140,7 @@ public class MissionServiceTests
     {
         // Arrange
         using var context = CreateInMemoryContext();
-        var service = new MissionService(context);
+        var service = new MissionService(context, _tenantProvider);
 
         var org = new Organization { Id = Guid.NewGuid(), Name = "Test Org" };
         var workspace = new Workspace
@@ -194,7 +194,7 @@ public class MissionServiceTests
     {
         // Arrange
         using var context = CreateInMemoryContext();
-        var service = new MissionService(context);
+        var service = new MissionService(context, _tenantProvider);
 
         var request = new CreateMissionRequest
         {
@@ -223,7 +223,7 @@ public class MissionServiceTests
     {
         // Arrange
         using var context = CreateInMemoryContext();
-        var service = new MissionService(context);
+        var service = new MissionService(context, _tenantProvider);
 
         var org = new Organization { Id = Guid.NewGuid(), Name = "Test Org" };
         context.Organizations.Add(org);
@@ -255,7 +255,7 @@ public class MissionServiceTests
     {
         // Arrange
         using var context = CreateInMemoryContext();
-        var service = new MissionService(context);
+        var service = new MissionService(context, _tenantProvider);
 
         var org = new Organization { Id = Guid.NewGuid(), Name = "Test Org" };
         var workspace = new Workspace
@@ -295,7 +295,7 @@ public class MissionServiceTests
     {
         // Arrange
         using var context = CreateInMemoryContext();
-        var service = new MissionService(context);
+        var service = new MissionService(context, _tenantProvider);
 
         var org = new Organization { Id = Guid.NewGuid(), Name = "Test Org" };
         var workspace = new Workspace
@@ -343,7 +343,7 @@ public class MissionServiceTests
     {
         // Arrange
         using var context = CreateInMemoryContext();
-        var service = new MissionService(context);
+        var service = new MissionService(context, _tenantProvider);
 
         var org = new Organization { Id = Guid.NewGuid(), Name = "Test Org" };
         var workspace = new Workspace
@@ -404,7 +404,7 @@ public class MissionServiceTests
     {
         // Arrange
         using var context = CreateInMemoryContext();
-        var service = new MissionService(context);
+        var service = new MissionService(context, _tenantProvider);
 
         var org = new Organization { Id = Guid.NewGuid(), Name = "Test Org" };
         context.Organizations.Add(org);
@@ -434,7 +434,7 @@ public class MissionServiceTests
     {
         // Arrange
         using var context = CreateInMemoryContext();
-        var service = new MissionService(context);
+        var service = new MissionService(context, _tenantProvider);
 
         var org = new Organization { Id = Guid.NewGuid(), Name = "Test Org" };
         context.Organizations.Add(org);
@@ -464,7 +464,7 @@ public class MissionServiceTests
     {
         // Arrange
         using var context = CreateInMemoryContext();
-        var service = new MissionService(context);
+        var service = new MissionService(context, _tenantProvider);
 
         var org = new Organization { Id = Guid.NewGuid(), Name = "Test Org" };
         context.Organizations.Add(org);
@@ -498,7 +498,7 @@ public class MissionServiceTests
     {
         // Arrange
         using var context = CreateInMemoryContext();
-        var service = new MissionService(context);
+        var service = new MissionService(context, _tenantProvider);
 
         // Create hierarchy: Organization > Workspace > Team > Collaborator
         var org = new Organization { Id = Guid.NewGuid(), Name = "Test Org" };
@@ -588,7 +588,7 @@ public class MissionServiceTests
     {
         // Arrange
         using var context = CreateInMemoryContext();
-        var service = new MissionService(context);
+        var service = new MissionService(context, _tenantProvider);
 
         // Act
         var result = await service.GetMyMissionsAsync(Guid.NewGuid(), null, 1, 10);
@@ -603,7 +603,7 @@ public class MissionServiceTests
     {
         // Arrange
         using var context = CreateInMemoryContext();
-        var service = new MissionService(context);
+        var service = new MissionService(context, _tenantProvider);
 
         var org = new Organization { Id = Guid.NewGuid(), Name = "Test Org" };
         var workspace = new Workspace
@@ -672,7 +672,7 @@ public class MissionServiceTests
     {
         // Arrange
         using var context = CreateInMemoryContext();
-        var service = new MissionService(context);
+        var service = new MissionService(context, _tenantProvider);
 
         var org = new Organization { Id = Guid.NewGuid(), Name = "Test Org" };
         var workspace = new Workspace

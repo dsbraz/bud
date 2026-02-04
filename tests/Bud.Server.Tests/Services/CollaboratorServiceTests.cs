@@ -12,6 +12,7 @@ namespace Bud.Server.Tests.Services;
 public class CollaboratorServiceTests
 {
     private readonly TestTenantProvider _tenantProvider = new() { IsGlobalAdmin = true };
+    private readonly TestOrganizationAuthorizationService _orgAuth = new();
 
     private ApplicationDbContext CreateInMemoryContext()
     {
@@ -98,7 +99,7 @@ public class CollaboratorServiceTests
         context.Collaborators.AddRange(owner, regularCollaborator);
         await context.SaveChangesAsync();
 
-        var service = new CollaboratorService(context, _tenantProvider);
+        var service = new CollaboratorService(context, _tenantProvider, _orgAuth);
 
         var request = new CreateCollaboratorRequest
         {
@@ -157,7 +158,7 @@ public class CollaboratorServiceTests
         context.Collaborators.Add(owner);
         await context.SaveChangesAsync();
 
-        var service = new CollaboratorService(context, _tenantProvider);
+        var service = new CollaboratorService(context, _tenantProvider, _orgAuth);
 
         var request = new CreateCollaboratorRequest
         {
@@ -185,7 +186,7 @@ public class CollaboratorServiceTests
         using var context = CreateInMemoryContext();
         var (org, _, team) = await CreateTestHierarchy(context);
 
-        var service = new CollaboratorService(context, _tenantProvider);
+        var service = new CollaboratorService(context, _tenantProvider, _orgAuth);
 
         var request = new CreateCollaboratorRequest
         {

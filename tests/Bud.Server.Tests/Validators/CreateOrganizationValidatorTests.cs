@@ -17,7 +17,6 @@ public class CreateOrganizationValidatorTests
         {
             Name = "test.com",
             OwnerId = Guid.NewGuid(),
-            UserEmail = "admin@getbud.co"
         };
 
         // Act
@@ -39,7 +38,6 @@ public class CreateOrganizationValidatorTests
         {
             Name = name!,
             OwnerId = Guid.NewGuid(),
-            UserEmail = "admin@getbud.co"
         };
 
         // Act
@@ -60,7 +58,6 @@ public class CreateOrganizationValidatorTests
         {
             Name = $"{longLabel}.com",
             OwnerId = Guid.NewGuid(),
-            UserEmail = "admin@getbud.co"
         };
 
         // Act
@@ -81,7 +78,6 @@ public class CreateOrganizationValidatorTests
         {
             Name = $"{label}.com.br",
             OwnerId = Guid.NewGuid(),
-            UserEmail = "admin@getbud.co"
         };
 
         // Act
@@ -104,7 +100,6 @@ public class CreateOrganizationValidatorTests
         {
             Name = domain,
             OwnerId = Guid.NewGuid(),
-            UserEmail = "admin@getbud.co"
         };
 
         // Act
@@ -130,7 +125,6 @@ public class CreateOrganizationValidatorTests
         {
             Name = domain,
             OwnerId = Guid.NewGuid(),
-            UserEmail = "admin@getbud.co"
         };
 
         // Act
@@ -149,7 +143,6 @@ public class CreateOrganizationValidatorTests
         {
             Name = "test.com",
             OwnerId = Guid.Empty,
-            UserEmail = "admin@getbud.co"
         };
 
         // Act
@@ -171,7 +164,6 @@ public class CreateOrganizationValidatorTests
         {
             Name = "test.com",
             OwnerId = Guid.NewGuid(),
-            UserEmail = userEmail!
         };
 
         // Act

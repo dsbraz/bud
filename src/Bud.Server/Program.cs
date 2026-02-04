@@ -5,7 +5,10 @@ using Bud.Server.Services;
 using Bud.Server.Settings;
 using Bud.Server.Validators;
 using FluentValidation;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
+using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -28,9 +31,31 @@ builder.Services.Configure<GlobalAdminSettings>(builder.Configuration.GetSection
 // Add FluentValidation
 builder.Services.AddValidatorsFromAssemblyContaining<CreateOrganizationValidator>();
 
+// Add JWT Authentication
+var jwtKey = builder.Configuration["Jwt:Key"] ?? "dev-secret-key-change-in-production-minimum-32-characters-required";
+var jwtIssuer = builder.Configuration["Jwt:Issuer"] ?? "bud-dev";
+var jwtAudience = builder.Configuration["Jwt:Audience"] ?? "bud-api";
+
+builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+    .AddJwtBearer(options =>
+    {
+        options.TokenValidationParameters = new TokenValidationParameters
+        {
+            ValidateIssuer = true,
+            ValidateAudience = true,
+            ValidateLifetime = true,
+            ValidateIssuerSigningKey = true,
+            ValidIssuer = jwtIssuer,
+            ValidAudience = jwtAudience,
+            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey))
+        };
+    });
+
+builder.Services.AddAuthorization();
+
 // Add Multi-Tenancy
 builder.Services.AddHttpContextAccessor();
-builder.Services.AddScoped<ITenantProvider, HttpTenantProvider>();
+builder.Services.AddScoped<ITenantProvider, JwtTenantProvider>();
 builder.Services.AddScoped<TenantSaveChangesInterceptor>();
 
 // Add DbContext
@@ -54,6 +79,8 @@ builder.Services.AddScoped<ICollaboratorService, CollaboratorService>();
 builder.Services.AddScoped<IMissionService, MissionService>();
 builder.Services.AddScoped<IMissionMetricService, MissionMetricService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
+builder.Services.AddScoped<ITenantAuthorizationService, TenantAuthorizationService>();
+builder.Services.AddScoped<IOrganizationAuthorizationService, OrganizationAuthorizationService>();
 
 // Add Health Checks
 builder.Services.AddHealthChecks()
@@ -109,6 +136,10 @@ app.UseExceptionHandler();
 app.UseHttpsRedirection();
 app.UseBlazorFrameworkFiles();
 app.UseStaticFiles();
+
+// Authentication & Authorization - MUST be before TenantRequiredMiddleware
+app.UseAuthentication();
+app.UseAuthorization();
 
 // Multi-tenancy middleware — must be before MapControllers
 app.UseMiddleware<TenantRequiredMiddleware>();

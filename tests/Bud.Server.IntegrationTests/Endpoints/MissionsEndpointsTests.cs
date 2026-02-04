@@ -73,7 +73,6 @@ public class MissionsEndpointsTests : IClassFixture<CustomWebApplicationFactory>
             {
                 Name = "test-mission.com",
                 OwnerId = leaderId,
-                UserEmail = "admin@getbud.co"
             });
         var org = await orgResponse.Content.ReadFromJsonAsync<Organization>();
 
@@ -132,7 +131,6 @@ public class MissionsEndpointsTests : IClassFixture<CustomWebApplicationFactory>
             {
                 Name = "test-org.com",
                 OwnerId = leaderId,
-                UserEmail = "admin@getbud.co"
             });
         var org = await orgResponse.Content.ReadFromJsonAsync<Organization>();
 
@@ -163,7 +161,7 @@ public class MissionsEndpointsTests : IClassFixture<CustomWebApplicationFactory>
         // Arrange: Create organization and mission
         var leaderId = await GetOrCreateAdminLeader();
         var orgResponse = await _client.PostAsJsonAsync("/api/organizations",
-            new CreateOrganizationRequest { Name = "test-org.com", OwnerId = leaderId, UserEmail = "admin@getbud.co" });
+            new CreateOrganizationRequest { Name = "test-missions.com", OwnerId = leaderId });
         var org = await orgResponse.Content.ReadFromJsonAsync<Organization>();
 
         var createRequest = new CreateMissionRequest
@@ -215,8 +213,7 @@ public class MissionsEndpointsTests : IClassFixture<CustomWebApplicationFactory>
             new CreateOrganizationRequest
             {
                 Name = "org1.com",
-                OwnerId = leaderId,
-                UserEmail = "admin@getbud.co"
+                OwnerId = leaderId
             });
         var org1 = await org1Response.Content.ReadFromJsonAsync<Organization>();
 
@@ -224,8 +221,7 @@ public class MissionsEndpointsTests : IClassFixture<CustomWebApplicationFactory>
             new CreateOrganizationRequest
             {
                 Name = "org2.com",
-                OwnerId = leaderId,
-                UserEmail = "admin@getbud.co"
+                OwnerId = leaderId
             });
         var org2 = await org2Response.Content.ReadFromJsonAsync<Organization>();
 
@@ -266,7 +262,7 @@ public class MissionsEndpointsTests : IClassFixture<CustomWebApplicationFactory>
         // Arrange: Create organization and multiple missions
         var leaderId = await GetOrCreateAdminLeader();
         var orgResponse = await _client.PostAsJsonAsync("/api/organizations",
-            new CreateOrganizationRequest { Name = "test-org.com", OwnerId = leaderId, UserEmail = "admin@getbud.co" });
+            new CreateOrganizationRequest { Name = "test-org.com", OwnerId = leaderId });
         var org = await orgResponse.Content.ReadFromJsonAsync<Organization>();
 
         for (int i = 1; i <= 15; i++)
@@ -304,7 +300,7 @@ public class MissionsEndpointsTests : IClassFixture<CustomWebApplicationFactory>
         // Arrange: Create full hierarchy
         var leaderId = await GetOrCreateAdminLeader();
         var orgResponse = await _client.PostAsJsonAsync("/api/organizations",
-            new CreateOrganizationRequest { Name = "test-org.com", OwnerId = leaderId, UserEmail = "admin@getbud.co" });
+            new CreateOrganizationRequest { Name = "test-org.com", OwnerId = leaderId });
         var org = await orgResponse.Content.ReadFromJsonAsync<Organization>();
 
         var workspaceResponse = await _client.PostAsJsonAsync("/api/workspaces",
@@ -315,15 +311,22 @@ public class MissionsEndpointsTests : IClassFixture<CustomWebApplicationFactory>
             new CreateTeamRequest { Name = "Test Team", WorkspaceId = workspace!.Id });
         var team = await teamResponse.Content.ReadFromJsonAsync<Team>();
 
-        var collaboratorResponse = await _client.PostAsJsonAsync("/api/collaborators",
-            new CreateCollaboratorRequest
-            {
-                FullName = "Test User",
-                Email = "test@example.com",
-                Role = CollaboratorRole.IndividualContributor,
-                TeamId = team!.Id
-            });
-        var collaborator = await collaboratorResponse.Content.ReadFromJsonAsync<Collaborator>();
+        // Create collaborator directly in database (since API doesn't support creating with TeamId)
+        using var scope = _factory.Services.CreateScope();
+        var dbContext = scope.ServiceProvider.GetRequiredService<Bud.Server.Data.ApplicationDbContext>();
+
+        var collaborator = new Collaborator
+        {
+            Id = Guid.NewGuid(),
+            FullName = "Test User",
+            Email = "test@example.com",
+            Role = CollaboratorRole.IndividualContributor,
+            OrganizationId = org!.Id,
+            TeamId = team!.Id
+        };
+
+        dbContext.Collaborators.Add(collaborator);
+        await dbContext.SaveChangesAsync();
 
         // Create missions at each level
         await _client.PostAsJsonAsync("/api/missions", new CreateMissionRequest
@@ -368,7 +371,7 @@ public class MissionsEndpointsTests : IClassFixture<CustomWebApplicationFactory>
         // Arrange: Create organization and mission
         var leaderId = await GetOrCreateAdminLeader();
         var orgResponse = await _client.PostAsJsonAsync("/api/organizations",
-            new CreateOrganizationRequest { Name = "test-org.com", OwnerId = leaderId, UserEmail = "admin@getbud.co" });
+            new CreateOrganizationRequest { Name = "test-missions.com", OwnerId = leaderId });
         var org = await orgResponse.Content.ReadFromJsonAsync<Organization>();
 
         var createRequest = new CreateMissionRequest
@@ -412,7 +415,7 @@ public class MissionsEndpointsTests : IClassFixture<CustomWebApplicationFactory>
         // Arrange: Create organization and mission
         var leaderId = await GetOrCreateAdminLeader();
         var orgResponse = await _client.PostAsJsonAsync("/api/organizations",
-            new CreateOrganizationRequest { Name = "test-org.com", OwnerId = leaderId, UserEmail = "admin@getbud.co" });
+            new CreateOrganizationRequest { Name = "test-missions.com", OwnerId = leaderId });
         var org = await orgResponse.Content.ReadFromJsonAsync<Organization>();
 
         var createRequest = new CreateMissionRequest

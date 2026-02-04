@@ -8,7 +8,8 @@ namespace Bud.Server.Services;
 
 public sealed class TeamService(
     ApplicationDbContext dbContext,
-    ITenantProvider tenantProvider) : ITeamService
+    ITenantProvider tenantProvider,
+    IOrganizationAuthorizationService orgAuth) : ITeamService
 {
     public async Task<ServiceResult<Team>> CreateAsync(CreateTeamRequest request, CancellationToken cancellationToken = default)
     {
@@ -21,13 +22,10 @@ public sealed class TeamService(
             return ServiceResult<Team>.NotFound("Workspace não encontrado.");
         }
 
-        if (!tenantProvider.IsGlobalAdmin)
+        var authResult = await orgAuth.RequireOrgOwnerAsync(workspace.OrganizationId, cancellationToken);
+        if (!authResult.IsSuccess)
         {
-            var isOwner = await IsOrgOwnerAsync(workspace.OrganizationId, cancellationToken);
-            if (!isOwner)
-            {
-                return ServiceResult<Team>.Forbidden("Apenas o proprietário da organização pode criar times.");
-            }
+            return ServiceResult<Team>.Forbidden(authResult.Error ?? "Apenas o proprietário da organização pode criar times.");
         }
 
         if (request.ParentTeamId.HasValue)
@@ -236,18 +234,5 @@ public sealed class TeamService(
         };
 
         return ServiceResult<PagedResult<Collaborator>>.Success(result);
-    }
-
-    private async Task<bool> IsOrgOwnerAsync(Guid organizationId, CancellationToken cancellationToken)
-    {
-        if (tenantProvider.CollaboratorId is null)
-            return false;
-
-        return await dbContext.Organizations
-            .AsNoTracking()
-            .AnyAsync(o =>
-                o.Id == organizationId &&
-                o.OwnerId == tenantProvider.CollaboratorId.Value,
-                cancellationToken);
     }
 }

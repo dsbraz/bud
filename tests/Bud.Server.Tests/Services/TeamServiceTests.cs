@@ -12,6 +12,7 @@ namespace Bud.Server.Tests.Services;
 public class TeamServiceTests
 {
     private readonly TestTenantProvider _tenantProvider = new() { IsGlobalAdmin = true };
+    private readonly TestOrganizationAuthorizationService _orgAuth = new();
 
     private ApplicationDbContext CreateInMemoryContext()
     {
@@ -46,7 +47,7 @@ public class TeamServiceTests
     {
         // Arrange
         using var context = CreateInMemoryContext();
-        var service = new TeamService(context, _tenantProvider);
+        var service = new TeamService(context, _tenantProvider, _orgAuth);
 
         var request = new CreateTeamRequest
         {
@@ -68,7 +69,7 @@ public class TeamServiceTests
     {
         // Arrange
         using var context = CreateInMemoryContext();
-        var service = new TeamService(context, _tenantProvider);
+        var service = new TeamService(context, _tenantProvider, _orgAuth);
         var (_, workspace) = await CreateTestHierarchy(context);
 
         var request = new CreateTeamRequest
@@ -92,7 +93,7 @@ public class TeamServiceTests
     {
         // Arrange
         using var context = CreateInMemoryContext();
-        var service = new TeamService(context, _tenantProvider);
+        var service = new TeamService(context, _tenantProvider, _orgAuth);
 
         // Create two different workspaces
         var org = new Organization { Id = Guid.NewGuid(), Name = "Test Org" };
@@ -145,7 +146,7 @@ public class TeamServiceTests
     {
         // Arrange
         using var context = CreateInMemoryContext();
-        var service = new TeamService(context, _tenantProvider);
+        var service = new TeamService(context, _tenantProvider, _orgAuth);
         var (org, workspace) = await CreateTestHierarchy(context);
 
         // Create parent team
@@ -218,7 +219,8 @@ public class TeamServiceTests
         context.Collaborators.AddRange(owner, regularCollaborator);
         await context.SaveChangesAsync();
 
-        var service = new TeamService(context, _tenantProvider);
+        var orgAuth = new TestOrganizationAuthorizationService { ShouldAllowOwnerAccess = false };
+        var service = new TeamService(context, _tenantProvider, orgAuth);
 
         var request = new CreateTeamRequest
         {
@@ -266,7 +268,7 @@ public class TeamServiceTests
         context.Collaborators.Add(owner);
         await context.SaveChangesAsync();
 
-        var service = new TeamService(context, _tenantProvider);
+        var service = new TeamService(context, _tenantProvider, _orgAuth);
 
         var request = new CreateTeamRequest
         {
@@ -292,7 +294,7 @@ public class TeamServiceTests
     {
         // Arrange
         using var context = CreateInMemoryContext();
-        var service = new TeamService(context, _tenantProvider);
+        var service = new TeamService(context, _tenantProvider, _orgAuth);
         var (org, workspace) = await CreateTestHierarchy(context);
 
         // Create team
@@ -327,7 +329,7 @@ public class TeamServiceTests
     {
         // Arrange
         using var context = CreateInMemoryContext();
-        var service = new TeamService(context, _tenantProvider);
+        var service = new TeamService(context, _tenantProvider, _orgAuth);
 
         // Create two workspaces
         var org = new Organization { Id = Guid.NewGuid(), Name = "Test Org" };
@@ -389,7 +391,7 @@ public class TeamServiceTests
     {
         // Arrange
         using var context = CreateInMemoryContext();
-        var service = new TeamService(context, _tenantProvider);
+        var service = new TeamService(context, _tenantProvider, _orgAuth);
         var (org, workspace) = await CreateTestHierarchy(context);
 
         // Create team without parent
@@ -439,7 +441,7 @@ public class TeamServiceTests
     {
         // Arrange
         using var context = CreateInMemoryContext();
-        var service = new TeamService(context, _tenantProvider);
+        var service = new TeamService(context, _tenantProvider, _orgAuth);
         var (org, workspace) = await CreateTestHierarchy(context);
 
         // Create parent team
@@ -478,7 +480,7 @@ public class TeamServiceTests
     {
         // Arrange
         using var context = CreateInMemoryContext();
-        var service = new TeamService(context, _tenantProvider);
+        var service = new TeamService(context, _tenantProvider, _orgAuth);
         var (org, workspace) = await CreateTestHierarchy(context);
 
         // Create team without sub-teams
@@ -509,7 +511,7 @@ public class TeamServiceTests
     {
         // Arrange
         using var context = CreateInMemoryContext();
-        var service = new TeamService(context, _tenantProvider);
+        var service = new TeamService(context, _tenantProvider, _orgAuth);
         var (org, workspace) = await CreateTestHierarchy(context);
 
         // Create team with collaborators

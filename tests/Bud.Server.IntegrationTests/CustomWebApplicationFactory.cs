@@ -1,4 +1,6 @@
+using System.Net.Http.Headers;
 using Bud.Server.Data;
+using Bud.Server.IntegrationTests.Helpers;
 using Bud.Server.MultiTenancy;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
@@ -55,24 +57,25 @@ public class CustomWebApplicationFactory : WebApplicationFactory<Program>, IAsyn
     }
 
     /// <summary>
-    /// Creates an HttpClient with global admin headers (bypasses TenantRequiredMiddleware).
+    /// Creates an HttpClient with global admin JWT token.
     /// </summary>
     public HttpClient CreateGlobalAdminClient()
     {
         var client = CreateClient();
-        client.DefaultRequestHeaders.Add("X-User-Email", "admin@getbud.co");
+        var token = JwtTestHelper.GenerateGlobalAdminToken();
+        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
         return client;
     }
 
     /// <summary>
-    /// Creates an HttpClient with tenant and collaborator headers for non-global admin access.
+    /// Creates an HttpClient with tenant user JWT token and optional X-Tenant-Id header.
     /// </summary>
     public HttpClient CreateTenantClient(Guid tenantId, string email, Guid collaboratorId)
     {
         var client = CreateClient();
-        client.DefaultRequestHeaders.Add("X-User-Email", email);
+        var token = JwtTestHelper.GenerateTenantUserToken(email, tenantId, collaboratorId);
+        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
         client.DefaultRequestHeaders.Add("X-Tenant-Id", tenantId.ToString());
-        client.DefaultRequestHeaders.Add("X-Collaborator-Id", collaboratorId.ToString());
         return client;
     }
 

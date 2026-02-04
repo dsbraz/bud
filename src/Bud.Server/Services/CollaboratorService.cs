@@ -8,7 +8,8 @@ namespace Bud.Server.Services;
 
 public sealed class CollaboratorService(
     ApplicationDbContext dbContext,
-    ITenantProvider tenantProvider) : ICollaboratorService
+    ITenantProvider tenantProvider,
+    IOrganizationAuthorizationService orgAuth) : ICollaboratorService
 {
     public async Task<ServiceResult<Collaborator>> CreateAsync(CreateCollaboratorRequest request, CancellationToken cancellationToken = default)
     {
@@ -23,13 +24,10 @@ public sealed class CollaboratorService(
         }
 
         // Verificação de permissão
-        if (!tenantProvider.IsGlobalAdmin)
+        var authResult = await orgAuth.RequireOrgOwnerAsync(organizationId.Value, cancellationToken);
+        if (!authResult.IsSuccess)
         {
-            var isOwner = await IsOrgOwnerAsync(organizationId.Value, cancellationToken);
-            if (!isOwner)
-            {
-                return ServiceResult<Collaborator>.Forbidden("Apenas o proprietário da organização pode criar colaboradores.");
-            }
+            return ServiceResult<Collaborator>.Forbidden(authResult.Error ?? "Apenas o proprietário da organização pode criar colaboradores.");
         }
 
         // Criar colaborador SEM team
@@ -192,18 +190,5 @@ public sealed class CollaboratorService(
             .ToListAsync(cancellationToken);
 
         return ServiceResult<List<LeaderCollaboratorResponse>>.Success(leaders);
-    }
-
-    private async Task<bool> IsOrgOwnerAsync(Guid organizationId, CancellationToken cancellationToken)
-    {
-        if (tenantProvider.CollaboratorId is null)
-            return false;
-
-        return await dbContext.Organizations
-            .AsNoTracking()
-            .AnyAsync(o =>
-                o.Id == organizationId &&
-                o.OwnerId == tenantProvider.CollaboratorId.Value,
-                cancellationToken);
     }
 }

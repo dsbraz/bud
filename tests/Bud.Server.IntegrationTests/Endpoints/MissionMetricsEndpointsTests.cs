@@ -69,7 +69,6 @@ public class MissionMetricsEndpointsTests : IClassFixture<CustomWebApplicationFa
             {
                 Name = "test-org.com",
                 OwnerId = leaderId,
-                UserEmail = "admin@getbud.co"
             });
         var org = await orgResponse.Content.ReadFromJsonAsync<Organization>();
 

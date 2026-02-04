@@ -1,4 +1,3 @@
-using Bud.Server.MultiTenancy;
 using Bud.Server.Services;
 using Bud.Shared.Contracts;
 using Bud.Shared.Models;
@@ -12,8 +11,7 @@ namespace Bud.Server.Controllers;
 public sealed class OrganizationsController(
     IOrganizationService organizationService,
     IValidator<CreateOrganizationRequest> createValidator,
-    IValidator<UpdateOrganizationRequest> updateValidator,
-    ITenantProvider tenantProvider) : ControllerBase
+    IValidator<UpdateOrganizationRequest> updateValidator) : ControllerBase
 {
     [HttpPost]
     [ProducesResponseType(typeof(Organization), StatusCodes.Status201Created)]
@@ -22,18 +20,6 @@ public sealed class OrganizationsController(
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status403Forbidden)]
     public async Task<ActionResult<Organization>> Create(CreateOrganizationRequest request, CancellationToken cancellationToken)
     {
-        // Apenas administradores globais podem criar organizações
-        if (!tenantProvider.IsGlobalAdmin)
-        {
-            return StatusCode(StatusCodes.Status403Forbidden,
-                new ProblemDetails
-                {
-                    Status = StatusCodes.Status403Forbidden,
-                    Title = "Acesso negado",
-                    Detail = "Apenas administradores globais podem criar organizações."
-                });
-        }
-
         var validationResult = await createValidator.ValidateAsync(request, cancellationToken);
         if (!validationResult.IsValid)
         {
@@ -48,6 +34,7 @@ public sealed class OrganizationsController(
             return result.ErrorType switch
             {
                 ServiceErrorType.NotFound => NotFound(new ProblemDetails { Detail = result.Error }),
+                ServiceErrorType.Forbidden => StatusCode(StatusCodes.Status403Forbidden, new ProblemDetails { Detail = result.Error }),
                 ServiceErrorType.Validation => BadRequest(new ProblemDetails { Detail = result.Error }),
                 _ => BadRequest(new ProblemDetails { Detail = result.Error })
             };
@@ -63,18 +50,6 @@ public sealed class OrganizationsController(
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status403Forbidden)]
     public async Task<ActionResult<Organization>> Update(Guid id, UpdateOrganizationRequest request, CancellationToken cancellationToken)
     {
-        // Apenas administradores globais podem atualizar organizações
-        if (!tenantProvider.IsGlobalAdmin)
-        {
-            return StatusCode(StatusCodes.Status403Forbidden,
-                new ProblemDetails
-                {
-                    Status = StatusCodes.Status403Forbidden,
-                    Title = "Acesso negado",
-                    Detail = "Apenas administradores globais podem atualizar organizações."
-                });
-        }
-
         var validationResult = await updateValidator.ValidateAsync(request, cancellationToken);
         if (!validationResult.IsValid)
         {
@@ -86,9 +61,12 @@ public sealed class OrganizationsController(
 
         if (result.IsFailure)
         {
-            return result.ErrorType == ServiceErrorType.NotFound
-                ? NotFound(new ProblemDetails { Detail = result.Error })
-                : BadRequest(new ProblemDetails { Detail = result.Error });
+            return result.ErrorType switch
+            {
+                ServiceErrorType.NotFound => NotFound(new ProblemDetails { Detail = result.Error }),
+                ServiceErrorType.Forbidden => StatusCode(StatusCodes.Status403Forbidden, new ProblemDetails { Detail = result.Error }),
+                _ => BadRequest(new ProblemDetails { Detail = result.Error })
+            };
         }
 
         return Ok(result.Value);
@@ -98,27 +76,20 @@ public sealed class OrganizationsController(
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status409Conflict)]
     public async Task<IActionResult> Delete(Guid id, CancellationToken cancellationToken)
     {
-        // Apenas administradores globais podem deletar organizações
-        if (!tenantProvider.IsGlobalAdmin)
-        {
-            return StatusCode(StatusCodes.Status403Forbidden,
-                new ProblemDetails
-                {
-                    Status = StatusCodes.Status403Forbidden,
-                    Title = "Acesso negado",
-                    Detail = "Apenas administradores globais podem deletar organizações."
-                });
-        }
-
         var result = await organizationService.DeleteAsync(id, cancellationToken);
 
         if (result.IsFailure)
         {
-            return result.ErrorType == ServiceErrorType.NotFound
-                ? NotFound(new ProblemDetails { Detail = result.Error })
-                : BadRequest(new ProblemDetails { Detail = result.Error });
+            return result.ErrorType switch
+            {
+                ServiceErrorType.NotFound => NotFound(new ProblemDetails { Detail = result.Error }),
+                ServiceErrorType.Forbidden => StatusCode(StatusCodes.Status403Forbidden, new ProblemDetails { Detail = result.Error }),
+                ServiceErrorType.Conflict => Conflict(new ProblemDetails { Detail = result.Error }),
+                _ => BadRequest(new ProblemDetails { Detail = result.Error })
+            };
         }
 
         return NoContent();

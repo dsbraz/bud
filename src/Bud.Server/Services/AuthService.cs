@@ -3,10 +3,17 @@ using Bud.Server.Settings;
 using Bud.Shared.Contracts;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
+using Microsoft.IdentityModel.Tokens;
+using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
+using System.Text;
 
 namespace Bud.Server.Services;
 
-public sealed class AuthService(ApplicationDbContext dbContext, IOptions<GlobalAdminSettings> globalAdminSettings) : IAuthService
+public sealed class AuthService(
+    ApplicationDbContext dbContext,
+    IOptions<GlobalAdminSettings> globalAdminSettings,
+    IConfiguration configuration) : IAuthService
 {
     private readonly string _globalAdminEmail = globalAdminSettings.Value.Email;
 
@@ -22,8 +29,18 @@ public sealed class AuthService(ApplicationDbContext dbContext, IOptions<GlobalA
 
         if (IsGlobalAdminLogin(normalizedEmail))
         {
+            var adminClaims = new List<Claim>
+            {
+                new(ClaimTypes.Email, normalizedEmail),
+                new("email", normalizedEmail),
+                new(ClaimTypes.Role, "GlobalAdmin")
+            };
+
+            var adminToken = GenerateJwtToken(adminClaims);
+
             return ServiceResult<AuthLoginResponse>.Success(new AuthLoginResponse
             {
+                Token = adminToken,
                 Email = normalizedEmail,
                 DisplayName = "Administrador Global",
                 IsGlobalAdmin = true
@@ -40,8 +57,20 @@ public sealed class AuthService(ApplicationDbContext dbContext, IOptions<GlobalA
             return ServiceResult<AuthLoginResponse>.NotFound("Usuário não encontrado.");
         }
 
+        var claims = new List<Claim>
+        {
+            new(ClaimTypes.Email, collaborator.Email),
+            new("email", collaborator.Email),
+            new("collaborator_id", collaborator.Id.ToString()),
+            new("organization_id", collaborator.OrganizationId.ToString()),
+            new(ClaimTypes.Name, collaborator.FullName)
+        };
+
+        var token = GenerateJwtToken(claims);
+
         return ServiceResult<AuthLoginResponse>.Success(new AuthLoginResponse
         {
+            Token = token,
             Email = collaborator.Email,
             DisplayName = collaborator.FullName,
             IsGlobalAdmin = false,
@@ -117,5 +146,22 @@ public sealed class AuthService(ApplicationDbContext dbContext, IOptions<GlobalA
     private bool IsGlobalAdminLogin(string normalizedEmail)
     {
         return string.Equals(normalizedEmail, _globalAdminEmail, StringComparison.OrdinalIgnoreCase);
+    }
+
+    private string GenerateJwtToken(List<Claim> claims)
+    {
+        var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(
+            configuration["Jwt:Key"] ?? "dev-secret-key-change-in-production-minimum-32-characters-required"));
+        var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
+
+        var token = new JwtSecurityToken(
+            issuer: configuration["Jwt:Issuer"] ?? "bud-dev",
+            audience: configuration["Jwt:Audience"] ?? "bud-api",
+            claims: claims,
+            expires: DateTime.UtcNow.AddHours(8),
+            signingCredentials: creds
+        );
+
+        return new JwtSecurityTokenHandler().WriteToken(token);
     }
 }

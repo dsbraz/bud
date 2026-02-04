@@ -19,14 +19,9 @@ public sealed class OrganizationService(
     public async Task<ServiceResult<Organization>> CreateAsync(CreateOrganizationRequest request, CancellationToken cancellationToken = default)
     {
         // 1. Global Admin Authorization Check
-        var normalizedEmail = request.UserEmail.Trim().ToLowerInvariant();
-        var isGlobalAdmin = normalizedEmail.Equals(_globalAdminEmail, StringComparison.OrdinalIgnoreCase);
-
-        if (!isGlobalAdmin)
+        if (!tenantProvider.IsGlobalAdmin)
         {
-            return ServiceResult<Organization>.Failure(
-                "Apenas administradores globais podem criar organizações.",
-                ServiceErrorType.Validation);
+            return ServiceResult<Organization>.Forbidden("Apenas administradores globais podem criar organizações.");
         }
 
         // 2. Validate Owner Exists
@@ -69,6 +64,12 @@ public sealed class OrganizationService(
 
     public async Task<ServiceResult<Organization>> UpdateAsync(Guid id, UpdateOrganizationRequest request, CancellationToken cancellationToken = default)
     {
+        // Authorization: Only global admin can update organizations
+        if (!tenantProvider.IsGlobalAdmin)
+        {
+            return ServiceResult<Organization>.Forbidden("Apenas administradores globais podem alterar organizações.");
+        }
+
         var organization = await dbContext.Organizations
             .Include(o => o.Owner)
             .FirstOrDefaultAsync(o => o.Id == id, cancellationToken);
@@ -127,6 +128,12 @@ public sealed class OrganizationService(
 
     public async Task<ServiceResult> DeleteAsync(Guid id, CancellationToken cancellationToken = default)
     {
+        // Authorization: Only global admin can delete organizations
+        if (!tenantProvider.IsGlobalAdmin)
+        {
+            return ServiceResult.Forbidden("Apenas administradores globais podem excluir organizações.");
+        }
+
         var organization = await dbContext.Organizations.FindAsync([id], cancellationToken);
 
         if (organization is null)
@@ -141,6 +148,28 @@ public sealed class OrganizationService(
             return ServiceResult.Failure(
                 "Esta organização está protegida e não pode ser excluída.",
                 ServiceErrorType.Validation);
+        }
+
+        // Check if organization has associated workspaces
+        var hasWorkspaces = await dbContext.Workspaces
+            .AnyAsync(w => w.OrganizationId == id, cancellationToken);
+
+        if (hasWorkspaces)
+        {
+            return ServiceResult.Failure(
+                "Não é possível excluir a organização porque ela possui workspaces associados. Exclua os workspaces primeiro.",
+                ServiceErrorType.Conflict);
+        }
+
+        // Check if organization has collaborators assigned
+        var hasCollaborators = await dbContext.Collaborators
+            .AnyAsync(c => c.OrganizationId == id, cancellationToken);
+
+        if (hasCollaborators)
+        {
+            return ServiceResult.Failure(
+                "Não é possível excluir a organização porque ela possui colaboradores associados. Remova os colaboradores primeiro.",
+                ServiceErrorType.Conflict);
         }
 
         dbContext.Organizations.Remove(organization);

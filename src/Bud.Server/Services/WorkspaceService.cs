@@ -8,7 +8,8 @@ namespace Bud.Server.Services;
 
 public sealed class WorkspaceService(
     ApplicationDbContext dbContext,
-    ITenantProvider tenantProvider) : IWorkspaceService
+    ITenantProvider tenantProvider,
+    IOrganizationAuthorizationService orgAuth) : IWorkspaceService
 {
     public async Task<ServiceResult<Workspace>> CreateAsync(CreateWorkspaceRequest request, CancellationToken cancellationToken = default)
     {
@@ -20,13 +21,10 @@ public sealed class WorkspaceService(
             return ServiceResult<Workspace>.NotFound("Organização não encontrada.");
         }
 
-        if (!tenantProvider.IsGlobalAdmin)
+        var authResult = await orgAuth.RequireOrgOwnerAsync(request.OrganizationId, cancellationToken);
+        if (!authResult.IsSuccess)
         {
-            var isOwner = await IsOrgOwnerAsync(request.OrganizationId, cancellationToken);
-            if (!isOwner)
-            {
-                return ServiceResult<Workspace>.Forbidden("Apenas o proprietário da organização pode criar workspaces.");
-            }
+            return ServiceResult<Workspace>.Forbidden(authResult.Error ?? "Apenas o proprietário da organização pode criar workspaces.");
         }
 
         var nameExists = await dbContext.Workspaces
@@ -60,14 +58,11 @@ public sealed class WorkspaceService(
             return ServiceResult<Workspace>.NotFound("Workspace não encontrado.");
         }
 
-        if (!tenantProvider.IsGlobalAdmin)
+        var authResult = await orgAuth.RequireWriteAccessAsync(workspace.OrganizationId, id, cancellationToken);
+        if (!authResult.IsSuccess)
         {
-            var hasWriteAccess = await HasWriteAccessAsync(workspace.OrganizationId, id, cancellationToken);
-            if (!hasWriteAccess)
-            {
-                return ServiceResult<Workspace>.Forbidden(
-                    "Você não tem permissão para atualizar este workspace.");
-            }
+            return ServiceResult<Workspace>.Forbidden(
+                authResult.Error ?? "Você não tem permissão para atualizar este workspace.");
         }
 
         var nameExists = await dbContext.Workspaces
@@ -94,14 +89,11 @@ public sealed class WorkspaceService(
             return ServiceResult.NotFound("Workspace não encontrado.");
         }
 
-        if (!tenantProvider.IsGlobalAdmin)
+        var authResult = await orgAuth.RequireWriteAccessAsync(workspace.OrganizationId, id, cancellationToken);
+        if (!authResult.IsSuccess)
         {
-            var hasWriteAccess = await HasWriteAccessAsync(workspace.OrganizationId, id, cancellationToken);
-            if (!hasWriteAccess)
-            {
-                return ServiceResult.Forbidden(
-                    "Você não tem permissão para excluir este workspace.");
-            }
+            return ServiceResult.Forbidden(
+                authResult.Error ?? "Você não tem permissão para excluir este workspace.");
         }
 
         dbContext.Workspaces.Remove(workspace);
@@ -219,14 +211,6 @@ public sealed class WorkspaceService(
             return true;
 
         return await IsCollaboratorInWorkspaceAsync(workspace.Id, cancellationToken);
-    }
-
-    private async Task<bool> HasWriteAccessAsync(Guid organizationId, Guid workspaceId, CancellationToken cancellationToken)
-    {
-        if (await IsOrgOwnerAsync(organizationId, cancellationToken))
-            return true;
-
-        return await IsCollaboratorInWorkspaceAsync(workspaceId, cancellationToken);
     }
 
     private async Task<bool> IsCollaboratorInWorkspaceAsync(Guid workspaceId, CancellationToken cancellationToken)

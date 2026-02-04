@@ -81,7 +81,6 @@ public class WorkspacesEndpointsTests : IClassFixture<CustomWebApplicationFactor
             {
                 Name = $"test-{Guid.NewGuid():N}.com",
                 OwnerId = leaderId,
-                UserEmail = "admin@getbud.co"
             });
         return (await orgResponse.Content.ReadFromJsonAsync<Organization>())!;
     }
@@ -196,16 +195,22 @@ public class WorkspacesEndpointsTests : IClassFixture<CustomWebApplicationFactor
             new CreateTeamRequest { Name = "Test Team", WorkspaceId = privateWsMember.Id });
         var team = (await teamResponse.Content.ReadFromJsonAsync<Team>())!;
 
-        // Create a collaborator in that team
-        var collabResponse = await _adminClient.PostAsJsonAsync("/api/collaborators",
-            new CreateCollaboratorRequest
-            {
-                FullName = "Test User",
-                Email = $"testuser-{Guid.NewGuid():N}@test.com",
-                Role = CollaboratorRole.IndividualContributor,
-                TeamId = team.Id
-            });
-        var collaborator = (await collabResponse.Content.ReadFromJsonAsync<Collaborator>())!;
+        // Create a collaborator directly in database (since API doesn't support creating with TeamId)
+        using var scope = _factory.Services.CreateScope();
+        var dbContext = scope.ServiceProvider.GetRequiredService<Bud.Server.Data.ApplicationDbContext>();
+
+        var collaborator = new Collaborator
+        {
+            Id = Guid.NewGuid(),
+            FullName = "Test User",
+            Email = $"testuser-{Guid.NewGuid():N}@test.com",
+            Role = CollaboratorRole.IndividualContributor,
+            OrganizationId = org.Id,
+            TeamId = team.Id
+        };
+
+        dbContext.Collaborators.Add(collaborator);
+        await dbContext.SaveChangesAsync();
 
         // Act: get all workspaces as the non-admin tenant user
         var tenantClient = _factory.CreateTenantClient(org.Id, collaborator.Email, collaborator.Id);

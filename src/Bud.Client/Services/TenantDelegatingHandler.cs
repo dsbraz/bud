@@ -1,4 +1,5 @@
 using System.Net.Http;
+using System.Net.Http.Headers;
 
 namespace Bud.Client.Services;
 
@@ -13,7 +14,11 @@ public sealed class TenantDelegatingHandler(
 
         if (authState.Session is not null)
         {
-            request.Headers.Add("X-User-Email", authState.Session.Email);
+            // Add JWT Authorization header
+            if (!string.IsNullOrEmpty(authState.Session.Token))
+            {
+                request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", authState.Session.Token);
+            }
 
             // Use the selected organization from OrganizationContext
             // If null (TODOS selected), don't send X-Tenant-Id to see all orgs
@@ -21,12 +26,6 @@ public sealed class TenantDelegatingHandler(
             {
                 request.Headers.Add("X-Tenant-Id",
                     orgContext.SelectedOrganizationId.Value.ToString());
-            }
-
-            if (authState.Session.CollaboratorId.HasValue)
-            {
-                request.Headers.Add("X-Collaborator-Id",
-                    authState.Session.CollaboratorId.Value.ToString());
             }
         }
 

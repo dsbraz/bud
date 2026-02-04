@@ -1,3 +1,4 @@
+using Bud.Server.Services;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Bud.Server.MultiTenancy;
@@ -11,11 +12,14 @@ public sealed class TenantRequiredMiddleware(RequestDelegate next)
         "/api/auth/my-organizations"
     };
 
-    public async Task InvokeAsync(HttpContext context, ITenantProvider tenantProvider)
+    public async Task InvokeAsync(
+        HttpContext context,
+        ITenantProvider tenantProvider,
+        ITenantAuthorizationService tenantAuth)
     {
         var path = context.Request.Path.Value ?? string.Empty;
 
-        // Skip non-API paths and excluded paths
+        // Allow excluded auth paths
         if (!path.StartsWith("/api/", StringComparison.OrdinalIgnoreCase) ||
             ExcludedPaths.Contains(path))
         {
@@ -23,25 +27,42 @@ public sealed class TenantRequiredMiddleware(RequestDelegate next)
             return;
         }
 
-        // Check if user is authenticated via X-User-Email header
-        var userEmail = context.Request.Headers["X-User-Email"].FirstOrDefault();
-        var isAuthenticated = !string.IsNullOrWhiteSpace(userEmail);
+        // Check if user is authenticated via JWT (validated by ASP.NET Core)
+        var isAuthenticated = context.User.Identity?.IsAuthenticated == true;
 
-        // Allow access if user is authenticated (has email) or is global admin
-        // This allows "TODOS" mode (no tenant ID) for authenticated users
-        if (isAuthenticated || tenantProvider.IsGlobalAdmin)
+        if (!isAuthenticated)
         {
-            await next(context);
+            context.Response.StatusCode = StatusCodes.Status401Unauthorized;
+            await context.Response.WriteAsJsonAsync(new ProblemDetails
+            {
+                Status = StatusCodes.Status401Unauthorized,
+                Title = "Não autenticado",
+                Detail = "É necessário autenticação para acessar este recurso."
+            });
             return;
         }
 
-        // Unauthenticated users are not allowed
-        context.Response.StatusCode = StatusCodes.Status401Unauthorized;
-        await context.Response.WriteAsJsonAsync(new ProblemDetails
+        // Validate tenant access (if X-Tenant-Id header was provided)
+        if (tenantProvider.TenantId.HasValue && !tenantProvider.IsGlobalAdmin)
         {
-            Status = 401,
-            Title = "Authentication required",
-            Detail = "You must be logged in to access this resource."
-        });
+            var hasAccess = await tenantAuth.UserBelongsToTenantAsync(
+                tenantProvider.TenantId.Value,
+                context.RequestAborted);
+
+            if (!hasAccess)
+            {
+                context.Response.StatusCode = StatusCodes.Status403Forbidden;
+                await context.Response.WriteAsJsonAsync(new ProblemDetails
+                {
+                    Status = StatusCodes.Status403Forbidden,
+                    Title = "Acesso negado",
+                    Detail = "Você não tem permissão para acessar esta organização."
+                });
+                return;
+            }
+        }
+
+        // User is authenticated and has access to the requested tenant
+        await next(context);
     }
 }

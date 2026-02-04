@@ -69,7 +69,6 @@ public class TeamsEndpointsTests : IClassFixture<CustomWebApplicationFactory>
             {
                 Name = "test-org.com",
                 OwnerId = leaderId,
-                UserEmail = "admin@getbud.co"
             });
         var org = await orgResponse.Content.ReadFromJsonAsync<Organization>();
 
@@ -122,7 +121,6 @@ public class TeamsEndpointsTests : IClassFixture<CustomWebApplicationFactory>
             {
                 Name = "test-org.com",
                 OwnerId = leaderId,
-                UserEmail = "admin@getbud.co"
             })
         ).Content.ReadFromJsonAsync<Organization>().Result!;
 
@@ -322,30 +320,38 @@ public class TeamsEndpointsTests : IClassFixture<CustomWebApplicationFactory>
     public async Task GetCollaborators_ReturnsTeamCollaborators()
     {
         // Arrange
-        var (_, workspace) = await CreateTestHierarchy();
+        var (org, workspace) = await CreateTestHierarchy();
 
         var teamResponse = await _client.PostAsJsonAsync("/api/teams",
             new CreateTeamRequest { Name = "Test Team", WorkspaceId = workspace.Id });
         var team = await teamResponse.Content.ReadFromJsonAsync<Team>();
 
-        // Create collaborators
-        await _client.PostAsJsonAsync("/api/collaborators",
-            new CreateCollaboratorRequest
-            {
-                FullName = "Collaborator 1",
-                Email = "collab1@example.com",
-                Role = CollaboratorRole.IndividualContributor,
-                TeamId = team!.Id
-            });
+        // Create collaborators directly in database (since API doesn't support creating with TeamId)
+        using var scope = _factory.Services.CreateScope();
+        var dbContext = scope.ServiceProvider.GetRequiredService<Bud.Server.Data.ApplicationDbContext>();
 
-        await _client.PostAsJsonAsync("/api/collaborators",
-            new CreateCollaboratorRequest
-            {
-                FullName = "Collaborator 2",
-                Email = "collab2@example.com",
-                Role = CollaboratorRole.Leader,
-                TeamId = team.Id
-            });
+        var collab1 = new Collaborator
+        {
+            Id = Guid.NewGuid(),
+            FullName = "Collaborator 1",
+            Email = "collab1@example.com",
+            Role = CollaboratorRole.IndividualContributor,
+            OrganizationId = org.Id,
+            TeamId = team!.Id
+        };
+
+        var collab2 = new Collaborator
+        {
+            Id = Guid.NewGuid(),
+            FullName = "Collaborator 2",
+            Email = "collab2@example.com",
+            Role = CollaboratorRole.Leader,
+            OrganizationId = org.Id,
+            TeamId = team.Id
+        };
+
+        dbContext.Collaborators.AddRange(collab1, collab2);
+        await dbContext.SaveChangesAsync();
 
         // Act
         var response = await _client.GetAsync($"/api/teams/{team.Id}/collaborators");
