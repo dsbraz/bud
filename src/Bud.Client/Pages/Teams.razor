@@ -188,23 +188,28 @@
 
 @if (isDetailsModalOpen && detailsTeam != null)
 {
-    var teamCollaborators = collaborators.Where(c => c.TeamId == detailsTeam.Id).ToList();
-
     <Modal Title="@($"Detalhes: {detailsTeam.Name}")" OnClose="CloseDetailsModal">
         <ChildContent>
             <div class="detail-section">
                 <h3 class="detail-section-title">Colaboradores</h3>
-                @if (teamCollaborators.Count == 0)
+                @if (detailsTeamCollaborators == null)
+                {
+                    <p class="muted">Carregando...</p>
+                }
+                else if (detailsTeamCollaborators.Count == 0)
                 {
                     <p class="muted">Nenhum colaborador vinculado.</p>
                 }
                 else
                 {
                     <ul class="detail-list">
-                        @foreach (var collaborator in teamCollaborators)
+                        @foreach (var collaborator in detailsTeamCollaborators)
                         {
                             <li class="detail-list-item">
-                                <span class="detail-name">@collaborator.FullName</span>
+                                <div class="detail-collab-main">
+                                    <span class="detail-name">@collaborator.FullName</span>
+                                </div>
+                                <span class="detail-email">@collaborator.Email</span>
                             </li>
                         }
                     </ul>
@@ -240,6 +245,7 @@
     // Estado do modal de detalhes
     private bool isDetailsModalOpen = false;
     private Team? detailsTeam = null;
+    private List<CollaboratorSummaryDto>? detailsTeamCollaborators = null;
 
     // Estado de confirmação de exclusão
     private Guid? deletingTeamId = null;
@@ -290,16 +296,22 @@
         collaborators = result?.Items.ToList() ?? new List<Collaborator>();
     }
 
-    private void OpenDetailsModal(Team team)
+    private async Task OpenDetailsModal(Team team)
     {
         detailsTeam = team;
+        detailsTeamCollaborators = null;
         isDetailsModalOpen = true;
+
+        // Carregar colaboradores da equipe via API
+        detailsTeamCollaborators = await Api.GetTeamCollaboratorSummariesAsync(team.Id) ?? new();
+        StateHasChanged();
     }
 
     private void CloseDetailsModal()
     {
         isDetailsModalOpen = false;
         detailsTeam = null;
+        detailsTeamCollaborators = null;
     }
 
     private async Task OnCreateWorkspaceChanged(ChangeEventArgs e)

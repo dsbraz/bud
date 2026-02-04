@@ -210,41 +210,62 @@
 
 @if (isDetailsModalOpen && detailsCollaborator != null)
 {
-    var detailsTeam = teams.FirstOrDefault(t => t.Id == detailsCollaborator.TeamId);
-    var detailsWorkspace = detailsTeam != null
-        ? workspaces.FirstOrDefault(w => w.Id == detailsTeam.WorkspaceId)
-        : null;
-
     <Modal Title="@($"Detalhes: {detailsCollaborator.FullName}")" OnClose="CloseDetailsModal">
         <ChildContent>
             <div class="detail-section">
-                <h3 class="detail-section-title">Workspace</h3>
-                @if (detailsWorkspace == null)
+                <h3 class="detail-section-title">Workspaces</h3>
+                @if (detailsCollaboratorTeams == null)
                 {
-                    <p class="muted">Nenhum workspace encontrado.</p>
+                    <p class="muted">Carregando...</p>
                 }
                 else
                 {
-                    <ul class="detail-list">
-                        <li class="detail-list-item">
-                            <span class="detail-name">@detailsWorkspace.Name</span>
-                        </li>
-                    </ul>
+                    var uniqueWorkspaces = detailsCollaboratorTeams
+                        .Where(t => !string.IsNullOrEmpty(t.WorkspaceName))
+                        .Select(t => t.WorkspaceName)
+                        .Distinct()
+                        .ToList();
+
+                    @if (uniqueWorkspaces.Count == 0)
+                    {
+                        <p class="muted">Nenhum workspace vinculado.</p>
+                    }
+                    else
+                    {
+                        <ul class="detail-list">
+                            @foreach (var workspaceName in uniqueWorkspaces)
+                            {
+                                <li class="detail-list-item">
+                                    <span class="detail-name">@workspaceName</span>
+                                </li>
+                            }
+                        </ul>
+                    }
                 }
             </div>
 
             <div class="detail-section">
-                <h3 class="detail-section-title">Equipe</h3>
-                @if (detailsTeam == null)
+                <h3 class="detail-section-title">Equipes</h3>
+                @if (detailsCollaboratorTeams == null)
+                {
+                    <p class="muted">Carregando...</p>
+                }
+                else if (detailsCollaboratorTeams.Count == 0)
                 {
                     <p class="muted">Nenhuma equipe atribuída.</p>
                 }
                 else
                 {
                     <ul class="detail-list">
-                        <li class="detail-list-item">
-                            <span class="detail-name">@detailsTeam.Name</span>
-                        </li>
+                        @foreach (var team in detailsCollaboratorTeams)
+                        {
+                            <li class="detail-list-item">
+                                <div class="detail-collab-main">
+                                    <span class="detail-name">@team.Name</span>
+                                </div>
+                                <span class="detail-email">@team.WorkspaceName</span>
+                            </li>
+                        }
                     </ul>
                 }
             </div>
@@ -276,6 +297,7 @@
     // Estado do modal de detalhes
     private bool isDetailsModalOpen = false;
     private Collaborator? detailsCollaborator = null;
+    private List<TeamSummaryDto>? detailsCollaboratorTeams = null;
 
     // Estado de confirmação de exclusão
     private Guid? deletingCollaboratorId = null;
@@ -421,16 +443,22 @@
         teamsModified = false;
     }
 
-    private void OpenDetailsModal(Collaborator collaborator)
+    private async Task OpenDetailsModal(Collaborator collaborator)
     {
         detailsCollaborator = collaborator;
+        detailsCollaboratorTeams = null;
         isDetailsModalOpen = true;
+
+        // Carregar equipes do colaborador via API
+        detailsCollaboratorTeams = await Api.GetCollaboratorTeamsAsync(collaborator.Id) ?? new();
+        StateHasChanged();
     }
 
     private void CloseDetailsModal()
     {
         isDetailsModalOpen = false;
         detailsCollaborator = null;
+        detailsCollaboratorTeams = null;
     }
 
     private async Task UpdateCollaborator()

@@ -392,6 +392,7 @@ else
             await Api.CreateOrganizationAsync(newOrganization);
             newOrganization = new CreateOrganizationRequest();
             await LoadOrganizations();
+            await RefreshAvailableOrganizations();
 
             ToastService.ShowSuccess("Organização criada com sucesso!", "A organização foi criada e está disponível.");
             CloseModal();
@@ -432,6 +433,7 @@ else
         {
             await Api.UpdateOrganizationAsync(editingOrganizationId.Value, editOrganization);
             await LoadOrganizations();
+            await RefreshAvailableOrganizations();
             ToastService.ShowSuccess("Organização atualizada com sucesso!", "As alterações foram salvas.");
             CloseModal();
         }
@@ -485,6 +487,7 @@ else
         {
             await Api.DeleteOrganizationAsync(organizationId);
             await LoadOrganizations();
+            await RefreshAvailableOrganizations();
             ToastService.ShowSuccess("Organização excluída", $"A organização '{orgName}' foi removida com sucesso.");
         }
         catch (HttpRequestException ex)
@@ -544,6 +547,22 @@ else
             Console.WriteLine($"Erro ao carregar colaboradores: {ex.Message}");
             ToastService.ShowError("Erro", "Não foi possível carregar os colaboradores.");
             orgCollaborators = new PagedResult<Collaborator> { Items = Array.Empty<Collaborator>() };
+        }
+    }
+
+    private async Task RefreshAvailableOrganizations()
+    {
+        try
+        {
+            var organizations = await Api.GetMyOrganizationsAsync();
+            if (organizations != null)
+            {
+                OrgContext.UpdateAvailableOrganizations(organizations);
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Erro ao atualizar lista de organizações: {ex.Message}");
         }
     }
 

@@ -67,6 +67,12 @@ public sealed class OrganizationContext(IJSRuntime jsRuntime)
         await jsRuntime.InvokeAsync<object>("localStorage.removeItem", StorageKey);
     }
 
+    public void UpdateAvailableOrganizations(List<OrganizationSummaryDto> organizations)
+    {
+        _availableOrganizations = organizations;
+        OnOrganizationChanged?.Invoke();
+    }
+
     public string GetSelectedOrganizationName()
     {
         if (_selectedOrganizationId == null)
