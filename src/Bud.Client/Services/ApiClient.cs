@@ -79,6 +79,12 @@ public sealed class ApiClient
         return await _http.GetFromJsonAsync<PagedResult<Workspace>>(url);
     }
 
+    public async Task<PagedResult<Collaborator>?> GetOrganizationCollaboratorsAsync(Guid organizationId, int page = 1, int pageSize = 10)
+    {
+        var url = $"api/organizations/{organizationId}/collaborators?page={page}&pageSize={pageSize}";
+        return await _http.GetFromJsonAsync<PagedResult<Collaborator>>(url);
+    }
+
     public async Task<Workspace?> CreateWorkspaceAsync(CreateWorkspaceRequest request)
     {
         var response = await _http.PostAsJsonAsync("api/workspaces", request);

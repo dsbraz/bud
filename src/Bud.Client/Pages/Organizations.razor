@@ -65,7 +65,7 @@ else
                     var isDeleting = deletingOrganizationId == org.Id;
                     var isProtected = !string.IsNullOrEmpty(org.Name) &&
                                     org.Name.Equals(GlobalAdminOrgName, StringComparison.OrdinalIgnoreCase);
-                    <tr>
+                    <tr style="cursor: pointer;" @onclick="() => OpenDetailsModal(org)">
                         <td>
                             @org.Name
                             @if (isProtected)
@@ -198,6 +198,80 @@ else
         }
     </Modal>
 }
+
+@if (isDetailsModalOpen && selectedOrganization != null)
+{
+    <Modal Title="@($"Detalhes: {selectedOrganization.Name}")"
+           Size="lg"
+           OnClose="CloseDetailsModal">
+        <ChildContent>
+            <div class="detail-section">
+                <h3 class="detail-section-title">Workspaces</h3>
+                @if (orgWorkspaces == null)
+                {
+                    <p class="muted">Carregando...</p>
+                }
+                else if (orgWorkspaces.Items.Count == 0)
+                {
+                    <p class="muted">Nenhum workspace encontrado.</p>
+                }
+                else
+                {
+                    <ul class="detail-list">
+                        @foreach (var ws in orgWorkspaces.Items.Take(10))
+                        {
+                            <li class="detail-list-item">
+                                <span class="detail-icon">@(ws.Visibility == Visibility.Public ? "🔓" : "🔒")</span>
+                                <span class="detail-name">@ws.Name</span>
+                            </li>
+                        }
+                    </ul>
+                    @if (orgWorkspaces.Total > 10)
+                    {
+                        <p class="detail-more">e mais @(orgWorkspaces.Total - 10)...</p>
+                    }
+                }
+            </div>
+
+            <div class="detail-section">
+                <h3 class="detail-section-title">Colaboradores</h3>
+                @if (orgCollaborators == null)
+                {
+                    <p class="muted">Carregando...</p>
+                }
+                else if (orgCollaborators.Items.Count == 0)
+                {
+                    <p class="muted">Nenhum colaborador encontrado.</p>
+                }
+                else
+                {
+                    <ul class="detail-list">
+                        @foreach (var collab in orgCollaborators.Items.Take(10))
+                        {
+                            <li class="detail-list-item">
+                                <div class="detail-collab-main">
+                                    <span class="detail-name">@collab.FullName</span>
+                                    <span class="badge @(collab.Role == CollaboratorRole.Leader ? "leader" : "contributor")">
+                                        @(collab.Role == CollaboratorRole.Leader ? "Líder" : "Contribuidor")
+                                    </span>
+                                </div>
+                                <span class="detail-email">@collab.Email</span>
+                                @if (collab.Team != null)
+                                {
+                                    <span class="detail-team">Time: @collab.Team.Name</span>
+                                }
+                            </li>
+                        }
+                    </ul>
+                    @if (orgCollaborators.Total > 10)
+                    {
+                        <p class="detail-more">e mais @(orgCollaborators.Total - 10)...</p>
+                    }
+                }
+            </div>
+        </ChildContent>
+    </Modal>
+}
 }
 
 @code {
@@ -213,6 +287,12 @@ else
     private Guid? deletingOrganizationId = null;
     private System.Threading.Timer? deleteConfirmTimer;
     private const string GlobalAdminOrgName = "getbud.co"; // Organização do admin global
+
+    // Estado do modal de detalhes
+    private bool isDetailsModalOpen = false;
+    private Organization? selectedOrganization = null;
+    private PagedResult<Workspace>? orgWorkspaces = null;
+    private PagedResult<Collaborator>? orgCollaborators = null;
 
     protected override async Task OnInitializedAsync()
     {
@@ -415,6 +495,56 @@ else
         catch (Exception ex)
         {
             ToastService.ShowError("Erro inesperado", ex.Message);
+        }
+    }
+
+    private async Task OpenDetailsModal(Organization org)
+    {
+        selectedOrganization = org;
+        isDetailsModalOpen = true;
+        orgWorkspaces = null;
+        orgCollaborators = null;
+
+        // Carregar dados em paralelo para melhor performance
+        await Task.WhenAll(
+            LoadOrganizationWorkspaces(org.Id),
+            LoadOrganizationCollaborators(org.Id)
+        );
+    }
+
+    private void CloseDetailsModal()
+    {
+        isDetailsModalOpen = false;
+        selectedOrganization = null;
+        orgWorkspaces = null;
+        orgCollaborators = null;
+    }
+
+    private async Task LoadOrganizationWorkspaces(Guid organizationId)
+    {
+        try
+        {
+            orgWorkspaces = await Api.GetWorkspacesAsync(organizationId, null, 1, 10);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Erro ao carregar workspaces: {ex.Message}");
+            ToastService.ShowError("Erro", "Não foi possível carregar os workspaces.");
+            orgWorkspaces = new PagedResult<Workspace> { Items = Array.Empty<Workspace>() };
+        }
+    }
+
+    private async Task LoadOrganizationCollaborators(Guid organizationId)
+    {
+        try
+        {
+            orgCollaborators = await Api.GetOrganizationCollaboratorsAsync(organizationId, 1, 10);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Erro ao carregar colaboradores: {ex.Message}");
+            ToastService.ShowError("Erro", "Não foi possível carregar os colaboradores.");
+            orgCollaborators = new PagedResult<Collaborator> { Items = Array.Empty<Collaborator>() };
         }
     }
 

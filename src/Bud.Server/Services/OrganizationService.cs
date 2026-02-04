@@ -275,4 +275,38 @@ public sealed class OrganizationService(
 
         return ServiceResult<PagedResult<Workspace>>.Success(result);
     }
+
+    public async Task<ServiceResult<PagedResult<Collaborator>>> GetCollaboratorsAsync(Guid id, int page, int pageSize, CancellationToken cancellationToken = default)
+    {
+        page = page < 1 ? 1 : page;
+        pageSize = pageSize is < 1 or > 100 ? 10 : pageSize;
+
+        var organizationExists = await dbContext.Organizations.AnyAsync(o => o.Id == id, cancellationToken);
+        if (!organizationExists)
+        {
+            return ServiceResult<PagedResult<Collaborator>>.NotFound("Organização não encontrada.");
+        }
+
+        var query = dbContext.Collaborators
+            .AsNoTracking()
+            .Where(c => c.OrganizationId == id);
+
+        var total = await query.CountAsync(cancellationToken);
+        var items = await query
+            .Include(c => c.Team)
+            .OrderBy(c => c.FullName)
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
+            .ToListAsync(cancellationToken);
+
+        var result = new PagedResult<Collaborator>
+        {
+            Items = items,
+            Total = total,
+            Page = page,
+            PageSize = pageSize
+        };
+
+        return ServiceResult<PagedResult<Collaborator>>.Success(result);
+    }
 }

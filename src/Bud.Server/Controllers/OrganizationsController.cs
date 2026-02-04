@@ -134,4 +134,20 @@ public sealed class OrganizationsController(
             ? Ok(result.Value)
             : NotFound(new ProblemDetails { Detail = result.Error });
     }
+
+    [HttpGet("{id:guid}/collaborators")]
+    [ProducesResponseType(typeof(PagedResult<Collaborator>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<PagedResult<Collaborator>>> GetCollaborators(
+        Guid id,
+        [FromQuery] int page = 1,
+        [FromQuery] int pageSize = 10,
+        CancellationToken cancellationToken = default)
+    {
+        var result = await organizationService.GetCollaboratorsAsync(id, page, pageSize, cancellationToken);
+
+        return result.IsSuccess
+            ? Ok(result.Value)
+            : NotFound(new ProblemDetails { Detail = result.Error });
+    }
 }
