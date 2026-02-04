@@ -8,8 +8,8 @@ public sealed class Collaborator : ITenantEntity
     public CollaboratorRole Role { get; set; } = CollaboratorRole.IndividualContributor;
     public Guid OrganizationId { get; set; }
     public Organization Organization { get; set; } = null!;
-    public Guid TeamId { get; set; }
-    public Team Team { get; set; } = null!;
+    public Guid? TeamId { get; set; }
+    public Team? Team { get; set; }
     public Guid? LeaderId { get; set; }
     public Collaborator? Leader { get; set; }
 }

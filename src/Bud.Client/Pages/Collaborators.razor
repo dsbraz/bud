@@ -82,16 +82,6 @@
         <EditForm Model="@newCollaborator" OnValidSubmit="CreateCollaborator">
             <DataAnnotationsValidator />
             <div class="form-row">
-                <label>Equipe</label>
-                <select class="input" @bind="createTeamId">
-                    <option value="">Selecione</option>
-                    @foreach (var team in teams)
-                    {
-                        <option value="@team.Id">@team.Name</option>
-                    }
-                </select>
-            </div>
-            <div class="form-row">
                 <label>Nome completo</label>
                 <InputText class="input" @bind-Value="newCollaborator.FullName" />
             </div>
@@ -132,7 +122,6 @@
     private PagedResult<Collaborator>? collaborators;
     private string? search;
     private string? selectedTeamId;
-    private string? createTeamId;
     private string? createLeaderId;
     private bool isModalOpen = false;
 
@@ -172,7 +161,6 @@
     private void OpenCreateModal()
     {
         newCollaborator = new CreateCollaboratorRequest();
-        createTeamId = null;
         createLeaderId = null;
         isModalOpen = true;
     }
@@ -184,12 +172,6 @@
 
     private async Task CreateCollaborator()
     {
-        if (!Guid.TryParse(createTeamId, out var teamId))
-        {
-            ToastService.ShowError("Erro ao criar colaborador", "Selecione uma equipe.");
-            return;
-        }
-
         if (string.IsNullOrWhiteSpace(newCollaborator.FullName))
         {
             ToastService.ShowError("Erro ao criar colaborador", "Informe o nome completo.");
@@ -202,7 +184,8 @@
             return;
         }
 
-        newCollaborator.TeamId = teamId;
+        // TeamId sempre null (colaboradores são criados sem equipe)
+        newCollaborator.TeamId = null;
         newCollaborator.LeaderId = Guid.TryParse(createLeaderId, out var leaderId) ? leaderId : null;
 
         try
@@ -210,7 +193,6 @@
             await Api.CreateCollaboratorAsync(newCollaborator);
             var createdCollaboratorName = newCollaborator.FullName;
             newCollaborator = new CreateCollaboratorRequest();
-            createTeamId = null;
             createLeaderId = null;
             await LoadCollaborators();
             await LoadAllCollaborators();

@@ -164,8 +164,8 @@ public sealed class OrganizationService(
             {
                 var memberWorkspaceIds = await dbContext.Collaborators
                     .AsNoTracking()
-                    .Where(c => c.Id == collaboratorId)
-                    .Select(c => c.Team.WorkspaceId)
+                    .Where(c => c.Id == collaboratorId && c.Team != null)
+                    .Select(c => c.Team!.WorkspaceId)
                     .Distinct()
                     .ToListAsync(cancellationToken);
 

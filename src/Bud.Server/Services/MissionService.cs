@@ -161,7 +161,7 @@ public sealed class MissionService(ApplicationDbContext dbContext) : IMissionSer
         }
 
         var teamId = collaborator.TeamId;
-        var workspaceId = collaborator.Team.WorkspaceId;
+        var workspaceId = collaborator.Team?.WorkspaceId;
         var organizationId = collaborator.OrganizationId;
 
         // Buscar missões do colaborador, team, workspace ou organization
@@ -170,8 +170,8 @@ public sealed class MissionService(ApplicationDbContext dbContext) : IMissionSer
             .AsNoTracking()
             .Where(m =>
                 m.CollaboratorId == collaboratorId ||
-                m.TeamId == teamId ||
-                m.WorkspaceId == workspaceId ||
+                (teamId.HasValue && m.TeamId == teamId) ||
+                (workspaceId.HasValue && m.WorkspaceId == workspaceId) ||
                 (m.OrganizationId == organizationId && m.WorkspaceId == null && m.TeamId == null && m.CollaboratorId == null));
 
         // Aplicar filtro de busca por nome

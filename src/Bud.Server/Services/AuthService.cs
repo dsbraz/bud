@@ -33,8 +33,6 @@ public sealed class AuthService(ApplicationDbContext dbContext, IOptions<GlobalA
         var collaborator = await dbContext.Collaborators
             .AsNoTracking()
             .IgnoreQueryFilters() // During login, we need to bypass tenant filters
-            .Include(c => c.Team)
-                .ThenInclude(t => t.Workspace)
             .FirstOrDefaultAsync(c => c.Email == normalizedEmail, cancellationToken);
 
         if (collaborator is null)
@@ -49,7 +47,7 @@ public sealed class AuthService(ApplicationDbContext dbContext, IOptions<GlobalA
             IsGlobalAdmin = false,
             CollaboratorId = collaborator.Id,
             Role = collaborator.Role,
-            OrganizationId = collaborator.Team.Workspace.OrganizationId
+            OrganizationId = collaborator.OrganizationId
         });
     }
 
@@ -78,21 +76,19 @@ public sealed class AuthService(ApplicationDbContext dbContext, IOptions<GlobalA
             return ServiceResult<List<OrganizationSummaryDto>>.Success(allOrgs);
         }
 
-        // Regular users: get organizations from two sources:
-        // 1. Organizations where they are members (via Collaborator → Team → Workspace)
+        // Regular users: get organizations from three sources:
+        // 1. Organizations where they are members (via Collaborator → Organization directly)
         // 2. Organizations where they are the Owner
 
         var orgsFromMembership = await dbContext.Collaborators
             .AsNoTracking()
             .IgnoreQueryFilters() // Need to bypass filters to discover user's organizations
             .Where(c => c.Email == normalizedEmail)
-            .Include(c => c.Team)
-                .ThenInclude(t => t.Workspace)
-                    .ThenInclude(w => w.Organization)
+            .Include(c => c.Organization)
             .Select(c => new OrganizationSummaryDto
             {
-                Id = c.Team.Workspace.Organization.Id,
-                Name = c.Team.Workspace.Organization.Name
+                Id = c.Organization.Id,
+                Name = c.Organization.Name
             })
             .ToListAsync(cancellationToken);
 

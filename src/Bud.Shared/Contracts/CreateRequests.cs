@@ -28,7 +28,7 @@ public sealed class CreateCollaboratorRequest
     public string FullName { get; set; } = string.Empty;
     public string Email { get; set; } = string.Empty;
     public CollaboratorRole Role { get; set; } = CollaboratorRole.IndividualContributor;
-    public Guid TeamId { get; set; }
+    public Guid? TeamId { get; set; }
     public Guid? LeaderId { get; set; }
 }
 

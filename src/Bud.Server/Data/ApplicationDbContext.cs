@@ -105,7 +105,8 @@ public sealed class ApplicationDbContext : DbContext
             .HasMany(t => t.Collaborators)
             .WithOne(c => c.Team)
             .HasForeignKey(c => c.TeamId)
-            .OnDelete(DeleteBehavior.Cascade);
+            .OnDelete(DeleteBehavior.SetNull)
+            .IsRequired(false);
 
         modelBuilder.Entity<Collaborator>()
             .HasOne(c => c.Leader)

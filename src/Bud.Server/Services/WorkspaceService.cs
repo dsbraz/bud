@@ -238,6 +238,7 @@ public sealed class WorkspaceService(
             .AsNoTracking()
             .AnyAsync(c =>
                 c.Id == tenantProvider.CollaboratorId.Value &&
+                c.Team != null &&
                 c.Team.WorkspaceId == workspaceId,
                 cancellationToken);
     }
@@ -276,8 +277,8 @@ public sealed class WorkspaceService(
 
         var memberWorkspaceIds = await dbContext.Collaborators
             .AsNoTracking()
-            .Where(c => c.Id == collaboratorId)
-            .Select(c => c.Team.WorkspaceId)
+            .Where(c => c.Id == collaboratorId && c.Team != null)
+            .Select(c => c.Team!.WorkspaceId)
             .Distinct()
             .ToListAsync(cancellationToken);
 

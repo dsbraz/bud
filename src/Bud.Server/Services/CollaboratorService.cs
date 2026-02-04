@@ -12,32 +12,35 @@ public sealed class CollaboratorService(
 {
     public async Task<ServiceResult<Collaborator>> CreateAsync(CreateCollaboratorRequest request, CancellationToken cancellationToken = default)
     {
-        var team = await dbContext.Teams
-            .AsNoTracking()
-            .FirstOrDefaultAsync(t => t.Id == request.TeamId, cancellationToken);
+        // Obter OrganizationId do TenantProvider
+        var organizationId = tenantProvider.TenantId;
 
-        if (team is null)
+        if (!organizationId.HasValue)
         {
-            return ServiceResult<Collaborator>.NotFound("Time não encontrado.");
+            return ServiceResult<Collaborator>.Failure(
+                "Contexto de organização não encontrado.",
+                ServiceErrorType.Validation);
         }
 
+        // Verificação de permissão
         if (!tenantProvider.IsGlobalAdmin)
         {
-            var isOwner = await IsOrgOwnerAsync(team.OrganizationId, cancellationToken);
+            var isOwner = await IsOrgOwnerAsync(organizationId.Value, cancellationToken);
             if (!isOwner)
             {
                 return ServiceResult<Collaborator>.Forbidden("Apenas o proprietário da organização pode criar colaboradores.");
             }
         }
 
+        // Criar colaborador SEM team
         var collaborator = new Collaborator
         {
             Id = Guid.NewGuid(),
             FullName = request.FullName.Trim(),
             Email = request.Email.Trim().ToLowerInvariant(),
             Role = request.Role,
-            OrganizationId = team.OrganizationId,
-            TeamId = request.TeamId,
+            OrganizationId = organizationId.Value,
+            TeamId = null, // Sempre null para novos colaboradores
             LeaderId = request.LeaderId,
         };
 
@@ -164,9 +167,9 @@ public sealed class CollaboratorService(
     public async Task<ServiceResult<List<LeaderCollaboratorResponse>>> GetLeadersAsync(CancellationToken cancellationToken = default)
     {
         var leaders = await dbContext.Collaborators
+            .Include(c => c.Organization) // Incluir Organization diretamente
             .Include(c => c.Team)
                 .ThenInclude(t => t.Workspace)
-                    .ThenInclude(w => w.Organization)
             .Where(c => c.Role == CollaboratorRole.Leader)
             .OrderBy(c => c.FullName)
             .Select(c => new LeaderCollaboratorResponse
@@ -174,9 +177,9 @@ public sealed class CollaboratorService(
                 Id = c.Id,
                 FullName = c.FullName,
                 Email = c.Email,
-                TeamName = c.Team.Name,
-                WorkspaceName = c.Team.Workspace.Name,
-                OrganizationName = c.Team.Workspace.Organization.Name
+                TeamName = c.Team != null ? c.Team.Name : null,
+                WorkspaceName = c.Team != null && c.Team.Workspace != null ? c.Team.Workspace.Name : null,
+                OrganizationName = c.Organization.Name // Usar Organization diretamente
             })
             .ToListAsync(cancellationToken);
 

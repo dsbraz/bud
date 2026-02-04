@@ -1,4 +1,5 @@
 using Bud.Server.Data;
+using Bud.Server.MultiTenancy;
 using Bud.Shared.Contracts;
 using Bud.Shared.Models;
 using FluentValidation;
@@ -9,10 +10,12 @@ namespace Bud.Server.Validators;
 public sealed class CreateCollaboratorValidator : AbstractValidator<CreateCollaboratorRequest>
 {
     private readonly ApplicationDbContext _context;
+    private readonly ITenantProvider _tenantProvider;
 
-    public CreateCollaboratorValidator(ApplicationDbContext context)
+    public CreateCollaboratorValidator(ApplicationDbContext context, ITenantProvider tenantProvider)
     {
         _context = context;
+        _tenantProvider = tenantProvider;
 
         RuleFor(x => x.FullName)
             .NotEmpty().WithMessage("FullName is required.")
@@ -23,9 +26,6 @@ public sealed class CreateCollaboratorValidator : AbstractValidator<CreateCollab
             .MaximumLength(320).WithMessage("Email must not exceed 320 characters.")
             .EmailAddress().WithMessage("Email must be a valid email address.")
             .MustAsync(BeUniqueEmail).WithMessage("Email is already in use.");
-
-        RuleFor(x => x.TeamId)
-            .NotEmpty().WithMessage("TeamId is required.");
 
         RuleFor(x => x.Role)
             .IsInEnum().WithMessage("Role must be a valid collaborator role.");
@@ -52,12 +52,9 @@ public sealed class CreateCollaboratorValidator : AbstractValidator<CreateCollab
         if (!leaderId.HasValue)
             return true;
 
-        var team = await _context.Teams
-            .AsNoTracking()
-            .IgnoreQueryFilters()
-            .FirstOrDefaultAsync(t => t.Id == request.TeamId, cancellationToken);
-
-        if (team == null)
+        // Obter OrganizationId do TenantProvider
+        var currentOrgId = _tenantProvider.TenantId;
+        if (!currentOrgId.HasValue)
             return false;
 
         var leader = await _context.Collaborators
@@ -68,7 +65,8 @@ public sealed class CreateCollaboratorValidator : AbstractValidator<CreateCollab
         if (leader == null)
             return false;
 
-        return leader.OrganizationId == team.OrganizationId && leader.Role == CollaboratorRole.Leader;
+        // Validar que o líder pertence à mesma organização e tem role Leader
+        return leader.OrganizationId == currentOrgId.Value && leader.Role == CollaboratorRole.Leader;
     }
 }
 
