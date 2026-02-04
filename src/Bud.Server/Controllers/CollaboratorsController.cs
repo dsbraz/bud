@@ -47,6 +47,7 @@ public sealed class CollaboratorsController(
     [ProducesResponseType(typeof(Collaborator), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
     [ProducesResponseType(typeof(ValidationProblemDetails), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status403Forbidden)]
     public async Task<ActionResult<Collaborator>> Update(Guid id, UpdateCollaboratorRequest request, CancellationToken cancellationToken)
     {
         var validationResult = await updateValidator.ValidateAsync(request, cancellationToken);
@@ -60,9 +61,13 @@ public sealed class CollaboratorsController(
 
         if (result.IsFailure)
         {
-            return result.ErrorType == ServiceErrorType.NotFound
-                ? NotFound(new ProblemDetails { Detail = result.Error })
-                : BadRequest(new ProblemDetails { Detail = result.Error });
+            return result.ErrorType switch
+            {
+                ServiceErrorType.NotFound => NotFound(new ProblemDetails { Detail = result.Error }),
+                ServiceErrorType.Forbidden => StatusCode(StatusCodes.Status403Forbidden,
+                    new ProblemDetails { Detail = result.Error }),
+                _ => BadRequest(new ProblemDetails { Detail = result.Error })
+            };
         }
 
         return Ok(result.Value);
@@ -71,15 +76,22 @@ public sealed class CollaboratorsController(
     [HttpDelete("{id:guid}")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status409Conflict)]
     public async Task<IActionResult> Delete(Guid id, CancellationToken cancellationToken)
     {
         var result = await collaboratorService.DeleteAsync(id, cancellationToken);
 
         if (result.IsFailure)
         {
-            return result.ErrorType == ServiceErrorType.NotFound
-                ? NotFound(new ProblemDetails { Detail = result.Error })
-                : BadRequest(new ProblemDetails { Detail = result.Error });
+            return result.ErrorType switch
+            {
+                ServiceErrorType.NotFound => NotFound(new ProblemDetails { Detail = result.Error }),
+                ServiceErrorType.Forbidden => StatusCode(StatusCodes.Status403Forbidden,
+                    new ProblemDetails { Detail = result.Error }),
+                ServiceErrorType.Conflict => Conflict(new ProblemDetails { Detail = result.Error }),
+                _ => BadRequest(new ProblemDetails { Detail = result.Error })
+            };
         }
 
         return NoContent();

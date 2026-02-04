@@ -57,6 +57,16 @@ public sealed class CollaboratorService(
             return ServiceResult<Collaborator>.NotFound("Colaborador não encontrado.");
         }
 
+        // Verificar permissão usando o mesmo padrão de CreateAsync
+        var organizationId = collaborator.OrganizationId;
+        var authResult = await orgAuth.RequireOrgOwnerAsync(organizationId, cancellationToken);
+        if (!authResult.IsSuccess)
+        {
+            return ServiceResult<Collaborator>.Forbidden(
+                authResult.Error ?? "Apenas o proprietário da organização pode editar colaboradores."
+            );
+        }
+
         var normalizedEmail = request.Email.Trim().ToLowerInvariant();
         if (collaborator.Email != normalizedEmail)
         {
@@ -91,6 +101,35 @@ public sealed class CollaboratorService(
             }
         }
 
+        // Validação: Se estiver tentando mudar de Leader para IndividualContributor
+        if (collaborator.Role == CollaboratorRole.Leader &&
+            request.Role == CollaboratorRole.IndividualContributor)
+        {
+            // Validação 1: Verificar se tem membros de equipe
+            var hasTeamMembers = await dbContext.Collaborators
+                .AnyAsync(c => c.LeaderId == id, cancellationToken);
+
+            if (hasTeamMembers)
+            {
+                return ServiceResult<Collaborator>.Failure(
+                    "Não é possível alterar o perfil. Este líder possui membros de equipe.",
+                    ServiceErrorType.Validation
+                );
+            }
+
+            // Validação 2: Verificar se é owner de alguma organização
+            var isOrgOwner = await dbContext.Organizations
+                .AnyAsync(o => o.OwnerId == id, cancellationToken);
+
+            if (isOrgOwner)
+            {
+                return ServiceResult<Collaborator>.Failure(
+                    "Não é possível alterar o perfil. Este líder é proprietário de uma organização.",
+                    ServiceErrorType.Validation
+                );
+            }
+        }
+
         collaborator.FullName = request.FullName.Trim();
         collaborator.Email = normalizedEmail;
         collaborator.Role = request.Role;
@@ -107,6 +146,40 @@ public sealed class CollaboratorService(
         if (collaborator is null)
         {
             return ServiceResult.NotFound("Colaborador não encontrado.");
+        }
+
+        // Verificar permissão usando o mesmo padrão de CreateAsync
+        var organizationId = collaborator.OrganizationId;
+        var authResult = await orgAuth.RequireOrgOwnerAsync(organizationId, cancellationToken);
+        if (!authResult.IsSuccess)
+        {
+            return ServiceResult.Forbidden(
+                authResult.Error ?? "Apenas o proprietário da organização pode excluir colaboradores."
+            );
+        }
+
+        // Validação 1: Verificar se é owner de alguma organização
+        var isOrgOwner = await dbContext.Organizations
+            .AnyAsync(o => o.OwnerId == id, cancellationToken);
+
+        if (isOrgOwner)
+        {
+            return ServiceResult.Failure(
+                "Não é possível excluir o colaborador. Ele é proprietário de uma organização.",
+                ServiceErrorType.Conflict
+            );
+        }
+
+        // Validação 2: Verificar se tem membros de equipe (é líder de outros)
+        var hasTeamMembers = await dbContext.Collaborators
+            .AnyAsync(c => c.LeaderId == id, cancellationToken);
+
+        if (hasTeamMembers)
+        {
+            return ServiceResult.Failure(
+                "Não é possível excluir o colaborador. Ele é líder de outros colaboradores.",
+                ServiceErrorType.Conflict
+            );
         }
 
         dbContext.Collaborators.Remove(collaborator);

@@ -139,6 +139,30 @@ public sealed class ApiClient
         return await response.Content.ReadFromJsonAsync<Collaborator>();
     }
 
+    public async Task<Collaborator?> UpdateCollaboratorAsync(Guid id, UpdateCollaboratorRequest request)
+    {
+        var response = await _http.PutAsJsonAsync($"api/collaborators/{id}", request);
+
+        if (!response.IsSuccessStatusCode)
+        {
+            var errorMessage = await ExtractErrorMessageAsync(response);
+            throw new HttpRequestException(errorMessage);
+        }
+
+        return await response.Content.ReadFromJsonAsync<Collaborator>();
+    }
+
+    public async Task DeleteCollaboratorAsync(Guid id)
+    {
+        var response = await _http.DeleteAsync($"api/collaborators/{id}");
+
+        if (!response.IsSuccessStatusCode)
+        {
+            var errorMessage = await ExtractErrorMessageAsync(response);
+            throw new HttpRequestException(errorMessage);
+        }
+    }
+
     public async Task<PagedResult<Mission>?> GetMissionsAsync(
         MissionScopeType? scopeType,
         Guid? scopeId,

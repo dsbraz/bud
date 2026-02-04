@@ -55,6 +55,7 @@
                     <th>Perfil</th>
                     <th>Líder</th>
                     <th>Equipe</th>
+                    <th style="width: 120px; text-align: center;">Ações</th>
                 </tr>
             </thead>
             <tbody>
@@ -64,12 +65,38 @@
                     var leader = collaborator.LeaderId.HasValue
                         ? allCollaborators.FirstOrDefault(c => c.Id == collaborator.LeaderId.Value)
                         : null;
+                    var isDeleting = deletingCollaboratorId == collaborator.Id;
                     <tr>
                         <td>@collaborator.FullName</td>
                         <td>@collaborator.Email</td>
                         <td>@GetRoleLabel(collaborator.Role)</td>
                         <td>@(leader?.FullName ?? "—")</td>
                         <td>@(team?.Name ?? "—")</td>
+                        <td style="text-align: center;">
+                            <div class="table-actions">
+                                <button class="button-icon" @onclick="() => OpenEditModal(collaborator)"
+                                        title="Editar colaborador">
+                                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                                        <path d="M11.334 2.00004C11.5091 1.82494 11.7169 1.68605 11.9457 1.59129C12.1745 1.49653 12.4197 1.44775 12.6673 1.44775C12.9149 1.44775 13.1601 1.49653 13.3889 1.59129C13.6177 1.68605 13.8256 1.82494 14.0007 2.00004C14.1758 2.17513 14.3147 2.383 14.4094 2.61178C14.5042 2.84055 14.553 3.08575 14.553 3.33337C14.553 3.58099 14.5042 3.82619 14.4094 4.05497C14.3147 4.28374 14.1758 4.49161 14.0007 4.66671L5.00065 13.6667L1.33398 14.6667L2.33398 11L11.334 2.00004Z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                                    </svg>
+                                </button>
+                                <button class="button-icon @(isDeleting ? "danger" : "")"
+                                        @onclick="() => HandleDeleteClick(collaborator.Id)"
+                                        title="@(isDeleting ? "Clique novamente para confirmar" : "Excluir colaborador")">
+                                    @if (isDeleting)
+                                    {
+                                        <span style="font-size: 11px; white-space: nowrap;">Confirmar?</span>
+                                    }
+                                    else
+                                    {
+                                        <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                                            <path d="M2 4H3.33333H14" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                                            <path d="M5.33398 4.00004V2.66671C5.33398 2.31309 5.47446 1.97395 5.72451 1.7239C5.97456 1.47385 6.3137 1.33337 6.66732 1.33337H9.33398C9.6876 1.33337 10.0268 1.47385 10.2768 1.7239C10.5269 1.97395 10.6673 2.31309 10.6673 2.66671V4.00004M12.6673 4.00004V13.3334C12.6673 13.687 12.5269 14.0261 12.2768 14.2762C12.0268 14.5262 11.6876 14.6667 11.334 14.6667H4.66732C4.3137 14.6667 3.97456 14.5262 3.72451 14.2762C3.47446 14.0261 3.33398 13.687 3.33398 13.3334V4.00004H12.6673Z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                                        </svg>
+                                    }
+                                </button>
+                            </div>
+                        </td>
                     </tr>
                 }
             </tbody>
@@ -116,6 +143,53 @@
     </Modal>
 }
 
+@if (isEditModalOpen)
+{
+    <Modal Title="Editar colaborador" OnClose="CloseEditModal">
+        <EditForm Model="@editCollaborator" OnValidSubmit="UpdateCollaborator">
+            <DataAnnotationsValidator />
+            <div class="form-row">
+                <label>Nome completo</label>
+                <InputText class="input" @bind-Value="editCollaborator.FullName" placeholder="Nome do colaborador" />
+                <ValidationMessage For="() => editCollaborator.FullName" />
+            </div>
+            <div class="form-row">
+                <label>E-mail</label>
+                <InputText class="input" @bind-Value="editCollaborator.Email" type="email" placeholder="email@exemplo.com" />
+                <ValidationMessage For="() => editCollaborator.Email" />
+            </div>
+            <div class="form-row">
+                <label>Perfil</label>
+                <InputSelect class="input" @bind-Value="editCollaborator.Role">
+                    <option value="@CollaboratorRole.IndividualContributor">Contribuidor individual</option>
+                    <option value="@CollaboratorRole.Leader">Líder</option>
+                </InputSelect>
+                <ValidationMessage For="() => editCollaborator.Role" />
+            </div>
+            <div class="form-row">
+                <label>Líder (opcional)</label>
+                <select class="input" @bind="editLeaderId">
+                    <option value="">Nenhum</option>
+                    @foreach (var leader in leaders)
+                    {
+                        @if (leader.Id != selectedCollaborator?.Id)
+                        {
+                            <option value="@leader.Id">@leader.FullName - @leader.TeamName</option>
+                        }
+                    }
+                </select>
+                <small class="form-hint">
+                    O líder pode ser alterado para qualquer colaborador com função de Líder.
+                </small>
+            </div>
+            <div class="form-actions">
+                <button class="button tertiary" type="button" @onclick="CloseEditModal">Cancelar</button>
+                <button class="button primary" type="submit">Salvar alterações</button>
+            </div>
+        </EditForm>
+    </Modal>
+}
+
 @code {
     private CreateCollaboratorRequest newCollaborator = new();
     private List<Team> teams = new();
@@ -126,6 +200,16 @@
     private string? selectedTeamId;
     private string? createLeaderId;
     private bool isModalOpen = false;
+
+    // Estado do modal de edição
+    private bool isEditModalOpen = false;
+    private Collaborator? selectedCollaborator = null;
+    private UpdateCollaboratorRequest editCollaborator = new();
+    private string? editLeaderId;
+
+    // Estado de confirmação de exclusão
+    private Guid? deletingCollaboratorId = null;
+    private System.Threading.Timer? deleteConfirmTimer;
 
     protected override async Task OnInitializedAsync()
     {
@@ -148,6 +232,7 @@
     public void Dispose()
     {
         OrgContext.OnOrganizationChanged -= HandleOrganizationChanged;
+        deleteConfirmTimer?.Dispose();
     }
 
     private async Task LoadTeams()
@@ -224,6 +309,107 @@
         catch (Exception ex)
         {
             ToastService.ShowError("Erro inesperado", ex.Message);
+        }
+    }
+
+    private void OpenEditModal(Collaborator collaborator)
+    {
+        selectedCollaborator = collaborator;
+        editCollaborator = new UpdateCollaboratorRequest
+        {
+            FullName = collaborator.FullName,
+            Email = collaborator.Email,
+            Role = collaborator.Role,
+            LeaderId = collaborator.LeaderId
+        };
+        editLeaderId = collaborator.LeaderId?.ToString() ?? "";
+        isEditModalOpen = true;
+    }
+
+    private void CloseEditModal()
+    {
+        isEditModalOpen = false;
+        selectedCollaborator = null;
+        editCollaborator = new();
+        editLeaderId = null;
+    }
+
+    private async Task UpdateCollaborator()
+    {
+        if (selectedCollaborator == null) return;
+
+        editCollaborator.LeaderId = Guid.TryParse(editLeaderId, out var leaderId) ? leaderId : null;
+
+        try
+        {
+            var result = await Api.UpdateCollaboratorAsync(selectedCollaborator.Id, editCollaborator);
+            if (result != null)
+            {
+                ToastService.ShowSuccess("Colaborador atualizado", "As alterações foram salvas com sucesso.");
+                CloseEditModal();
+                await LoadCollaborators();
+                await LoadAllCollaborators();
+            }
+        }
+        catch (HttpRequestException ex)
+        {
+            ToastService.ShowError("Erro ao atualizar", ex.Message);
+        }
+        catch (Exception ex)
+        {
+            ToastService.ShowError("Erro inesperado", ex.Message);
+        }
+    }
+
+    private void HandleDeleteClick(Guid collaboratorId)
+    {
+        if (deletingCollaboratorId == collaboratorId)
+        {
+            // Segundo clique - executar exclusão
+            _ = DeleteCollaborator(collaboratorId);
+        }
+        else
+        {
+            // Primeiro clique - mostrar confirmação
+            deletingCollaboratorId = collaboratorId;
+
+            // Reset após 3 segundos
+            deleteConfirmTimer?.Dispose();
+            deleteConfirmTimer = new System.Threading.Timer(
+                _ => InvokeAsync(() =>
+                {
+                    deletingCollaboratorId = null;
+                    StateHasChanged();
+                }),
+                null,
+                3000,
+                Timeout.Infinite
+            );
+        }
+    }
+
+    private async Task DeleteCollaborator(Guid collaboratorId)
+    {
+        try
+        {
+            await Api.DeleteCollaboratorAsync(collaboratorId);
+            ToastService.ShowSuccess("Colaborador excluído", "O colaborador foi removido com sucesso.");
+            await LoadCollaborators();
+            await LoadAllCollaborators();
+        }
+        catch (HttpRequestException ex)
+        {
+            ToastService.ShowError("Erro ao excluir", ex.Message);
+        }
+        catch (Exception ex)
+        {
+            ToastService.ShowError("Erro inesperado", ex.Message);
+        }
+        finally
+        {
+            deletingCollaboratorId = null;
+            deleteConfirmTimer?.Dispose();
+            deleteConfirmTimer = null;
         }
     }
 
