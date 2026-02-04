@@ -1,6 +1,8 @@
 @page "/collaborators"
 @inject ApiClient Api
 @inject ToastService ToastService
+@inject OrganizationContext OrgContext
+@implements IDisposable
 
 <div class="page-header">
     <div>
@@ -131,6 +133,21 @@
         await LoadLeaders();
         await LoadCollaborators();
         await LoadAllCollaborators();
+        OrgContext.OnOrganizationChanged += HandleOrganizationChanged;
+    }
+
+    private async void HandleOrganizationChanged()
+    {
+        await LoadTeams();
+        await LoadLeaders();
+        await LoadCollaborators();
+        await LoadAllCollaborators();
+        StateHasChanged();
+    }
+
+    public void Dispose()
+    {
+        OrgContext.OnOrganizationChanged -= HandleOrganizationChanged;
     }
 
     private async Task LoadTeams()
@@ -141,7 +158,7 @@
 
     private async Task LoadLeaders()
     {
-        leaders = await Api.GetLeadersAsync() ?? new List<LeaderCollaboratorResponse>();
+        leaders = await Api.GetLeadersAsync(OrgContext.SelectedOrganizationId) ?? new List<LeaderCollaboratorResponse>();
     }
 
     private async Task LoadAllCollaborators()

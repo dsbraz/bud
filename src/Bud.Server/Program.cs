@@ -65,10 +65,17 @@ if (string.IsNullOrWhiteSpace(connectionString))
     throw new InvalidOperationException("Connection string 'DefaultConnection' not configured.");
 }
 
-builder.Services.AddDbContext<ApplicationDbContext>((sp, options) =>
+// Register ApplicationDbContext with explicit ITenantProvider injection
+// This is necessary because optional constructor parameters are not automatically injected by DI
+builder.Services.AddScoped<ApplicationDbContext>(sp =>
 {
-    options.UseNpgsql(connectionString);
-    options.AddInterceptors(sp.GetRequiredService<TenantSaveChangesInterceptor>());
+    var optionsBuilder = new DbContextOptionsBuilder<ApplicationDbContext>();
+    optionsBuilder.UseNpgsql(connectionString);
+    optionsBuilder.AddInterceptors(sp.GetRequiredService<TenantSaveChangesInterceptor>());
+
+    // CRITICAL: Explicitly inject ITenantProvider so query filters work
+    var tenantProvider = sp.GetRequiredService<ITenantProvider>();
+    return new ApplicationDbContext(optionsBuilder.Options, tenantProvider);
 });
 
 // Add Services

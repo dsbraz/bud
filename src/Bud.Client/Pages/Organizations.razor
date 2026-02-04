@@ -218,6 +218,13 @@ else
     {
         await AuthState.EnsureInitializedAsync();
         await LoadOrganizations();
+        OrgContext.OnOrganizationChanged += HandleOrganizationChanged;
+    }
+
+    private async void HandleOrganizationChanged()
+    {
+        await LoadOrganizations();
+        StateHasChanged();
     }
 
     private async Task LoadLeaders(Guid? organizationId = null)
@@ -414,5 +421,6 @@ else
     public void Dispose()
     {
         deleteConfirmTimer?.Dispose();
+        OrgContext.OnOrganizationChanged -= HandleOrganizationChanged;
     }
 }

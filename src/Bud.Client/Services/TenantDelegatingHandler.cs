@@ -20,6 +20,12 @@ public sealed class TenantDelegatingHandler(
                 request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", authState.Session.Token);
             }
 
+            // Add user email header for organization lookup
+            if (!string.IsNullOrEmpty(authState.Session.Email))
+            {
+                request.Headers.Add("X-User-Email", authState.Session.Email);
+            }
+
             // Use the selected organization from OrganizationContext
             // If null (TODOS selected), don't send X-Tenant-Id to see all orgs
             if (orgContext.SelectedOrganizationId.HasValue)

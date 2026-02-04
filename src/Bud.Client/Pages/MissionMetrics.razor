@@ -1,6 +1,8 @@
 @page "/mission-metrics"
 @inject ApiClient Api
 @inject ToastService ToastService
+@inject OrganizationContext OrgContext
+@implements IDisposable
 
 <MissionsMenu />
 
@@ -198,6 +200,19 @@
     {
         await LoadMissions();
         await LoadMetrics();
+        OrgContext.OnOrganizationChanged += HandleOrganizationChanged;
+    }
+
+    private async void HandleOrganizationChanged()
+    {
+        await LoadMissions();
+        await LoadMetrics();
+        StateHasChanged();
+    }
+
+    public void Dispose()
+    {
+        OrgContext.OnOrganizationChanged -= HandleOrganizationChanged;
     }
 
     private async Task LoadMissions()

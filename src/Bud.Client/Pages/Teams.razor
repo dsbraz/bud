@@ -1,6 +1,8 @@
 @page "/teams"
 @inject ApiClient Api
 @inject ToastService ToastService
+@inject OrganizationContext OrgContext
+@implements IDisposable
 
 <ManagementMenu />
 
@@ -125,11 +127,24 @@
     {
         await LoadWorkspaces();
         await LoadTeams();
+        OrgContext.OnOrganizationChanged += HandleOrganizationChanged;
+    }
+
+    private async void HandleOrganizationChanged()
+    {
+        await LoadWorkspaces();
+        await LoadTeams();
+        StateHasChanged();
+    }
+
+    public void Dispose()
+    {
+        OrgContext.OnOrganizationChanged -= HandleOrganizationChanged;
     }
 
     private async Task LoadWorkspaces()
     {
-        var result = await Api.GetWorkspacesAsync(null, null, 1, 100);
+        var result = await Api.GetWorkspacesAsync(OrgContext.SelectedOrganizationId, null, 1, 100);
         workspaces = result?.Items.ToList() ?? new List<Workspace>();
     }
 

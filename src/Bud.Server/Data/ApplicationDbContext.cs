@@ -181,45 +181,46 @@ public sealed class ApplicationDbContext : DbContext
         // Global Query Filters for multi-tenancy (simplified for performance)
         // SECURITY: Tenant ownership validation is now done in TenantRequiredMiddleware
         // These filters provide basic data isolation only
+        // Global admins see all ONLY when no tenant is selected; otherwise they see the selected tenant
         modelBuilder.Entity<Organization>()
             .HasQueryFilter(o =>
                 !_applyTenantFilter || // No tenant provider (migrations/tests)
-                _isGlobalAdmin ||      // Global admin sees all
-                (_tenantId != null && o.Id == _tenantId)
+                (_isGlobalAdmin && _tenantId == null) || // Global admin with no tenant selected sees all
+                (_tenantId != null && o.Id == _tenantId) // Anyone with tenant selected sees only that tenant
             );
 
         modelBuilder.Entity<Workspace>()
             .HasQueryFilter(w =>
                 !_applyTenantFilter ||
-                _isGlobalAdmin ||
+                (_isGlobalAdmin && _tenantId == null) ||
                 (_tenantId != null && w.OrganizationId == _tenantId)
             );
 
         modelBuilder.Entity<Team>()
             .HasQueryFilter(t =>
                 !_applyTenantFilter ||
-                _isGlobalAdmin ||
+                (_isGlobalAdmin && _tenantId == null) ||
                 (_tenantId != null && t.OrganizationId == _tenantId)
             );
 
         modelBuilder.Entity<Collaborator>()
             .HasQueryFilter(c =>
                 !_applyTenantFilter ||
-                _isGlobalAdmin ||
+                (_isGlobalAdmin && _tenantId == null) ||
                 (_tenantId != null && c.OrganizationId == _tenantId)
             );
 
         modelBuilder.Entity<Mission>()
             .HasQueryFilter(m =>
                 !_applyTenantFilter ||
-                _isGlobalAdmin ||
+                (_isGlobalAdmin && _tenantId == null) ||
                 (_tenantId != null && m.OrganizationId == _tenantId)
             );
 
         modelBuilder.Entity<MissionMetric>()
             .HasQueryFilter(mm =>
                 !_applyTenantFilter ||
-                _isGlobalAdmin ||
+                (_isGlobalAdmin && _tenantId == null) ||
                 (_tenantId != null && mm.OrganizationId == _tenantId)
             );
     }
