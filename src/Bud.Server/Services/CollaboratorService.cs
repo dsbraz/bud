@@ -180,7 +180,10 @@ public sealed class CollaboratorService(
 
         if (teamId.HasValue)
         {
-            query = query.Where(c => c.TeamId == teamId.Value);
+            var teamCollaboratorIds = dbContext.CollaboratorTeams
+                .Where(ct => ct.TeamId == teamId.Value)
+                .Select(ct => ct.CollaboratorId);
+            query = query.Where(c => teamCollaboratorIds.Contains(c.Id));
         }
 
         if (!string.IsNullOrWhiteSpace(search))

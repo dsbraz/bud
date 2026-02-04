@@ -54,14 +54,12 @@
                     <th>E-mail</th>
                     <th>Perfil</th>
                     <th>Líder</th>
-                    <th>Equipe</th>
                     <th style="width: 120px; text-align: center;">Ações</th>
                 </tr>
             </thead>
             <tbody>
                 @foreach (var collaborator in collaborators.Items)
                 {
-                    var team = teams.FirstOrDefault(t => t.Id == collaborator.TeamId);
                     var leader = collaborator.LeaderId.HasValue
                         ? allCollaborators.FirstOrDefault(c => c.Id == collaborator.LeaderId.Value)
                         : null;
@@ -71,7 +69,6 @@
                         <td>@collaborator.Email</td>
                         <td>@GetRoleLabel(collaborator.Role)</td>
                         <td>@(leader?.FullName ?? "—")</td>
-                        <td>@(team?.Name ?? "—")</td>
                         <td style="text-align: center;">
                             <div class="table-actions">
                                 <button class="button-icon" @onclick="async () => await OpenEditModal(collaborator)"

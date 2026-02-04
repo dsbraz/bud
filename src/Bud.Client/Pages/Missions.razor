@@ -340,6 +340,9 @@
     {
         await InvokeAsync(async () =>
         {
+            filterScopeTypeValue = null;
+            filterScopeId = null;
+            await LoadReferenceData();
             await LoadMissions();
             StateHasChanged();
         });
@@ -386,7 +389,7 @@
     {
         filterScopeTypeValue = e.Value?.ToString();
         filterScopeId = null;
-        await InvokeAsync(StateHasChanged);
+        await LoadMissions();
     }
 
     private void OpenCreateModal()

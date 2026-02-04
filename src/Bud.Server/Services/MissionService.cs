@@ -97,21 +97,39 @@ public sealed class MissionService(ApplicationDbContext dbContext) : IMissionSer
 
         var query = dbContext.Missions.AsNoTracking();
 
-        if (scopeType.HasValue && scopeId.HasValue)
+        if (scopeType.HasValue)
         {
-            query = scopeType.Value switch
+            if (scopeId.HasValue)
             {
-                // Org-scoped missions: OrganizationId matches AND no other scope FK is set
-                MissionScopeType.Organization => query.Where(m =>
-                    m.OrganizationId == scopeId.Value &&
-                    m.WorkspaceId == null &&
-                    m.TeamId == null &&
-                    m.CollaboratorId == null),
-                MissionScopeType.Workspace => query.Where(m => m.WorkspaceId == scopeId.Value),
-                MissionScopeType.Team => query.Where(m => m.TeamId == scopeId.Value),
-                MissionScopeType.Collaborator => query.Where(m => m.CollaboratorId == scopeId.Value),
-                _ => query
-            };
+                query = scopeType.Value switch
+                {
+                    // Org-scoped missions: OrganizationId matches AND no other scope FK is set
+                    MissionScopeType.Organization => query.Where(m =>
+                        m.OrganizationId == scopeId.Value &&
+                        m.WorkspaceId == null &&
+                        m.TeamId == null &&
+                        m.CollaboratorId == null),
+                    MissionScopeType.Workspace => query.Where(m => m.WorkspaceId == scopeId.Value),
+                    MissionScopeType.Team => query.Where(m => m.TeamId == scopeId.Value),
+                    MissionScopeType.Collaborator => query.Where(m => m.CollaboratorId == scopeId.Value),
+                    _ => query
+                };
+            }
+            else
+            {
+                // Filter by scope level (without specific entity)
+                query = scopeType.Value switch
+                {
+                    MissionScopeType.Organization => query.Where(m =>
+                        m.WorkspaceId == null &&
+                        m.TeamId == null &&
+                        m.CollaboratorId == null),
+                    MissionScopeType.Workspace => query.Where(m => m.WorkspaceId != null),
+                    MissionScopeType.Team => query.Where(m => m.TeamId != null),
+                    MissionScopeType.Collaborator => query.Where(m => m.CollaboratorId != null),
+                    _ => query
+                };
+            }
         }
 
         if (!string.IsNullOrWhiteSpace(search))
