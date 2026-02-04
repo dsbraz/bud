@@ -1,11 +1,4 @@
-@inject Services.AuthState AuthState
-
 <nav class="management-menu">
-    @if (AuthState.Session?.IsGlobalAdmin == true)
-    {
-        <NavLink class="management-item" href="organizations">Organizações</NavLink>
-    }
     <NavLink class="management-item" href="workspaces">Workspaces</NavLink>
     <NavLink class="management-item" href="teams">Equipes</NavLink>
-    <NavLink class="management-item" href="collaborators">Colaboradores</NavLink>
 </nav>

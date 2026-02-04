@@ -34,7 +34,7 @@ public sealed class WorkspaceService(
 
         if (nameExists)
         {
-            return ServiceResult<Workspace>.BadRequest("Já existe um workspace com este nome nesta organização.");
+            return ServiceResult<Workspace>.Failure("Já existe um workspace com este nome nesta organização.", ServiceErrorType.Conflict);
         }
 
         var workspace = new Workspace
@@ -75,7 +75,7 @@ public sealed class WorkspaceService(
 
         if (nameExists)
         {
-            return ServiceResult<Workspace>.BadRequest("Já existe um workspace com este nome nesta organização.");
+            return ServiceResult<Workspace>.Failure("Já existe um workspace com este nome nesta organização.", ServiceErrorType.Conflict);
         }
 
         workspace.Name = request.Name.Trim();

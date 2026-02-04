@@ -1,12 +1,14 @@
 @page "/workspaces"
 @inject ApiClient Api
 @inject ToastService ToastService
+@inject OrganizationContext OrgContext
+@implements IDisposable
 
 <ManagementMenu />
 
 <div class="page-header">
     <div>
-        <div class="page-kicker">Gestão</div>
+        <div class="page-kicker">Configurações</div>
         <h1>Workspaces</h1>
         <p class="page-subtitle">Crie workspaces vinculados às organizações.</p>
     </div>
@@ -18,16 +20,6 @@
 
 <div class="card">
     <div class="card-filters">
-        <div class="form-row">
-            <label>Organização</label>
-            <select class="input" @bind="selectedOrganizationId" @bind:after="LoadWorkspaces">
-                <option value="">Todas</option>
-                @foreach (var org in organizations)
-                {
-                    <option value="@org.Id">@org.Name</option>
-                }
-            </select>
-        </div>
         <div class="form-row">
             <label>Busca</label>
             <InputText class="input" @bind-Value="search" />
@@ -79,16 +71,6 @@
         <EditForm Model="@newWorkspace" OnValidSubmit="CreateWorkspace">
             <DataAnnotationsValidator />
             <div class="form-row">
-                <label>Organização</label>
-                <select class="input" @bind="createOrganizationId">
-                    <option value="">Selecione</option>
-                    @foreach (var org in organizations)
-                    {
-                        <option value="@org.Id">@org.Name</option>
-                    }
-                </select>
-            </div>
-            <div class="form-row">
                 <label>Nome</label>
                 <InputText class="input" @bind-Value="newWorkspace.Name" />
             </div>
@@ -113,8 +95,6 @@
     private List<Organization> organizations = new();
     private PagedResult<Workspace>? workspaces;
     private string? search;
-    private string? selectedOrganizationId;
-    private string? createOrganizationId;
     private string? createVisibility;
     private bool isModalOpen = false;
 
@@ -122,6 +102,18 @@
     {
         await LoadOrganizations();
         await LoadWorkspaces();
+        OrgContext.OnOrganizationChanged += HandleOrganizationChanged;
+    }
+
+    private async void HandleOrganizationChanged()
+    {
+        await LoadWorkspaces();
+        StateHasChanged();
+    }
+
+    public void Dispose()
+    {
+        OrgContext.OnOrganizationChanged -= HandleOrganizationChanged;
     }
 
     private async Task LoadOrganizations()
@@ -132,16 +124,12 @@
 
     private async Task LoadWorkspaces()
     {
-        var filterOrgId = Guid.TryParse(selectedOrganizationId, out var parsedOrgId)
-            ? parsedOrgId
-            : (Guid?)null;
-        workspaces = await Api.GetWorkspacesAsync(filterOrgId, search, 1, 20) ?? new PagedResult<Workspace>();
+        workspaces = await Api.GetWorkspacesAsync(OrgContext.SelectedOrganizationId, search, 1, 20) ?? new PagedResult<Workspace>();
     }
 
     private void OpenCreateModal()
     {
         newWorkspace = new CreateWorkspaceRequest();
-        createOrganizationId = null;
         createVisibility = null;
         isModalOpen = true;
     }
@@ -153,9 +141,9 @@
 
     private async Task CreateWorkspace()
     {
-        if (!Guid.TryParse(createOrganizationId, out var organizationId))
+        if (!OrgContext.SelectedOrganizationId.HasValue)
         {
-            ToastService.ShowError("Erro ao criar workspace", "Selecione uma organização.");
+            ToastService.ShowError("Erro ao criar workspace", "Selecione uma organização específica no menu lateral. Não é possível criar workspaces com 'TODOS' selecionado.");
             return;
         }
 
@@ -172,7 +160,7 @@
             return;
         }
 
-        newWorkspace.OrganizationId = organizationId;
+        newWorkspace.OrganizationId = OrgContext.SelectedOrganizationId.Value;
         newWorkspace.Visibility = visibility;
 
         try
@@ -180,7 +168,6 @@
             await Api.CreateWorkspaceAsync(newWorkspace);
             var workspaceName = newWorkspace.Name;
             newWorkspace = new CreateWorkspaceRequest();
-            createOrganizationId = null;
             createVisibility = null;
             await LoadWorkspaces();
 
