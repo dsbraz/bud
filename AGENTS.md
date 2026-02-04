@@ -151,6 +151,76 @@ The application uses **row-level tenant isolation** based on `OrganizationId`. E
 - `Mission.OrganizationId` is **non-nullable** (always set as tenant discriminator). Mission scope level is determined by which of `WorkspaceId`/`TeamId`/`CollaboratorId` is set; if none are set, the mission is org-scoped
 - Services must populate `OrganizationId` when creating entities (resolved from the parent entity in the hierarchy)
 
+#### Multi-Tenancy Frontend (UI)
+
+The user selects the tenant (organization) through a **combo box at the top of the sidebar menu**. This combo is implemented in [MainLayout.razor](src/Bud.Client/Layout/MainLayout.razor).
+
+**Main components:**
+
+- **OrganizationContext** ([OrganizationContext.cs](src/Bud.Client/Services/OrganizationContext.cs)) - Manages the selected tenant:
+  - `SelectedOrganizationId` (Guid?) - ID of the selected organization (null = "TODOS")
+  - `AvailableOrganizations` - List of organizations available to the user
+  - `ShowAllOrganizations` - Returns true when no specific org is selected
+  - `OnOrganizationChanged` - Event fired when selection changes
+  - Persists selection in localStorage (`"bud.organization.selected"`)
+
+**"TODOS" option:**
+
+- Allows viewing data from **all organizations** (global admin only)
+- Implemented as `SelectedOrganizationId = null`
+- When selected, `TenantDelegatingHandler` **does NOT send** the `X-Tenant-Id` header, allowing the backend to return all data
+- Displayed as "TODOS" with initials "TD"
+
+**Data flow when changing tenant:**
+
+1. User clicks combo and selects an organization (or "TODOS")
+2. `OrganizationContext.SelectOrganizationAsync(orgId)` is called
+3. Value is persisted in localStorage
+4. `OnOrganizationChanged` event is fired
+5. Subscribed components reload their data
+6. `TenantDelegatingHandler` intercepts requests and adds `X-Tenant-Id` header (if orgId != null)
+7. Backend filters data according to selected tenant
+
+**Pattern for components:**
+
+Components that display tenant-specific data should:
+- Inject `OrganizationContext`
+- Subscribe to `OnOrganizationChanged` event in `OnInitializedAsync`
+- Reload data when event is fired
+- Unsubscribe in `Dispose()`
+
+Example (see [Missions.razor](src/Bud.Client/Pages/Missions.razor)):
+
+```csharp
+@inject OrganizationContext OrgContext
+
+protected override async Task OnInitializedAsync()
+{
+    OrgContext.OnOrganizationChanged += HandleOrganizationChanged;
+    await LoadData();
+}
+
+private async void HandleOrganizationChanged()
+{
+    await InvokeAsync(async () =>
+    {
+        await LoadData();
+        StateHasChanged();
+    });
+}
+
+public void Dispose()
+{
+    OrgContext.OnOrganizationChanged -= HandleOrganizationChanged;
+}
+```
+
+**IMPORTANT:**
+
+- **All pages that display tenant-scoped data must react to tenant changes**
+- The selection combo is always visible in the sidebar (except on auth pages)
+- Global admin can see "TODOS", regular users see only their organizations
+
 ### Service Layer Pattern
 
 All business logic lives in services that return `ServiceResult` or `ServiceResult<T>`:
@@ -205,6 +275,8 @@ See [OrganizationsController.cs](src/Bud.Server/Controllers/OrganizationsControl
 - Blazor WebAssembly with pages in `src/Bud.Client/Pages/`
 - API communication through [ApiClient.cs](src/Bud.Client/Services/ApiClient.cs)
 - Auth state managed by [AuthState.cs](src/Bud.Client/Services/AuthState.cs)
+- Tenant context managed by [OrganizationContext.cs](src/Bud.Client/Services/OrganizationContext.cs)
+- Tenant selection UI in sidebar ([MainLayout.razor](src/Bud.Client/Layout/MainLayout.razor))
 - Layouts in `src/Bud.Client/Layout/` (MainLayout, AuthLayout)
 
 ## Testing Guidelines
@@ -352,5 +424,6 @@ The `docker-compose.yml` configures:
 - **Validation pattern:** [OrganizationValidators.cs](src/Bud.Server/Validators/OrganizationValidators.cs)
 - **Error handling:** [GlobalExceptionHandler.cs](src/Bud.Server/Middleware/GlobalExceptionHandler.cs)
 - **Client API calls:** [ApiClient.cs](src/Bud.Client/Services/ApiClient.cs)
-- **Multi-tenancy:** [ITenantProvider.cs](src/Bud.Server/MultiTenancy/ITenantProvider.cs), [HttpTenantProvider.cs](src/Bud.Server/MultiTenancy/HttpTenantProvider.cs), [TenantRequiredMiddleware.cs](src/Bud.Server/MultiTenancy/TenantRequiredMiddleware.cs)
+- **Multi-tenancy (backend):** [ITenantProvider.cs](src/Bud.Server/MultiTenancy/ITenantProvider.cs), [HttpTenantProvider.cs](src/Bud.Server/MultiTenancy/HttpTenantProvider.cs), [TenantRequiredMiddleware.cs](src/Bud.Server/MultiTenancy/TenantRequiredMiddleware.cs)
+- **Multi-tenancy (frontend):** [OrganizationContext.cs](src/Bud.Client/Services/OrganizationContext.cs), [MainLayout.razor](src/Bud.Client/Layout/MainLayout.razor), [TenantDelegatingHandler.cs](src/Bud.Client/Services/TenantDelegatingHandler.cs)
 - **Tenant entity marker:** [ITenantEntity.cs](src/Bud.Shared/Models/ITenantEntity.cs)

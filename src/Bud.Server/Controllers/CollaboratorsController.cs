@@ -100,9 +100,10 @@ public sealed class CollaboratorsController(
     [HttpGet("leaders")]
     [ProducesResponseType(typeof(List<LeaderCollaboratorResponse>), StatusCodes.Status200OK)]
     public async Task<ActionResult<List<LeaderCollaboratorResponse>>> GetLeaders(
+        [FromQuery] Guid? organizationId,
         CancellationToken cancellationToken)
     {
-        var result = await collaboratorService.GetLeadersAsync(cancellationToken);
+        var result = await collaboratorService.GetLeadersAsync(organizationId, cancellationToken);
 
         if (result.IsFailure)
         {

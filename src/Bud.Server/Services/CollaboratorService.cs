@@ -164,13 +164,21 @@ public sealed class CollaboratorService(
         return ServiceResult<PagedResult<Collaborator>>.Success(result);
     }
 
-    public async Task<ServiceResult<List<LeaderCollaboratorResponse>>> GetLeadersAsync(CancellationToken cancellationToken = default)
+    public async Task<ServiceResult<List<LeaderCollaboratorResponse>>> GetLeadersAsync(Guid? organizationId = null, CancellationToken cancellationToken = default)
     {
-        var leaders = await dbContext.Collaborators
-            .Include(c => c.Organization) // Incluir Organization diretamente
+        var query = dbContext.Collaborators
+            .Include(c => c.Organization)
             .Include(c => c.Team)
                 .ThenInclude(t => t.Workspace)
-            .Where(c => c.Role == CollaboratorRole.Leader)
+            .Where(c => c.Role == CollaboratorRole.Leader);
+
+        // Filter by organization if provided
+        if (organizationId.HasValue)
+        {
+            query = query.Where(c => c.OrganizationId == organizationId.Value);
+        }
+
+        var leaders = await query
             .OrderBy(c => c.FullName)
             .Select(c => new LeaderCollaboratorResponse
             {
@@ -179,7 +187,7 @@ public sealed class CollaboratorService(
                 Email = c.Email,
                 TeamName = c.Team != null ? c.Team.Name : null,
                 WorkspaceName = c.Team != null && c.Team.Workspace != null ? c.Team.Workspace.Name : null,
-                OrganizationName = c.Organization.Name // Usar Organization diretamente
+                OrganizationName = c.Organization.Name
             })
             .ToListAsync(cancellationToken);
 

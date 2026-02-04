@@ -14,6 +14,7 @@ public sealed class OrganizationService(
     ITenantProvider tenantProvider) : IOrganizationService
 {
     private readonly string _globalAdminEmail = globalAdminSettings.Value.Email;
+    private readonly string _globalAdminOrgName = globalAdminSettings.Value.OrganizationName;
 
     public async Task<ServiceResult<Organization>> CreateAsync(CreateOrganizationRequest request, CancellationToken cancellationToken = default)
     {
@@ -68,15 +69,58 @@ public sealed class OrganizationService(
 
     public async Task<ServiceResult<Organization>> UpdateAsync(Guid id, UpdateOrganizationRequest request, CancellationToken cancellationToken = default)
     {
-        var organization = await dbContext.Organizations.FindAsync([id], cancellationToken);
+        var organization = await dbContext.Organizations
+            .Include(o => o.Owner)
+            .FirstOrDefaultAsync(o => o.Id == id, cancellationToken);
 
         if (organization is null)
         {
-            return ServiceResult<Organization>.NotFound("Organization not found.");
+            return ServiceResult<Organization>.NotFound("Organização não encontrada.");
         }
 
+        // Check if organization is protected
+        if (!string.IsNullOrEmpty(_globalAdminOrgName) &&
+            organization.Name.Equals(_globalAdminOrgName, StringComparison.OrdinalIgnoreCase))
+        {
+            return ServiceResult<Organization>.Failure(
+                "Esta organização está protegida e não pode ser alterada.",
+                ServiceErrorType.Validation);
+        }
+
+        // Update name
         organization.Name = request.Name.Trim();
+
+        // Update owner if provided
+        if (request.OwnerId.HasValue && request.OwnerId.Value != Guid.Empty)
+        {
+            // Validate new owner exists
+            var newOwner = await dbContext.Collaborators
+                .FirstOrDefaultAsync(c => c.Id == request.OwnerId.Value, cancellationToken);
+
+            if (newOwner == null)
+            {
+                return ServiceResult<Organization>.Failure(
+                    "O líder selecionado não foi encontrado.",
+                    ServiceErrorType.NotFound);
+            }
+
+            // Validate new owner is Leader
+            if (newOwner.Role != CollaboratorRole.Leader)
+            {
+                return ServiceResult<Organization>.Failure(
+                    "O proprietário da organização deve ter a função de Líder.",
+                    ServiceErrorType.Validation);
+            }
+
+            organization.OwnerId = request.OwnerId.Value;
+        }
+
         await dbContext.SaveChangesAsync(cancellationToken);
+
+        // Reload owner for response
+        await dbContext.Entry(organization)
+            .Reference(o => o.Owner)
+            .LoadAsync(cancellationToken);
 
         return ServiceResult<Organization>.Success(organization);
     }
@@ -87,7 +131,16 @@ public sealed class OrganizationService(
 
         if (organization is null)
         {
-            return ServiceResult.NotFound("Organization not found.");
+            return ServiceResult.NotFound("Organização não encontrada.");
+        }
+
+        // Check if organization is protected
+        if (!string.IsNullOrEmpty(_globalAdminOrgName) &&
+            organization.Name.Equals(_globalAdminOrgName, StringComparison.OrdinalIgnoreCase))
+        {
+            return ServiceResult.Failure(
+                "Esta organização está protegida e não pode ser excluída.",
+                ServiceErrorType.Validation);
         }
 
         dbContext.Organizations.Remove(organization);
@@ -121,6 +174,7 @@ public sealed class OrganizationService(
 
         var total = await query.CountAsync(cancellationToken);
         var items = await query
+            .Include(o => o.Owner)
             .OrderBy(o => o.Name)
             .Skip((page - 1) * pageSize)
             .Take(pageSize)

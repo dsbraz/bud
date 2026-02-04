@@ -1,8 +1,10 @@
 @page "/organizations"
+@implements IDisposable
 @inject ApiClient Api
 @inject AuthState AuthState
 @inject ToastService ToastService
 @inject NavigationManager Navigation
+@inject OrganizationContext OrgContext
 
 @if (AuthState.Session?.IsGlobalAdmin != true)
 {
@@ -20,7 +22,7 @@ else
     </div>
     @if (AuthState.Session?.IsGlobalAdmin == true)
     {
-        <button class="button primary" @onclick="OpenCreateModal">
+        <button class="button primary" @onclick="async () => await OpenCreateModal()">
             <span class="button-icon-text">+</span>
             Nova organização
         </button>
@@ -52,15 +54,54 @@ else
             <thead>
                 <tr>
                     <th>Domínio</th>
+                    <th>Proprietário</th>
                     <th>ID</th>
+                    <th style="width: 120px; text-align: center;">Ações</th>
                 </tr>
             </thead>
             <tbody>
                 @foreach (var org in organizations.Items)
                 {
+                    var isDeleting = deletingOrganizationId == org.Id;
+                    var isProtected = !string.IsNullOrEmpty(org.Name) &&
+                                    org.Name.Equals(GlobalAdminOrgName, StringComparison.OrdinalIgnoreCase);
                     <tr>
-                        <td>@org.Name</td>
+                        <td>
+                            @org.Name
+                            @if (isProtected)
+                            {
+                                <span class="badge protected" title="Organização protegida">🔒</span>
+                            }
+                        </td>
+                        <td>@(org.Owner?.FullName ?? "—")</td>
                         <td class="mono">@org.Id</td>
+                        <td style="text-align: center;">
+                            <div class="table-actions">
+                                <button class="button-icon" @onclick="async () => await OpenEditModal(org)"
+                                        disabled="@isProtected"
+                                        title="@(isProtected ? "Esta organização está protegida" : "Editar organização")">
+                                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                                        <path d="M11.334 2.00004C11.5091 1.82494 11.7169 1.68605 11.9457 1.59129C12.1745 1.49653 12.4197 1.44775 12.6673 1.44775C12.9149 1.44775 13.1601 1.49653 13.3889 1.59129C13.6177 1.68605 13.8256 1.82494 14.0007 2.00004C14.1758 2.17513 14.3147 2.383 14.4094 2.61178C14.5042 2.84055 14.553 3.08575 14.553 3.33337C14.553 3.58099 14.5042 3.82619 14.4094 4.05497C14.3147 4.28374 14.1758 4.49161 14.0007 4.66671L5.00065 13.6667L1.33398 14.6667L2.33398 11L11.334 2.00004Z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                                    </svg>
+                                </button>
+                                <button class="button-icon @(isDeleting ? "danger" : "")"
+                                        @onclick="() => HandleDeleteClick(org.Id)"
+                                        disabled="@isProtected"
+                                        title="@(isProtected ? "Esta organização está protegida" : isDeleting ? "Clique novamente para confirmar" : "Excluir organização")">
+                                    @if (isDeleting)
+                                    {
+                                        <span style="font-size: 11px; white-space: nowrap;">Confirmar?</span>
+                                    }
+                                    else
+                                    {
+                                        <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                                            <path d="M2 4H3.33333H14" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                                            <path d="M5.33398 4.00004V2.66671C5.33398 2.31309 5.47446 1.97395 5.72451 1.7239C5.97456 1.47385 6.3137 1.33337 6.66732 1.33337H9.33398C9.6876 1.33337 10.0268 1.47385 10.2768 1.7239C10.5269 1.97395 10.6673 2.31309 10.6673 2.66671V4.00004M12.6673 4.00004V13.3334C12.6673 13.687 12.5269 14.0261 12.2768 14.2762C12.0268 14.5262 11.6876 14.6667 11.334 14.6667H4.66732C4.3137 14.6667 3.97456 14.5262 3.72451 14.2762C3.47446 14.0261 3.33398 13.687 3.33398 13.3334V4.00004H12.6673Z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                                        </svg>
+                                    }
+                                </button>
+                            </div>
+                        </td>
                     </tr>
                 }
             </tbody>
@@ -71,46 +112,89 @@ else
 
 @if (isModalOpen)
 {
-    <Modal Title="Criar organização" OnClose="CloseModal">
+    <Modal Title="@(modalMode == "create" ? "Criar organização" : "Editar organização")" OnClose="CloseModal">
         @if (AuthState.Session?.IsGlobalAdmin == true)
         {
-            <EditForm Model="@newOrganization" OnValidSubmit="CreateOrganization">
-                <DataAnnotationsValidator />
-                <div class="form-row">
-                    <label>Domínio</label>
-                    <InputText class="input" @bind-Value="newOrganization.Name" placeholder="empresa.com.br" />
-                </div>
-                <div class="form-row">
-                    <label>Líder (Proprietário) *</label>
-                    <InputSelect class="input" @bind-Value="newOrganization.OwnerId">
-                        <option value="@Guid.Empty">-- Selecione um líder --</option>
-                        @foreach (var leader in leaders)
+            @if (modalMode == "create")
+            {
+                <EditForm Model="@newOrganization" OnValidSubmit="CreateOrganization">
+                    <DataAnnotationsValidator />
+                    <div class="form-row">
+                        <label>Domínio</label>
+                        <InputText class="input" @bind-Value="newOrganization.Name" placeholder="empresa.com.br" />
+                    </div>
+                    <div class="form-row">
+                        <label>Líder (Proprietário) *</label>
+                        <InputSelect class="input" @bind-Value="newOrganization.OwnerId">
+                            <option value="@Guid.Empty">-- Selecione um líder --</option>
+                            @foreach (var leader in leaders)
+                            {
+                                <option value="@leader.Id">
+                                    @leader.FullName - @leader.TeamName (@leader.OrganizationName)
+                                </option>
+                            }
+                        </InputSelect>
+                        <small class="form-hint">Apenas colaboradores com função de Líder podem ser proprietários.</small>
+                    </div>
+                    <div class="form-actions">
+                        <button class="button tertiary" type="button" @onclick="CloseModal">Cancelar</button>
+                        <button class="button primary" type="submit" disabled="@isSubmitting">
+                            @if (isSubmitting)
+                            {
+                                <span>Salvando...</span>
+                            }
+                            else
+                            {
+                                <span>Salvar</span>
+                            }
+                        </button>
+                    </div>
+                </EditForm>
+            }
+            else
+            {
+                <EditForm Model="@editOrganization" OnValidSubmit="UpdateOrganization">
+                    <DataAnnotationsValidator />
+                    <div class="form-row">
+                        <label>Domínio</label>
+                        <InputText class="input" @bind-Value="editOrganization.Name" placeholder="empresa.com.br" disabled="@IsProtectedOrganization()" />
+                        @if (IsProtectedOrganization())
                         {
-                            <option value="@leader.Id">
-                                @leader.FullName - @leader.TeamName (@leader.OrganizationName)
-                            </option>
+                            <small class="form-hint" style="color: var(--color-error);">Esta organização está protegida e não pode ser alterada.</small>
                         }
-                    </InputSelect>
-                    <small class="form-hint">Apenas colaboradores com função de Líder podem ser proprietários.</small>
-                </div>
-                <div class="form-actions">
-                    <button class="button tertiary" type="button" @onclick="CloseModal">Cancelar</button>
-                    <button class="button primary" type="submit" disabled="@isSubmitting">
-                        @if (isSubmitting)
-                        {
-                            <span>Salvando...</span>
-                        }
-                        else
-                        {
-                            <span>Salvar</span>
-                        }
-                    </button>
-                </div>
-            </EditForm>
+                    </div>
+                    <div class="form-row">
+                        <label>Líder (Proprietário) *</label>
+                        <InputSelect class="input" @bind-Value="editOrganization.OwnerId" disabled="@IsProtectedOrganization()">
+                            <option value="@Guid.Empty">-- Selecione um líder --</option>
+                            @foreach (var leader in leaders)
+                            {
+                                <option value="@leader.Id">
+                                    @leader.FullName - @leader.TeamName (@leader.OrganizationName)
+                                </option>
+                            }
+                        </InputSelect>
+                        <small class="form-hint">O proprietário pode ser alterado para qualquer colaborador com função de Líder.</small>
+                    </div>
+                    <div class="form-actions">
+                        <button class="button tertiary" type="button" @onclick="CloseModal">Cancelar</button>
+                        <button class="button primary" type="submit" disabled="@(isSubmitting || IsProtectedOrganization())">
+                            @if (isSubmitting)
+                            {
+                                <span>Salvando...</span>
+                            }
+                            else
+                            {
+                                <span>Salvar alterações</span>
+                            }
+                        </button>
+                    </div>
+                </EditForm>
+            }
         }
         else
         {
-            <p class="muted">Apenas administradores podem criar organizações.</p>
+            <p class="muted">Apenas administradores podem gerenciar organizações.</p>
         }
     </Modal>
 }
@@ -123,19 +207,24 @@ else
     private string? search;
     private bool isSubmitting = false;
     private bool isModalOpen = false;
+    private string modalMode = "create"; // "create" ou "edit"
+    private Guid? editingOrganizationId = null;
+    private UpdateOrganizationRequest editOrganization = new();
+    private Guid? deletingOrganizationId = null;
+    private System.Threading.Timer? deleteConfirmTimer;
+    private const string GlobalAdminOrgName = "getbud.co"; // Organização do admin global
 
     protected override async Task OnInitializedAsync()
     {
         await AuthState.EnsureInitializedAsync();
-        await LoadLeaders();
         await LoadOrganizations();
     }
 
-    private async Task LoadLeaders()
+    private async Task LoadLeaders(Guid? organizationId = null)
     {
         try
         {
-            leaders = await Api.GetLeadersAsync() ?? new List<LeaderCollaboratorResponse>();
+            leaders = await Api.GetLeadersAsync(organizationId) ?? new List<LeaderCollaboratorResponse>();
         }
         catch (Exception ex)
         {
@@ -149,18 +238,53 @@ else
         organizations = await Api.GetOrganizationsAsync(search, 1, 20) ?? new PagedResult<Organization>();
     }
 
-    private void OpenCreateModal()
+    private async Task OpenCreateModal()
     {
+        modalMode = "create";
+        editingOrganizationId = null;
         newOrganization = new CreateOrganizationRequest
         {
             UserEmail = AuthState.Session?.Email ?? string.Empty
         };
+        // Load leaders based on selected tenant context
+        // If a specific org is selected, show only its leaders
+        // If "TODOS" is selected (null), show all leaders
+        await LoadLeaders(OrgContext.SelectedOrganizationId);
         isModalOpen = true;
+    }
+
+    private async Task OpenEditModal(Organization org)
+    {
+        modalMode = "edit";
+        editingOrganizationId = org.Id;
+        editOrganization = new UpdateOrganizationRequest
+        {
+            Name = org.Name,
+            OwnerId = org.OwnerId ?? Guid.Empty
+        };
+        // Load leaders based on selected tenant context
+        // If a specific org is selected, show only its leaders
+        // If "TODOS" is selected (null), show all leaders
+        await LoadLeaders(OrgContext.SelectedOrganizationId);
+        isModalOpen = true;
+    }
+
+    private bool IsProtectedOrganization()
+    {
+        if (editingOrganizationId == null) return false;
+
+        var org = organizations?.Items.FirstOrDefault(o => o.Id == editingOrganizationId);
+        return org != null &&
+               !string.IsNullOrEmpty(org.Name) &&
+               org.Name.Equals(GlobalAdminOrgName, StringComparison.OrdinalIgnoreCase);
     }
 
     private void CloseModal()
     {
         isModalOpen = false;
+        modalMode = "create";
+        editingOrganizationId = null;
+        editOrganization = new UpdateOrganizationRequest();
     }
 
     private async Task CreateOrganization()
@@ -207,5 +331,97 @@ else
         {
             isSubmitting = false;
         }
+    }
+
+    private async Task UpdateOrganization()
+    {
+        if (editingOrganizationId == null) return;
+
+        if (string.IsNullOrWhiteSpace(editOrganization.Name))
+        {
+            ToastService.ShowError("Erro ao atualizar organização", "Por favor, informe o domínio da organização.");
+            return;
+        }
+
+        if (editOrganization.OwnerId == Guid.Empty)
+        {
+            ToastService.ShowError("Erro ao atualizar organização", "Por favor, selecione um líder para a organização.");
+            return;
+        }
+
+        isSubmitting = true;
+
+        try
+        {
+            await Api.UpdateOrganizationAsync(editingOrganizationId.Value, editOrganization);
+            await LoadOrganizations();
+            ToastService.ShowSuccess("Organização atualizada com sucesso!", "As alterações foram salvas.");
+            CloseModal();
+        }
+        catch (HttpRequestException ex)
+        {
+            ToastService.ShowError("Erro ao atualizar organização", ex.Message);
+        }
+        catch (Exception ex)
+        {
+            ToastService.ShowError("Erro inesperado", ex.Message);
+        }
+        finally
+        {
+            isSubmitting = false;
+        }
+    }
+
+    private void HandleDeleteClick(Guid organizationId)
+    {
+        if (deletingOrganizationId == organizationId)
+        {
+            // Segunda clique - confirma exclusão
+            _ = DeleteOrganization(organizationId);
+        }
+        else
+        {
+            // Primeiro clique - mostra confirmação
+            deletingOrganizationId = organizationId;
+
+            // Reseta após 3 segundos
+            deleteConfirmTimer?.Dispose();
+            deleteConfirmTimer = new System.Threading.Timer(_ =>
+            {
+                InvokeAsync(() =>
+                {
+                    deletingOrganizationId = null;
+                    StateHasChanged();
+                });
+            }, null, 3000, Timeout.Infinite);
+        }
+    }
+
+    private async Task DeleteOrganization(Guid organizationId)
+    {
+        deletingOrganizationId = null;
+        deleteConfirmTimer?.Dispose();
+
+        var orgName = organizations?.Items.FirstOrDefault(o => o.Id == organizationId)?.Name ?? "organização";
+
+        try
+        {
+            await Api.DeleteOrganizationAsync(organizationId);
+            await LoadOrganizations();
+            ToastService.ShowSuccess("Organização excluída", $"A organização '{orgName}' foi removida com sucesso.");
+        }
+        catch (HttpRequestException ex)
+        {
+            ToastService.ShowError("Erro ao excluir organização", ex.Message);
+        }
+        catch (Exception ex)
+        {
+            ToastService.ShowError("Erro inesperado", ex.Message);
+        }
+    }
+
+    public void Dispose()
+    {
+        deleteConfirmTimer?.Dispose();
     }
 }

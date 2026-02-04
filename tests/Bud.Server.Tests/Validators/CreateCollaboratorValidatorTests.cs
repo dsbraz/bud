@@ -1,9 +1,11 @@
 using Bud.Server.Data;
+using Bud.Server.MultiTenancy;
 using Bud.Server.Validators;
 using Bud.Shared.Contracts;
 using Bud.Shared.Models;
 using FluentAssertions;
 using Microsoft.EntityFrameworkCore;
+using Moq;
 using Xunit;
 
 namespace Bud.Server.Tests.Validators;
@@ -23,7 +25,8 @@ public class CreateCollaboratorValidatorTests : IDisposable
             .Options;
 
         _context = new ApplicationDbContext(options);
-        _validator = new CreateCollaboratorValidator(_context);
+        var mockTenantProvider = new Mock<ITenantProvider>();
+        _validator = new CreateCollaboratorValidator(_context, mockTenantProvider.Object);
 
         _organization = new Organization
         {

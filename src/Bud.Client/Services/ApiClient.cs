@@ -38,9 +38,38 @@ public sealed class ApiClient
         return await response.Content.ReadFromJsonAsync<Organization>();
     }
 
-    public async Task<List<LeaderCollaboratorResponse>?> GetLeadersAsync()
+    public async Task<Organization?> UpdateOrganizationAsync(Guid id, UpdateOrganizationRequest request)
     {
-        return await _http.GetFromJsonAsync<List<LeaderCollaboratorResponse>>("api/collaborators/leaders");
+        var response = await _http.PutAsJsonAsync($"api/organizations/{id}", request);
+
+        if (!response.IsSuccessStatusCode)
+        {
+            var errorMessage = await ExtractErrorMessageAsync(response);
+            throw new HttpRequestException(errorMessage);
+        }
+
+        return await response.Content.ReadFromJsonAsync<Organization>();
+    }
+
+    public async Task DeleteOrganizationAsync(Guid id)
+    {
+        var response = await _http.DeleteAsync($"api/organizations/{id}");
+
+        if (!response.IsSuccessStatusCode)
+        {
+            var errorMessage = await ExtractErrorMessageAsync(response);
+            throw new HttpRequestException(errorMessage);
+        }
+    }
+
+    public async Task<List<LeaderCollaboratorResponse>?> GetLeadersAsync(Guid? organizationId = null)
+    {
+        var url = "api/collaborators/leaders";
+        if (organizationId.HasValue)
+        {
+            url += $"?organizationId={organizationId.Value}";
+        }
+        return await _http.GetFromJsonAsync<List<LeaderCollaboratorResponse>>(url);
     }
 
     public async Task<PagedResult<Workspace>?> GetWorkspacesAsync(Guid? organizationId, string? search, int page = 1, int pageSize = 10)

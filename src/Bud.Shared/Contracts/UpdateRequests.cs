@@ -5,6 +5,7 @@ namespace Bud.Shared.Contracts;
 public sealed class UpdateOrganizationRequest
 {
     public string Name { get; set; } = string.Empty;
+    public Guid? OwnerId { get; set; }
 }
 
 public sealed class UpdateWorkspaceRequest
