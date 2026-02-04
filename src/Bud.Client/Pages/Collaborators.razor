@@ -66,7 +66,7 @@
                         ? allCollaborators.FirstOrDefault(c => c.Id == collaborator.LeaderId.Value)
                         : null;
                     var isDeleting = deletingCollaboratorId == collaborator.Id;
-                    <tr>
+                    <tr @onclick="() => OpenDetailsModal(collaborator)" style="cursor: pointer;">
                         <td>@collaborator.FullName</td>
                         <td>@collaborator.Email</td>
                         <td>@GetRoleLabel(collaborator.Role)</td>
@@ -75,6 +75,7 @@
                         <td style="text-align: center;">
                             <div class="table-actions">
                                 <button class="button-icon" @onclick="() => OpenEditModal(collaborator)"
+                                        @onclick:stopPropagation="true"
                                         title="Editar colaborador">
                                     <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
                                         <path d="M11.334 2.00004C11.5091 1.82494 11.7169 1.68605 11.9457 1.59129C12.1745 1.49653 12.4197 1.44775 12.6673 1.44775C12.9149 1.44775 13.1601 1.49653 13.3889 1.59129C13.6177 1.68605 13.8256 1.82494 14.0007 2.00004C14.1758 2.17513 14.3147 2.383 14.4094 2.61178C14.5042 2.84055 14.553 3.08575 14.553 3.33337C14.553 3.58099 14.5042 3.82619 14.4094 4.05497C14.3147 4.28374 14.1758 4.49161 14.0007 4.66671L5.00065 13.6667L1.33398 14.6667L2.33398 11L11.334 2.00004Z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
@@ -82,6 +83,7 @@
                                 </button>
                                 <button class="button-icon @(isDeleting ? "danger" : "")"
                                         @onclick="() => HandleDeleteClick(collaborator.Id)"
+                                        @onclick:stopPropagation="true"
                                         title="@(isDeleting ? "Clique novamente para confirmar" : "Excluir colaborador")">
                                     @if (isDeleting)
                                     {
@@ -190,9 +192,55 @@
     </Modal>
 }
 
+@if (isDetailsModalOpen && detailsCollaborator != null)
+{
+    var detailsTeam = teams.FirstOrDefault(t => t.Id == detailsCollaborator.TeamId);
+    var detailsWorkspace = detailsTeam != null
+        ? workspaces.FirstOrDefault(w => w.Id == detailsTeam.WorkspaceId)
+        : null;
+
+    <Modal Title="@($"Detalhes: {detailsCollaborator.FullName}")" OnClose="CloseDetailsModal">
+        <ChildContent>
+            <div class="detail-section">
+                <h3 class="detail-section-title">Workspace</h3>
+                @if (detailsWorkspace == null)
+                {
+                    <p class="muted">Nenhum workspace encontrado.</p>
+                }
+                else
+                {
+                    <ul class="detail-list">
+                        <li class="detail-list-item">
+                            <span class="detail-icon">@(detailsWorkspace.Visibility == Visibility.Public ? "🔓" : "🔒")</span>
+                            <span class="detail-name">@detailsWorkspace.Name</span>
+                        </li>
+                    </ul>
+                }
+            </div>
+
+            <div class="detail-section">
+                <h3 class="detail-section-title">Equipe</h3>
+                @if (detailsTeam == null)
+                {
+                    <p class="muted">Nenhuma equipe atribuída.</p>
+                }
+                else
+                {
+                    <ul class="detail-list">
+                        <li class="detail-list-item">
+                            <span class="detail-name">@detailsTeam.Name</span>
+                        </li>
+                    </ul>
+                }
+            </div>
+        </ChildContent>
+    </Modal>
+}
+
 @code {
     private CreateCollaboratorRequest newCollaborator = new();
     private List<Team> teams = new();
+    private List<Workspace> workspaces = new();
     private List<LeaderCollaboratorResponse> leaders = new();
     private List<Collaborator> allCollaborators = new();
     private PagedResult<Collaborator>? collaborators;
@@ -207,6 +255,10 @@
     private UpdateCollaboratorRequest editCollaborator = new();
     private string? editLeaderId;
 
+    // Estado do modal de detalhes
+    private bool isDetailsModalOpen = false;
+    private Collaborator? detailsCollaborator = null;
+
     // Estado de confirmação de exclusão
     private Guid? deletingCollaboratorId = null;
     private System.Threading.Timer? deleteConfirmTimer;
@@ -214,6 +266,7 @@
     protected override async Task OnInitializedAsync()
     {
         await LoadTeams();
+        await LoadWorkspaces();
         await LoadLeaders();
         await LoadCollaborators();
         await LoadAllCollaborators();
@@ -223,6 +276,7 @@
     private async void HandleOrganizationChanged()
     {
         await LoadTeams();
+        await LoadWorkspaces();
         await LoadLeaders();
         await LoadCollaborators();
         await LoadAllCollaborators();
@@ -239,6 +293,12 @@
     {
         var result = await Api.GetTeamsAsync(null, null, null, 1, 200);
         teams = result?.Items.ToList() ?? new List<Team>();
+    }
+
+    private async Task LoadWorkspaces()
+    {
+        var result = await Api.GetWorkspacesAsync(OrgContext.SelectedOrganizationId, null, 1, 200);
+        workspaces = result?.Items.ToList() ?? new List<Workspace>();
     }
 
     private async Task LoadLeaders()
@@ -332,6 +392,18 @@
         selectedCollaborator = null;
         editCollaborator = new();
         editLeaderId = null;
+    }
+
+    private void OpenDetailsModal(Collaborator collaborator)
+    {
+        detailsCollaborator = collaborator;
+        isDetailsModalOpen = true;
+    }
+
+    private void CloseDetailsModal()
+    {
+        isDetailsModalOpen = false;
+        detailsCollaborator = null;
     }
 
     private async Task UpdateCollaborator()
