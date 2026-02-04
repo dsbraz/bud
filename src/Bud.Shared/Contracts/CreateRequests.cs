@@ -12,7 +12,6 @@ public sealed class CreateWorkspaceRequest
 {
     public string Name { get; set; } = string.Empty;
     public Guid OrganizationId { get; set; }
-    public Visibility? Visibility { get; set; }
 }
 
 public sealed class CreateTeamRequest

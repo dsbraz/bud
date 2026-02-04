@@ -11,7 +11,6 @@ public sealed class UpdateOrganizationRequest
 public sealed class UpdateWorkspaceRequest
 {
     public string Name { get; set; } = string.Empty;
-    public Visibility Visibility { get; set; }
 }
 
 public sealed class UpdateTeamRequest

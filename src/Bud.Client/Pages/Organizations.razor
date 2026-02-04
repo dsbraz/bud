@@ -221,7 +221,6 @@ else
                         @foreach (var ws in orgWorkspaces.Items.Take(10))
                         {
                             <li class="detail-list-item">
-                                <span class="detail-icon">@(ws.Visibility == Visibility.Public ? "🔓" : "🔒")</span>
                                 <span class="detail-name">@ws.Name</span>
                             </li>
                         }

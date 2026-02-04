@@ -48,11 +48,6 @@ public sealed class ApplicationDbContext : DbContext
             .Property(w => w.Name)
             .HasMaxLength(200);
 
-        modelBuilder.Entity<Workspace>()
-            .Property(w => w.Visibility)
-            .HasConversion<int>()
-            .IsRequired();
-
         modelBuilder.Entity<Organization>()
             .HasMany(o => o.Workspaces)
             .WithOne(w => w.Organization)

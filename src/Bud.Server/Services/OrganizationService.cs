@@ -1,5 +1,4 @@
 using Bud.Server.Data;
-using Bud.Server.MultiTenancy;
 using Bud.Server.Settings;
 using Bud.Shared.Contracts;
 using Bud.Shared.Models;
@@ -10,8 +9,7 @@ namespace Bud.Server.Services;
 
 public sealed class OrganizationService(
     ApplicationDbContext dbContext,
-    IOptions<GlobalAdminSettings> globalAdminSettings,
-    ITenantProvider tenantProvider) : IOrganizationService
+    IOptions<GlobalAdminSettings> globalAdminSettings) : IOrganizationService
 {
     private readonly string _globalAdminEmail = globalAdminSettings.Value.Email;
     private readonly string _globalAdminOrgName = globalAdminSettings.Value.OrganizationName;
@@ -216,29 +214,6 @@ public sealed class OrganizationService(
         var query = dbContext.Workspaces
             .AsNoTracking()
             .Where(w => w.OrganizationId == id);
-
-        // Visibility filtering
-        if (!tenantProvider.IsGlobalAdmin && tenantProvider.CollaboratorId.HasValue)
-        {
-            var collaboratorId = tenantProvider.CollaboratorId.Value;
-            var isOrgOwner = await dbContext.Organizations
-                .AsNoTracking()
-                .AnyAsync(o => o.Id == id && o.OwnerId == collaboratorId, cancellationToken);
-
-            if (!isOrgOwner)
-            {
-                var memberWorkspaceIds = await dbContext.Collaborators
-                    .AsNoTracking()
-                    .Where(c => c.Id == collaboratorId && c.Team != null)
-                    .Select(c => c.Team!.WorkspaceId)
-                    .Distinct()
-                    .ToListAsync(cancellationToken);
-
-                query = query.Where(w =>
-                    w.Visibility == Visibility.Public ||
-                    memberWorkspaceIds.Contains(w.Id));
-            }
-        }
 
         var total = await query.CountAsync(cancellationToken);
         var items = await query

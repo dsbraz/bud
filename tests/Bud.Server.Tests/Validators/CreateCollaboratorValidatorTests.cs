@@ -40,8 +40,7 @@ public class CreateCollaboratorValidatorTests : IDisposable
         {
             Id = Guid.NewGuid(),
             Name = "Test Workspace",
-            OrganizationId = _organization.Id,
-            Visibility = Visibility.Private
+            OrganizationId = _organization.Id
         };
 
         _team = new Team
@@ -239,8 +238,7 @@ public class CreateCollaboratorValidatorTests : IDisposable
         {
             Id = Guid.NewGuid(),
             Name = "Other Workspace",
-            OrganizationId = otherOrganization.Id,
-            Visibility = Visibility.Private
+            OrganizationId = otherOrganization.Id
         };
         var otherTeam = new Team
         {

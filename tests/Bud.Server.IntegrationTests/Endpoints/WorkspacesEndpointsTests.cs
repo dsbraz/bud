@@ -41,7 +41,6 @@ public class WorkspacesEndpointsTests : IClassFixture<CustomWebApplicationFactor
         {
             Id = Guid.NewGuid(),
             Name = "getbud.co",
-            Visibility = Visibility.Public,
             OrganizationId = org.Id
         };
         dbContext.Workspaces.Add(workspace);
@@ -109,15 +108,14 @@ public class WorkspacesEndpointsTests : IClassFixture<CustomWebApplicationFactor
     #region Create Tests
 
     [Fact]
-    public async Task Create_WithPublicVisibility_ReturnsCreated()
+    public async Task Create_WithValidData_ReturnsCreated()
     {
         // Arrange
         var org = await CreateTestOrganization();
         var request = new CreateWorkspaceRequest
         {
-            Name = "Public WS",
-            OrganizationId = org.Id,
-            Visibility = Visibility.Public
+            Name = "Test Workspace",
+            OrganizationId = org.Id
         };
 
         // Act
@@ -127,48 +125,7 @@ public class WorkspacesEndpointsTests : IClassFixture<CustomWebApplicationFactor
         response.StatusCode.Should().Be(HttpStatusCode.Created);
         var workspace = await response.Content.ReadFromJsonAsync<Workspace>();
         workspace.Should().NotBeNull();
-        workspace!.Visibility.Should().Be(Visibility.Public);
-    }
-
-    [Fact]
-    public async Task Create_WithPrivateVisibility_ReturnsCreated()
-    {
-        // Arrange
-        var org = await CreateTestOrganization();
-        var request = new CreateWorkspaceRequest
-        {
-            Name = "Private WS",
-            OrganizationId = org.Id,
-            Visibility = Visibility.Private
-        };
-
-        // Act
-        var response = await _adminClient.PostAsJsonAsync("/api/workspaces", request);
-
-        // Assert
-        response.StatusCode.Should().Be(HttpStatusCode.Created);
-        var workspace = await response.Content.ReadFromJsonAsync<Workspace>();
-        workspace.Should().NotBeNull();
-        workspace!.Visibility.Should().Be(Visibility.Private);
-    }
-
-    [Fact]
-    public async Task Create_WithoutVisibility_ReturnsBadRequest()
-    {
-        // Arrange
-        var org = await CreateTestOrganization();
-        var request = new CreateWorkspaceRequest
-        {
-            Name = "Missing Visibility WS",
-            OrganizationId = org.Id,
-            Visibility = null
-        };
-
-        // Act
-        var response = await _adminClient.PostAsJsonAsync("/api/workspaces", request);
-
-        // Assert
-        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        workspace!.Name.Should().Be("Test Workspace");
     }
 
     [Fact]
@@ -182,8 +139,7 @@ public class WorkspacesEndpointsTests : IClassFixture<CustomWebApplicationFactor
         var request = new CreateWorkspaceRequest
         {
             Name = "WS NonOwner",
-            OrganizationId = org.Id,
-            Visibility = Visibility.Public
+            OrganizationId = org.Id
         };
 
         // Act
@@ -195,136 +151,91 @@ public class WorkspacesEndpointsTests : IClassFixture<CustomWebApplicationFactor
 
     #endregion
 
-    #region Visibility Filtering Tests
+    #region Update Tests
 
     [Fact]
-    public async Task GetAll_AsTenantUser_FiltersPrivateWorkspaces()
+    public async Task Update_WithValidData_ReturnsOk()
     {
-        // Arrange: create org, public ws, private ws, team+collaborator in public ws
+        // Arrange
         var org = await CreateTestOrganization();
-
-        // Create public workspace
-        var publicWsResponse = await _adminClient.PostAsJsonAsync("/api/workspaces",
+        var createResponse = await _adminClient.PostAsJsonAsync("/api/workspaces",
             new CreateWorkspaceRequest
             {
-                Name = "Public WS for Filter Test",
-                OrganizationId = org.Id,
-                Visibility = Visibility.Public
+                Name = "Original Name",
+                OrganizationId = org.Id
             });
-        var publicWs = (await publicWsResponse.Content.ReadFromJsonAsync<Workspace>())!;
+        var workspace = (await createResponse.Content.ReadFromJsonAsync<Workspace>())!;
 
-        // Create private workspace with a team and collaborator
-        var privateWsResponse = await _adminClient.PostAsJsonAsync("/api/workspaces",
-            new CreateWorkspaceRequest
-            {
-                Name = "Private WS (member) for Filter Test",
-                OrganizationId = org.Id,
-                Visibility = Visibility.Private
-            });
-        var privateWsMember = (await privateWsResponse.Content.ReadFromJsonAsync<Workspace>())!;
-
-        // Create another private workspace (no team membership)
-        var privateWsNoMemberResponse = await _adminClient.PostAsJsonAsync("/api/workspaces",
-            new CreateWorkspaceRequest
-            {
-                Name = "Private WS (non-member) for Filter Test",
-                OrganizationId = org.Id,
-                Visibility = Visibility.Private
-            });
-        var privateWsNoMember = (await privateWsNoMemberResponse.Content.ReadFromJsonAsync<Workspace>())!;
-
-        // Create a team in the private workspace where user IS a member
-        var teamResponse = await _adminClient.PostAsJsonAsync("/api/teams",
-            new CreateTeamRequest { Name = "Test Team", WorkspaceId = privateWsMember.Id });
-        var team = (await teamResponse.Content.ReadFromJsonAsync<Team>())!;
-
-        // Create a collaborator directly in database (since API doesn't support creating with TeamId)
-        using var scope = _factory.Services.CreateScope();
-        var dbContext = scope.ServiceProvider.GetRequiredService<Bud.Server.Data.ApplicationDbContext>();
-
-        var collaborator = new Collaborator
+        var updateRequest = new UpdateWorkspaceRequest
         {
-            Id = Guid.NewGuid(),
-            FullName = "Test User",
-            Email = $"testuser-{Guid.NewGuid():N}@test.com",
-            Role = CollaboratorRole.IndividualContributor,
-            OrganizationId = org.Id,
-            TeamId = team.Id
+            Name = "Updated Name"
         };
 
-        dbContext.Collaborators.Add(collaborator);
-        await dbContext.SaveChangesAsync();
-
-        // Act: get all workspaces as the non-admin tenant user
-        var tenantClient = _factory.CreateTenantClient(org.Id, collaborator.Email, collaborator.Id);
-        var response = await tenantClient.GetAsync($"/api/workspaces?organizationId={org.Id}");
+        // Act
+        var response = await _adminClient.PutAsJsonAsync($"/api/workspaces/{workspace.Id}", updateRequest);
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.OK);
-        var result = await response.Content.ReadFromJsonAsync<PagedResult<Workspace>>();
-        result.Should().NotBeNull();
-
-        result!.Items.Should().Contain(w => w.Id == publicWs.Id);
-        result.Items.Should().Contain(w => w.Id == privateWsMember.Id);
-        result.Items.Should().NotContain(w => w.Id == privateWsNoMember.Id);
+        var updated = await response.Content.ReadFromJsonAsync<Workspace>();
+        updated!.Name.Should().Be("Updated Name");
     }
 
-    #endregion
-
-    #region Write Access Tests
-
     [Fact]
-    public async Task Update_AsNonMember_ReturnsForbidden()
+    public async Task Update_AsNonOwner_ReturnsForbidden()
     {
-        // Arrange: create org, workspace, collaborator in a different workspace
+        // Arrange
         var org = await CreateTestOrganization();
 
-        // Create workspace
         var wsResponse = await _adminClient.PostAsJsonAsync("/api/workspaces",
             new CreateWorkspaceRequest
             {
                 Name = "Target WS",
-                OrganizationId = org.Id,
-                Visibility = Visibility.Public
+                OrganizationId = org.Id
             });
         var targetWs = (await wsResponse.Content.ReadFromJsonAsync<Workspace>())!;
 
-        // Create a DIFFERENT workspace with team and collaborator
-        var otherWsResponse = await _adminClient.PostAsJsonAsync("/api/workspaces",
-            new CreateWorkspaceRequest
-            {
-                Name = "Other WS",
-                OrganizationId = org.Id,
-                Visibility = Visibility.Public
-            });
-        var otherWs = (await otherWsResponse.Content.ReadFromJsonAsync<Workspace>())!;
-
-        var teamResponse = await _adminClient.PostAsJsonAsync("/api/teams",
-            new CreateTeamRequest { Name = "Other Team", WorkspaceId = otherWs.Id });
-        var team = (await teamResponse.Content.ReadFromJsonAsync<Team>())!;
-
-        var collabResponse = await _adminClient.PostAsJsonAsync("/api/collaborators",
-            new CreateCollaboratorRequest
-            {
-                FullName = "Non-Member User",
-                Email = $"nonmember-{Guid.NewGuid():N}@test.com",
-                Role = CollaboratorRole.IndividualContributor,
-                TeamId = team.Id
-            });
-        var collaborator = (await collabResponse.Content.ReadFromJsonAsync<Collaborator>())!;
-
-        // Act: try to update targetWs as a non-member
+        var collaborator = await CreateNonOwnerCollaborator(org.Id);
         var tenantClient = _factory.CreateTenantClient(org.Id, collaborator.Email, collaborator.Id);
+
         var updateRequest = new UpdateWorkspaceRequest
         {
-            Name = "Should Not Update",
-            Visibility = Visibility.Private
+            Name = "Should Not Update"
         };
+
+        // Act
         var response = await tenantClient.PutAsJsonAsync($"/api/workspaces/{targetWs.Id}", updateRequest);
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.Forbidden);
     }
+
+    #endregion
+
+    #region Delete Tests
+
+    [Fact]
+    public async Task Delete_ExistingWorkspace_ReturnsNoContent()
+    {
+        // Arrange
+        var org = await CreateTestOrganization();
+        var createResponse = await _adminClient.PostAsJsonAsync("/api/workspaces",
+            new CreateWorkspaceRequest
+            {
+                Name = "WS to Delete",
+                OrganizationId = org.Id
+            });
+        var workspace = (await createResponse.Content.ReadFromJsonAsync<Workspace>())!;
+
+        // Act
+        var response = await _adminClient.DeleteAsync($"/api/workspaces/{workspace.Id}");
+
+        // Assert
+        response.StatusCode.Should().Be(HttpStatusCode.NoContent);
+    }
+
+    #endregion
+
+    #region Authentication Tests
 
     [Fact]
     public async Task GetAll_WithoutAuthentication_ReturnsUnauthorized()

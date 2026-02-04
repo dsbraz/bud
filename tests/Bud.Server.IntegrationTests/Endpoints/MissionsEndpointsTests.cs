@@ -366,7 +366,7 @@ public class MissionsEndpointsTests : IClassFixture<CustomWebApplicationFactory>
         var org = await orgResponse.Content.ReadFromJsonAsync<Organization>();
 
         var workspaceResponse = await _client.PostAsJsonAsync("/api/workspaces",
-            new CreateWorkspaceRequest { Name = "Test Workspace", OrganizationId = org!.Id, Visibility = Visibility.Public });
+            new CreateWorkspaceRequest { Name = "Test Workspace", OrganizationId = org!.Id });
         var workspace = await workspaceResponse.Content.ReadFromJsonAsync<Workspace>();
 
         var teamResponse = await _client.PostAsJsonAsync("/api/teams",

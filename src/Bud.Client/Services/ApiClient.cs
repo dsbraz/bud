@@ -98,6 +98,30 @@ public sealed class ApiClient
         return await response.Content.ReadFromJsonAsync<Workspace>();
     }
 
+    public async Task<Workspace?> UpdateWorkspaceAsync(Guid id, UpdateWorkspaceRequest request)
+    {
+        var response = await _http.PutAsJsonAsync($"api/workspaces/{id}", request);
+
+        if (!response.IsSuccessStatusCode)
+        {
+            var errorMessage = await ExtractErrorMessageAsync(response);
+            throw new HttpRequestException(errorMessage);
+        }
+
+        return await response.Content.ReadFromJsonAsync<Workspace>();
+    }
+
+    public async Task DeleteWorkspaceAsync(Guid id)
+    {
+        var response = await _http.DeleteAsync($"api/workspaces/{id}");
+
+        if (!response.IsSuccessStatusCode)
+        {
+            var errorMessage = await ExtractErrorMessageAsync(response);
+            throw new HttpRequestException(errorMessage);
+        }
+    }
+
     public async Task<PagedResult<Team>?> GetTeamsAsync(Guid? workspaceId, Guid? parentTeamId, string? search, int page = 1, int pageSize = 10)
     {
         var workspaceParam = workspaceId.HasValue ? workspaceId.Value.ToString() : string.Empty;
@@ -117,6 +141,30 @@ public sealed class ApiClient
         }
 
         return await response.Content.ReadFromJsonAsync<Team>();
+    }
+
+    public async Task<Team?> UpdateTeamAsync(Guid id, UpdateTeamRequest request)
+    {
+        var response = await _http.PutAsJsonAsync($"api/teams/{id}", request);
+
+        if (!response.IsSuccessStatusCode)
+        {
+            var errorMessage = await ExtractErrorMessageAsync(response);
+            throw new HttpRequestException(errorMessage);
+        }
+
+        return await response.Content.ReadFromJsonAsync<Team>();
+    }
+
+    public async Task DeleteTeamAsync(Guid id)
+    {
+        var response = await _http.DeleteAsync($"api/teams/{id}");
+
+        if (!response.IsSuccessStatusCode)
+        {
+            var errorMessage = await ExtractErrorMessageAsync(response);
+            throw new HttpRequestException(errorMessage);
+        }
     }
 
     public async Task<PagedResult<Collaborator>?> GetCollaboratorsAsync(Guid? teamId, string? search, int page = 1, int pageSize = 10)

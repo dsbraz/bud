@@ -20,7 +20,7 @@ public class OrganizationServiceTests
         return new ApplicationDbContext(options, tenantProvider);
     }
 
-    private static OrganizationService CreateService(ApplicationDbContext context, TestTenantProvider tenantProvider)
+    private static OrganizationService CreateService(ApplicationDbContext context)
     {
         var settings = Options.Create(new GlobalAdminSettings
         {
@@ -28,7 +28,7 @@ public class OrganizationServiceTests
             OrganizationName = "getbud.co"
         });
 
-        return new OrganizationService(context, settings, tenantProvider);
+        return new OrganizationService(context, settings);
     }
 
     [Fact]
@@ -37,7 +37,7 @@ public class OrganizationServiceTests
         // Arrange
         var tenantProvider = new TestTenantProvider { IsGlobalAdmin = true };
         using var context = CreateInMemoryContext(tenantProvider);
-        var service = CreateService(context, tenantProvider);
+        var service = CreateService(context);
 
         // Act
         var result = await service.GetByIdAsync(Guid.NewGuid());
@@ -54,7 +54,7 @@ public class OrganizationServiceTests
         // Arrange
         var tenantProvider = new TestTenantProvider { IsGlobalAdmin = true };
         using var context = CreateInMemoryContext(tenantProvider);
-        var service = CreateService(context, tenantProvider);
+        var service = CreateService(context);
 
         // Act
         var result = await service.GetWorkspacesAsync(Guid.NewGuid(), 1, 10);

@@ -43,20 +43,45 @@
             <thead>
                 <tr>
                     <th>Nome</th>
-                    <th>Visibilidade</th>
                     <th>Organização</th>
                     <th>ID</th>
+                    <th style="width: 120px; text-align: center;">Ações</th>
                 </tr>
             </thead>
             <tbody>
                 @foreach (var workspace in workspaces.Items)
                 {
                     var org = organizations.FirstOrDefault(o => o.Id == workspace.OrganizationId);
+                    var isDeleting = deletingWorkspaceId == workspace.Id;
                     <tr>
                         <td>@workspace.Name</td>
-                        <td>@(workspace.Visibility == Visibility.Public ? "Pública" : "Privada")</td>
                         <td>@(org?.Name ?? "—")</td>
                         <td class="mono">@workspace.Id</td>
+                        <td style="text-align: center;">
+                            <div class="table-actions">
+                                <button class="button-icon" @onclick="() => OpenEditModal(workspace)"
+                                        title="Editar workspace">
+                                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                                        <path d="M11.334 2.00004C11.5091 1.82494 11.7169 1.68605 11.9457 1.59129C12.1745 1.49653 12.4197 1.44775 12.6673 1.44775C12.9149 1.44775 13.1601 1.49653 13.3889 1.59129C13.6177 1.68605 13.8256 1.82494 14.0007 2.00004C14.1758 2.17513 14.3147 2.383 14.4094 2.61178C14.5042 2.84055 14.553 3.08575 14.553 3.33337C14.553 3.58099 14.5042 3.82619 14.4094 4.05497C14.3147 4.28374 14.1758 4.49161 14.0007 4.66671L5.00065 13.6667L1.33398 14.6667L2.33398 11L11.334 2.00004Z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                                    </svg>
+                                </button>
+                                <button class="button-icon @(isDeleting ? "danger" : "")"
+                                        @onclick="() => HandleDeleteClick(workspace.Id)"
+                                        title="@(isDeleting ? "Clique novamente para confirmar" : "Excluir workspace")">
+                                    @if (isDeleting)
+                                    {
+                                        <span style="font-size: 11px; white-space: nowrap;">Confirmar?</span>
+                                    }
+                                    else
+                                    {
+                                        <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                                            <path d="M2 4H3.33333H14" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                                            <path d="M5.33398 4.00004V2.66671C5.33398 2.31309 5.47446 1.97395 5.72451 1.7239C5.97456 1.47385 6.3137 1.33337 6.66732 1.33337H9.33398C9.6876 1.33337 10.0268 1.47385 10.2768 1.7239C10.5269 1.97395 10.6673 2.31309 10.6673 2.66671V4.00004M12.6673 4.00004V13.3334C12.6673 13.687 12.5269 14.0261 12.2768 14.2762C12.0268 14.5262 11.6876 14.6667 11.334 14.6667H4.66732C4.3137 14.6667 3.97456 14.5262 3.72451 14.2762C3.47446 14.0261 3.33398 13.687 3.33398 13.3334V4.00004H12.6673Z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                                        </svg>
+                                    }
+                                </button>
+                            </div>
+                        </td>
                     </tr>
                 }
             </tbody>
@@ -74,17 +99,26 @@
                 <label>Nome</label>
                 <InputText class="input" @bind-Value="newWorkspace.Name" />
             </div>
-            <div class="form-row">
-                <label>Visibilidade</label>
-                <select class="input" @bind="createVisibility">
-                    <option value="">Selecione</option>
-                    <option value="Public">Pública</option>
-                    <option value="Private">Privada</option>
-                </select>
-            </div>
             <div class="form-actions">
                 <button class="button tertiary" type="button" @onclick="CloseModal">Cancelar</button>
                 <button class="button primary" type="submit">Salvar</button>
+            </div>
+        </EditForm>
+    </Modal>
+}
+
+@if (isEditModalOpen)
+{
+    <Modal Title="Editar workspace" OnClose="CloseEditModal">
+        <EditForm Model="@editWorkspace" OnValidSubmit="UpdateWorkspace">
+            <DataAnnotationsValidator />
+            <div class="form-row">
+                <label>Nome</label>
+                <InputText class="input" @bind-Value="editWorkspace.Name" />
+            </div>
+            <div class="form-actions">
+                <button class="button tertiary" type="button" @onclick="CloseEditModal">Cancelar</button>
+                <button class="button primary" type="submit">Salvar alterações</button>
             </div>
         </EditForm>
     </Modal>
@@ -95,8 +129,16 @@
     private List<Organization> organizations = new();
     private PagedResult<Workspace>? workspaces;
     private string? search;
-    private string? createVisibility;
     private bool isModalOpen = false;
+
+    // Estado do modal de edição
+    private bool isEditModalOpen = false;
+    private Workspace? selectedWorkspace = null;
+    private UpdateWorkspaceRequest editWorkspace = new();
+
+    // Estado de confirmação de exclusão
+    private Guid? deletingWorkspaceId = null;
+    private System.Threading.Timer? deleteConfirmTimer;
 
     protected override async Task OnInitializedAsync()
     {
@@ -114,6 +156,7 @@
     public void Dispose()
     {
         OrgContext.OnOrganizationChanged -= HandleOrganizationChanged;
+        deleteConfirmTimer?.Dispose();
     }
 
     private async Task LoadOrganizations()
@@ -130,7 +173,6 @@
     private void OpenCreateModal()
     {
         newWorkspace = new CreateWorkspaceRequest();
-        createVisibility = null;
         isModalOpen = true;
     }
 
@@ -153,22 +195,13 @@
             return;
         }
 
-        if (string.IsNullOrEmpty(createVisibility) ||
-            !Enum.TryParse<Visibility>(createVisibility, out var visibility))
-        {
-            ToastService.ShowError("Erro ao criar workspace", "Selecione a visibilidade do workspace.");
-            return;
-        }
-
         newWorkspace.OrganizationId = OrgContext.SelectedOrganizationId.Value;
-        newWorkspace.Visibility = visibility;
 
         try
         {
             await Api.CreateWorkspaceAsync(newWorkspace);
             var workspaceName = newWorkspace.Name;
             newWorkspace = new CreateWorkspaceRequest();
-            createVisibility = null;
             await LoadWorkspaces();
 
             ToastService.ShowSuccess("Workspace criado com sucesso!", $"O workspace '{workspaceName}' foi criado.");
@@ -181,6 +214,98 @@
         catch (Exception ex)
         {
             ToastService.ShowError("Erro inesperado", ex.Message);
+        }
+    }
+
+    private void OpenEditModal(Workspace workspace)
+    {
+        selectedWorkspace = workspace;
+        editWorkspace = new UpdateWorkspaceRequest
+        {
+            Name = workspace.Name
+        };
+        isEditModalOpen = true;
+    }
+
+    private void CloseEditModal()
+    {
+        isEditModalOpen = false;
+        selectedWorkspace = null;
+        editWorkspace = new();
+    }
+
+    private async Task UpdateWorkspace()
+    {
+        if (selectedWorkspace == null) return;
+
+        try
+        {
+            var result = await Api.UpdateWorkspaceAsync(selectedWorkspace.Id, editWorkspace);
+            if (result != null)
+            {
+                ToastService.ShowSuccess("Workspace atualizado", "As alterações foram salvas com sucesso.");
+                CloseEditModal();
+                await LoadWorkspaces();
+            }
+        }
+        catch (HttpRequestException ex)
+        {
+            ToastService.ShowError("Erro ao atualizar", ex.Message);
+        }
+        catch (Exception ex)
+        {
+            ToastService.ShowError("Erro inesperado", ex.Message);
+        }
+    }
+
+    private void HandleDeleteClick(Guid workspaceId)
+    {
+        if (deletingWorkspaceId == workspaceId)
+        {
+            // Segundo clique - executar exclusão
+            _ = DeleteWorkspace(workspaceId);
+        }
+        else
+        {
+            // Primeiro clique - mostrar confirmação
+            deletingWorkspaceId = workspaceId;
+
+            // Reset após 3 segundos
+            deleteConfirmTimer?.Dispose();
+            deleteConfirmTimer = new System.Threading.Timer(
+                _ => InvokeAsync(() =>
+                {
+                    deletingWorkspaceId = null;
+                    StateHasChanged();
+                }),
+                null,
+                3000,
+                Timeout.Infinite
+            );
+        }
+    }
+
+    private async Task DeleteWorkspace(Guid workspaceId)
+    {
+        try
+        {
+            await Api.DeleteWorkspaceAsync(workspaceId);
+            ToastService.ShowSuccess("Workspace excluído", "O workspace foi removido com sucesso.");
+            await LoadWorkspaces();
+        }
+        catch (HttpRequestException ex)
+        {
+            ToastService.ShowError("Erro ao excluir", ex.Message);
+        }
+        catch (Exception ex)
+        {
+            ToastService.ShowError("Erro inesperado", ex.Message);
+        }
+        finally
+        {
+            deletingWorkspaceId = null;
+            deleteConfirmTimer?.Dispose();
+            deleteConfirmTimer = null;
         }
     }
 }

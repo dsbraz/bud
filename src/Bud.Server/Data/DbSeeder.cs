@@ -23,41 +23,20 @@ public static class DbSeeder
         };
         context.Organizations.Add(budOrg);
 
-        // 2. Create Workspace "Bud"
-        var budWorkspace = new Workspace
-        {
-            Id = Guid.NewGuid(),
-            Name = "Bud",
-            Visibility = Visibility.Public,
-            OrganizationId = budOrg.Id
-        };
-        context.Workspaces.Add(budWorkspace);
-
-        // 3. Create Team "Bud"
-        var budTeam = new Team
-        {
-            Id = Guid.NewGuid(),
-            Name = "Bud",
-            OrganizationId = budOrg.Id,
-            WorkspaceId = budWorkspace.Id
-        };
-        context.Teams.Add(budTeam);
-
-        // 4. Create Global Admin Leader
+        // 2. Create Global Admin Leader
         var adminLeader = new Collaborator
         {
             Id = Guid.NewGuid(),
             FullName = "Administrador Global",
             Email = "admin@getbud.co",
             Role = CollaboratorRole.Leader,
-            OrganizationId = budOrg.Id,
-            TeamId = budTeam.Id
+            OrganizationId = budOrg.Id
         };
         context.Collaborators.Add(adminLeader);
 
         await context.SaveChangesAsync();
 
-        // 5. Update Organization with Owner
+        // 3. Update Organization with Owner
         budOrg.OwnerId = adminLeader.Id;
         await context.SaveChangesAsync();
     }

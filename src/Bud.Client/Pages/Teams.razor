@@ -55,6 +55,7 @@
                     <th>Nome</th>
                     <th>Workspace</th>
                     <th>Equipe pai</th>
+                    <th style="width: 120px; text-align: center;">Ações</th>
                 </tr>
             </thead>
             <tbody>
@@ -62,10 +63,36 @@
                 {
                     var workspace = workspaces.FirstOrDefault(w => w.Id == team.WorkspaceId);
                     var parent = allTeams.FirstOrDefault(t => t.Id == team.ParentTeamId);
+                    var isDeleting = deletingTeamId == team.Id;
                     <tr>
                         <td>@team.Name</td>
                         <td>@(workspace?.Name ?? "—")</td>
                         <td>@(parent?.Name ?? "—")</td>
+                        <td style="text-align: center;">
+                            <div class="table-actions">
+                                <button class="button-icon" @onclick="() => OpenEditModal(team)"
+                                        title="Editar equipe">
+                                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                                        <path d="M11.334 2.00004C11.5091 1.82494 11.7169 1.68605 11.9457 1.59129C12.1745 1.49653 12.4197 1.44775 12.6673 1.44775C12.9149 1.44775 13.1601 1.49653 13.3889 1.59129C13.6177 1.68605 13.8256 1.82494 14.0007 2.00004C14.1758 2.17513 14.3147 2.383 14.4094 2.61178C14.5042 2.84055 14.553 3.08575 14.553 3.33337C14.553 3.58099 14.5042 3.82619 14.4094 4.05497C14.3147 4.28374 14.1758 4.49161 14.0007 4.66671L5.00065 13.6667L1.33398 14.6667L2.33398 11L11.334 2.00004Z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                                    </svg>
+                                </button>
+                                <button class="button-icon @(isDeleting ? "danger" : "")"
+                                        @onclick="() => HandleDeleteClick(team.Id)"
+                                        title="@(isDeleting ? "Clique novamente para confirmar" : "Excluir equipe")">
+                                    @if (isDeleting)
+                                    {
+                                        <span style="font-size: 11px; white-space: nowrap;">Confirmar?</span>
+                                    }
+                                    else
+                                    {
+                                        <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                                            <path d="M2 4H3.33333H14" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                                            <path d="M5.33398 4.00004V2.66671C5.33398 2.31309 5.47446 1.97395 5.72451 1.7239C5.97456 1.47385 6.3137 1.33337 6.66732 1.33337H9.33398C9.6876 1.33337 10.0268 1.47385 10.2768 1.7239C10.5269 1.97395 10.6673 2.31309 10.6673 2.66671V4.00004M12.6673 4.00004V13.3334C12.6673 13.687 12.5269 14.0261 12.2768 14.2762C12.0268 14.5262 11.6876 14.6667 11.334 14.6667H4.66732C4.3137 14.6667 3.97456 14.5262 3.72451 14.2762C3.47446 14.0261 3.33398 13.687 3.33398 13.3334V4.00004H12.6673Z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                                        </svg>
+                                    }
+                                </button>
+                            </div>
+                        </td>
                     </tr>
                 }
             </tbody>
@@ -111,6 +138,36 @@
     </Modal>
 }
 
+@if (isEditModalOpen)
+{
+    <Modal Title="Editar equipe" OnClose="CloseEditModal">
+        <EditForm Model="@editTeam" OnValidSubmit="UpdateTeam">
+            <DataAnnotationsValidator />
+            <div class="form-row">
+                <label>Equipe pai (opcional)</label>
+                <select class="input" @bind="editParentTeamId">
+                    <option value="">Nenhuma</option>
+                    @foreach (var team in editParentTeams)
+                    {
+                        @if (team.Id != selectedTeam?.Id)
+                        {
+                            <option value="@team.Id">@team.Name</option>
+                        }
+                    }
+                </select>
+            </div>
+            <div class="form-row">
+                <label>Nome</label>
+                <InputText class="input" @bind-Value="editTeam.Name" />
+            </div>
+            <div class="form-actions">
+                <button class="button tertiary" type="button" @onclick="CloseEditModal">Cancelar</button>
+                <button class="button primary" type="submit">Salvar alterações</button>
+            </div>
+        </EditForm>
+    </Modal>
+}
+
 @code {
     private CreateTeamRequest newTeam = new();
     private List<Workspace> workspaces = new();
@@ -122,6 +179,17 @@
     private string? createWorkspaceId;
     private string? createParentTeamId;
     private bool isModalOpen = false;
+
+    // Estado do modal de edição
+    private bool isEditModalOpen = false;
+    private Team? selectedTeam = null;
+    private UpdateTeamRequest editTeam = new();
+    private string? editParentTeamId;
+    private List<Team> editParentTeams = new();
+
+    // Estado de confirmação de exclusão
+    private Guid? deletingTeamId = null;
+    private System.Threading.Timer? deleteConfirmTimer;
 
     protected override async Task OnInitializedAsync()
     {
@@ -140,6 +208,7 @@
     public void Dispose()
     {
         OrgContext.OnOrganizationChanged -= HandleOrganizationChanged;
+        deleteConfirmTimer?.Dispose();
     }
 
     private async Task LoadWorkspaces()
@@ -223,6 +292,109 @@
         catch (Exception ex)
         {
             ToastService.ShowError("Erro inesperado", ex.Message);
+        }
+    }
+
+    private async Task OpenEditModal(Team team)
+    {
+        selectedTeam = team;
+        editTeam = new UpdateTeamRequest
+        {
+            Name = team.Name,
+            ParentTeamId = team.ParentTeamId
+        };
+        editParentTeamId = team.ParentTeamId?.ToString() ?? "";
+
+        // Carregar equipes do mesmo workspace para seleção de equipe pai
+        var result = await Api.GetTeamsAsync(team.WorkspaceId, null, null, 1, 200);
+        editParentTeams = result?.Items.ToList() ?? new List<Team>();
+
+        isEditModalOpen = true;
+    }
+
+    private void CloseEditModal()
+    {
+        isEditModalOpen = false;
+        selectedTeam = null;
+        editTeam = new();
+        editParentTeamId = null;
+        editParentTeams.Clear();
+    }
+
+    private async Task UpdateTeam()
+    {
+        if (selectedTeam == null) return;
+
+        editTeam.ParentTeamId = Guid.TryParse(editParentTeamId, out var parentId) ? parentId : null;
+
+        try
+        {
+            var result = await Api.UpdateTeamAsync(selectedTeam.Id, editTeam);
+            if (result != null)
+            {
+                ToastService.ShowSuccess("Equipe atualizada", "As alterações foram salvas com sucesso.");
+                CloseEditModal();
+                await LoadTeams();
+            }
+        }
+        catch (HttpRequestException ex)
+        {
+            ToastService.ShowError("Erro ao atualizar", ex.Message);
+        }
+        catch (Exception ex)
+        {
+            ToastService.ShowError("Erro inesperado", ex.Message);
+        }
+    }
+
+    private void HandleDeleteClick(Guid teamId)
+    {
+        if (deletingTeamId == teamId)
+        {
+            // Segundo clique - executar exclusão
+            _ = DeleteTeam(teamId);
+        }
+        else
+        {
+            // Primeiro clique - mostrar confirmação
+            deletingTeamId = teamId;
+
+            // Reset após 3 segundos
+            deleteConfirmTimer?.Dispose();
+            deleteConfirmTimer = new System.Threading.Timer(
+                _ => InvokeAsync(() =>
+                {
+                    deletingTeamId = null;
+                    StateHasChanged();
+                }),
+                null,
+                3000,
+                Timeout.Infinite
+            );
+        }
+    }
+
+    private async Task DeleteTeam(Guid teamId)
+    {
+        try
+        {
+            await Api.DeleteTeamAsync(teamId);
+            ToastService.ShowSuccess("Equipe excluída", "A equipe foi removida com sucesso.");
+            await LoadTeams();
+        }
+        catch (HttpRequestException ex)
+        {
+            ToastService.ShowError("Erro ao excluir", ex.Message);
+        }
+        catch (Exception ex)
+        {
+            ToastService.ShowError("Erro inesperado", ex.Message);
+        }
+        finally
+        {
+            deletingTeamId = null;
+            deleteConfirmTimer?.Dispose();
+            deleteConfirmTimer = null;
         }
     }
 }

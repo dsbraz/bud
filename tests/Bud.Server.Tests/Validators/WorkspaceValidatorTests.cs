@@ -1,6 +1,5 @@
 using Bud.Server.Validators;
 using Bud.Shared.Contracts;
-using Bud.Shared.Models;
 using FluentAssertions;
 using Xunit;
 
@@ -14,29 +13,12 @@ public class WorkspaceValidatorTests
     #region CreateWorkspaceValidator Tests
 
     [Fact]
-    public async Task CreateWorkspace_WithNullVisibility_ShouldFail()
+    public async Task CreateWorkspace_WithValidRequest_ShouldPass()
     {
         var request = new CreateWorkspaceRequest
         {
             Name = "Test Workspace",
-            OrganizationId = Guid.NewGuid(),
-            Visibility = null
-        };
-
-        var result = await _createValidator.ValidateAsync(request);
-
-        result.IsValid.Should().BeFalse();
-        result.Errors.Should().Contain(e => e.PropertyName == "Visibility");
-    }
-
-    [Fact]
-    public async Task CreateWorkspace_WithPublicVisibility_ShouldPass()
-    {
-        var request = new CreateWorkspaceRequest
-        {
-            Name = "Test Workspace",
-            OrganizationId = Guid.NewGuid(),
-            Visibility = Visibility.Public
+            OrganizationId = Guid.NewGuid()
         };
 
         var result = await _createValidator.ValidateAsync(request);
@@ -45,34 +27,33 @@ public class WorkspaceValidatorTests
     }
 
     [Fact]
-    public async Task CreateWorkspace_WithPrivateVisibility_ShouldPass()
+    public async Task CreateWorkspace_WithEmptyName_ShouldFail()
     {
         var request = new CreateWorkspaceRequest
         {
-            Name = "Test Workspace",
-            OrganizationId = Guid.NewGuid(),
-            Visibility = Visibility.Private
-        };
-
-        var result = await _createValidator.ValidateAsync(request);
-
-        result.IsValid.Should().BeTrue();
-    }
-
-    [Fact]
-    public async Task CreateWorkspace_WithInvalidVisibilityEnumValue_ShouldFail()
-    {
-        var request = new CreateWorkspaceRequest
-        {
-            Name = "Test Workspace",
-            OrganizationId = Guid.NewGuid(),
-            Visibility = (Visibility)99
+            Name = "",
+            OrganizationId = Guid.NewGuid()
         };
 
         var result = await _createValidator.ValidateAsync(request);
 
         result.IsValid.Should().BeFalse();
-        result.Errors.Should().Contain(e => e.PropertyName == "Visibility");
+        result.Errors.Should().Contain(e => e.PropertyName == "Name");
+    }
+
+    [Fact]
+    public async Task CreateWorkspace_WithEmptyOrganizationId_ShouldFail()
+    {
+        var request = new CreateWorkspaceRequest
+        {
+            Name = "Test Workspace",
+            OrganizationId = Guid.Empty
+        };
+
+        var result = await _createValidator.ValidateAsync(request);
+
+        result.IsValid.Should().BeFalse();
+        result.Errors.Should().Contain(e => e.PropertyName == "OrganizationId");
     }
 
     #endregion
@@ -80,12 +61,11 @@ public class WorkspaceValidatorTests
     #region UpdateWorkspaceValidator Tests
 
     [Fact]
-    public async Task UpdateWorkspace_WithValidVisibility_ShouldPass()
+    public async Task UpdateWorkspace_WithValidName_ShouldPass()
     {
         var request = new UpdateWorkspaceRequest
         {
-            Name = "Updated Name",
-            Visibility = Visibility.Private
+            Name = "Updated Name"
         };
 
         var result = await _updateValidator.ValidateAsync(request);
@@ -94,18 +74,17 @@ public class WorkspaceValidatorTests
     }
 
     [Fact]
-    public async Task UpdateWorkspace_WithInvalidVisibilityEnumValue_ShouldFail()
+    public async Task UpdateWorkspace_WithEmptyName_ShouldFail()
     {
         var request = new UpdateWorkspaceRequest
         {
-            Name = "Updated Name",
-            Visibility = (Visibility)99
+            Name = ""
         };
 
         var result = await _updateValidator.ValidateAsync(request);
 
         result.IsValid.Should().BeFalse();
-        result.Errors.Should().Contain(e => e.PropertyName == "Visibility");
+        result.Errors.Should().Contain(e => e.PropertyName == "Name");
     }
 
     #endregion

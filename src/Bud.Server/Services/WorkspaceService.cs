@@ -1,5 +1,4 @@
 using Bud.Server.Data;
-using Bud.Server.MultiTenancy;
 using Bud.Shared.Contracts;
 using Bud.Shared.Models;
 using Microsoft.EntityFrameworkCore;
@@ -7,8 +6,7 @@ using Microsoft.EntityFrameworkCore;
 namespace Bud.Server.Services;
 
 public sealed class WorkspaceService(
-    ApplicationDbContext dbContext,
-    ITenantProvider tenantProvider) : IWorkspaceService
+    ApplicationDbContext dbContext) : IWorkspaceService
 {
     public async Task<ServiceResult<Workspace>> CreateAsync(CreateWorkspaceRequest request, CancellationToken cancellationToken = default)
     {
@@ -32,7 +30,6 @@ public sealed class WorkspaceService(
         {
             Id = Guid.NewGuid(),
             Name = request.Name.Trim(),
-            Visibility = request.Visibility!.Value,
             OrganizationId = request.OrganizationId,
         };
 
@@ -60,7 +57,6 @@ public sealed class WorkspaceService(
         }
 
         workspace.Name = request.Name.Trim();
-        workspace.Visibility = request.Visibility;
         await dbContext.SaveChangesAsync(cancellationToken);
 
         return ServiceResult<Workspace>.Success(workspace);
@@ -92,11 +88,6 @@ public sealed class WorkspaceService(
             return ServiceResult<Workspace>.NotFound("Workspace não encontrado.");
         }
 
-        if (!await HasReadAccessAsync(workspace, cancellationToken))
-        {
-            return ServiceResult<Workspace>.NotFound("Workspace não encontrado.");
-        }
-
         return ServiceResult<Workspace>.Success(workspace);
     }
 
@@ -116,8 +107,6 @@ public sealed class WorkspaceService(
         {
             query = query.Where(w => w.Name.Contains(search.Trim()));
         }
-
-        query = await ApplyVisibilityFilterAsync(query, cancellationToken);
 
         var total = await query.CountAsync(cancellationToken);
         var items = await query
@@ -151,11 +140,6 @@ public sealed class WorkspaceService(
             return ServiceResult<PagedResult<Team>>.NotFound("Workspace não encontrado.");
         }
 
-        if (!await HasReadAccessAsync(workspace, cancellationToken))
-        {
-            return ServiceResult<PagedResult<Team>>.NotFound("Workspace não encontrado.");
-        }
-
         var query = dbContext.Teams
             .AsNoTracking()
             .Where(t => t.WorkspaceId == id);
@@ -176,91 +160,5 @@ public sealed class WorkspaceService(
         };
 
         return ServiceResult<PagedResult<Team>>.Success(result);
-    }
-
-    private async Task<bool> HasReadAccessAsync(Workspace workspace, CancellationToken cancellationToken)
-    {
-        if (tenantProvider.IsGlobalAdmin)
-        {
-            return true;
-        }
-
-        if (workspace.Visibility == Visibility.Public)
-        {
-            return true;
-        }
-
-        if (await IsOrgOwnerAsync(workspace.OrganizationId, cancellationToken))
-        {
-            return true;
-        }
-
-        return await IsCollaboratorInWorkspaceAsync(workspace.Id, cancellationToken);
-    }
-
-    private async Task<bool> IsCollaboratorInWorkspaceAsync(Guid workspaceId, CancellationToken cancellationToken)
-    {
-        if (tenantProvider.CollaboratorId is null)
-        {
-            return false;
-        }
-
-        return await dbContext.Collaborators
-            .AsNoTracking()
-            .AnyAsync(c =>
-                c.Id == tenantProvider.CollaboratorId.Value &&
-                c.Team != null &&
-                c.Team.WorkspaceId == workspaceId,
-                cancellationToken);
-    }
-
-    private async Task<bool> IsOrgOwnerAsync(Guid organizationId, CancellationToken cancellationToken)
-    {
-        if (tenantProvider.CollaboratorId is null)
-        {
-            return false;
-        }
-
-        return await dbContext.Organizations
-            .AsNoTracking()
-            .AnyAsync(o =>
-                o.Id == organizationId &&
-                o.OwnerId == tenantProvider.CollaboratorId.Value,
-                cancellationToken);
-    }
-
-    private async Task<IQueryable<Workspace>> ApplyVisibilityFilterAsync(
-        IQueryable<Workspace> query, CancellationToken cancellationToken)
-    {
-        if (tenantProvider.IsGlobalAdmin || tenantProvider.CollaboratorId is null)
-        {
-            return query;
-        }
-
-        var collaboratorId = tenantProvider.CollaboratorId.Value;
-
-        var isOrgOwner = tenantProvider.TenantId.HasValue &&
-            await dbContext.Organizations
-                .AsNoTracking()
-                .AnyAsync(o =>
-                    o.Id == tenantProvider.TenantId.Value &&
-                    o.OwnerId == collaboratorId,
-                    cancellationToken);
-
-        if (isOrgOwner)
-        {
-            return query;
-        }
-
-        var memberWorkspaceIds = await dbContext.Collaborators
-            .AsNoTracking()
-            .Where(c => c.Id == collaboratorId && c.Team != null)
-            .Select(c => c.Team!.WorkspaceId)
-            .Distinct()
-            .ToListAsync(cancellationToken);
-
-        return query.Where(w =>
-            w.Visibility == Visibility.Public ||
-            memberWorkspaceIds.Contains(w.Id));
     }
 }
