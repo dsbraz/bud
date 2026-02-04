@@ -12,7 +12,6 @@ namespace Bud.Server.Tests.Services;
 public class WorkspaceServiceTests
 {
     private readonly TestTenantProvider _tenantProvider = new() { IsGlobalAdmin = true };
-    private readonly TestOrganizationAuthorizationService _orgAuth = new();
 
     private ApplicationDbContext CreateInMemoryContext()
     {
@@ -23,7 +22,7 @@ public class WorkspaceServiceTests
         return new ApplicationDbContext(options, _tenantProvider);
     }
 
-    private async Task<(Organization org, Workspace publicWs, Workspace privateWsMember, Workspace privateWsNonMember, Collaborator collaborator)> CreateVisibilityTestHierarchy(
+    private static async Task<(Organization org, Workspace publicWs, Workspace privateWsMember, Workspace privateWsNonMember, Collaborator collaborator)> CreateVisibilityTestHierarchy(
         ApplicationDbContext context,
         Guid? organizationId = null)
     {
@@ -86,7 +85,7 @@ public class WorkspaceServiceTests
     {
         // Arrange
         using var context = CreateInMemoryContext();
-        var service = new WorkspaceService(context, _tenantProvider, _orgAuth);
+        var service = new WorkspaceService(context, _tenantProvider);
 
         var org = new Organization { Id = Guid.NewGuid(), Name = "Test Org" };
         context.Organizations.Add(org);
@@ -113,7 +112,7 @@ public class WorkspaceServiceTests
     {
         // Arrange
         using var context = CreateInMemoryContext();
-        var service = new WorkspaceService(context, _tenantProvider, _orgAuth);
+        var service = new WorkspaceService(context, _tenantProvider);
 
         var org = new Organization { Id = Guid.NewGuid(), Name = "Test Org" };
         context.Organizations.Add(org);
@@ -136,7 +135,7 @@ public class WorkspaceServiceTests
     }
 
     [Fact]
-    public async Task CreateWorkspace_AsNonOwner_ReturnsForbidden()
+    public async Task CreateWorkspace_AsNonOwner_CreatesSuccessfully()
     {
         // Arrange
         var org = new Organization { Id = Guid.NewGuid(), Name = "Test Org" };
@@ -160,14 +159,13 @@ public class WorkspaceServiceTests
         _tenantProvider.IsGlobalAdmin = false;
         _tenantProvider.TenantId = org.Id;
         _tenantProvider.CollaboratorId = regularCollaborator.Id;
-        _orgAuth.ShouldAllowOwnerAccess = false;
 
         using var context = CreateInMemoryContext();
         context.Organizations.Add(org);
         context.Collaborators.AddRange(owner, regularCollaborator);
         await context.SaveChangesAsync();
 
-        var service = new WorkspaceService(context, _tenantProvider, _orgAuth);
+        var service = new WorkspaceService(context, _tenantProvider);
 
         var request = new CreateWorkspaceRequest
         {
@@ -180,9 +178,8 @@ public class WorkspaceServiceTests
         var result = await service.CreateAsync(request);
 
         // Assert
-        result.IsSuccess.Should().BeFalse();
-        result.ErrorType.Should().Be(ServiceErrorType.Forbidden);
-        result.Error.Should().Be("Apenas o proprietário da organização pode realizar esta ação.");
+        result.IsSuccess.Should().BeTrue();
+        result.Value.Should().NotBeNull();
     }
 
     [Fact]
@@ -208,7 +205,7 @@ public class WorkspaceServiceTests
         context.Collaborators.Add(owner);
         await context.SaveChangesAsync();
 
-        var service = new WorkspaceService(context, _tenantProvider, _orgAuth);
+        var service = new WorkspaceService(context, _tenantProvider);
 
         var request = new CreateWorkspaceRequest
         {
@@ -237,7 +234,7 @@ public class WorkspaceServiceTests
         _tenantProvider.IsGlobalAdmin = true;
         using var context = CreateInMemoryContext();
         var (org, _, _, _, _) = await CreateVisibilityTestHierarchy(context);
-        var service = new WorkspaceService(context, _tenantProvider, _orgAuth);
+        var service = new WorkspaceService(context, _tenantProvider);
 
         // Act
         var result = await service.GetAllAsync(org.Id, null, 1, 10);
@@ -263,7 +260,7 @@ public class WorkspaceServiceTests
 
         _tenantProvider.CollaboratorId = collaborator.Id;
 
-        var service = new WorkspaceService(context, _tenantProvider, _orgAuth);
+        var service = new WorkspaceService(context, _tenantProvider);
 
         // Act
         var result = await service.GetAllAsync(org.Id, null, 1, 10);
@@ -286,7 +283,7 @@ public class WorkspaceServiceTests
 
         _tenantProvider.CollaboratorId = collaborator.Id;
 
-        var service = new WorkspaceService(context, _tenantProvider, _orgAuth);
+        var service = new WorkspaceService(context, _tenantProvider);
 
         // Act
         var result = await service.GetAllAsync(org.Id, null, 1, 10);
@@ -315,7 +312,7 @@ public class WorkspaceServiceTests
 
         _tenantProvider.CollaboratorId = collaborator.Id;
 
-        var service = new WorkspaceService(context, _tenantProvider, _orgAuth);
+        var service = new WorkspaceService(context, _tenantProvider);
 
         // Act
         var result = await service.GetByIdAsync(publicWs.Id);
@@ -337,7 +334,7 @@ public class WorkspaceServiceTests
 
         _tenantProvider.CollaboratorId = collaborator.Id;
 
-        var service = new WorkspaceService(context, _tenantProvider, _orgAuth);
+        var service = new WorkspaceService(context, _tenantProvider);
 
         // Act
         var result = await service.GetByIdAsync(privateWsMember.Id);
@@ -359,7 +356,7 @@ public class WorkspaceServiceTests
 
         _tenantProvider.CollaboratorId = collaborator.Id;
 
-        var service = new WorkspaceService(context, _tenantProvider, _orgAuth);
+        var service = new WorkspaceService(context, _tenantProvider);
 
         // Act
         var result = await service.GetByIdAsync(privateWsNonMember.Id);
@@ -385,7 +382,7 @@ public class WorkspaceServiceTests
 
         _tenantProvider.CollaboratorId = collaborator.Id;
 
-        var service = new WorkspaceService(context, _tenantProvider, _orgAuth);
+        var service = new WorkspaceService(context, _tenantProvider);
 
         // Act
         var result = await service.GetByIdAsync(privateWsNonMember.Id);
@@ -400,19 +397,18 @@ public class WorkspaceServiceTests
     #region UpdateAsync Write Access Tests
 
     [Fact]
-    public async Task UpdateAsync_AsNonMember_ReturnsForbidden()
+    public async Task UpdateAsync_AsNonMember_ReturnsSuccess()
     {
         // Arrange
         _tenantProvider.IsGlobalAdmin = false;
         var orgId = Guid.NewGuid();
         _tenantProvider.TenantId = orgId;
-        _orgAuth.ShouldAllowWriteAccess = false;
         using var context = CreateInMemoryContext();
         var (org, _, _, privateWsNonMember, collaborator) = await CreateVisibilityTestHierarchy(context, orgId);
 
         _tenantProvider.CollaboratorId = collaborator.Id;
 
-        var service = new WorkspaceService(context, _tenantProvider, _orgAuth);
+        var service = new WorkspaceService(context, _tenantProvider);
 
         var request = new UpdateWorkspaceRequest
         {
@@ -424,8 +420,8 @@ public class WorkspaceServiceTests
         var result = await service.UpdateAsync(privateWsNonMember.Id, request);
 
         // Assert
-        result.IsSuccess.Should().BeFalse();
-        result.ErrorType.Should().Be(ServiceErrorType.Forbidden);
+        result.IsSuccess.Should().BeTrue();
+        result.Value!.Name.Should().Be("Updated Name");
     }
 
     [Fact]
@@ -440,7 +436,7 @@ public class WorkspaceServiceTests
 
         _tenantProvider.CollaboratorId = collaborator.Id;
 
-        var service = new WorkspaceService(context, _tenantProvider, _orgAuth);
+        var service = new WorkspaceService(context, _tenantProvider);
 
         var request = new UpdateWorkspaceRequest
         {
@@ -472,7 +468,7 @@ public class WorkspaceServiceTests
 
         _tenantProvider.CollaboratorId = collaborator.Id;
 
-        var service = new WorkspaceService(context, _tenantProvider, _orgAuth);
+        var service = new WorkspaceService(context, _tenantProvider);
 
         var request = new UpdateWorkspaceRequest
         {
@@ -494,26 +490,24 @@ public class WorkspaceServiceTests
     #region DeleteAsync Write Access Tests
 
     [Fact]
-    public async Task DeleteAsync_AsNonMember_ReturnsForbidden()
+    public async Task DeleteAsync_AsNonMember_ReturnsSuccess()
     {
         // Arrange
         _tenantProvider.IsGlobalAdmin = false;
         var orgId = Guid.NewGuid();
         _tenantProvider.TenantId = orgId;
-        _orgAuth.ShouldAllowWriteAccess = false;
         using var context = CreateInMemoryContext();
         var (org, publicWs, _, _, collaborator) = await CreateVisibilityTestHierarchy(context, orgId);
 
         _tenantProvider.CollaboratorId = collaborator.Id;
 
-        var service = new WorkspaceService(context, _tenantProvider, _orgAuth);
+        var service = new WorkspaceService(context, _tenantProvider);
 
         // Act - try to delete the public workspace where user is not a member
         var result = await service.DeleteAsync(publicWs.Id);
 
         // Assert
-        result.IsSuccess.Should().BeFalse();
-        result.ErrorType.Should().Be(ServiceErrorType.Forbidden);
+        result.IsSuccess.Should().BeTrue();
     }
 
     [Fact]
@@ -528,7 +522,7 @@ public class WorkspaceServiceTests
 
         _tenantProvider.CollaboratorId = collaborator.Id;
 
-        var service = new WorkspaceService(context, _tenantProvider, _orgAuth);
+        var service = new WorkspaceService(context, _tenantProvider);
 
         // Act
         var result = await service.DeleteAsync(privateWsMember.Id);
@@ -553,7 +547,7 @@ public class WorkspaceServiceTests
 
         _tenantProvider.CollaboratorId = collaborator.Id;
 
-        var service = new WorkspaceService(context, _tenantProvider, _orgAuth);
+        var service = new WorkspaceService(context, _tenantProvider);
 
         // Act
         var result = await service.DeleteAsync(publicWs.Id);
@@ -578,7 +572,7 @@ public class WorkspaceServiceTests
 
         _tenantProvider.CollaboratorId = collaborator.Id;
 
-        var service = new WorkspaceService(context, _tenantProvider, _orgAuth);
+        var service = new WorkspaceService(context, _tenantProvider);
 
         // Act
         var result = await service.GetTeamsAsync(privateWsNonMember.Id, 1, 10);

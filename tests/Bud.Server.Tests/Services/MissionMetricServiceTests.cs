@@ -22,7 +22,7 @@ public class MissionMetricServiceTests
         return new ApplicationDbContext(options, _tenantProvider);
     }
 
-    private async Task<Mission> CreateTestMission(ApplicationDbContext context)
+    private static async Task<Mission> CreateTestMission(ApplicationDbContext context)
     {
         var org = new Organization { Id = Guid.NewGuid(), Name = "Test Org" };
         context.Organizations.Add(org);

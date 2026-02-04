@@ -91,14 +91,15 @@
 
     private async Task LoadMyMissions()
     {
-        if (AuthState.Session?.CollaboratorId.HasValue != true)
+        var collaboratorId = AuthState.Session?.CollaboratorId;
+        if (!collaboratorId.HasValue)
         {
             return;
         }
 
         missions = null;
         missions = await Api.GetMyThingsAsync(
-            AuthState.Session.CollaboratorId.Value,
+            collaboratorId.Value,
             search,
             currentPage,
             pageSize

@@ -51,7 +51,7 @@ public class CreateMissionMetricValidatorTests
         result.IsValid.Should().BeFalse();
         result.Errors.Should().ContainSingle(e =>
             e.PropertyName == "TargetText" &&
-            e.ErrorMessage.Contains("qualitative"));
+            e.ErrorMessage.Contains("métricas qualitativas"));
     }
 
     [Fact]
@@ -73,7 +73,7 @@ public class CreateMissionMetricValidatorTests
         result.IsValid.Should().BeFalse();
         result.Errors.Should().ContainSingle(e =>
             e.PropertyName == "TargetText" &&
-            e.ErrorMessage.Contains("qualitative"));
+            e.ErrorMessage.Contains("métricas qualitativas"));
     }
 
     [Fact]
@@ -123,7 +123,7 @@ public class CreateMissionMetricValidatorTests
         result.IsValid.Should().BeFalse();
         result.Errors.Should().ContainSingle(e =>
             e.PropertyName == "QuantitativeType" &&
-            e.ErrorMessage.Contains("quantitative"));
+            e.ErrorMessage.Contains("métricas quantitativas"));
     }
 
     [Fact]
@@ -147,7 +147,7 @@ public class CreateMissionMetricValidatorTests
         result.IsValid.Should().BeFalse();
         result.Errors.Should().ContainSingle(e =>
             e.PropertyName == "Unit" &&
-            e.ErrorMessage.Contains("quantitative"));
+            e.ErrorMessage.Contains("métricas quantitativas"));
     }
 
     #region KeepAbove Tests
@@ -219,7 +219,7 @@ public class CreateMissionMetricValidatorTests
         result.IsValid.Should().BeFalse();
         result.Errors.Should().ContainSingle(e =>
             e.PropertyName == "MinValue" &&
-            e.ErrorMessage.Contains("greater than or equal to 0"));
+            e.ErrorMessage.Contains("maior ou igual a 0"));
     }
 
     [Fact]
@@ -315,7 +315,7 @@ public class CreateMissionMetricValidatorTests
         result.IsValid.Should().BeFalse();
         result.Errors.Should().ContainSingle(e =>
             e.PropertyName == "MaxValue" &&
-            e.ErrorMessage.Contains("greater than or equal to 0"));
+            e.ErrorMessage.Contains("maior ou igual a 0"));
     }
 
     #endregion
@@ -417,7 +417,7 @@ public class CreateMissionMetricValidatorTests
         result.IsValid.Should().BeFalse();
         result.Errors.Should().ContainSingle(e =>
             e.PropertyName == "MaxValue" &&
-            e.ErrorMessage.Contains("greater than MinValue"));
+            e.ErrorMessage.Contains("valor mínimo"));
     }
 
     [Fact]
@@ -442,7 +442,7 @@ public class CreateMissionMetricValidatorTests
         result.IsValid.Should().BeFalse();
         result.Errors.Should().ContainSingle(e =>
             e.PropertyName == "MaxValue" &&
-            e.ErrorMessage.Contains("greater than MinValue"));
+            e.ErrorMessage.Contains("valor mínimo"));
     }
 
     [Fact]
@@ -467,7 +467,7 @@ public class CreateMissionMetricValidatorTests
         result.IsValid.Should().BeFalse();
         result.Errors.Should().ContainSingle(e =>
             e.PropertyName == "MinValue" &&
-            e.ErrorMessage.Contains("greater than or equal to 0"));
+            e.ErrorMessage.Contains("maior ou igual a 0"));
     }
 
     #endregion
@@ -541,7 +541,7 @@ public class CreateMissionMetricValidatorTests
         result.IsValid.Should().BeFalse();
         result.Errors.Should().ContainSingle(e =>
             e.PropertyName == "MaxValue" &&
-            e.ErrorMessage.Contains("greater than or equal to 0"));
+            e.ErrorMessage.Contains("maior ou igual a 0"));
     }
 
     #endregion
@@ -615,7 +615,7 @@ public class CreateMissionMetricValidatorTests
         result.IsValid.Should().BeFalse();
         result.Errors.Should().ContainSingle(e =>
             e.PropertyName == "MaxValue" &&
-            e.ErrorMessage.Contains("greater than or equal to 0"));
+            e.ErrorMessage.Contains("maior ou igual a 0"));
     }
 
     #endregion

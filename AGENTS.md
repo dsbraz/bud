@@ -266,6 +266,26 @@ Controllers use primary constructors and follow this pattern:
 
 See [OrganizationsController.cs](src/Bud.Server/Controllers/OrganizationsController.cs) as the reference implementation.
 
+### Authorization Pattern (padrão recomendado)
+
+**Objetivo:** centralizar autorização em policies e handlers, reduzindo `if` espalhados em serviços.
+
+**Policies:**
+- `TenantSelected` — exige autenticação e tenant selecionado (global admin sempre passa)
+- `GlobalAdmin` — exige usuário global admin
+- `OrganizationOwner` — exige que o colaborador seja owner da organização
+- `OrganizationWrite` — exige permissão de escrita na organização
+
+**Onde aplicar:**
+- Controllers devem aplicar `[Authorize(Policy = ...)]`
+- `GlobalAdmin` em ações administrativas (ex.: `POST/PUT/DELETE` em organizações)
+- `TenantSelected` em endpoints tenant-scoped em geral
+
+**Diretrizes:**
+- Evite checagens diretas de `IsGlobalAdmin` e `TenantId` nos serviços quando houver policy equivalente
+- Mantenha mensagens de erro em pt-BR
+- Para novas regras, crie um `Requirement` + `Handler` e registre no `Program.cs`
+
 ### Validation
 
 - **FluentValidation** is used for all request validation

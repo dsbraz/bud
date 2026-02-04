@@ -12,7 +12,6 @@ namespace Bud.Server.Tests.Services;
 public class CollaboratorServiceTests
 {
     private readonly TestTenantProvider _tenantProvider = new() { IsGlobalAdmin = true };
-    private readonly TestOrganizationAuthorizationService _orgAuth = new();
 
     private ApplicationDbContext CreateInMemoryContext()
     {
@@ -23,7 +22,7 @@ public class CollaboratorServiceTests
         return new ApplicationDbContext(options, _tenantProvider);
     }
 
-    private async Task<(Organization org, Workspace workspace, Team team)> CreateTestHierarchy(ApplicationDbContext context)
+    private static async Task<(Organization org, Workspace workspace, Team team)> CreateTestHierarchy(ApplicationDbContext context)
     {
         var org = new Organization { Id = Guid.NewGuid(), Name = "Test Org" };
         var workspace = new Workspace
@@ -51,7 +50,7 @@ public class CollaboratorServiceTests
     #region CreateAsync Tests
 
     [Fact]
-    public async Task CreateCollaborator_AsNonOwner_ReturnsForbidden()
+    public async Task CreateCollaborator_AsNonOwner_CreatesSuccessfully()
     {
         // Arrange
         var org = new Organization { Id = Guid.NewGuid(), Name = "Test Org" };
@@ -91,7 +90,6 @@ public class CollaboratorServiceTests
         _tenantProvider.IsGlobalAdmin = false;
         _tenantProvider.TenantId = org.Id;
         _tenantProvider.CollaboratorId = regularCollaborator.Id;
-        _orgAuth.ShouldAllowOwnerAccess = false;
 
         using var context = CreateInMemoryContext();
         context.Organizations.Add(org);
@@ -100,7 +98,7 @@ public class CollaboratorServiceTests
         context.Collaborators.AddRange(owner, regularCollaborator);
         await context.SaveChangesAsync();
 
-        var service = new CollaboratorService(context, _tenantProvider, _orgAuth);
+        var service = new CollaboratorService(context, _tenantProvider);
 
         var request = new CreateCollaboratorRequest
         {
@@ -114,9 +112,8 @@ public class CollaboratorServiceTests
         var result = await service.CreateAsync(request);
 
         // Assert
-        result.IsSuccess.Should().BeFalse();
-        result.ErrorType.Should().Be(ServiceErrorType.Forbidden);
-        result.Error.Should().Be("Apenas o proprietário da organização pode realizar esta ação.");
+        result.IsSuccess.Should().BeTrue();
+        result.Value.Should().NotBeNull();
     }
 
     [Fact]
@@ -159,7 +156,7 @@ public class CollaboratorServiceTests
         context.Collaborators.Add(owner);
         await context.SaveChangesAsync();
 
-        var service = new CollaboratorService(context, _tenantProvider, _orgAuth);
+        var service = new CollaboratorService(context, _tenantProvider);
 
         var request = new CreateCollaboratorRequest
         {
@@ -188,7 +185,7 @@ public class CollaboratorServiceTests
         var (org, _, team) = await CreateTestHierarchy(context);
         _tenantProvider.TenantId = org.Id;
 
-        var service = new CollaboratorService(context, _tenantProvider, _orgAuth);
+        var service = new CollaboratorService(context, _tenantProvider);
 
         var request = new CreateCollaboratorRequest
         {

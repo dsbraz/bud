@@ -85,7 +85,7 @@ public sealed class AuthService(
         var normalizedEmail = email?.Trim().ToLowerInvariant();
         if (string.IsNullOrWhiteSpace(normalizedEmail))
         {
-            return ServiceResult<List<OrganizationSummaryDto>>.Failure("Email is required.");
+            return ServiceResult<List<OrganizationSummaryDto>>.Failure("E-mail é obrigatório.");
         }
 
         // Global admin can see all organizations

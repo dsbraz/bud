@@ -2,8 +2,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
 
-namespace Bud.Server.Migrations
-{
+namespace Bud.Server.Migrations;
     /// <inheritdoc />
     public partial class AddCollaboratorRole : Migration
     {
@@ -26,4 +25,3 @@ namespace Bud.Server.Migrations
                 table: "Collaborators");
         }
     }
-}

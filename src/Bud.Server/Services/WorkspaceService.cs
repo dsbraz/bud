@@ -8,8 +8,7 @@ namespace Bud.Server.Services;
 
 public sealed class WorkspaceService(
     ApplicationDbContext dbContext,
-    ITenantProvider tenantProvider,
-    IOrganizationAuthorizationService orgAuth) : IWorkspaceService
+    ITenantProvider tenantProvider) : IWorkspaceService
 {
     public async Task<ServiceResult<Workspace>> CreateAsync(CreateWorkspaceRequest request, CancellationToken cancellationToken = default)
     {
@@ -19,12 +18,6 @@ public sealed class WorkspaceService(
         if (!organizationExists)
         {
             return ServiceResult<Workspace>.NotFound("Organização não encontrada.");
-        }
-
-        var authResult = await orgAuth.RequireOrgOwnerAsync(request.OrganizationId, cancellationToken);
-        if (!authResult.IsSuccess)
-        {
-            return ServiceResult<Workspace>.Forbidden(authResult.Error ?? "Apenas o proprietário da organização pode criar workspaces.");
         }
 
         var nameExists = await dbContext.Workspaces
@@ -58,13 +51,6 @@ public sealed class WorkspaceService(
             return ServiceResult<Workspace>.NotFound("Workspace não encontrado.");
         }
 
-        var authResult = await orgAuth.RequireWriteAccessAsync(workspace.OrganizationId, id, cancellationToken);
-        if (!authResult.IsSuccess)
-        {
-            return ServiceResult<Workspace>.Forbidden(
-                authResult.Error ?? "Você não tem permissão para atualizar este workspace.");
-        }
-
         var nameExists = await dbContext.Workspaces
             .AnyAsync(w => w.OrganizationId == workspace.OrganizationId && w.Name == request.Name.Trim() && w.Id != id, cancellationToken);
 
@@ -87,13 +73,6 @@ public sealed class WorkspaceService(
         if (workspace is null)
         {
             return ServiceResult.NotFound("Workspace não encontrado.");
-        }
-
-        var authResult = await orgAuth.RequireWriteAccessAsync(workspace.OrganizationId, id, cancellationToken);
-        if (!authResult.IsSuccess)
-        {
-            return ServiceResult.Forbidden(
-                authResult.Error ?? "Você não tem permissão para excluir este workspace.");
         }
 
         dbContext.Workspaces.Remove(workspace);
@@ -202,13 +181,19 @@ public sealed class WorkspaceService(
     private async Task<bool> HasReadAccessAsync(Workspace workspace, CancellationToken cancellationToken)
     {
         if (tenantProvider.IsGlobalAdmin)
+        {
             return true;
+        }
 
         if (workspace.Visibility == Visibility.Public)
+        {
             return true;
+        }
 
         if (await IsOrgOwnerAsync(workspace.OrganizationId, cancellationToken))
+        {
             return true;
+        }
 
         return await IsCollaboratorInWorkspaceAsync(workspace.Id, cancellationToken);
     }
@@ -216,7 +201,9 @@ public sealed class WorkspaceService(
     private async Task<bool> IsCollaboratorInWorkspaceAsync(Guid workspaceId, CancellationToken cancellationToken)
     {
         if (tenantProvider.CollaboratorId is null)
+        {
             return false;
+        }
 
         return await dbContext.Collaborators
             .AsNoTracking()
@@ -230,7 +217,9 @@ public sealed class WorkspaceService(
     private async Task<bool> IsOrgOwnerAsync(Guid organizationId, CancellationToken cancellationToken)
     {
         if (tenantProvider.CollaboratorId is null)
+        {
             return false;
+        }
 
         return await dbContext.Organizations
             .AsNoTracking()
@@ -244,7 +233,9 @@ public sealed class WorkspaceService(
         IQueryable<Workspace> query, CancellationToken cancellationToken)
     {
         if (tenantProvider.IsGlobalAdmin || tenantProvider.CollaboratorId is null)
+        {
             return query;
+        }
 
         var collaboratorId = tenantProvider.CollaboratorId.Value;
 
@@ -257,7 +248,9 @@ public sealed class WorkspaceService(
                     cancellationToken);
 
         if (isOrgOwner)
+        {
             return query;
+        }
 
         var memberWorkspaceIds = await dbContext.Collaborators
             .AsNoTracking()

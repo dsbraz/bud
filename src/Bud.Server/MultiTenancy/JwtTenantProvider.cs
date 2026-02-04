@@ -11,7 +11,8 @@ public sealed class JwtTenantProvider : ITenantProvider
 
     public JwtTenantProvider(IHttpContextAccessor httpContextAccessor)
     {
-        var user = httpContextAccessor.HttpContext?.User;
+        var httpContext = httpContextAccessor.HttpContext;
+        var user = httpContext?.User;
         if (user?.Identity?.IsAuthenticated != true)
         {
             return;
@@ -21,7 +22,7 @@ public sealed class JwtTenantProvider : ITenantProvider
         UserEmail = user.FindFirst("email")?.Value ?? user.FindFirst(ClaimTypes.Email)?.Value;
 
         // Tenant (pode ser enviado via header X-Tenant-Id ou estar no claim)
-        var tenantHeader = httpContextAccessor.HttpContext.Request.Headers["X-Tenant-Id"].FirstOrDefault();
+        var tenantHeader = httpContext?.Request.Headers["X-Tenant-Id"].FirstOrDefault();
         if (Guid.TryParse(tenantHeader, out var tenantId))
         {
             TenantId = tenantId;

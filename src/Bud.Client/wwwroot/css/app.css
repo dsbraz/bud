@@ -663,7 +663,7 @@ a {
 }
 
 .blazor-error-boundary::after {
-    content: "An error has occurred."
+    content: "Ocorreu um erro."
 }
 
 .loading-progress {
@@ -697,7 +697,7 @@ a {
 }
 
 .loading-progress-text:after {
-    content: var(--blazor-load-percentage-text, "Loading");
+    content: var(--blazor-load-percentage-text, "Carregando");
 }
 
 .auth-shell {

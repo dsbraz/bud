@@ -31,6 +31,7 @@ public enum QuantitativeMetricType
     Reduce = 4
 }
 
+#pragma warning disable CA1720
 public enum MetricUnit
 {
     Integer = 0,
@@ -39,3 +40,4 @@ public enum MetricUnit
     Hours = 3,
     Points = 4
 }
+#pragma warning restore CA1720

@@ -1,15 +1,11 @@
 using Bud.Server.Data;
-using Bud.Server.MultiTenancy;
 using Bud.Shared.Contracts;
 using Bud.Shared.Models;
 using Microsoft.EntityFrameworkCore;
 
 namespace Bud.Server.Services;
 
-public sealed class TeamService(
-    ApplicationDbContext dbContext,
-    ITenantProvider tenantProvider,
-    IOrganizationAuthorizationService orgAuth) : ITeamService
+public sealed class TeamService(ApplicationDbContext dbContext) : ITeamService
 {
     public async Task<ServiceResult<Team>> CreateAsync(CreateTeamRequest request, CancellationToken cancellationToken = default)
     {
@@ -20,12 +16,6 @@ public sealed class TeamService(
         if (workspace is null)
         {
             return ServiceResult<Team>.NotFound("Workspace não encontrado.");
-        }
-
-        var authResult = await orgAuth.RequireOrgOwnerAsync(workspace.OrganizationId, cancellationToken);
-        if (!authResult.IsSuccess)
-        {
-            return ServiceResult<Team>.Forbidden(authResult.Error ?? "Apenas o proprietário da organização pode criar times.");
         }
 
         if (request.ParentTeamId.HasValue)

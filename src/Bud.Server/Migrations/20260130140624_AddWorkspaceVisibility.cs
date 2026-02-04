@@ -2,8 +2,7 @@
 
 #nullable disable
 
-namespace Bud.Server.Migrations
-{
+namespace Bud.Server.Migrations;
     /// <inheritdoc />
     public partial class AddWorkspaceVisibility : Migration
     {
@@ -26,4 +25,3 @@ namespace Bud.Server.Migrations
                 table: "Workspaces");
         }
     }
-}

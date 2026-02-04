@@ -9,8 +9,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
 #nullable disable
 
-namespace Bud.Server.Migrations
-{
+namespace Bud.Server.Migrations;
     [DbContext(typeof(ApplicationDbContext))]
     [Migration("20260203184947_AddLeaderAndUniqueEmailToCollaborator")]
     partial class AddLeaderAndUniqueEmailToCollaborator
@@ -384,4 +383,3 @@ namespace Bud.Server.Migrations
 #pragma warning restore 612, 618
         }
     }
-}

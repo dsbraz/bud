@@ -2,8 +2,7 @@
 
 #nullable disable
 
-namespace Bud.Server.Migrations
-{
+namespace Bud.Server.Migrations;
     /// <inheritdoc />
     public partial class UpdateMissionMetricFields : Migration
     {
@@ -45,4 +44,3 @@ namespace Bud.Server.Migrations
                 newName: "TargetValue");
         }
     }
-}

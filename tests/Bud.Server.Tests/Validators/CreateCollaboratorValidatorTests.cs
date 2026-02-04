@@ -141,7 +141,7 @@ public class CreateCollaboratorValidatorTests : IDisposable
 
         // Assert
         result.IsValid.Should().BeFalse();
-        result.Errors.Should().Contain(e => e.PropertyName == "Email" && e.ErrorMessage.Contains("valid email"));
+        result.Errors.Should().Contain(e => e.PropertyName == "Email" && e.ErrorMessage.Contains("E-mail deve ser válido"));
     }
 
     [Fact]
@@ -171,7 +171,7 @@ public class CreateCollaboratorValidatorTests : IDisposable
 
         // Assert
         result.IsValid.Should().BeFalse();
-        result.Errors.Should().Contain(e => e.PropertyName == "Email" && e.ErrorMessage.Contains("already in use"));
+        result.Errors.Should().Contain(e => e.PropertyName == "Email" && e.ErrorMessage.Contains("E-mail já está em uso"));
     }
 
     [Fact]

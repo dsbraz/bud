@@ -18,13 +18,7 @@ public sealed class OrganizationService(
 
     public async Task<ServiceResult<Organization>> CreateAsync(CreateOrganizationRequest request, CancellationToken cancellationToken = default)
     {
-        // 1. Global Admin Authorization Check
-        if (!tenantProvider.IsGlobalAdmin)
-        {
-            return ServiceResult<Organization>.Forbidden("Apenas administradores globais podem criar organizações.");
-        }
-
-        // 2. Validate Owner Exists
+        // 1. Validate Owner Exists
         var owner = await dbContext.Collaborators
             .FirstOrDefaultAsync(c => c.Id == request.OwnerId, cancellationToken);
 
@@ -35,7 +29,7 @@ public sealed class OrganizationService(
                 ServiceErrorType.NotFound);
         }
 
-        // 3. Validate Owner is Leader
+        // 2. Validate Owner is Leader
         if (owner.Role != CollaboratorRole.Leader)
         {
             return ServiceResult<Organization>.Failure(
@@ -43,7 +37,7 @@ public sealed class OrganizationService(
                 ServiceErrorType.Validation);
         }
 
-        // 4. Create Organization
+        // 3. Create Organization
         var organization = new Organization
         {
             Id = Guid.NewGuid(),
@@ -64,12 +58,6 @@ public sealed class OrganizationService(
 
     public async Task<ServiceResult<Organization>> UpdateAsync(Guid id, UpdateOrganizationRequest request, CancellationToken cancellationToken = default)
     {
-        // Authorization: Only global admin can update organizations
-        if (!tenantProvider.IsGlobalAdmin)
-        {
-            return ServiceResult<Organization>.Forbidden("Apenas administradores globais podem alterar organizações.");
-        }
-
         var organization = await dbContext.Organizations
             .Include(o => o.Owner)
             .FirstOrDefaultAsync(o => o.Id == id, cancellationToken);
@@ -128,12 +116,6 @@ public sealed class OrganizationService(
 
     public async Task<ServiceResult> DeleteAsync(Guid id, CancellationToken cancellationToken = default)
     {
-        // Authorization: Only global admin can delete organizations
-        if (!tenantProvider.IsGlobalAdmin)
-        {
-            return ServiceResult.Forbidden("Apenas administradores globais podem excluir organizações.");
-        }
-
         var organization = await dbContext.Organizations.FindAsync([id], cancellationToken);
 
         if (organization is null)

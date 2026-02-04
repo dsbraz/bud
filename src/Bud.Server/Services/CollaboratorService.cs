@@ -8,8 +8,7 @@ namespace Bud.Server.Services;
 
 public sealed class CollaboratorService(
     ApplicationDbContext dbContext,
-    ITenantProvider tenantProvider,
-    IOrganizationAuthorizationService orgAuth) : ICollaboratorService
+    ITenantProvider tenantProvider) : ICollaboratorService
 {
     public async Task<ServiceResult<Collaborator>> CreateAsync(CreateCollaboratorRequest request, CancellationToken cancellationToken = default)
     {
@@ -21,13 +20,6 @@ public sealed class CollaboratorService(
             return ServiceResult<Collaborator>.Failure(
                 "Contexto de organização não encontrado.",
                 ServiceErrorType.Validation);
-        }
-
-        // Verificação de permissão
-        var authResult = await orgAuth.RequireOrgOwnerAsync(organizationId.Value, cancellationToken);
-        if (!authResult.IsSuccess)
-        {
-            return ServiceResult<Collaborator>.Forbidden(authResult.Error ?? "Apenas o proprietário da organização pode criar colaboradores.");
         }
 
         // Criar colaborador SEM team
@@ -55,16 +47,6 @@ public sealed class CollaboratorService(
         if (collaborator is null)
         {
             return ServiceResult<Collaborator>.NotFound("Colaborador não encontrado.");
-        }
-
-        // Verificar permissão usando o mesmo padrão de CreateAsync
-        var organizationId = collaborator.OrganizationId;
-        var authResult = await orgAuth.RequireOrgOwnerAsync(organizationId, cancellationToken);
-        if (!authResult.IsSuccess)
-        {
-            return ServiceResult<Collaborator>.Forbidden(
-                authResult.Error ?? "Apenas o proprietário da organização pode editar colaboradores."
-            );
         }
 
         var normalizedEmail = request.Email.Trim().ToLowerInvariant();
@@ -148,16 +130,6 @@ public sealed class CollaboratorService(
             return ServiceResult.NotFound("Colaborador não encontrado.");
         }
 
-        // Verificar permissão usando o mesmo padrão de CreateAsync
-        var organizationId = collaborator.OrganizationId;
-        var authResult = await orgAuth.RequireOrgOwnerAsync(organizationId, cancellationToken);
-        if (!authResult.IsSuccess)
-        {
-            return ServiceResult.Forbidden(
-                authResult.Error ?? "Apenas o proprietário da organização pode excluir colaboradores."
-            );
-        }
-
         // Validação 1: Verificar se é owner de alguma organização
         var isOrgOwner = await dbContext.Organizations
             .AnyAsync(o => o.OwnerId == id, cancellationToken);
@@ -239,7 +211,7 @@ public sealed class CollaboratorService(
     {
         var query = dbContext.Collaborators
             .Include(c => c.Organization)
-            .Include(c => c.Team)
+            .Include(c => c.Team!)
                 .ThenInclude(t => t.Workspace)
             .Where(c => c.Role == CollaboratorRole.Leader);
 

@@ -108,7 +108,7 @@ public class CreateMissionValidatorTests
         result.IsValid.Should().BeFalse();
         result.Errors.Should().ContainSingle(e =>
             e.PropertyName == "EndDate" &&
-            e.ErrorMessage.Contains("StartDate"));
+            e.ErrorMessage.Contains("data de início"));
     }
 
     [Fact]

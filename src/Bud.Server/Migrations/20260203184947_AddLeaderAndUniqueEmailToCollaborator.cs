@@ -3,8 +3,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
 
-namespace Bud.Server.Migrations
-{
+namespace Bud.Server.Migrations;
     /// <inheritdoc />
     public partial class AddLeaderAndUniqueEmailToCollaborator : Migration
     {
@@ -57,4 +56,3 @@ namespace Bud.Server.Migrations
                 table: "Collaborators");
         }
     }
-}

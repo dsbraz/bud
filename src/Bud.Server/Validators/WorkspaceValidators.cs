@@ -8,15 +8,15 @@ public sealed class CreateWorkspaceValidator : AbstractValidator<CreateWorkspace
     public CreateWorkspaceValidator()
     {
         RuleFor(x => x.Name)
-            .NotEmpty().WithMessage("Name is required.")
-            .MaximumLength(200).WithMessage("Name must not exceed 200 characters.");
+            .NotEmpty().WithMessage("Nome é obrigatório.")
+            .MaximumLength(200).WithMessage("Nome deve ter no máximo 200 caracteres.");
 
         RuleFor(x => x.OrganizationId)
-            .NotEmpty().WithMessage("OrganizationId is required.");
+            .NotEmpty().WithMessage("Organização é obrigatória.");
 
         RuleFor(x => x.Visibility)
-            .NotNull().WithMessage("Visibility is required.")
-            .IsInEnum().WithMessage("Visibility must be a valid value (Public or Private).");
+            .NotNull().WithMessage("Visibilidade é obrigatória.")
+            .IsInEnum().WithMessage("Visibilidade deve ser um valor válido (Pública ou Privada).");
     }
 }
 
@@ -25,10 +25,10 @@ public sealed class UpdateWorkspaceValidator : AbstractValidator<UpdateWorkspace
     public UpdateWorkspaceValidator()
     {
         RuleFor(x => x.Name)
-            .NotEmpty().WithMessage("Name is required.")
-            .MaximumLength(200).WithMessage("Name must not exceed 200 characters.");
+            .NotEmpty().WithMessage("Nome é obrigatório.")
+            .MaximumLength(200).WithMessage("Nome deve ter no máximo 200 caracteres.");
 
         RuleFor(x => x.Visibility)
-            .IsInEnum().WithMessage("Visibility must be a valid value (Public or Private).");
+            .IsInEnum().WithMessage("Visibilidade deve ser um valor válido (Pública ou Privada).");
     }
 }

@@ -11,7 +11,7 @@ public sealed class GlobalExceptionHandler(ILogger<GlobalExceptionHandler> logge
         Exception exception,
         CancellationToken cancellationToken)
     {
-        logger.LogError(exception, "An unhandled exception occurred: {Message}", exception.Message);
+        logger.LogError(exception, "Ocorreu uma exceção não tratada: {Message}", exception.Message);
 
         var problemDetails = exception switch
         {
@@ -32,8 +32,8 @@ public sealed class GlobalExceptionHandler(ILogger<GlobalExceptionHandler> logge
         return new ProblemDetails
         {
             Status = StatusCodes.Status500InternalServerError,
-            Title = "An unexpected error occurred",
-            Detail = "An internal server error has occurred. Please try again later.",
+            Title = "Ocorreu um erro inesperado",
+            Detail = "Ocorreu um erro interno. Tente novamente mais tarde.",
             Instance = httpContext.Request.Path
         };
     }
@@ -50,8 +50,8 @@ public sealed class GlobalExceptionHandler(ILogger<GlobalExceptionHandler> logge
         return new ValidationProblemDetails(errors)
         {
             Status = StatusCodes.Status400BadRequest,
-            Title = "Validation failed",
-            Detail = "One or more validation errors occurred.",
+            Title = "Falha de validação",
+            Detail = "Um ou mais erros de validação ocorreram.",
             Instance = httpContext.Request.Path
         };
     }

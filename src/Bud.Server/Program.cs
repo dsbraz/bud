@@ -1,3 +1,6 @@
+using Bud.Server.Authorization;
+using Bud.Server.Authorization.Handlers;
+using Bud.Server.Authorization.Requirements;
 using Bud.Server.Data;
 using Bud.Server.Middleware;
 using Bud.Server.MultiTenancy;
@@ -5,6 +8,7 @@ using Bud.Server.Services;
 using Bud.Server.Settings;
 using Bud.Server.Validators;
 using FluentValidation;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
@@ -51,7 +55,34 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
         };
     });
 
-builder.Services.AddAuthorization();
+builder.Services.AddAuthorization(options =>
+{
+    options.AddPolicy(AuthorizationPolicies.TenantSelected, policy =>
+    {
+        policy.RequireAuthenticatedUser();
+        policy.AddRequirements(new TenantSelectedRequirement());
+    });
+    options.AddPolicy(AuthorizationPolicies.GlobalAdmin, policy =>
+    {
+        policy.RequireAuthenticatedUser();
+        policy.AddRequirements(new GlobalAdminRequirement());
+    });
+    options.AddPolicy(AuthorizationPolicies.TenantOrganizationMatch, policy =>
+    {
+        policy.RequireAuthenticatedUser();
+        policy.AddRequirements(new TenantOrganizationMatchRequirement());
+    });
+    options.AddPolicy(AuthorizationPolicies.OrganizationOwner, policy =>
+    {
+        policy.RequireAuthenticatedUser();
+        policy.AddRequirements(new OrganizationOwnerRequirement());
+    });
+    options.AddPolicy(AuthorizationPolicies.OrganizationWrite, policy =>
+    {
+        policy.RequireAuthenticatedUser();
+        policy.AddRequirements(new OrganizationWriteRequirement());
+    });
+});
 
 // Add Multi-Tenancy
 builder.Services.AddHttpContextAccessor();
@@ -88,6 +119,11 @@ builder.Services.AddScoped<IMissionMetricService, MissionMetricService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<ITenantAuthorizationService, TenantAuthorizationService>();
 builder.Services.AddScoped<IOrganizationAuthorizationService, OrganizationAuthorizationService>();
+builder.Services.AddScoped<IAuthorizationHandler, TenantSelectedHandler>();
+builder.Services.AddScoped<IAuthorizationHandler, GlobalAdminHandler>();
+builder.Services.AddScoped<IAuthorizationHandler, TenantOrganizationMatchHandler>();
+builder.Services.AddScoped<IAuthorizationHandler, OrganizationOwnerHandler>();
+builder.Services.AddScoped<IAuthorizationHandler, OrganizationWriteHandler>();
 
 // Add Health Checks
 builder.Services.AddHealthChecks()

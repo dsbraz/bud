@@ -13,7 +13,7 @@
 
     <!-- Build settings -->
     <GenerateDocumentationFile>false</GenerateDocumentationFile>
-    <NoWarn>$(NoWarn);1591;CA1716</NoWarn>
+    <NoWarn>$(NoWarn);1591;CA1716;MSB3026</NoWarn>
   </PropertyGroup>
 
   <ItemGroup>

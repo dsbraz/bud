@@ -9,8 +9,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
 #nullable disable
 
-namespace Bud.Server.Migrations
-{
+namespace Bud.Server.Migrations;
     [DbContext(typeof(ApplicationDbContext))]
     [Migration("20260130030653_AddMultiTenancy")]
     partial class AddMultiTenancy
@@ -357,4 +356,3 @@ namespace Bud.Server.Migrations
 #pragma warning restore 612, 618
         }
     }
-}

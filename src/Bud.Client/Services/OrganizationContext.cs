@@ -37,7 +37,7 @@ public sealed class OrganizationContext(IJSRuntime jsRuntime)
             }
 
             // Default to first organization if available
-            if (_availableOrganizations.Any())
+            if (_availableOrganizations.Count > 0)
             {
                 _selectedOrganizationId = _availableOrganizations.First().Id;
             }

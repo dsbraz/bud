@@ -102,6 +102,47 @@ public class MissionsEndpointsTests : IClassFixture<CustomWebApplicationFactory>
     }
 
     [Fact]
+    public async Task Create_WithTenantMismatch_ReturnsForbidden()
+    {
+        // Arrange: create two organizations
+        var leaderId = await GetOrCreateAdminLeader();
+        var org1Response = await _client.PostAsJsonAsync("/api/organizations",
+            new CreateOrganizationRequest
+            {
+                Name = "org-1.com",
+                OwnerId = leaderId
+            });
+        var org1 = await org1Response.Content.ReadFromJsonAsync<Organization>();
+
+        var org2Response = await _client.PostAsJsonAsync("/api/organizations",
+            new CreateOrganizationRequest
+            {
+                Name = "org-2.com",
+                OwnerId = leaderId
+            });
+        var org2 = await org2Response.Content.ReadFromJsonAsync<Organization>();
+
+        var collaborator = await CreateNonOwnerCollaborator(org1!.Id);
+        var tenantClient = _factory.CreateTenantClient(org1.Id, collaborator.Email, collaborator.Id);
+
+        var request = new CreateMissionRequest
+        {
+            Name = "Mission Forbidden",
+            StartDate = DateTime.UtcNow,
+            EndDate = DateTime.UtcNow.AddDays(7),
+            Status = MissionStatus.Planned,
+            ScopeType = MissionScopeType.Organization,
+            ScopeId = org2!.Id
+        };
+
+        // Act
+        var response = await tenantClient.PostAsJsonAsync("/api/missions", request);
+
+        // Assert
+        response.StatusCode.Should().Be(HttpStatusCode.Forbidden);
+    }
+
+    [Fact]
     public async Task Create_WithInvalidScopeId_ReturnsNotFound()
     {
         // Arrange
@@ -153,6 +194,26 @@ public class MissionsEndpointsTests : IClassFixture<CustomWebApplicationFactory>
     }
 
     #endregion
+
+    private async Task<Collaborator> CreateNonOwnerCollaborator(Guid organizationId)
+    {
+        using var scope = _factory.Services.CreateScope();
+        var dbContext = scope.ServiceProvider.GetRequiredService<Bud.Server.Data.ApplicationDbContext>();
+
+        var collaborator = new Collaborator
+        {
+            Id = Guid.NewGuid(),
+            FullName = "Colaborador Teste",
+            Email = $"colaborador-{Guid.NewGuid():N}@test.com",
+            Role = CollaboratorRole.IndividualContributor,
+            OrganizationId = organizationId
+        };
+
+        dbContext.Collaborators.Add(collaborator);
+        await dbContext.SaveChangesAsync();
+
+        return collaborator;
+    }
 
     #region GetById Tests
 
@@ -440,6 +501,19 @@ public class MissionsEndpointsTests : IClassFixture<CustomWebApplicationFactory>
         // Verify it's deleted
         var getResponse = await _client.GetAsync($"/api/missions/{created.Id}");
         getResponse.StatusCode.Should().Be(HttpStatusCode.NotFound);
+    }
+
+    [Fact]
+    public async Task GetAll_WithoutAuthentication_ReturnsUnauthorized()
+    {
+        // Arrange
+        var unauthenticatedClient = _factory.CreateClient();
+
+        // Act
+        var response = await unauthenticatedClient.GetAsync("/api/missions");
+
+        // Assert
+        response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
     }
 
     #endregion

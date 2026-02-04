@@ -23,7 +23,10 @@ public sealed class TenantSaveChangesInterceptor(ITenantProvider tenantProvider)
 
     private void SetTenantId(DbContext? context)
     {
-        if (context is null || tenantProvider.TenantId is null) return;
+        if (context is null || tenantProvider.TenantId is null)
+        {
+            return;
+        }
 
         foreach (var entry in context.ChangeTracker.Entries<ITenantEntity>()
             .Where(e => e.State == EntityState.Added))

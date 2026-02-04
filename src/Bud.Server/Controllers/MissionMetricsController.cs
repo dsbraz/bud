@@ -1,15 +1,23 @@
+using Bud.Server.Authorization;
+using Bud.Server.Authorization.ResourceScopes;
+using Bud.Server.Data;
 using Bud.Server.Services;
 using Bud.Shared.Contracts;
 using Bud.Shared.Models;
 using FluentValidation;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 
 namespace Bud.Server.Controllers;
 
 [ApiController]
+[Authorize(Policy = AuthorizationPolicies.TenantSelected)]
 [Route("api/mission-metrics")]
 public sealed class MissionMetricsController(
     IMissionMetricService metricService,
+    ApplicationDbContext dbContext,
+    IAuthorizationService authorizationService,
     IValidator<CreateMissionMetricRequest> createValidator,
     IValidator<UpdateMissionMetricRequest> updateValidator) : ControllerBase
 {
@@ -17,6 +25,7 @@ public sealed class MissionMetricsController(
     [ProducesResponseType(typeof(MissionMetric), StatusCodes.Status201Created)]
     [ProducesResponseType(typeof(ValidationProblemDetails), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status403Forbidden)]
     public async Task<ActionResult<MissionMetric>> Create(CreateMissionMetricRequest request, CancellationToken cancellationToken)
     {
         var validationResult = await createValidator.ValidateAsync(request, cancellationToken);
@@ -24,6 +33,30 @@ public sealed class MissionMetricsController(
         {
             return ValidationProblem(new ValidationProblemDetails(
                 validationResult.ToDictionary()));
+        }
+
+        var mission = await dbContext.Missions
+            .IgnoreQueryFilters()
+            .AsNoTracking()
+            .FirstOrDefaultAsync(m => m.Id == request.MissionId, cancellationToken);
+
+        if (mission is null)
+        {
+            return NotFound(new ProblemDetails { Detail = "Missão não encontrada." });
+        }
+
+        var authResult = await authorizationService.AuthorizeAsync(
+            User,
+            new OrganizationResource(mission.OrganizationId),
+            AuthorizationPolicies.TenantOrganizationMatch);
+
+        if (!authResult.Succeeded)
+        {
+            return StatusCode(StatusCodes.Status403Forbidden, new ProblemDetails
+            {
+                Title = "Acesso negado",
+                Detail = "Você não tem permissão para criar métricas nesta missão."
+            });
         }
 
         var result = await metricService.CreateAsync(request, cancellationToken);
@@ -42,6 +75,7 @@ public sealed class MissionMetricsController(
     [ProducesResponseType(typeof(MissionMetric), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
     [ProducesResponseType(typeof(ValidationProblemDetails), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status403Forbidden)]
     public async Task<ActionResult<MissionMetric>> Update(Guid id, UpdateMissionMetricRequest request, CancellationToken cancellationToken)
     {
         var validationResult = await updateValidator.ValidateAsync(request, cancellationToken);
@@ -49,6 +83,30 @@ public sealed class MissionMetricsController(
         {
             return ValidationProblem(new ValidationProblemDetails(
                 validationResult.ToDictionary()));
+        }
+
+        var metric = await dbContext.MissionMetrics
+            .IgnoreQueryFilters()
+            .AsNoTracking()
+            .FirstOrDefaultAsync(m => m.Id == id, cancellationToken);
+
+        if (metric is null)
+        {
+            return NotFound(new ProblemDetails { Detail = "Métrica da missão não encontrada." });
+        }
+
+        var authResult = await authorizationService.AuthorizeAsync(
+            User,
+            new OrganizationResource(metric.OrganizationId),
+            AuthorizationPolicies.TenantOrganizationMatch);
+
+        if (!authResult.Succeeded)
+        {
+            return StatusCode(StatusCodes.Status403Forbidden, new ProblemDetails
+            {
+                Title = "Acesso negado",
+                Detail = "Você não tem permissão para atualizar métricas nesta missão."
+            });
         }
 
         var result = await metricService.UpdateAsync(id, request, cancellationToken);
@@ -66,8 +124,33 @@ public sealed class MissionMetricsController(
     [HttpDelete("{id:guid}")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status403Forbidden)]
     public async Task<IActionResult> Delete(Guid id, CancellationToken cancellationToken)
     {
+        var metric = await dbContext.MissionMetrics
+            .IgnoreQueryFilters()
+            .AsNoTracking()
+            .FirstOrDefaultAsync(m => m.Id == id, cancellationToken);
+
+        if (metric is null)
+        {
+            return NotFound(new ProblemDetails { Detail = "Métrica da missão não encontrada." });
+        }
+
+        var authResult = await authorizationService.AuthorizeAsync(
+            User,
+            new OrganizationResource(metric.OrganizationId),
+            AuthorizationPolicies.TenantOrganizationMatch);
+
+        if (!authResult.Succeeded)
+        {
+            return StatusCode(StatusCodes.Status403Forbidden, new ProblemDetails
+            {
+                Title = "Acesso negado",
+                Detail = "Você não tem permissão para excluir métricas nesta missão."
+            });
+        }
+
         var result = await metricService.DeleteAsync(id, cancellationToken);
 
         if (result.IsFailure)

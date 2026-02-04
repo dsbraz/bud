@@ -3,8 +3,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
 
-namespace Bud.Server.Migrations
-{
+namespace Bud.Server.Migrations;
     /// <inheritdoc />
     public partial class AddMultiTenancy : Migration
     {
@@ -130,4 +129,3 @@ namespace Bud.Server.Migrations
                 oldType: "uuid");
         }
     }
-}

@@ -1,15 +1,23 @@
+using Bud.Server.Authorization;
+using Bud.Server.Authorization.ResourceScopes;
+using Bud.Server.Data;
 using Bud.Server.Services;
 using Bud.Shared.Contracts;
 using Bud.Shared.Models;
 using FluentValidation;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 
 namespace Bud.Server.Controllers;
 
 [ApiController]
+[Authorize(Policy = AuthorizationPolicies.TenantSelected)]
 [Route("api/workspaces")]
 public sealed class WorkspacesController(
     IWorkspaceService workspaceService,
+    ApplicationDbContext dbContext,
+    IAuthorizationService authorizationService,
     IValidator<CreateWorkspaceRequest> createValidator,
     IValidator<UpdateWorkspaceRequest> updateValidator) : ControllerBase
 {
@@ -25,6 +33,20 @@ public sealed class WorkspacesController(
         {
             return ValidationProblem(new ValidationProblemDetails(
                 validationResult.ToDictionary()));
+        }
+
+        var authResult = await authorizationService.AuthorizeAsync(
+            User,
+            new OrganizationResource(request.OrganizationId),
+            AuthorizationPolicies.OrganizationOwner);
+
+        if (!authResult.Succeeded)
+        {
+            return StatusCode(StatusCodes.Status403Forbidden, new ProblemDetails
+            {
+                Title = "Acesso negado",
+                Detail = "Apenas o proprietário da organização pode criar workspaces."
+            });
         }
 
         var result = await workspaceService.CreateAsync(request, cancellationToken);
@@ -57,6 +79,29 @@ public sealed class WorkspacesController(
                 validationResult.ToDictionary()));
         }
 
+        var workspace = await dbContext.Workspaces
+            .AsNoTracking()
+            .FirstOrDefaultAsync(w => w.Id == id, cancellationToken);
+
+        if (workspace is null)
+        {
+            return NotFound(new ProblemDetails { Detail = "Workspace não encontrado." });
+        }
+
+        var authResult = await authorizationService.AuthorizeAsync(
+            User,
+            new OrganizationResource(workspace.OrganizationId),
+            AuthorizationPolicies.OrganizationWrite);
+
+        if (!authResult.Succeeded)
+        {
+            return StatusCode(StatusCodes.Status403Forbidden, new ProblemDetails
+            {
+                Title = "Acesso negado",
+                Detail = "Você não tem permissão para atualizar este workspace."
+            });
+        }
+
         var result = await workspaceService.UpdateAsync(id, request, cancellationToken);
 
         if (result.IsFailure)
@@ -79,6 +124,29 @@ public sealed class WorkspacesController(
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status403Forbidden)]
     public async Task<IActionResult> Delete(Guid id, CancellationToken cancellationToken)
     {
+        var workspace = await dbContext.Workspaces
+            .AsNoTracking()
+            .FirstOrDefaultAsync(w => w.Id == id, cancellationToken);
+
+        if (workspace is null)
+        {
+            return NotFound(new ProblemDetails { Detail = "Workspace não encontrado." });
+        }
+
+        var authResult = await authorizationService.AuthorizeAsync(
+            User,
+            new OrganizationResource(workspace.OrganizationId),
+            AuthorizationPolicies.OrganizationWrite);
+
+        if (!authResult.Succeeded)
+        {
+            return StatusCode(StatusCodes.Status403Forbidden, new ProblemDetails
+            {
+                Title = "Acesso negado",
+                Detail = "Você não tem permissão para excluir este workspace."
+            });
+        }
+
         var result = await workspaceService.DeleteAsync(id, cancellationToken);
 
         if (result.IsFailure)

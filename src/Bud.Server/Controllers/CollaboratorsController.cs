@@ -1,15 +1,25 @@
+using Bud.Server.Authorization;
+using Bud.Server.Authorization.ResourceScopes;
+using Bud.Server.Data;
+using Bud.Server.MultiTenancy;
 using Bud.Server.Services;
 using Bud.Shared.Contracts;
 using Bud.Shared.Models;
 using FluentValidation;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 
 namespace Bud.Server.Controllers;
 
 [ApiController]
+[Authorize(Policy = AuthorizationPolicies.TenantSelected)]
 [Route("api/collaborators")]
 public sealed class CollaboratorsController(
     ICollaboratorService collaboratorService,
+    ApplicationDbContext dbContext,
+    IAuthorizationService authorizationService,
+    ITenantProvider tenantProvider,
     IValidator<CreateCollaboratorRequest> createValidator,
     IValidator<UpdateCollaboratorRequest> updateValidator) : ControllerBase
 {
@@ -25,6 +35,23 @@ public sealed class CollaboratorsController(
         {
             return ValidationProblem(new ValidationProblemDetails(
                 validationResult.ToDictionary()));
+        }
+
+        if (tenantProvider.TenantId.HasValue)
+        {
+            var authResult = await authorizationService.AuthorizeAsync(
+                User,
+                new OrganizationResource(tenantProvider.TenantId.Value),
+                AuthorizationPolicies.OrganizationOwner);
+
+            if (!authResult.Succeeded)
+            {
+                return StatusCode(StatusCodes.Status403Forbidden, new ProblemDetails
+                {
+                    Title = "Acesso negado",
+                    Detail = "Apenas o proprietário da organização pode criar colaboradores."
+                });
+            }
         }
 
         var result = await collaboratorService.CreateAsync(request, cancellationToken);
@@ -57,6 +84,29 @@ public sealed class CollaboratorsController(
                 validationResult.ToDictionary()));
         }
 
+        var collaborator = await dbContext.Collaborators
+            .AsNoTracking()
+            .FirstOrDefaultAsync(c => c.Id == id, cancellationToken);
+
+        if (collaborator is null)
+        {
+            return NotFound(new ProblemDetails { Detail = "Colaborador não encontrado." });
+        }
+
+        var authResult = await authorizationService.AuthorizeAsync(
+            User,
+            new OrganizationResource(collaborator.OrganizationId),
+            AuthorizationPolicies.OrganizationOwner);
+
+        if (!authResult.Succeeded)
+        {
+            return StatusCode(StatusCodes.Status403Forbidden, new ProblemDetails
+            {
+                Title = "Acesso negado",
+                Detail = "Apenas o proprietário da organização pode editar colaboradores."
+            });
+        }
+
         var result = await collaboratorService.UpdateAsync(id, request, cancellationToken);
 
         if (result.IsFailure)
@@ -80,6 +130,29 @@ public sealed class CollaboratorsController(
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status409Conflict)]
     public async Task<IActionResult> Delete(Guid id, CancellationToken cancellationToken)
     {
+        var collaborator = await dbContext.Collaborators
+            .AsNoTracking()
+            .FirstOrDefaultAsync(c => c.Id == id, cancellationToken);
+
+        if (collaborator is null)
+        {
+            return NotFound(new ProblemDetails { Detail = "Colaborador não encontrado." });
+        }
+
+        var authResult = await authorizationService.AuthorizeAsync(
+            User,
+            new OrganizationResource(collaborator.OrganizationId),
+            AuthorizationPolicies.OrganizationOwner);
+
+        if (!authResult.Succeeded)
+        {
+            return StatusCode(StatusCodes.Status403Forbidden, new ProblemDetails
+            {
+                Title = "Acesso negado",
+                Detail = "Apenas o proprietário da organização pode excluir colaboradores."
+            });
+        }
+
         var result = await collaboratorService.DeleteAsync(id, cancellationToken);
 
         if (result.IsFailure)

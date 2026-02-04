@@ -9,8 +9,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
 #nullable disable
 
-namespace Bud.Server.Migrations
-{
+namespace Bud.Server.Migrations;
     [DbContext(typeof(ApplicationDbContext))]
     [Migration("20260127184931_AddMissions")]
     partial class AddMissions
@@ -299,4 +298,3 @@ namespace Bud.Server.Migrations
 #pragma warning restore 612, 618
         }
     }
-}

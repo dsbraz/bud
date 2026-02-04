@@ -388,5 +388,89 @@ public class MissionMetricsEndpointsTests : IClassFixture<CustomWebApplicationFa
         result.Items.Should().OnlyContain(m => m.MissionId == mission1.Id);
     }
 
+    [Fact]
+    public async Task Create_WithTenantMismatch_ReturnsForbidden()
+    {
+        // Arrange
+        var leaderId = await GetOrCreateAdminLeader();
+        var org1Response = await _client.PostAsJsonAsync("/api/organizations",
+            new CreateOrganizationRequest
+            {
+                Name = "metric-org-1.com",
+                OwnerId = leaderId
+            });
+        var org1 = await org1Response.Content.ReadFromJsonAsync<Organization>();
+
+        var org2Response = await _client.PostAsJsonAsync("/api/organizations",
+            new CreateOrganizationRequest
+            {
+                Name = "metric-org-2.com",
+                OwnerId = leaderId
+            });
+        var org2 = await org2Response.Content.ReadFromJsonAsync<Organization>();
+
+        var missionResponse = await _client.PostAsJsonAsync("/api/missions",
+            new CreateMissionRequest
+            {
+                Name = "Mission Org 2",
+                StartDate = DateTime.UtcNow,
+                EndDate = DateTime.UtcNow.AddDays(7),
+                Status = MissionStatus.Planned,
+                ScopeType = MissionScopeType.Organization,
+                ScopeId = org2!.Id
+            });
+        var mission = await missionResponse.Content.ReadFromJsonAsync<Mission>();
+
+        var collaborator = await CreateNonOwnerCollaborator(org1!.Id);
+        var tenantClient = _factory.CreateTenantClient(org1.Id, collaborator.Email, collaborator.Id);
+
+        var request = new CreateMissionMetricRequest
+        {
+            MissionId = mission!.Id,
+            Name = "Metric Forbidden",
+            Type = MetricType.Qualitative,
+            TargetText = "Teste"
+        };
+
+        // Act
+        var response = await tenantClient.PostAsJsonAsync("/api/mission-metrics", request);
+
+        // Assert
+        response.StatusCode.Should().Be(HttpStatusCode.Forbidden);
+    }
+
+    [Fact]
+    public async Task GetAll_WithoutAuthentication_ReturnsUnauthorized()
+    {
+        // Arrange
+        var unauthenticatedClient = _factory.CreateClient();
+
+        // Act
+        var response = await unauthenticatedClient.GetAsync("/api/mission-metrics");
+
+        // Assert
+        response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
+    }
+
     #endregion
+
+    private async Task<Collaborator> CreateNonOwnerCollaborator(Guid organizationId)
+    {
+        using var scope = _factory.Services.CreateScope();
+        var dbContext = scope.ServiceProvider.GetRequiredService<Bud.Server.Data.ApplicationDbContext>();
+
+        var collaborator = new Collaborator
+        {
+            Id = Guid.NewGuid(),
+            FullName = "Colaborador Teste",
+            Email = $"colaborador-{Guid.NewGuid():N}@test.com",
+            Role = CollaboratorRole.IndividualContributor,
+            OrganizationId = organizationId
+        };
+
+        dbContext.Collaborators.Add(collaborator);
+        await dbContext.SaveChangesAsync();
+
+        return collaborator;
+    }
 }

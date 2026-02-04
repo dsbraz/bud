@@ -1,15 +1,23 @@
+using Bud.Server.Authorization;
+using Bud.Server.Authorization.ResourceScopes;
+using Bud.Server.Data;
 using Bud.Server.Services;
 using Bud.Shared.Contracts;
 using Bud.Shared.Models;
 using FluentValidation;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 
 namespace Bud.Server.Controllers;
 
 [ApiController]
+[Authorize(Policy = AuthorizationPolicies.TenantSelected)]
 [Route("api/teams")]
 public sealed class TeamsController(
     ITeamService teamService,
+    ApplicationDbContext dbContext,
+    IAuthorizationService authorizationService,
     IValidator<CreateTeamRequest> createValidator,
     IValidator<UpdateTeamRequest> updateValidator) : ControllerBase
 {
@@ -25,6 +33,29 @@ public sealed class TeamsController(
         {
             return ValidationProblem(new ValidationProblemDetails(
                 validationResult.ToDictionary()));
+        }
+
+        var workspace = await dbContext.Workspaces
+            .AsNoTracking()
+            .FirstOrDefaultAsync(w => w.Id == request.WorkspaceId, cancellationToken);
+
+        if (workspace is null)
+        {
+            return NotFound(new ProblemDetails { Detail = "Workspace não encontrado." });
+        }
+
+        var authResult = await authorizationService.AuthorizeAsync(
+            User,
+            new OrganizationResource(workspace.OrganizationId),
+            AuthorizationPolicies.OrganizationOwner);
+
+        if (!authResult.Succeeded)
+        {
+            return StatusCode(StatusCodes.Status403Forbidden, new ProblemDetails
+            {
+                Title = "Acesso negado",
+                Detail = "Apenas o proprietário da organização pode criar times."
+            });
         }
 
         var result = await teamService.CreateAsync(request, cancellationToken);
@@ -47,6 +78,7 @@ public sealed class TeamsController(
     [ProducesResponseType(typeof(Team), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
     [ProducesResponseType(typeof(ValidationProblemDetails), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status403Forbidden)]
     public async Task<ActionResult<Team>> Update(Guid id, UpdateTeamRequest request, CancellationToken cancellationToken)
     {
         var validationResult = await updateValidator.ValidateAsync(request, cancellationToken);
@@ -56,13 +88,40 @@ public sealed class TeamsController(
                 validationResult.ToDictionary()));
         }
 
+        var team = await dbContext.Teams
+            .AsNoTracking()
+            .FirstOrDefaultAsync(t => t.Id == id, cancellationToken);
+
+        if (team is null)
+        {
+            return NotFound(new ProblemDetails { Detail = "Time não encontrado." });
+        }
+
+        var authResult = await authorizationService.AuthorizeAsync(
+            User,
+            new OrganizationResource(team.OrganizationId),
+            AuthorizationPolicies.OrganizationWrite);
+
+        if (!authResult.Succeeded)
+        {
+            return StatusCode(StatusCodes.Status403Forbidden, new ProblemDetails
+            {
+                Title = "Acesso negado",
+                Detail = "Você não tem permissão para atualizar este time."
+            });
+        }
+
         var result = await teamService.UpdateAsync(id, request, cancellationToken);
 
         if (result.IsFailure)
         {
-            return result.ErrorType == ServiceErrorType.NotFound
-                ? NotFound(new ProblemDetails { Detail = result.Error })
-                : BadRequest(new ProblemDetails { Detail = result.Error });
+            return result.ErrorType switch
+            {
+                ServiceErrorType.NotFound => NotFound(new ProblemDetails { Detail = result.Error }),
+                ServiceErrorType.Forbidden => StatusCode(StatusCodes.Status403Forbidden,
+                    new ProblemDetails { Detail = result.Error }),
+                _ => BadRequest(new ProblemDetails { Detail = result.Error })
+            };
         }
 
         return Ok(result.Value);
@@ -72,8 +131,32 @@ public sealed class TeamsController(
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status409Conflict)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status403Forbidden)]
     public async Task<IActionResult> Delete(Guid id, CancellationToken cancellationToken)
     {
+        var team = await dbContext.Teams
+            .AsNoTracking()
+            .FirstOrDefaultAsync(t => t.Id == id, cancellationToken);
+
+        if (team is null)
+        {
+            return NotFound(new ProblemDetails { Detail = "Time não encontrado." });
+        }
+
+        var authResult = await authorizationService.AuthorizeAsync(
+            User,
+            new OrganizationResource(team.OrganizationId),
+            AuthorizationPolicies.OrganizationWrite);
+
+        if (!authResult.Succeeded)
+        {
+            return StatusCode(StatusCodes.Status403Forbidden, new ProblemDetails
+            {
+                Title = "Acesso negado",
+                Detail = "Você não tem permissão para excluir este time."
+            });
+        }
+
         var result = await teamService.DeleteAsync(id, cancellationToken);
 
         if (result.IsFailure)
@@ -82,6 +165,8 @@ public sealed class TeamsController(
             {
                 ServiceErrorType.NotFound => NotFound(new ProblemDetails { Detail = result.Error }),
                 ServiceErrorType.Conflict => Conflict(new ProblemDetails { Detail = result.Error }),
+                ServiceErrorType.Forbidden => StatusCode(StatusCodes.Status403Forbidden,
+                    new ProblemDetails { Detail = result.Error }),
                 _ => BadRequest(new ProblemDetails { Detail = result.Error })
             };
         }

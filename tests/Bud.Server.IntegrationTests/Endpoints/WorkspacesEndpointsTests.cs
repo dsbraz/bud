@@ -86,6 +86,26 @@ public class WorkspacesEndpointsTests : IClassFixture<CustomWebApplicationFactor
         return (await orgResponse.Content.ReadFromJsonAsync<Organization>())!;
     }
 
+    private async Task<Collaborator> CreateNonOwnerCollaborator(Guid organizationId)
+    {
+        using var scope = _factory.Services.CreateScope();
+        var dbContext = scope.ServiceProvider.GetRequiredService<Bud.Server.Data.ApplicationDbContext>();
+
+        var collaborator = new Collaborator
+        {
+            Id = Guid.NewGuid(),
+            FullName = "Colaborador Teste",
+            Email = $"colaborador-{Guid.NewGuid():N}@test.com",
+            Role = CollaboratorRole.IndividualContributor,
+            OrganizationId = organizationId
+        };
+
+        dbContext.Collaborators.Add(collaborator);
+        await dbContext.SaveChangesAsync();
+
+        return collaborator;
+    }
+
     #region Create Tests
 
     [Fact]
@@ -149,6 +169,28 @@ public class WorkspacesEndpointsTests : IClassFixture<CustomWebApplicationFactor
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+    }
+
+    [Fact]
+    public async Task Create_AsNonOwner_ReturnsForbidden()
+    {
+        // Arrange
+        var org = await CreateTestOrganization();
+        var collaborator = await CreateNonOwnerCollaborator(org.Id);
+        var tenantClient = _factory.CreateTenantClient(org.Id, collaborator.Email, collaborator.Id);
+
+        var request = new CreateWorkspaceRequest
+        {
+            Name = "WS NonOwner",
+            OrganizationId = org.Id,
+            Visibility = Visibility.Public
+        };
+
+        // Act
+        var response = await tenantClient.PostAsJsonAsync("/api/workspaces", request);
+
+        // Assert
+        response.StatusCode.Should().Be(HttpStatusCode.Forbidden);
     }
 
     #endregion
@@ -282,6 +324,19 @@ public class WorkspacesEndpointsTests : IClassFixture<CustomWebApplicationFactor
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.Forbidden);
+    }
+
+    [Fact]
+    public async Task GetAll_WithoutAuthentication_ReturnsUnauthorized()
+    {
+        // Arrange
+        var unauthenticatedClient = _factory.CreateClient();
+
+        // Act
+        var response = await unauthenticatedClient.GetAsync("/api/workspaces");
+
+        // Assert
+        response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
     }
 
     #endregion

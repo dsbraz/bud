@@ -8,11 +8,11 @@ public sealed class CreateTeamValidator : AbstractValidator<CreateTeamRequest>
     public CreateTeamValidator()
     {
         RuleFor(x => x.Name)
-            .NotEmpty().WithMessage("Name is required.")
-            .MaximumLength(200).WithMessage("Name must not exceed 200 characters.");
+            .NotEmpty().WithMessage("Nome é obrigatório.")
+            .MaximumLength(200).WithMessage("Nome deve ter no máximo 200 caracteres.");
 
         RuleFor(x => x.WorkspaceId)
-            .NotEmpty().WithMessage("WorkspaceId is required.");
+            .NotEmpty().WithMessage("Workspace é obrigatório.");
     }
 }
 
@@ -21,7 +21,7 @@ public sealed class UpdateTeamValidator : AbstractValidator<UpdateTeamRequest>
     public UpdateTeamValidator()
     {
         RuleFor(x => x.Name)
-            .NotEmpty().WithMessage("Name is required.")
-            .MaximumLength(200).WithMessage("Name must not exceed 200 characters.");
+            .NotEmpty().WithMessage("Nome é obrigatório.")
+            .MaximumLength(200).WithMessage("Nome deve ter no máximo 200 caracteres.");
     }
 }

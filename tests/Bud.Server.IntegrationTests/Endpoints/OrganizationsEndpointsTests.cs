@@ -382,4 +382,14 @@ public class OrganizationsEndpointsTests : IClassFixture<CustomWebApplicationFac
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.Forbidden);
     }
+
+    [Fact]
+    public async Task GetAll_WithoutAuthentication_ReturnsUnauthorized()
+    {
+        var unauthenticatedClient = _factory.CreateClient();
+
+        var response = await unauthenticatedClient.GetAsync("/api/organizations");
+
+        response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
+    }
 }

@@ -80,6 +80,27 @@ public class TeamsEndpointsTests : IClassFixture<CustomWebApplicationFactory>
         return (org!, workspace!);
     }
 
+    private async Task<Collaborator> CreateNonOwnerCollaborator(Guid organizationId)
+    {
+        using var scope = _factory.Services.CreateScope();
+        var dbContext = scope.ServiceProvider.GetRequiredService<Bud.Server.Data.ApplicationDbContext>();
+
+        var collaborator = new Collaborator
+        {
+            Id = Guid.NewGuid(),
+            FullName = "Colaborador Teste",
+            Email = $"colaborador-{Guid.NewGuid():N}@example.com",
+            Role = CollaboratorRole.IndividualContributor,
+            OrganizationId = organizationId,
+            TeamId = null
+        };
+
+        dbContext.Collaborators.Add(collaborator);
+        await dbContext.SaveChangesAsync();
+
+        return collaborator;
+    }
+
     #region Create Tests
 
     [Fact]
@@ -113,25 +134,46 @@ public class TeamsEndpointsTests : IClassFixture<CustomWebApplicationFactory>
     }
 
     [Fact]
+    public async Task Create_AsNonOwner_ReturnsForbidden()
+    {
+        // Arrange
+        var (org, workspace) = await CreateTestHierarchy();
+        var collaborator = await CreateNonOwnerCollaborator(org.Id);
+        var tenantClient = _factory.CreateTenantClient(org.Id, collaborator.Email, collaborator.Id);
+
+        var request = new CreateTeamRequest
+        {
+            Name = "Team NonOwner",
+            WorkspaceId = workspace.Id
+        };
+
+        // Act
+        var response = await tenantClient.PostAsJsonAsync("/api/teams", request);
+
+        // Assert
+        response.StatusCode.Should().Be(HttpStatusCode.Forbidden);
+    }
+
+    [Fact]
     public async Task Create_WithParentInDifferentWorkspace_ReturnsBadRequest()
     {
         // Arrange: Create two workspaces
         var leaderId = await GetOrCreateAdminLeader();
-        var org = (await _client.PostAsJsonAsync("/api/organizations",
+        var orgResponse = await _client.PostAsJsonAsync("/api/organizations",
             new CreateOrganizationRequest
             {
                 Name = "test-org.com",
                 OwnerId = leaderId,
-            })
-        ).Content.ReadFromJsonAsync<Organization>().Result!;
+            });
+        var org = (await orgResponse.Content.ReadFromJsonAsync<Organization>())!;
 
-        var workspace1 = (await _client.PostAsJsonAsync("/api/workspaces",
-            new CreateWorkspaceRequest { Name = "Workspace 1", OrganizationId = org.Id, Visibility = Visibility.Public })
-        ).Content.ReadFromJsonAsync<Workspace>().Result!;
+        var workspace1Response = await _client.PostAsJsonAsync("/api/workspaces",
+            new CreateWorkspaceRequest { Name = "Workspace 1", OrganizationId = org.Id, Visibility = Visibility.Public });
+        var workspace1 = (await workspace1Response.Content.ReadFromJsonAsync<Workspace>())!;
 
-        var workspace2 = (await _client.PostAsJsonAsync("/api/workspaces",
-            new CreateWorkspaceRequest { Name = "Workspace 2", OrganizationId = org.Id, Visibility = Visibility.Public })
-        ).Content.ReadFromJsonAsync<Workspace>().Result!;
+        var workspace2Response = await _client.PostAsJsonAsync("/api/workspaces",
+            new CreateWorkspaceRequest { Name = "Workspace 2", OrganizationId = org.Id, Visibility = Visibility.Public });
+        var workspace2 = (await workspace2Response.Content.ReadFromJsonAsync<Workspace>())!;
 
         // Create parent team in workspace1
         var parentResponse = await _client.PostAsJsonAsync("/api/teams",
@@ -214,6 +256,31 @@ public class TeamsEndpointsTests : IClassFixture<CustomWebApplicationFactory>
         updated.ParentTeamId.Should().Be(team1.Id);
     }
 
+    [Fact]
+    public async Task Update_WhenNotOwner_ReturnsForbidden()
+    {
+        // Arrange
+        var (org, workspace) = await CreateTestHierarchy();
+
+        var createResponse = await _client.PostAsJsonAsync("/api/teams",
+            new CreateTeamRequest { Name = "Team A", WorkspaceId = workspace.Id });
+        var team = await createResponse.Content.ReadFromJsonAsync<Team>();
+
+        var collaborator = await CreateNonOwnerCollaborator(org.Id);
+        var tenantClient = _factory.CreateTenantClient(org.Id, collaborator.Email, collaborator.Id);
+
+        var updateRequest = new UpdateTeamRequest
+        {
+            Name = "Team A Updated"
+        };
+
+        // Act
+        var response = await tenantClient.PutAsJsonAsync($"/api/teams/{team!.Id}", updateRequest);
+
+        // Assert
+        response.StatusCode.Should().Be(HttpStatusCode.Forbidden);
+    }
+
     #endregion
 
     #region Delete Tests
@@ -266,6 +333,26 @@ public class TeamsEndpointsTests : IClassFixture<CustomWebApplicationFactory>
         getResponse.StatusCode.Should().Be(HttpStatusCode.NotFound);
     }
 
+    [Fact]
+    public async Task Delete_WhenNotOwner_ReturnsForbidden()
+    {
+        // Arrange
+        var (org, workspace) = await CreateTestHierarchy();
+
+        var createResponse = await _client.PostAsJsonAsync("/api/teams",
+            new CreateTeamRequest { Name = "Team B", WorkspaceId = workspace.Id });
+        var team = await createResponse.Content.ReadFromJsonAsync<Team>();
+
+        var collaborator = await CreateNonOwnerCollaborator(org.Id);
+        var tenantClient = _factory.CreateTenantClient(org.Id, collaborator.Email, collaborator.Id);
+
+        // Act
+        var response = await tenantClient.DeleteAsync($"/api/teams/{team!.Id}");
+
+        // Assert
+        response.StatusCode.Should().Be(HttpStatusCode.Forbidden);
+    }
+
     #endregion
 
     #region GetSubTeams Tests
@@ -311,6 +398,23 @@ public class TeamsEndpointsTests : IClassFixture<CustomWebApplicationFactory>
         result.Should().NotBeNull();
         result!.Items.Should().HaveCount(2);
         result.Items.Should().OnlyContain(t => t.ParentTeamId == parentTeam.Id);
+    }
+
+    #endregion
+
+    #region Authorization Tests
+
+    [Fact]
+    public async Task GetAll_WithoutAuthentication_ReturnsUnauthorized()
+    {
+        // Arrange
+        var unauthenticatedClient = _factory.CreateClient();
+
+        // Act
+        var response = await unauthenticatedClient.GetAsync("/api/teams");
+
+        // Assert
+        response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
     }
 
     #endregion

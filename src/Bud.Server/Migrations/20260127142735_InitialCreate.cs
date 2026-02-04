@@ -3,8 +3,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
 
-namespace Bud.Server.Migrations
-{
+namespace Bud.Server.Migrations;
     /// <inheritdoc />
     public partial class InitialCreate : Migration
     {
@@ -125,4 +124,3 @@ namespace Bud.Server.Migrations
                 name: "Organizations");
         }
     }
-}

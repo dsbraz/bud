@@ -1,12 +1,15 @@
+using Bud.Server.Authorization;
 using Bud.Server.Services;
 using Bud.Shared.Contracts;
 using Bud.Shared.Models;
 using FluentValidation;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Bud.Server.Controllers;
 
 [ApiController]
+[Authorize(Policy = AuthorizationPolicies.TenantSelected)]
 [Route("api/organizations")]
 public sealed class OrganizationsController(
     IOrganizationService organizationService,
@@ -14,6 +17,7 @@ public sealed class OrganizationsController(
     IValidator<UpdateOrganizationRequest> updateValidator) : ControllerBase
 {
     [HttpPost]
+    [Authorize(Policy = AuthorizationPolicies.GlobalAdmin)]
     [ProducesResponseType(typeof(Organization), StatusCodes.Status201Created)]
     [ProducesResponseType(typeof(ValidationProblemDetails), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
@@ -44,6 +48,7 @@ public sealed class OrganizationsController(
     }
 
     [HttpPut("{id:guid}")]
+    [Authorize(Policy = AuthorizationPolicies.GlobalAdmin)]
     [ProducesResponseType(typeof(Organization), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
     [ProducesResponseType(typeof(ValidationProblemDetails), StatusCodes.Status400BadRequest)]
@@ -73,6 +78,7 @@ public sealed class OrganizationsController(
     }
 
     [HttpDelete("{id:guid}")]
+    [Authorize(Policy = AuthorizationPolicies.GlobalAdmin)]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status403Forbidden)]

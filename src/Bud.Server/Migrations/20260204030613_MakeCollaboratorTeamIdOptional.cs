@@ -3,8 +3,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
 
-namespace Bud.Server.Migrations
-{
+namespace Bud.Server.Migrations;
     /// <inheritdoc />
     public partial class MakeCollaboratorTeamIdOptional : Migration
     {
@@ -58,4 +57,3 @@ namespace Bud.Server.Migrations
                 onDelete: ReferentialAction.Cascade);
         }
     }
-}

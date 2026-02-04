@@ -26,6 +26,10 @@ public sealed class ServiceResult
         => new(false, error, ServiceErrorType.Forbidden);
 }
 
+[System.Diagnostics.CodeAnalysis.SuppressMessage(
+    "Design",
+    "CA1000:Do not declare static members on generic types",
+    Justification = "Factory methods for service results.")]
 public sealed class ServiceResult<T>
 {
     public bool IsSuccess { get; }
