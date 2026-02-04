@@ -185,7 +185,7 @@ public sealed class OrganizationService(
             .FirstOrDefaultAsync(o => o.Id == id, cancellationToken);
 
         return organization is null
-            ? ServiceResult<Organization>.NotFound("Organization not found.")
+            ? ServiceResult<Organization>.NotFound("Organização não encontrada.")
             : ServiceResult<Organization>.Success(organization);
     }
 
@@ -228,7 +228,7 @@ public sealed class OrganizationService(
         var organizationExists = await dbContext.Organizations.AnyAsync(o => o.Id == id, cancellationToken);
         if (!organizationExists)
         {
-            return ServiceResult<PagedResult<Workspace>>.NotFound("Organization not found.");
+            return ServiceResult<PagedResult<Workspace>>.NotFound("Organização não encontrada.");
         }
 
         var query = dbContext.Workspaces

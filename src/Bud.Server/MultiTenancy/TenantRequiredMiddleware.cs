@@ -42,6 +42,18 @@ public sealed class TenantRequiredMiddleware(RequestDelegate next)
             return;
         }
 
+        if (!tenantProvider.IsGlobalAdmin && !tenantProvider.TenantId.HasValue)
+        {
+            context.Response.StatusCode = StatusCodes.Status403Forbidden;
+            await context.Response.WriteAsJsonAsync(new ProblemDetails
+            {
+                Status = StatusCodes.Status403Forbidden,
+                Title = "Acesso negado",
+                Detail = "É necessário selecionar uma organização para acessar este recurso."
+            });
+            return;
+        }
+
         // Validate tenant access (if X-Tenant-Id header was provided)
         if (tenantProvider.TenantId.HasValue && !tenantProvider.IsGlobalAdmin)
         {

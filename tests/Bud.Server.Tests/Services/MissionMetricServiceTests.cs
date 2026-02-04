@@ -231,6 +231,89 @@ public class MissionMetricServiceTests
 
     #endregion
 
+    #region Error Message Tests
+
+    [Fact]
+    public async Task CreateMetric_WithInvalidMission_ReturnsNotFoundInPortuguese()
+    {
+        // Arrange
+        using var context = CreateInMemoryContext();
+        var service = new MissionMetricService(context);
+
+        var request = new CreateMissionMetricRequest
+        {
+            MissionId = Guid.NewGuid(),
+            Name = "Metric",
+            Type = MetricType.Qualitative,
+            TargetText = "Teste"
+        };
+
+        // Act
+        var result = await service.CreateAsync(request);
+
+        // Assert
+        result.IsSuccess.Should().BeFalse();
+        result.ErrorType.Should().Be(ServiceErrorType.NotFound);
+        result.Error.Should().Be("Missão não encontrada.");
+    }
+
+    [Fact]
+    public async Task UpdateMetric_WithInvalidId_ReturnsNotFoundInPortuguese()
+    {
+        // Arrange
+        using var context = CreateInMemoryContext();
+        var service = new MissionMetricService(context);
+
+        var request = new UpdateMissionMetricRequest
+        {
+            Name = "Metric",
+            Type = MetricType.Qualitative,
+            TargetText = "Teste"
+        };
+
+        // Act
+        var result = await service.UpdateAsync(Guid.NewGuid(), request);
+
+        // Assert
+        result.IsSuccess.Should().BeFalse();
+        result.ErrorType.Should().Be(ServiceErrorType.NotFound);
+        result.Error.Should().Be("Métrica da missão não encontrada.");
+    }
+
+    [Fact]
+    public async Task DeleteMetric_WithInvalidId_ReturnsNotFoundInPortuguese()
+    {
+        // Arrange
+        using var context = CreateInMemoryContext();
+        var service = new MissionMetricService(context);
+
+        // Act
+        var result = await service.DeleteAsync(Guid.NewGuid());
+
+        // Assert
+        result.IsSuccess.Should().BeFalse();
+        result.ErrorType.Should().Be(ServiceErrorType.NotFound);
+        result.Error.Should().Be("Métrica da missão não encontrada.");
+    }
+
+    [Fact]
+    public async Task GetMetricById_WithInvalidId_ReturnsNotFoundInPortuguese()
+    {
+        // Arrange
+        using var context = CreateInMemoryContext();
+        var service = new MissionMetricService(context);
+
+        // Act
+        var result = await service.GetByIdAsync(Guid.NewGuid());
+
+        // Assert
+        result.IsSuccess.Should().BeFalse();
+        result.ErrorType.Should().Be(ServiceErrorType.NotFound);
+        result.Error.Should().Be("Métrica da missão não encontrada.");
+    }
+
+    #endregion
+
     #region CreateAsync Tests
 
     [Fact]
@@ -254,7 +337,7 @@ public class MissionMetricServiceTests
         // Assert
         result.IsSuccess.Should().BeFalse();
         result.ErrorType.Should().Be(ServiceErrorType.NotFound);
-        result.Error.Should().Be("Mission not found.");
+        result.Error.Should().Be("Missão não encontrada.");
     }
 
     [Fact]

@@ -12,18 +12,21 @@
         @* Organization Selector *@
         <div class="workspace-selector @(isDropdownOpen ? "open" : "")" @onclick="ToggleDropdown">
             <div class="workspace-icon">@GetOrganizationInitials()</div>
-            <div class="workspace-name">@OrgContext.GetSelectedOrganizationName()</div>
+            <div class="workspace-name">@GetOrganizationDisplayName()</div>
             <svg class="workspace-chevron" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
             </svg>
             @if (isDropdownOpen)
             {
                 <div class="workspace-dropdown" @onclick:stopPropagation="true">
-                    <div class="workspace-dropdown-item @(OrgContext.ShowAllOrganizations ? "selected" : "")"
-                         @onclick="() => SelectOrganization(null)">
-                        <div class="workspace-icon">TD</div>
-                        <div class="workspace-item-name">TODOS</div>
-                    </div>
+                    @if (CanShowAllOrganizations)
+                    {
+                        <div class="workspace-dropdown-item @(OrgContext.ShowAllOrganizations ? "selected" : "")"
+                             @onclick="() => SelectOrganization(null)">
+                            <div class="workspace-icon">TD</div>
+                            <div class="workspace-item-name">TODOS</div>
+                        </div>
+                    }
                     @foreach (var org in OrgContext.AvailableOrganizations)
                     {
                         var isSelected = OrgContext.SelectedOrganizationId == org.Id;
@@ -86,6 +89,7 @@
 
 @code {
     private bool isDropdownOpen = false;
+    private bool CanShowAllOrganizations => AuthState.Session?.IsGlobalAdmin == true;
 
     private string UserLabel => AuthState.Session is null
         ? "Sistema interno"
@@ -122,12 +126,22 @@
 
     private string GetOrganizationInitials()
     {
-        if (OrgContext.ShowAllOrganizations)
+        if (OrgContext.ShowAllOrganizations && CanShowAllOrganizations)
         {
             return "TD";
         }
 
         return GetInitials(OrgContext.GetSelectedOrganizationName());
+    }
+
+    private string GetOrganizationDisplayName()
+    {
+        if (OrgContext.ShowAllOrganizations && !CanShowAllOrganizations)
+        {
+            return "Desconhecida";
+        }
+
+        return OrgContext.GetSelectedOrganizationName();
     }
 
     private string GetInitials(string name)

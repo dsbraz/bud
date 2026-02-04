@@ -15,7 +15,7 @@ public sealed class MissionMetricService(ApplicationDbContext dbContext) : IMiss
 
         if (mission is null)
         {
-            return ServiceResult<MissionMetric>.NotFound("Mission not found.");
+            return ServiceResult<MissionMetric>.NotFound("Missão não encontrada.");
         }
 
         var metric = new MissionMetric
@@ -41,7 +41,7 @@ public sealed class MissionMetricService(ApplicationDbContext dbContext) : IMiss
 
         if (metric is null)
         {
-            return ServiceResult<MissionMetric>.NotFound("Mission metric not found.");
+            return ServiceResult<MissionMetric>.NotFound("Métrica da missão não encontrada.");
         }
 
         metric.Name = request.Name.Trim();
@@ -59,7 +59,7 @@ public sealed class MissionMetricService(ApplicationDbContext dbContext) : IMiss
 
         if (metric is null)
         {
-            return ServiceResult.NotFound("Mission metric not found.");
+            return ServiceResult.NotFound("Métrica da missão não encontrada.");
         }
 
         dbContext.MissionMetrics.Remove(metric);
@@ -75,7 +75,7 @@ public sealed class MissionMetricService(ApplicationDbContext dbContext) : IMiss
             .FirstOrDefaultAsync(m => m.Id == id, cancellationToken);
 
         return metric is null
-            ? ServiceResult<MissionMetric>.NotFound("Mission metric not found.")
+            ? ServiceResult<MissionMetric>.NotFound("Métrica da missão não encontrada.")
             : ServiceResult<MissionMetric>.Success(metric);
     }
 

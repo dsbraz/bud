@@ -212,6 +212,7 @@ public class MissionServiceTests
         // Assert
         result.IsSuccess.Should().BeFalse();
         result.ErrorType.Should().Be(ServiceErrorType.NotFound);
+        result.Error.Should().Be("Organização não encontrada.");
     }
 
     #endregion

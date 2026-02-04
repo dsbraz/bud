@@ -39,6 +39,17 @@ public static class JwtTestHelper
         return GenerateToken(claims);
     }
 
+    public static string GenerateUserTokenWithoutTenant(string email)
+    {
+        var claims = new List<Claim>
+        {
+            new(ClaimTypes.Email, email),
+            new("email", email)
+        };
+
+        return GenerateToken(claims);
+    }
+
     private static string GenerateToken(List<Claim> claims)
     {
         var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(SecretKey));

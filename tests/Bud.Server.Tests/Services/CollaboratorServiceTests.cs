@@ -91,6 +91,7 @@ public class CollaboratorServiceTests
         _tenantProvider.IsGlobalAdmin = false;
         _tenantProvider.TenantId = org.Id;
         _tenantProvider.CollaboratorId = regularCollaborator.Id;
+        _orgAuth.ShouldAllowOwnerAccess = false;
 
         using var context = CreateInMemoryContext();
         context.Organizations.Add(org);
@@ -115,7 +116,7 @@ public class CollaboratorServiceTests
         // Assert
         result.IsSuccess.Should().BeFalse();
         result.ErrorType.Should().Be(ServiceErrorType.Forbidden);
-        result.Error.Should().Be("Apenas o proprietário da organização pode criar colaboradores.");
+        result.Error.Should().Be("Apenas o proprietário da organização pode realizar esta ação.");
     }
 
     [Fact]
@@ -185,6 +186,7 @@ public class CollaboratorServiceTests
         _tenantProvider.IsGlobalAdmin = true;
         using var context = CreateInMemoryContext();
         var (org, _, team) = await CreateTestHierarchy(context);
+        _tenantProvider.TenantId = org.Id;
 
         var service = new CollaboratorService(context, _tenantProvider, _orgAuth);
 

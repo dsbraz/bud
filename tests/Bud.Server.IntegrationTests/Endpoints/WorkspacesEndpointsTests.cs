@@ -26,6 +26,7 @@ public class WorkspacesEndpointsTests : IClassFixture<CustomWebApplicationFactor
         var dbContext = scope.ServiceProvider.GetRequiredService<Bud.Server.Data.ApplicationDbContext>();
 
         var existingLeader = await dbContext.Collaborators
+            .IgnoreQueryFilters()
             .FirstOrDefaultAsync(c => c.Email == "admin@getbud.co");
 
         if (existingLeader != null)

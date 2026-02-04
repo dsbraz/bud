@@ -79,6 +79,17 @@ public class CustomWebApplicationFactory : WebApplicationFactory<Program>, IAsyn
         return client;
     }
 
+    /// <summary>
+    /// Creates an HttpClient with authenticated user JWT token but without tenant information.
+    /// </summary>
+    public HttpClient CreateUserClientWithoutTenant(string email)
+    {
+        var client = CreateClient();
+        var token = JwtTestHelper.GenerateUserTokenWithoutTenant(email);
+        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+        return client;
+    }
+
     public async Task InitializeAsync()
     {
         await _postgres.StartAsync();

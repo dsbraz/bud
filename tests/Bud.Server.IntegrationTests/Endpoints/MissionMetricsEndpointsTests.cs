@@ -26,6 +26,7 @@ public class MissionMetricsEndpointsTests : IClassFixture<CustomWebApplicationFa
         var dbContext = scope.ServiceProvider.GetRequiredService<Bud.Server.Data.ApplicationDbContext>();
 
         var existingLeader = await dbContext.Collaborators
+            .IgnoreQueryFilters()
             .FirstOrDefaultAsync(c => c.Email == "admin@getbud.co");
 
         if (existingLeader != null)

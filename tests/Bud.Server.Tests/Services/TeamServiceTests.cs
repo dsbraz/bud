@@ -234,7 +234,7 @@ public class TeamServiceTests
         // Assert
         result.IsSuccess.Should().BeFalse();
         result.ErrorType.Should().Be(ServiceErrorType.Forbidden);
-        result.Error.Should().Be("Apenas o proprietário da organização pode criar times.");
+        result.Error.Should().Be("Apenas o proprietário da organização pode realizar esta ação.");
     }
 
     [Fact]

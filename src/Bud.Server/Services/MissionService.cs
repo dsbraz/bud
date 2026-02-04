@@ -267,7 +267,7 @@ public sealed class MissionService(
 
         if (!exists)
         {
-            return ServiceResult.NotFound($"{scopeType} not found.");
+            return ServiceResult.NotFound(GetScopeNotFoundMessage(scopeType));
         }
 
         return ServiceResult.Success();
@@ -317,6 +317,18 @@ public sealed class MissionService(
                 mission.CollaboratorId = scopeId;
                 break;
         }
+    }
+
+    private static string GetScopeNotFoundMessage(MissionScopeType scopeType)
+    {
+        return scopeType switch
+        {
+            MissionScopeType.Organization => "Organização não encontrada.",
+            MissionScopeType.Workspace => "Workspace não encontrado.",
+            MissionScopeType.Team => "Time não encontrado.",
+            MissionScopeType.Collaborator => "Colaborador não encontrado.",
+            _ => "Escopo não encontrado."
+        };
     }
 
     private static DateTime NormalizeToUtc(DateTime value)

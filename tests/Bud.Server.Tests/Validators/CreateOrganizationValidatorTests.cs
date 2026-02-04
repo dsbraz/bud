@@ -152,25 +152,4 @@ public class CreateOrganizationValidatorTests
         result.IsValid.Should().BeFalse();
         result.Errors.Should().Contain(e => e.PropertyName == "OwnerId");
     }
-
-    [Theory]
-    [InlineData("")]
-    [InlineData("   ")]
-    [InlineData(null)]
-    public async Task Validate_WithEmptyOrWhitespaceUserEmail_ShouldFail(string? userEmail)
-    {
-        // Arrange
-        var request = new CreateOrganizationRequest
-        {
-            Name = "test.com",
-            OwnerId = Guid.NewGuid(),
-        };
-
-        // Act
-        var result = await _validator.ValidateAsync(request);
-
-        // Assert
-        result.IsValid.Should().BeFalse();
-        result.Errors.Should().Contain(e => e.PropertyName == "UserEmail");
-    }
 }

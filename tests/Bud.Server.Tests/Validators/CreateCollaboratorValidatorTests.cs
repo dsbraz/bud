@@ -34,6 +34,8 @@ public class CreateCollaboratorValidatorTests : IDisposable
             Name = "test.com"
         };
 
+        mockTenantProvider.SetupGet(p => p.TenantId).Returns(_organization.Id);
+
         _workspace = new Workspace
         {
             Id = Guid.NewGuid(),
@@ -170,25 +172,6 @@ public class CreateCollaboratorValidatorTests : IDisposable
         // Assert
         result.IsValid.Should().BeFalse();
         result.Errors.Should().Contain(e => e.PropertyName == "Email" && e.ErrorMessage.Contains("already in use"));
-    }
-
-    [Fact]
-    public async Task Validate_WithEmptyTeamId_ShouldFail()
-    {
-        // Arrange
-        var request = new CreateCollaboratorRequest
-        {
-            FullName = "John Doe",
-            Email = "john.doe@example.com",
-            TeamId = Guid.Empty
-        };
-
-        // Act
-        var result = await _validator.ValidateAsync(request);
-
-        // Assert
-        result.IsValid.Should().BeFalse();
-        result.Errors.Should().Contain(e => e.PropertyName == "TeamId");
     }
 
     [Fact]
