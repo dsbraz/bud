@@ -33,6 +33,29 @@ public class OrganizationsEndpointsTests : IClassFixture<CustomWebApplicationFac
 
         if (existingLeader != null)
         {
+            // Ensure org, workspace, and team exist
+            var existingOrg = await dbContext.Organizations.IgnoreQueryFilters().FirstOrDefaultAsync();
+            if (existingOrg == null)
+            {
+                existingOrg = new Organization { Id = Guid.NewGuid(), Name = "getbud.co", OwnerId = existingLeader.Id };
+                dbContext.Organizations.Add(existingOrg);
+            }
+
+            var existingWorkspace = await dbContext.Workspaces.IgnoreQueryFilters().FirstOrDefaultAsync();
+            if (existingWorkspace == null)
+            {
+                existingWorkspace = new Workspace { Id = Guid.NewGuid(), Name = "Bud", OrganizationId = existingOrg.Id };
+                dbContext.Workspaces.Add(existingWorkspace);
+            }
+
+            var existingTeam = await dbContext.Teams.IgnoreQueryFilters().FirstOrDefaultAsync();
+            if (existingTeam == null)
+            {
+                existingTeam = new Team { Id = Guid.NewGuid(), Name = "Bud", WorkspaceId = existingWorkspace.Id, OrganizationId = existingOrg.Id };
+                dbContext.Teams.Add(existingTeam);
+            }
+
+            await dbContext.SaveChangesAsync();
             return existingLeader.Id;
         }
 

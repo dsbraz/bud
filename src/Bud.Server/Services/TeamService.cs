@@ -225,4 +225,117 @@ public sealed class TeamService(ApplicationDbContext dbContext) : ITeamService
 
         return ServiceResult<PagedResult<Collaborator>>.Success(result);
     }
+
+    public async Task<ServiceResult<List<CollaboratorSummaryDto>>> GetCollaboratorSummariesAsync(Guid teamId, CancellationToken cancellationToken = default)
+    {
+        var team = await dbContext.Teams
+            .AsNoTracking()
+            .FirstOrDefaultAsync(t => t.Id == teamId, cancellationToken);
+
+        if (team is null)
+        {
+            return ServiceResult<List<CollaboratorSummaryDto>>.NotFound("Time não encontrado.");
+        }
+
+        var collaborators = await dbContext.CollaboratorTeams
+            .AsNoTracking()
+            .Where(ct => ct.TeamId == teamId)
+            .Include(ct => ct.Collaborator)
+            .Select(ct => new CollaboratorSummaryDto
+            {
+                Id = ct.Collaborator.Id,
+                FullName = ct.Collaborator.FullName,
+                Email = ct.Collaborator.Email,
+                Role = ct.Collaborator.Role
+            })
+            .OrderBy(c => c.FullName)
+            .ToListAsync(cancellationToken);
+
+        return ServiceResult<List<CollaboratorSummaryDto>>.Success(collaborators);
+    }
+
+    public async Task<ServiceResult> UpdateCollaboratorsAsync(Guid teamId, UpdateTeamCollaboratorsRequest request, CancellationToken cancellationToken = default)
+    {
+        var team = await dbContext.Teams
+            .Include(t => t.CollaboratorTeams)
+            .FirstOrDefaultAsync(t => t.Id == teamId, cancellationToken);
+
+        if (team is null)
+        {
+            return ServiceResult.NotFound("Time não encontrado.");
+        }
+
+        var distinctCollaboratorIds = request.CollaboratorIds.Distinct().ToList();
+
+        if (distinctCollaboratorIds.Count > 0)
+        {
+            // Validate all collaborators exist and belong to same organization
+            var validCollaborators = await dbContext.Collaborators
+                .Where(c => distinctCollaboratorIds.Contains(c.Id) && c.OrganizationId == team.OrganizationId)
+                .ToListAsync(cancellationToken);
+
+            if (validCollaborators.Count != distinctCollaboratorIds.Count)
+            {
+                return ServiceResult.Failure("Um ou mais colaboradores são inválidos ou pertencem a outra organização.", ServiceErrorType.Validation);
+            }
+        }
+
+        // Clear existing and add new
+        team.CollaboratorTeams.Clear();
+
+        foreach (var collaboratorId in distinctCollaboratorIds)
+        {
+            team.CollaboratorTeams.Add(new CollaboratorTeam
+            {
+                CollaboratorId = collaboratorId,
+                TeamId = teamId,
+                AssignedAt = DateTime.UtcNow
+            });
+        }
+
+        await dbContext.SaveChangesAsync(cancellationToken);
+        return ServiceResult.Success();
+    }
+
+    public async Task<ServiceResult<List<CollaboratorSummaryDto>>> GetAvailableCollaboratorsAsync(Guid teamId, string? search = null, CancellationToken cancellationToken = default)
+    {
+        var team = await dbContext.Teams
+            .AsNoTracking()
+            .FirstOrDefaultAsync(t => t.Id == teamId, cancellationToken);
+
+        if (team is null)
+        {
+            return ServiceResult<List<CollaboratorSummaryDto>>.NotFound("Time não encontrado.");
+        }
+
+        var currentCollaboratorIds = await dbContext.CollaboratorTeams
+            .Where(ct => ct.TeamId == teamId)
+            .Select(ct => ct.CollaboratorId)
+            .ToListAsync(cancellationToken);
+
+        var query = dbContext.Collaborators
+            .AsNoTracking()
+            .Where(c => c.OrganizationId == team.OrganizationId)
+            .Where(c => !currentCollaboratorIds.Contains(c.Id));
+
+        if (!string.IsNullOrWhiteSpace(search))
+        {
+            var term = search.Trim();
+            query = query.Where(c => c.FullName.Contains(term) || c.Email.Contains(term));
+        }
+
+        var collaborators = await query
+            .Select(c => new CollaboratorSummaryDto
+            {
+                Id = c.Id,
+                FullName = c.FullName,
+                Email = c.Email,
+                Role = c.Role
+            })
+            .OrderBy(c => c.FullName)
+            .Take(50)
+            .ToListAsync(cancellationToken);
+
+        return ServiceResult<List<CollaboratorSummaryDto>>.Success(collaborators);
+    }
 }

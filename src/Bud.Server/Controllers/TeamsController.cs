@@ -231,4 +231,68 @@ public sealed class TeamsController(
             ? Ok(result.Value)
             : NotFound(new ProblemDetails { Detail = result.Error });
     }
+
+    [HttpGet("{id:guid}/collaborators-summary")]
+    [ProducesResponseType(typeof(List<CollaboratorSummaryDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<List<CollaboratorSummaryDto>>> GetCollaboratorSummaries(Guid id, CancellationToken cancellationToken)
+    {
+        var result = await teamService.GetCollaboratorSummariesAsync(id, cancellationToken);
+        return result.IsSuccess
+            ? Ok(result.Value)
+            : NotFound(new ProblemDetails { Detail = result.Error });
+    }
+
+    [HttpPut("{id:guid}/collaborators")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status403Forbidden)]
+    public async Task<IActionResult> UpdateCollaborators(Guid id, UpdateTeamCollaboratorsRequest request, CancellationToken cancellationToken)
+    {
+        var team = await dbContext.Teams
+            .AsNoTracking()
+            .FirstOrDefaultAsync(t => t.Id == id, cancellationToken);
+
+        if (team is null)
+        {
+            return NotFound(new ProblemDetails { Detail = "Time não encontrado." });
+        }
+
+        var authResult = await authorizationService.AuthorizeAsync(
+            User,
+            new OrganizationResource(team.OrganizationId),
+            AuthorizationPolicies.OrganizationOwner);
+
+        if (!authResult.Succeeded)
+        {
+            return StatusCode(StatusCodes.Status403Forbidden, new ProblemDetails
+            {
+                Title = "Acesso negado",
+                Detail = "Apenas o proprietário da organização pode atribuir colaboradores."
+            });
+        }
+
+        var result = await teamService.UpdateCollaboratorsAsync(id, request, cancellationToken);
+
+        return result.IsSuccess
+            ? NoContent()
+            : result.ErrorType == ServiceErrorType.NotFound
+                ? NotFound(new ProblemDetails { Detail = result.Error })
+                : BadRequest(new ProblemDetails { Detail = result.Error });
+    }
+
+    [HttpGet("{id:guid}/available-collaborators")]
+    [ProducesResponseType(typeof(List<CollaboratorSummaryDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<List<CollaboratorSummaryDto>>> GetAvailableCollaborators(
+        Guid id,
+        [FromQuery] string? search,
+        CancellationToken cancellationToken)
+    {
+        var result = await teamService.GetAvailableCollaboratorsAsync(id, search, cancellationToken);
+        return result.IsSuccess
+            ? Ok(result.Value)
+            : NotFound(new ProblemDetails { Detail = result.Error });
+    }
 }

@@ -12,4 +12,5 @@ public sealed class Collaborator : ITenantEntity
     public Team? Team { get; set; }
     public Guid? LeaderId { get; set; }
     public Collaborator? Leader { get; set; }
+    public ICollection<CollaboratorTeam> CollaboratorTeams { get; set; } = new List<CollaboratorTeam>();
 }

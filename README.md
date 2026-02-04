@@ -12,6 +12,18 @@ docker compose up --build
 - App (UI + API): `http://localhost:8080`
 - Swagger (ambiente Development): `http://localhost:8080/swagger`
 
+### Padrão de desenvolvimento (sem hot reload)
+
+- O hot reload do Blazor WASM está desativado por padrão.
+- O build usa caches de NuGet e de compilação via volumes nomeados para acelerar o ciclo local.
+
+Se você encontrar assets antigos no browser, limpe os volumes e recompile:
+
+```bash
+docker compose down -v
+docker compose up --build
+```
+
 ## Design System & Tokens
 
 Bud 2.0 uses a comprehensive design token system based on the [Figma Style Guide](https://www.figma.com/design/j3n8YHBusCH8KEHvheGeF8/-ASSETS--Style-Guide).

@@ -12,4 +12,5 @@ public sealed class Team : ITenantEntity
     public Team? ParentTeam { get; set; }
     public ICollection<Team> SubTeams { get; set; } = new List<Team>();
     public ICollection<Collaborator> Collaborators { get; set; } = new List<Collaborator>();
+    public ICollection<CollaboratorTeam> CollaboratorTeams { get; set; } = new List<CollaboratorTeam>();
 }

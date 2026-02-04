@@ -20,18 +20,19 @@ services:
     environment:
       ASPNETCORE_ENVIRONMENT: Development
       ConnectionStrings__DefaultConnection: Host=db;Port=5432;Database=bud;Username=postgres;Password=postgres
-      DOTNET_USE_POLLING_FILE_WATCHER: "1"
-      DOTNET_WATCH_RESTART_ON_RUDE_EDIT: "1"
-      DOTNET_WATCH_SUPPRESS_LAUNCH_BROWSER: "1"
     ports:
       - "8080:8080"
     volumes:
       - ./src:/src/src
       - ./Directory.Build.props:/src/Directory.Build.props
-      - build_data:/tmp/bud
+      - nuget_cache:/root/.nuget/packages
+      - dotnet_obj:/tmp/obj
+      - dotnet_bin:/tmp/bin
     depends_on:
       - db
 
 volumes:
   postgres_data:
-  build_data:
+  nuget_cache:
+  dotnet_obj:
+  dotnet_bin:

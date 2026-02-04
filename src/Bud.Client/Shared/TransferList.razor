@@ -1,0 +1,173 @@
+@typeparam TItem
+
+<div class="transfer-list">
+    <div class="transfer-list-panel">
+        <div class="transfer-list-header">
+            <h4 class="transfer-list-title">@AvailableTitle</h4>
+            <span class="transfer-list-count">@AvailableItems.Count</span>
+        </div>
+        <div class="transfer-list-search">
+            <input type="text"
+                   class="input"
+                   placeholder="@SearchPlaceholder"
+                   @bind="availableSearch"
+                   @bind:event="oninput"
+                   @bind:after="OnAvailableSearchChangedAsync" />
+        </div>
+        <div class="transfer-list-items">
+            @if (filteredAvailableItems.Count == 0)
+            {
+                <p class="transfer-list-empty">@EmptyAvailableMessage</p>
+            }
+            else
+            {
+                @foreach (var item in filteredAvailableItems)
+                {
+                    var key = GetKey(item);
+                    var isSelected = selectedAvailable.Contains(key);
+                    <div class="transfer-list-item @(isSelected ? "selected" : "")"
+                         @onclick="() => ToggleAvailableSelection(item)">
+                        <span class="transfer-list-item-text">@GetDisplayText(item)</span>
+                        @if (GetSecondaryText != null)
+                        {
+                            <span class="transfer-list-item-secondary">@GetSecondaryText(item)</span>
+                        }
+                    </div>
+                }
+            }
+        </div>
+    </div>
+
+    <div class="transfer-list-actions">
+        <button type="button"
+                class="button secondary transfer-action-btn"
+                @onclick="MoveToAssignedAsync"
+                disabled="@(selectedAvailable.Count == 0)">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                <path d="M6 12L10 8L6 4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+        </button>
+        <button type="button"
+                class="button secondary transfer-action-btn"
+                @onclick="MoveToAvailableAsync"
+                disabled="@(selectedAssigned.Count == 0)">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                <path d="M10 4L6 8L10 12" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+        </button>
+    </div>
+
+    <div class="transfer-list-panel">
+        <div class="transfer-list-header">
+            <h4 class="transfer-list-title">@AssignedTitle</h4>
+            <span class="transfer-list-count">@AssignedItems.Count</span>
+        </div>
+        <div class="transfer-list-search">
+            <input type="text"
+                   class="input"
+                   placeholder="@SearchPlaceholder"
+                   @bind="assignedSearch"
+                   @bind:event="oninput" />
+        </div>
+        <div class="transfer-list-items">
+            @if (filteredAssignedItems.Count == 0)
+            {
+                <p class="transfer-list-empty">@EmptyAssignedMessage</p>
+            }
+            else
+            {
+                @foreach (var item in filteredAssignedItems)
+                {
+                    var key = GetKey(item);
+                    var isSelected = selectedAssigned.Contains(key);
+                    <div class="transfer-list-item @(isSelected ? "selected" : "")"
+                         @onclick="() => ToggleAssignedSelection(item)">
+                        <span class="transfer-list-item-text">@GetDisplayText(item)</span>
+                        @if (GetSecondaryText != null)
+                        {
+                            <span class="transfer-list-item-secondary">@GetSecondaryText(item)</span>
+                        }
+                    </div>
+                }
+            }
+        </div>
+    </div>
+</div>
+
+@code {
+    [Parameter] public List<TItem> AvailableItems { get; set; } = new();
+    [Parameter] public List<TItem> AssignedItems { get; set; } = new();
+    [Parameter] public EventCallback<List<TItem>> AssignedItemsChanged { get; set; }
+    [Parameter] public EventCallback<string> OnAvailableSearch { get; set; }
+
+    [Parameter] public Func<TItem, Guid> GetKey { get; set; } = _ => Guid.Empty;
+    [Parameter] public Func<TItem, string> GetDisplayText { get; set; } = item => item?.ToString() ?? "";
+    [Parameter] public Func<TItem, string>? GetSecondaryText { get; set; }
+
+    [Parameter] public string AvailableTitle { get; set; } = "Disponíveis";
+    [Parameter] public string AssignedTitle { get; set; } = "Atribuídos";
+    [Parameter] public string SearchPlaceholder { get; set; } = "Buscar...";
+    [Parameter] public string EmptyAvailableMessage { get; set; } = "Nenhum item disponível.";
+    [Parameter] public string EmptyAssignedMessage { get; set; } = "Nenhum item atribuído.";
+
+    private string availableSearch = "";
+    private string assignedSearch = "";
+    private HashSet<Guid> selectedAvailable = new();
+    private HashSet<Guid> selectedAssigned = new();
+
+    private List<TItem> filteredAvailableItems => string.IsNullOrWhiteSpace(availableSearch)
+        ? AvailableItems
+        : AvailableItems.Where(i => GetDisplayText(i).Contains(availableSearch, StringComparison.OrdinalIgnoreCase) ||
+            (GetSecondaryText != null && GetSecondaryText(i).Contains(availableSearch, StringComparison.OrdinalIgnoreCase))).ToList();
+
+    private List<TItem> filteredAssignedItems => string.IsNullOrWhiteSpace(assignedSearch)
+        ? AssignedItems
+        : AssignedItems.Where(i => GetDisplayText(i).Contains(assignedSearch, StringComparison.OrdinalIgnoreCase) ||
+            (GetSecondaryText != null && GetSecondaryText(i).Contains(assignedSearch, StringComparison.OrdinalIgnoreCase))).ToList();
+
+    private void ToggleAvailableSelection(TItem item)
+    {
+        var key = GetKey(item);
+        if (!selectedAvailable.Remove(key))
+            selectedAvailable.Add(key);
+    }
+
+    private void ToggleAssignedSelection(TItem item)
+    {
+        var key = GetKey(item);
+        if (!selectedAssigned.Remove(key))
+            selectedAssigned.Add(key);
+    }
+
+    private async Task MoveToAssignedAsync()
+    {
+        var itemsToMove = AvailableItems.Where(i => selectedAvailable.Contains(GetKey(i))).ToList();
+        foreach (var item in itemsToMove)
+        {
+            AvailableItems.Remove(item);
+            AssignedItems.Add(item);
+        }
+        selectedAvailable.Clear();
+        await AssignedItemsChanged.InvokeAsync(AssignedItems);
+    }
+
+    private async Task MoveToAvailableAsync()
+    {
+        var itemsToMove = AssignedItems.Where(i => selectedAssigned.Contains(GetKey(i))).ToList();
+        foreach (var item in itemsToMove)
+        {
+            AssignedItems.Remove(item);
+            AvailableItems.Add(item);
+        }
+        selectedAssigned.Clear();
+        await AssignedItemsChanged.InvokeAsync(AssignedItems);
+    }
+
+    private async Task OnAvailableSearchChangedAsync()
+    {
+        if (OnAvailableSearch.HasDelegate)
+        {
+            await OnAvailableSearch.InvokeAsync(availableSearch);
+        }
+    }
+}

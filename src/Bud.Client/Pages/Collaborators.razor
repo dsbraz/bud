@@ -74,7 +74,7 @@
                         <td>@(team?.Name ?? "—")</td>
                         <td style="text-align: center;">
                             <div class="table-actions">
-                                <button class="button-icon" @onclick="() => OpenEditModal(collaborator)"
+                                <button class="button-icon" @onclick="async () => await OpenEditModal(collaborator)"
                                         @onclick:stopPropagation="true"
                                         title="Editar colaborador">
                                     <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
@@ -147,7 +147,7 @@
 
 @if (isEditModalOpen)
 {
-    <Modal Title="Editar colaborador" OnClose="CloseEditModal">
+    <Modal Title="Editar colaborador" Size="lg" OnClose="CloseEditModal">
         <EditForm Model="@editCollaborator" OnValidSubmit="UpdateCollaborator">
             <DataAnnotationsValidator />
             <div class="form-row">
@@ -183,6 +183,22 @@
                 <small class="form-hint">
                     O líder pode ser alterado para qualquer colaborador com função de Líder.
                 </small>
+            </div>
+            <div class="form-row" style="margin-top: var(--spacing-4);">
+                <label>Equipes</label>
+                <TransferList TItem="TeamSummaryDto"
+                    AvailableItems="@availableTeamsForEdit"
+                    AssignedItems="@assignedTeamsForEdit"
+                    AssignedItemsChanged="OnTeamsChanged"
+                    OnAvailableSearch="SearchAvailableTeamsAsync"
+                    GetKey="@(t => t.Id)"
+                    GetDisplayText="@(t => t.Name)"
+                    GetSecondaryText="@(t => t.WorkspaceName)"
+                    AvailableTitle="Equipes disponíveis"
+                    AssignedTitle="Equipes atribuídas"
+                    SearchPlaceholder="Buscar equipe..."
+                    EmptyAvailableMessage="Nenhuma equipe disponível."
+                    EmptyAssignedMessage="Nenhuma equipe atribuída." />
             </div>
             <div class="form-actions">
                 <button class="button tertiary" type="button" @onclick="CloseEditModal">Cancelar</button>
@@ -253,6 +269,9 @@
     private Collaborator? selectedCollaborator = null;
     private UpdateCollaboratorRequest editCollaborator = new();
     private string? editLeaderId;
+    private List<TeamSummaryDto> availableTeamsForEdit = new();
+    private List<TeamSummaryDto> assignedTeamsForEdit = new();
+    private bool teamsModified = false;
 
     // Estado do modal de detalhes
     private bool isDetailsModalOpen = false;
@@ -371,7 +390,7 @@
         }
     }
 
-    private void OpenEditModal(Collaborator collaborator)
+    private async Task OpenEditModal(Collaborator collaborator)
     {
         selectedCollaborator = collaborator;
         editCollaborator = new UpdateCollaboratorRequest
@@ -382,6 +401,12 @@
             LeaderId = collaborator.LeaderId
         };
         editLeaderId = collaborator.LeaderId?.ToString() ?? "";
+
+        // Load teams for TransferList
+        assignedTeamsForEdit = await Api.GetCollaboratorTeamsAsync(collaborator.Id) ?? new();
+        availableTeamsForEdit = await Api.GetAvailableTeamsForCollaboratorAsync(collaborator.Id) ?? new();
+        teamsModified = false;
+
         isEditModalOpen = true;
     }
 
@@ -391,6 +416,9 @@
         selectedCollaborator = null;
         editCollaborator = new();
         editLeaderId = null;
+        availableTeamsForEdit = new();
+        assignedTeamsForEdit = new();
+        teamsModified = false;
     }
 
     private void OpenDetailsModal(Collaborator collaborator)
@@ -416,6 +444,15 @@
             var result = await Api.UpdateCollaboratorAsync(selectedCollaborator.Id, editCollaborator);
             if (result != null)
             {
+                // Update teams if modified
+                if (teamsModified)
+                {
+                    await Api.UpdateCollaboratorTeamsAsync(selectedCollaborator.Id, new UpdateCollaboratorTeamsRequest
+                    {
+                        TeamIds = assignedTeamsForEdit.Select(t => t.Id).ToList()
+                    });
+                }
+
                 ToastService.ShowSuccess("Colaborador atualizado", "As alterações foram salvas com sucesso.");
                 CloseEditModal();
                 await LoadCollaborators();
@@ -489,4 +526,16 @@
         CollaboratorRole.Leader => "Lider",
         _ => "Contribuidor individual"
     };
+
+    private void OnTeamsChanged(List<TeamSummaryDto> teams)
+    {
+        assignedTeamsForEdit = teams;
+        teamsModified = true;
+    }
+
+    private async Task SearchAvailableTeamsAsync(string search)
+    {
+        if (selectedCollaborator == null) return;
+        availableTeamsForEdit = await Api.GetAvailableTeamsForCollaboratorAsync(selectedCollaborator.Id, search) ?? new();
+    }
 }

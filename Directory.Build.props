@@ -4,6 +4,7 @@
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <LangVersion>latest</LangVersion>
+    <WasmEnableHotReload>false</WasmEnableHotReload>
 
     <!-- Code quality settings -->
     <TreatWarningsAsErrors>false</TreatWarningsAsErrors>

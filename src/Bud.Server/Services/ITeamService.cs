@@ -12,4 +12,9 @@ public interface ITeamService
     Task<ServiceResult<PagedResult<Team>>> GetAllAsync(Guid? workspaceId, Guid? parentTeamId, string? search, int page, int pageSize, CancellationToken cancellationToken = default);
     Task<ServiceResult<PagedResult<Team>>> GetSubTeamsAsync(Guid id, int page, int pageSize, CancellationToken cancellationToken = default);
     Task<ServiceResult<PagedResult<Collaborator>>> GetCollaboratorsAsync(Guid id, int page, int pageSize, CancellationToken cancellationToken = default);
+
+    // Many-to-many: Team <> Collaborator
+    Task<ServiceResult<List<CollaboratorSummaryDto>>> GetCollaboratorSummariesAsync(Guid teamId, CancellationToken cancellationToken = default);
+    Task<ServiceResult> UpdateCollaboratorsAsync(Guid teamId, UpdateTeamCollaboratorsRequest request, CancellationToken cancellationToken = default);
+    Task<ServiceResult<List<CollaboratorSummaryDto>>> GetAvailableCollaboratorsAsync(Guid teamId, string? search = null, CancellationToken cancellationToken = default);
 }

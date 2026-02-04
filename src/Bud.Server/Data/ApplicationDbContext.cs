@@ -28,6 +28,7 @@ public sealed class ApplicationDbContext : DbContext
     public DbSet<Collaborator> Collaborators => Set<Collaborator>();
     public DbSet<Mission> Missions => Set<Mission>();
     public DbSet<MissionMetric> MissionMetrics => Set<MissionMetric>();
+    public DbSet<CollaboratorTeam> CollaboratorTeams => Set<CollaboratorTeam>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -115,6 +116,28 @@ public sealed class ApplicationDbContext : DbContext
         modelBuilder.Entity<Collaborator>()
             .HasIndex(c => c.Email)
             .IsUnique();
+
+        // CollaboratorTeam (many-to-many junction table)
+        modelBuilder.Entity<CollaboratorTeam>()
+            .HasKey(ct => new { ct.CollaboratorId, ct.TeamId });
+
+        modelBuilder.Entity<CollaboratorTeam>()
+            .HasOne(ct => ct.Collaborator)
+            .WithMany(c => c.CollaboratorTeams)
+            .HasForeignKey(ct => ct.CollaboratorId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        modelBuilder.Entity<CollaboratorTeam>()
+            .HasOne(ct => ct.Team)
+            .WithMany(t => t.CollaboratorTeams)
+            .HasForeignKey(ct => ct.TeamId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        modelBuilder.Entity<CollaboratorTeam>()
+            .HasIndex(ct => ct.CollaboratorId);
+
+        modelBuilder.Entity<CollaboratorTeam>()
+            .HasIndex(ct => ct.TeamId);
 
         // Mission
         modelBuilder.Entity<Mission>()

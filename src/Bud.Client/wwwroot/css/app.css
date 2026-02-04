@@ -1739,3 +1739,144 @@ a {
     font-size: var(--font-size-xs);
     font-weight: var(--font-weight-medium);
 }
+
+/* ========================================
+   TRANSFER LIST COMPONENT
+   ======================================== */
+
+.transfer-list {
+    display: flex;
+    gap: var(--spacing-4);
+    align-items: stretch;
+    min-height: 300px;
+}
+
+.transfer-list-panel {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    background: var(--color-surface);
+    overflow: hidden;
+    min-width: 0;
+}
+
+.transfer-list-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: var(--spacing-3) var(--spacing-4);
+    background: var(--color-background-alt);
+    border-bottom: 1px solid var(--color-border-light);
+}
+
+.transfer-list-title {
+    margin: 0;
+    font-size: var(--font-size-sm);
+    font-weight: var(--font-weight-semibold);
+    color: var(--color-text-primary);
+}
+
+.transfer-list-count {
+    background: var(--color-brand-primary);
+    color: var(--color-text-inverse);
+    padding: 2px 8px;
+    border-radius: var(--radius-full);
+    font-size: var(--font-size-xs);
+    font-weight: var(--font-weight-semibold);
+    min-width: 24px;
+    text-align: center;
+}
+
+.transfer-list-search {
+    padding: var(--spacing-3);
+    border-bottom: 1px solid var(--color-border-light);
+}
+
+.transfer-list-search .input {
+    width: 100%;
+    padding: var(--spacing-2) var(--spacing-3);
+    font-size: var(--font-size-sm);
+}
+
+.transfer-list-items {
+    flex: 1;
+    overflow-y: auto;
+    padding: var(--spacing-2);
+    max-height: 250px;
+}
+
+.transfer-list-item {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    padding: var(--spacing-2) var(--spacing-3);
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    transition: all var(--transition-fast);
+    border: 1px solid transparent;
+}
+
+.transfer-list-item:hover {
+    background: var(--color-hover);
+}
+
+.transfer-list-item.selected {
+    background: rgba(255, 107, 53, 0.1);
+    border-color: var(--color-brand-primary);
+}
+
+.transfer-list-item-text {
+    font-size: var(--font-size-sm);
+    font-weight: var(--font-weight-medium);
+    color: var(--color-text-primary);
+}
+
+.transfer-list-item-secondary {
+    font-size: var(--font-size-xs);
+    color: var(--color-text-muted);
+}
+
+.transfer-list-empty {
+    padding: var(--spacing-4);
+    text-align: center;
+    color: var(--color-text-muted);
+    font-size: var(--font-size-sm);
+}
+
+.transfer-list-actions {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: var(--spacing-2);
+    padding: var(--spacing-2);
+}
+
+.transfer-action-btn {
+    padding: var(--spacing-2) !important;
+    min-width: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.transfer-action-btn:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+
+@media (max-width: 640px) {
+    .transfer-list {
+        flex-direction: column;
+    }
+
+    .transfer-list-actions {
+        flex-direction: row;
+        justify-content: center;
+    }
+
+    .transfer-list-actions svg {
+        transform: rotate(90deg);
+    }
+}

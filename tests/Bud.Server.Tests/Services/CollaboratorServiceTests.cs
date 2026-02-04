@@ -205,4 +205,355 @@ public class CollaboratorServiceTests
     }
 
     #endregion
+
+    #region GetTeamsAsync Tests
+
+    [Fact]
+    public async Task GetTeamsAsync_WithValidCollaborator_ReturnsTeams()
+    {
+        // Arrange
+        using var context = CreateInMemoryContext();
+        var (org, workspace, team) = await CreateTestHierarchy(context);
+
+        var team2 = new Team
+        {
+            Id = Guid.NewGuid(),
+            Name = "Team 2",
+            OrganizationId = org.Id,
+            WorkspaceId = workspace.Id
+        };
+        context.Teams.Add(team2);
+
+        var collaborator = new Collaborator
+        {
+            Id = Guid.NewGuid(),
+            FullName = "Test User",
+            Email = "test@example.com",
+            OrganizationId = org.Id
+        };
+        context.Collaborators.Add(collaborator);
+
+        // Add collaborator to both teams via junction table
+        context.CollaboratorTeams.AddRange(
+            new CollaboratorTeam { CollaboratorId = collaborator.Id, TeamId = team.Id },
+            new CollaboratorTeam { CollaboratorId = collaborator.Id, TeamId = team2.Id }
+        );
+        await context.SaveChangesAsync();
+
+        var service = new CollaboratorService(context, _tenantProvider);
+
+        // Act
+        var result = await service.GetTeamsAsync(collaborator.Id);
+
+        // Assert
+        result.IsSuccess.Should().BeTrue();
+        result.Value.Should().HaveCount(2);
+        result.Value.Should().Contain(t => t.Name == "Test Team");
+        result.Value.Should().Contain(t => t.Name == "Team 2");
+    }
+
+    [Fact]
+    public async Task GetTeamsAsync_WithNonExistentCollaborator_ReturnsNotFound()
+    {
+        // Arrange
+        using var context = CreateInMemoryContext();
+        var service = new CollaboratorService(context, _tenantProvider);
+
+        // Act
+        var result = await service.GetTeamsAsync(Guid.NewGuid());
+
+        // Assert
+        result.IsSuccess.Should().BeFalse();
+        result.ErrorType.Should().Be(ServiceErrorType.NotFound);
+        result.Error.Should().Be("Colaborador não encontrado.");
+    }
+
+    [Fact]
+    public async Task GetTeamsAsync_WithNoTeams_ReturnsEmptyList()
+    {
+        // Arrange
+        using var context = CreateInMemoryContext();
+        var (org, _, _) = await CreateTestHierarchy(context);
+
+        var collaborator = new Collaborator
+        {
+            Id = Guid.NewGuid(),
+            FullName = "Test User",
+            Email = "test@example.com",
+            OrganizationId = org.Id
+        };
+        context.Collaborators.Add(collaborator);
+        await context.SaveChangesAsync();
+
+        var service = new CollaboratorService(context, _tenantProvider);
+
+        // Act
+        var result = await service.GetTeamsAsync(collaborator.Id);
+
+        // Assert
+        result.IsSuccess.Should().BeTrue();
+        result.Value.Should().BeEmpty();
+    }
+
+    #endregion
+
+    #region UpdateTeamsAsync Tests
+
+    [Fact]
+    public async Task UpdateTeamsAsync_WithValidTeams_UpdatesSuccessfully()
+    {
+        // Arrange
+        using var context = CreateInMemoryContext();
+        var (org, workspace, team) = await CreateTestHierarchy(context);
+
+        var team2 = new Team
+        {
+            Id = Guid.NewGuid(),
+            Name = "Team 2",
+            OrganizationId = org.Id,
+            WorkspaceId = workspace.Id
+        };
+        context.Teams.Add(team2);
+
+        var collaborator = new Collaborator
+        {
+            Id = Guid.NewGuid(),
+            FullName = "Test User",
+            Email = "test@example.com",
+            OrganizationId = org.Id
+        };
+        context.Collaborators.Add(collaborator);
+
+        // Initially in team1
+        context.CollaboratorTeams.Add(new CollaboratorTeam { CollaboratorId = collaborator.Id, TeamId = team.Id });
+        await context.SaveChangesAsync();
+
+        var service = new CollaboratorService(context, _tenantProvider);
+
+        // Act - Update to team2 only
+        var result = await service.UpdateTeamsAsync(collaborator.Id, new UpdateCollaboratorTeamsRequest
+        {
+            TeamIds = new List<Guid> { team2.Id }
+        });
+
+        // Assert
+        result.IsSuccess.Should().BeTrue();
+
+        var updatedTeams = await context.CollaboratorTeams
+            .Where(ct => ct.CollaboratorId == collaborator.Id)
+            .ToListAsync();
+        updatedTeams.Should().HaveCount(1);
+        updatedTeams.First().TeamId.Should().Be(team2.Id);
+    }
+
+    [Fact]
+    public async Task UpdateTeamsAsync_WithNonExistentCollaborator_ReturnsNotFound()
+    {
+        // Arrange
+        using var context = CreateInMemoryContext();
+        var service = new CollaboratorService(context, _tenantProvider);
+
+        // Act
+        var result = await service.UpdateTeamsAsync(Guid.NewGuid(), new UpdateCollaboratorTeamsRequest
+        {
+            TeamIds = new List<Guid> { Guid.NewGuid() }
+        });
+
+        // Assert
+        result.IsSuccess.Should().BeFalse();
+        result.ErrorType.Should().Be(ServiceErrorType.NotFound);
+        result.Error.Should().Be("Colaborador não encontrado.");
+    }
+
+    [Fact]
+    public async Task UpdateTeamsAsync_WithTeamsFromDifferentOrg_ReturnsValidationError()
+    {
+        // Arrange
+        using var context = CreateInMemoryContext();
+        var (org1, workspace1, _) = await CreateTestHierarchy(context);
+
+        var org2 = new Organization { Id = Guid.NewGuid(), Name = "Org 2" };
+        var workspace2 = new Workspace
+        {
+            Id = Guid.NewGuid(),
+            Name = "Workspace 2",
+            OrganizationId = org2.Id
+        };
+        var teamInOrg2 = new Team
+        {
+            Id = Guid.NewGuid(),
+            Name = "Team in Org 2",
+            OrganizationId = org2.Id,
+            WorkspaceId = workspace2.Id
+        };
+
+        context.Organizations.Add(org2);
+        context.Workspaces.Add(workspace2);
+        context.Teams.Add(teamInOrg2);
+
+        var collaborator = new Collaborator
+        {
+            Id = Guid.NewGuid(),
+            FullName = "Test User",
+            Email = "test@example.com",
+            OrganizationId = org1.Id
+        };
+        context.Collaborators.Add(collaborator);
+        await context.SaveChangesAsync();
+
+        var service = new CollaboratorService(context, _tenantProvider);
+
+        // Act - Try to assign to team from different org
+        var result = await service.UpdateTeamsAsync(collaborator.Id, new UpdateCollaboratorTeamsRequest
+        {
+            TeamIds = new List<Guid> { teamInOrg2.Id }
+        });
+
+        // Assert
+        result.IsSuccess.Should().BeFalse();
+        result.ErrorType.Should().Be(ServiceErrorType.Validation);
+        result.Error.Should().Be("Uma ou mais equipes são inválidas ou pertencem a outra organização.");
+    }
+
+    [Fact]
+    public async Task UpdateTeamsAsync_WithEmptyList_RemovesAllTeams()
+    {
+        // Arrange
+        using var context = CreateInMemoryContext();
+        var (org, workspace, team) = await CreateTestHierarchy(context);
+
+        var collaborator = new Collaborator
+        {
+            Id = Guid.NewGuid(),
+            FullName = "Test User",
+            Email = "test@example.com",
+            OrganizationId = org.Id
+        };
+        context.Collaborators.Add(collaborator);
+        context.CollaboratorTeams.Add(new CollaboratorTeam { CollaboratorId = collaborator.Id, TeamId = team.Id });
+        await context.SaveChangesAsync();
+
+        var service = new CollaboratorService(context, _tenantProvider);
+
+        // Act
+        var result = await service.UpdateTeamsAsync(collaborator.Id, new UpdateCollaboratorTeamsRequest
+        {
+            TeamIds = new List<Guid>()
+        });
+
+        // Assert
+        result.IsSuccess.Should().BeTrue();
+
+        var teams = await context.CollaboratorTeams
+            .Where(ct => ct.CollaboratorId == collaborator.Id)
+            .ToListAsync();
+        teams.Should().BeEmpty();
+    }
+
+    #endregion
+
+    #region GetAvailableTeamsAsync Tests
+
+    [Fact]
+    public async Task GetAvailableTeamsAsync_ExcludesAlreadyAssignedTeams()
+    {
+        // Arrange
+        using var context = CreateInMemoryContext();
+        var (org, workspace, team) = await CreateTestHierarchy(context);
+
+        var team2 = new Team
+        {
+            Id = Guid.NewGuid(),
+            Name = "Team 2",
+            OrganizationId = org.Id,
+            WorkspaceId = workspace.Id
+        };
+        context.Teams.Add(team2);
+
+        var collaborator = new Collaborator
+        {
+            Id = Guid.NewGuid(),
+            FullName = "Test User",
+            Email = "test@example.com",
+            OrganizationId = org.Id
+        };
+        context.Collaborators.Add(collaborator);
+
+        // Collaborator is already in team1
+        context.CollaboratorTeams.Add(new CollaboratorTeam { CollaboratorId = collaborator.Id, TeamId = team.Id });
+        await context.SaveChangesAsync();
+
+        var service = new CollaboratorService(context, _tenantProvider);
+
+        // Act
+        var result = await service.GetAvailableTeamsAsync(collaborator.Id);
+
+        // Assert
+        result.IsSuccess.Should().BeTrue();
+        result.Value.Should().HaveCount(1);
+        result.Value.Should().Contain(t => t.Id == team2.Id);
+        result.Value.Should().NotContain(t => t.Id == team.Id);
+    }
+
+    [Fact]
+    public async Task GetAvailableTeamsAsync_WithSearch_FiltersCorrectly()
+    {
+        // Arrange
+        using var context = CreateInMemoryContext();
+        var (org, workspace, _) = await CreateTestHierarchy(context);
+
+        var alphaTeam = new Team
+        {
+            Id = Guid.NewGuid(),
+            Name = "Alpha Team",
+            OrganizationId = org.Id,
+            WorkspaceId = workspace.Id
+        };
+        var betaTeam = new Team
+        {
+            Id = Guid.NewGuid(),
+            Name = "Beta Team",
+            OrganizationId = org.Id,
+            WorkspaceId = workspace.Id
+        };
+        context.Teams.AddRange(alphaTeam, betaTeam);
+
+        var collaborator = new Collaborator
+        {
+            Id = Guid.NewGuid(),
+            FullName = "Test User",
+            Email = "test@example.com",
+            OrganizationId = org.Id
+        };
+        context.Collaborators.Add(collaborator);
+        await context.SaveChangesAsync();
+
+        var service = new CollaboratorService(context, _tenantProvider);
+
+        // Act
+        var result = await service.GetAvailableTeamsAsync(collaborator.Id, "Alpha");
+
+        // Assert
+        result.IsSuccess.Should().BeTrue();
+        result.Value.Should().HaveCount(1);
+        result.Value.First().Name.Should().Be("Alpha Team");
+    }
+
+    [Fact]
+    public async Task GetAvailableTeamsAsync_WithNonExistentCollaborator_ReturnsNotFound()
+    {
+        // Arrange
+        using var context = CreateInMemoryContext();
+        var service = new CollaboratorService(context, _tenantProvider);
+
+        // Act
+        var result = await service.GetAvailableTeamsAsync(Guid.NewGuid());
+
+        // Assert
+        result.IsSuccess.Should().BeFalse();
+        result.ErrorType.Should().Be(ServiceErrorType.NotFound);
+        result.Error.Should().Be("Colaborador não encontrado.");
+    }
+
+    #endregion
 }

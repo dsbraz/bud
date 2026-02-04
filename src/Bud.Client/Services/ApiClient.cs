@@ -324,4 +324,58 @@ public sealed class ApiClient
         var response = await _http.PostAsync("api/auth/logout", null);
         response.EnsureSuccessStatusCode();
     }
+
+    // Collaborator Teams (Many-to-Many)
+    public async Task<List<TeamSummaryDto>?> GetCollaboratorTeamsAsync(Guid collaboratorId)
+    {
+        return await _http.GetFromJsonAsync<List<TeamSummaryDto>>($"api/collaborators/{collaboratorId}/teams");
+    }
+
+    public async Task UpdateCollaboratorTeamsAsync(Guid collaboratorId, UpdateCollaboratorTeamsRequest request)
+    {
+        var response = await _http.PutAsJsonAsync($"api/collaborators/{collaboratorId}/teams", request);
+
+        if (!response.IsSuccessStatusCode)
+        {
+            var errorMessage = await ExtractErrorMessageAsync(response);
+            throw new HttpRequestException(errorMessage);
+        }
+    }
+
+    public async Task<List<TeamSummaryDto>?> GetAvailableTeamsForCollaboratorAsync(Guid collaboratorId, string? search = null)
+    {
+        var url = $"api/collaborators/{collaboratorId}/available-teams";
+        if (!string.IsNullOrWhiteSpace(search))
+        {
+            url += $"?search={Uri.EscapeDataString(search)}";
+        }
+        return await _http.GetFromJsonAsync<List<TeamSummaryDto>>(url);
+    }
+
+    // Team Collaborators (Many-to-Many)
+    public async Task<List<CollaboratorSummaryDto>?> GetTeamCollaboratorSummariesAsync(Guid teamId)
+    {
+        return await _http.GetFromJsonAsync<List<CollaboratorSummaryDto>>($"api/teams/{teamId}/collaborators-summary");
+    }
+
+    public async Task UpdateTeamCollaboratorsAsync(Guid teamId, UpdateTeamCollaboratorsRequest request)
+    {
+        var response = await _http.PutAsJsonAsync($"api/teams/{teamId}/collaborators", request);
+
+        if (!response.IsSuccessStatusCode)
+        {
+            var errorMessage = await ExtractErrorMessageAsync(response);
+            throw new HttpRequestException(errorMessage);
+        }
+    }
+
+    public async Task<List<CollaboratorSummaryDto>?> GetAvailableCollaboratorsForTeamAsync(Guid teamId, string? search = null)
+    {
+        var url = $"api/teams/{teamId}/available-collaborators";
+        if (!string.IsNullOrWhiteSpace(search))
+        {
+            url += $"?search={Uri.EscapeDataString(search)}";
+        }
+        return await _http.GetFromJsonAsync<List<CollaboratorSummaryDto>>(url);
+    }
 }
