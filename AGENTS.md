@@ -143,11 +143,17 @@ The application uses **row-level tenant isolation** based on `OrganizationId`. E
    - `TenantAuthorizationService` validates user access to specific tenants
    - `OrganizationAuthorizationService` validates organization ownership and write permissions
 
-4. **EF Core Global Query Filters** — configured in `ApplicationDbContext.OnModelCreating()` on all tenant entities. Simplified filter: `_tenantId == null || _isGlobalAdmin || entity.OrganizationId == _tenantId`. Global admin bypasses all filters.
+4. **EF Core Global Query Filters** — configured in `ApplicationDbContext.OnModelCreating()` on all tenant entities.
+   - Filters are applied only when an `ITenantProvider` is available (normal runtime).
+   - Global admin bypasses all filters.
+   - If `TenantId` is `null` for a non-admin user, the filters return no data.
 
 5. **`TenantSaveChangesInterceptor`** — EF Core `SaveChangesInterceptor` that auto-sets `OrganizationId` on new `ITenantEntity` entities if it's `Guid.Empty`.
 
-6. **`TenantRequiredMiddleware`** — validates JWT authentication and tenant access for `/api/*` requests (except `/api/auth/login`, `/api/auth/logout`, `/api/auth/my-organizations`). Returns 401 for unauthenticated requests, 403 for unauthorized tenant access.
+6. **`TenantRequiredMiddleware`** — validates JWT authentication and tenant access for `/api/*` requests (except `/api/auth/login`, `/api/auth/logout`, `/api/auth/my-organizations`).
+   - Returns 401 for unauthenticated requests.
+   - Returns 403 if the user is authenticated but **does not have a tenant selected** and is not a global admin.
+   - Returns 403 for unauthorized tenant access.
 
 7. **`TenantDelegatingHandler`** (client) — `DelegatingHandler` that reads `AuthState` and attaches `Authorization: Bearer <token>` header and optional `X-Tenant-Id` header to every HTTP request from the Blazor client.
 
@@ -344,6 +350,7 @@ See [OrganizationsController.cs](src/Bud.Server/Controllers/OrganizationsControl
 - **Multi-tenancy in integration tests:**
   - Use `factory.CreateAdminClient()` to create an `HttpClient` with admin headers (`X-User-Email: admin@getbud.co`), which bypasses `TenantRequiredMiddleware`
   - When creating entities directly via DbContext (e.g., in `GetOrCreateAdminLeader`), always set `OrganizationId` on `Team` and `Collaborator`
+  - Use `IgnoreQueryFilters()` when looking up bootstrap data to avoid tenant filters hiding existing records
 - Example: [OrganizationsEndpointsTests.cs](tests/Bud.Server.IntegrationTests/Endpoints/OrganizationsEndpointsTests.cs)
 
 ### E2E Tests
