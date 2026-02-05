@@ -469,6 +469,8 @@
             return;
         }
 
+        FlushPendingMetric();
+
         newMission.ScopeType = scopeType;
         newMission.ScopeId = scopeId;
         newMission.Description = missionDescription;
@@ -477,38 +479,7 @@
         var createdMission = await Api.CreateMissionAsync(newMission);
 
         // Create metrics for the mission
-        if (createdMission != null && tempMetrics.Any())
-        {
-            foreach (var tempMetric in tempMetrics)
-            {
-                var metricRequest = new CreateMissionMetricRequest
-                {
-                    MissionId = createdMission.Id,
-                    Name = tempMetric.Name,
-                    Type = Enum.Parse<MetricType>(tempMetric.Type)
-                };
-
-                if (tempMetric.Type == "Quantitative")
-                {
-                    if (!string.IsNullOrEmpty(tempMetric.QuantitativeType))
-                    {
-                        metricRequest.QuantitativeType = Enum.Parse<QuantitativeMetricType>(tempMetric.QuantitativeType);
-                    }
-                    metricRequest.MinValue = tempMetric.MinValue;
-                    metricRequest.MaxValue = tempMetric.MaxValue;
-                    if (!string.IsNullOrEmpty(tempMetric.Unit))
-                    {
-                        metricRequest.Unit = Enum.Parse<MetricUnit>(tempMetric.Unit);
-                    }
-                }
-                else
-                {
-                    metricRequest.TargetText = tempMetric.TargetText;
-                }
-
-                await Api.CreateMissionMetricAsync(metricRequest);
-            }
-        }
+        await CreateMetricsForMission(createdMission);
 
         newMission = new CreateMissionRequest
         {
@@ -522,6 +493,80 @@
 
         ToastService.ShowSuccess("Rascunho salvo com sucesso!", "A missão foi salva como rascunho.");
         CloseModal();
+    }
+
+    private void FlushPendingMetric()
+    {
+        if (showMetricForm && !string.IsNullOrWhiteSpace(newMetricName) && !string.IsNullOrWhiteSpace(newMetricType))
+        {
+            var details = newMetricType == "Quantitative"
+                ? BuildQuantitativeDetails()
+                : newMetricTargetText ?? "";
+
+            tempMetrics.Add(new TempMetric(
+                newMetricName,
+                newMetricType,
+                details,
+                newMetricQuantitativeType,
+                newMetricMinValue,
+                newMetricMaxValue,
+                newMetricTargetText,
+                newMetricUnit
+            ));
+
+            ClearMetricForm();
+        }
+    }
+
+    private async Task CreateMetricsForMission(Mission? createdMission)
+    {
+        if (createdMission is null || !tempMetrics.Any())
+        {
+            return;
+        }
+
+        var failedCount = 0;
+        foreach (var tempMetric in tempMetrics)
+        {
+            var metricRequest = new CreateMissionMetricRequest
+            {
+                MissionId = createdMission.Id,
+                Name = tempMetric.Name,
+                Type = Enum.Parse<MetricType>(tempMetric.Type)
+            };
+
+            if (tempMetric.Type == "Quantitative")
+            {
+                if (!string.IsNullOrEmpty(tempMetric.QuantitativeType))
+                {
+                    metricRequest.QuantitativeType = Enum.Parse<QuantitativeMetricType>(tempMetric.QuantitativeType);
+                }
+                metricRequest.MinValue = tempMetric.MinValue;
+                metricRequest.MaxValue = tempMetric.MaxValue;
+                if (!string.IsNullOrEmpty(tempMetric.Unit))
+                {
+                    metricRequest.Unit = Enum.Parse<MetricUnit>(tempMetric.Unit);
+                }
+            }
+            else
+            {
+                metricRequest.TargetText = tempMetric.TargetText;
+            }
+
+            try
+            {
+                await Api.CreateMissionMetricAsync(metricRequest);
+            }
+            catch (Exception)
+            {
+                failedCount++;
+            }
+        }
+
+        if (failedCount > 0)
+        {
+            ToastService.ShowError("Erro ao salvar métricas", $"{failedCount} métrica(s) não puderam ser salvas.");
+        }
     }
 
     private void AddMetricOrOpenForm()
@@ -625,6 +670,8 @@
             return;
         }
 
+        FlushPendingMetric();
+
         newMission.ScopeType = scopeType;
         newMission.ScopeId = scopeId;
         newMission.Description = missionDescription;
@@ -633,38 +680,7 @@
         var createdMission = await Api.CreateMissionAsync(newMission);
 
         // Create metrics for the mission
-        if (createdMission != null && tempMetrics.Any())
-        {
-            foreach (var tempMetric in tempMetrics)
-            {
-                var metricRequest = new CreateMissionMetricRequest
-                {
-                    MissionId = createdMission.Id,
-                    Name = tempMetric.Name,
-                    Type = Enum.Parse<MetricType>(tempMetric.Type)
-                };
-
-                if (tempMetric.Type == "Quantitative")
-                {
-                    if (!string.IsNullOrEmpty(tempMetric.QuantitativeType))
-                    {
-                        metricRequest.QuantitativeType = Enum.Parse<QuantitativeMetricType>(tempMetric.QuantitativeType);
-                    }
-                    metricRequest.MinValue = tempMetric.MinValue;
-                    metricRequest.MaxValue = tempMetric.MaxValue;
-                    if (!string.IsNullOrEmpty(tempMetric.Unit))
-                    {
-                        metricRequest.Unit = Enum.Parse<MetricUnit>(tempMetric.Unit);
-                    }
-                }
-                else
-                {
-                    metricRequest.TargetText = tempMetric.TargetText;
-                }
-
-                await Api.CreateMissionMetricAsync(metricRequest);
-            }
-        }
+        await CreateMetricsForMission(createdMission);
 
         newMission = new CreateMissionRequest
         {

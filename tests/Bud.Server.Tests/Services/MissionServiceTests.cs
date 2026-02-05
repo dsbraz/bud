@@ -215,6 +215,70 @@ public class MissionServiceTests
         result.Error.Should().Be("Organização não encontrada.");
     }
 
+    [Fact]
+    public async Task CreateMission_WithDescription_PersistsDescription()
+    {
+        // Arrange
+        using var context = CreateInMemoryContext();
+        var service = new MissionService(context);
+
+        var org = new Organization { Id = Guid.NewGuid(), Name = "Test Org" };
+        context.Organizations.Add(org);
+        await context.SaveChangesAsync();
+
+        var request = new CreateMissionRequest
+        {
+            Name = "Test Mission",
+            Description = "  Mission description  ",
+            StartDate = DateTime.UtcNow,
+            EndDate = DateTime.UtcNow.AddDays(7),
+            Status = MissionStatus.Planned,
+            ScopeType = MissionScopeType.Organization,
+            ScopeId = org.Id
+        };
+
+        // Act
+        var result = await service.CreateAsync(request);
+
+        // Assert
+        result.IsSuccess.Should().BeTrue();
+        result.Value!.Description.Should().Be("Mission description");
+
+        // Verify it's persisted in the database
+        var saved = await context.Missions.FirstAsync(m => m.Id == result.Value.Id);
+        saved.Description.Should().Be("Mission description");
+    }
+
+    [Fact]
+    public async Task CreateMission_WithNullDescription_PersistsNullDescription()
+    {
+        // Arrange
+        using var context = CreateInMemoryContext();
+        var service = new MissionService(context);
+
+        var org = new Organization { Id = Guid.NewGuid(), Name = "Test Org" };
+        context.Organizations.Add(org);
+        await context.SaveChangesAsync();
+
+        var request = new CreateMissionRequest
+        {
+            Name = "Test Mission",
+            Description = null,
+            StartDate = DateTime.UtcNow,
+            EndDate = DateTime.UtcNow.AddDays(7),
+            Status = MissionStatus.Planned,
+            ScopeType = MissionScopeType.Organization,
+            ScopeId = org.Id
+        };
+
+        // Act
+        var result = await service.CreateAsync(request);
+
+        // Assert
+        result.IsSuccess.Should().BeTrue();
+        result.Value!.Description.Should().BeNull();
+    }
+
     #endregion
 
     #region ApplyScope Tests

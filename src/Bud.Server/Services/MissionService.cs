@@ -25,6 +25,7 @@ public sealed class MissionService(ApplicationDbContext dbContext) : IMissionSer
         {
             Id = Guid.NewGuid(),
             Name = request.Name.Trim(),
+            Description = request.Description?.Trim(),
             StartDate = NormalizeToUtc(request.StartDate),
             EndDate = NormalizeToUtc(request.EndDate),
             Status = request.Status,

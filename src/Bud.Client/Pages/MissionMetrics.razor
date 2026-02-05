@@ -205,9 +205,13 @@
 
     private async void HandleOrganizationChanged()
     {
-        await LoadMissions();
-        await LoadMetrics();
-        StateHasChanged();
+        await InvokeAsync(async () =>
+        {
+            filterMissionId = null;
+            await LoadMissions();
+            await LoadMetrics();
+            StateHasChanged();
+        });
     }
 
     public void Dispose()
@@ -217,17 +221,31 @@
 
     private async Task LoadMissions()
     {
-        var result = await Api.GetMissionsAsync(null, null, null, 1, 200);
-        missions = result?.Items.ToList() ?? new List<Mission>();
+        try
+        {
+            var result = await Api.GetMissionsAsync(null, null, null, 1, 200);
+            missions = result?.Items.ToList() ?? new List<Mission>();
+        }
+        catch (Exception)
+        {
+            missions = new List<Mission>();
+        }
     }
 
     private async Task LoadMetrics()
     {
-        var missionId = Guid.TryParse(filterMissionId, out var parsedMissionId)
-            ? parsedMissionId
-            : (Guid?)null;
+        try
+        {
+            var missionId = Guid.TryParse(filterMissionId, out var parsedMissionId)
+                ? parsedMissionId
+                : (Guid?)null;
 
-        metrics = await Api.GetMissionMetricsAsync(missionId, search, 1, 20) ?? new PagedResult<MissionMetric>();
+            metrics = await Api.GetMissionMetricsAsync(missionId, search, 1, 20) ?? new PagedResult<MissionMetric>();
+        }
+        catch (Exception)
+        {
+            metrics = new PagedResult<MissionMetric>();
+        }
     }
 
     private async Task OnMetricTypeChanged(ChangeEventArgs e)
