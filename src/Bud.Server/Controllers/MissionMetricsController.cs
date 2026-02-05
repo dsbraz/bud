@@ -16,6 +16,7 @@ namespace Bud.Server.Controllers;
 [Route("api/mission-metrics")]
 public sealed class MissionMetricsController(
     IMissionMetricService metricService,
+    IMissionProgressService missionProgressService,
     ApplicationDbContext dbContext,
     IAuthorizationService authorizationService,
     IValidator<CreateMissionMetricRequest> createValidator,
@@ -173,6 +174,25 @@ public sealed class MissionMetricsController(
         return result.IsSuccess
             ? Ok(result.Value)
             : NotFound(new ProblemDetails { Detail = result.Error });
+    }
+
+    [HttpGet("progress")]
+    [ProducesResponseType(typeof(List<MetricProgressDto>), StatusCodes.Status200OK)]
+    public async Task<ActionResult<List<MetricProgressDto>>> GetProgress(
+        [FromQuery] string ids,
+        CancellationToken cancellationToken)
+    {
+        var metricIds = new List<Guid>();
+        foreach (var part in (ids ?? string.Empty).Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
+        {
+            if (Guid.TryParse(part, out var id))
+            {
+                metricIds.Add(id);
+            }
+        }
+
+        var result = await missionProgressService.GetMetricProgressAsync(metricIds, cancellationToken);
+        return Ok(result.Value);
     }
 
     [HttpGet]

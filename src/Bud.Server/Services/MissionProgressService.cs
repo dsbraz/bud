@@ -1,0 +1,303 @@
+using Bud.Server.Data;
+using Bud.Shared.Contracts;
+using Bud.Shared.Models;
+using Microsoft.EntityFrameworkCore;
+
+namespace Bud.Server.Services;
+
+public sealed class MissionProgressService(ApplicationDbContext dbContext) : IMissionProgressService
+{
+    public async Task<ServiceResult<List<MissionProgressDto>>> GetProgressAsync(
+        List<Guid> missionIds,
+        CancellationToken cancellationToken = default)
+    {
+        if (missionIds.Count == 0)
+        {
+            return ServiceResult<List<MissionProgressDto>>.Success([]);
+        }
+
+        var missions = await dbContext.Missions
+            .AsNoTracking()
+            .Include(m => m.Metrics)
+            .Where(m => missionIds.Contains(m.Id))
+            .ToListAsync(cancellationToken);
+
+        var allMetricIds = missions
+            .SelectMany(m => m.Metrics)
+            .Select(m => m.Id)
+            .ToList();
+
+        // Fetch all check-ins for the metrics (grouped in memory to avoid
+        // GroupBy+OrderBy+First which doesn't translate to SQL in PostgreSQL)
+        var allCheckins = await dbContext.MetricCheckins
+            .AsNoTracking()
+            .Where(c => allMetricIds.Contains(c.MissionMetricId))
+            .ToListAsync(cancellationToken);
+
+        var latestCheckinByMetric = allCheckins
+            .GroupBy(c => c.MissionMetricId)
+            .ToDictionary(g => g.Key, g => g.OrderBy(c => c.CheckinDate).Last());
+
+        // Build first check-in map for Reduce-type metrics (needed for baseline)
+        var reduceMetricIds = missions
+            .SelectMany(m => m.Metrics)
+            .Where(m => m.Type == MetricType.Quantitative && m.QuantitativeType == QuantitativeMetricType.Reduce)
+            .Select(m => m.Id)
+            .ToHashSet();
+
+        var firstCheckins = allCheckins
+            .Where(c => reduceMetricIds.Contains(c.MissionMetricId))
+            .GroupBy(c => c.MissionMetricId)
+            .ToDictionary(g => g.Key, g => g.OrderBy(c => c.CheckinDate).First());
+
+        var now = DateTime.UtcNow;
+        var results = new List<MissionProgressDto>();
+
+        foreach (var mission in missions)
+        {
+            var totalMetrics = mission.Metrics.Count;
+            var metricsWithCheckins = 0;
+            var progressSum = 0m;
+            var confidenceSum = 0m;
+
+            foreach (var metric in mission.Metrics)
+            {
+                if (!latestCheckinByMetric.TryGetValue(metric.Id, out var latestCheckin))
+                {
+                    continue;
+                }
+
+                metricsWithCheckins++;
+                confidenceSum += latestCheckin.ConfidenceLevel;
+
+                var metricProgress = CalculateMetricProgress(metric, latestCheckin, firstCheckins);
+                progressSum += metricProgress;
+            }
+
+            var overallProgress = totalMetrics > 0 && metricsWithCheckins > 0
+                ? progressSum / totalMetrics
+                : 0m;
+
+            var averageConfidence = metricsWithCheckins > 0
+                ? confidenceSum / metricsWithCheckins
+                : 0m;
+
+            var expectedProgress = CalculateExpectedProgress(mission.StartDate, mission.EndDate, now);
+
+            results.Add(new MissionProgressDto
+            {
+                MissionId = mission.Id,
+                OverallProgress = Math.Round(overallProgress, 1),
+                ExpectedProgress = Math.Round(expectedProgress, 1),
+                AverageConfidence = Math.Round(averageConfidence, 1),
+                TotalMetrics = totalMetrics,
+                MetricsWithCheckins = metricsWithCheckins
+            });
+        }
+
+        return ServiceResult<List<MissionProgressDto>>.Success(results);
+    }
+
+    public async Task<ServiceResult<List<MetricProgressDto>>> GetMetricProgressAsync(
+        List<Guid> metricIds,
+        CancellationToken cancellationToken = default)
+    {
+        if (metricIds.Count == 0)
+        {
+            return ServiceResult<List<MetricProgressDto>>.Success([]);
+        }
+
+        var metrics = await dbContext.MissionMetrics
+            .AsNoTracking()
+            .Where(m => metricIds.Contains(m.Id))
+            .ToListAsync(cancellationToken);
+
+        var allCheckins = await dbContext.MetricCheckins
+            .AsNoTracking()
+            .Where(c => metricIds.Contains(c.MissionMetricId))
+            .ToListAsync(cancellationToken);
+
+        var latestCheckinByMetric = allCheckins
+            .GroupBy(c => c.MissionMetricId)
+            .ToDictionary(g => g.Key, g => g.OrderBy(c => c.CheckinDate).Last());
+
+        var reduceMetricIds = metrics
+            .Where(m => m.Type == MetricType.Quantitative && m.QuantitativeType == QuantitativeMetricType.Reduce)
+            .Select(m => m.Id)
+            .ToHashSet();
+
+        var firstCheckins = allCheckins
+            .Where(c => reduceMetricIds.Contains(c.MissionMetricId))
+            .GroupBy(c => c.MissionMetricId)
+            .ToDictionary(g => g.Key, g => g.OrderBy(c => c.CheckinDate).First());
+
+        var results = new List<MetricProgressDto>();
+
+        foreach (var metric in metrics)
+        {
+            if (!latestCheckinByMetric.TryGetValue(metric.Id, out var latestCheckin))
+            {
+                results.Add(new MetricProgressDto
+                {
+                    MetricId = metric.Id,
+                    Progress = 0m,
+                    Confidence = 0,
+                    HasCheckins = false
+                });
+                continue;
+            }
+
+            var progress = CalculateMetricProgress(metric, latestCheckin, firstCheckins);
+
+            results.Add(new MetricProgressDto
+            {
+                MetricId = metric.Id,
+                Progress = Math.Round(progress, 1),
+                Confidence = latestCheckin.ConfidenceLevel,
+                HasCheckins = true
+            });
+        }
+
+        return ServiceResult<List<MetricProgressDto>>.Success(results);
+    }
+
+    public static decimal CalculateMetricProgress(
+        MissionMetric metric,
+        MetricCheckin latestCheckin,
+        Dictionary<Guid, MetricCheckin> firstCheckins)
+    {
+        if (metric.Type == MetricType.Qualitative)
+        {
+            return Clamp(latestCheckin.ConfidenceLevel / 5m * 100m);
+        }
+
+        if (latestCheckin.Value is null)
+        {
+            return 0m;
+        }
+
+        var value = latestCheckin.Value.Value;
+
+        return metric.QuantitativeType switch
+        {
+            QuantitativeMetricType.Achieve => CalculateAchieveProgress(value, metric.MaxValue),
+            QuantitativeMetricType.Reduce => CalculateReduceProgress(value, metric.MaxValue, metric.Id, firstCheckins),
+            QuantitativeMetricType.KeepAbove => CalculateKeepAboveProgress(value, metric.MinValue ?? 0m),
+            QuantitativeMetricType.KeepBelow => CalculateKeepBelowProgress(value, metric.MaxValue ?? decimal.MaxValue),
+            QuantitativeMetricType.KeepBetween => CalculateKeepBetweenProgress(value, metric.MinValue ?? 0m, metric.MaxValue ?? decimal.MaxValue),
+            _ => 0m
+        };
+    }
+
+    private static decimal CalculateAchieveProgress(decimal currentValue, decimal? maxValue)
+    {
+        if (maxValue is null or 0m)
+        {
+            return 0m;
+        }
+
+        return Clamp(currentValue / maxValue.Value * 100m);
+    }
+
+    private static decimal CalculateReduceProgress(
+        decimal currentValue,
+        decimal? maxValue,
+        Guid metricId,
+        Dictionary<Guid, MetricCheckin> firstCheckins)
+    {
+        var target = maxValue ?? 0m;
+
+        if (currentValue <= target)
+        {
+            return 100m;
+        }
+
+        if (!firstCheckins.TryGetValue(metricId, out var firstCheckin) || firstCheckin.Value is null)
+        {
+            return 0m;
+        }
+
+        var baseline = firstCheckin.Value.Value;
+        var range = baseline - target;
+
+        if (range <= 0m)
+        {
+            return 0m;
+        }
+
+        return Clamp((baseline - currentValue) / range * 100m);
+    }
+
+    private static decimal CalculateKeepAboveProgress(decimal currentValue, decimal minValue)
+    {
+        if (currentValue >= minValue)
+        {
+            return 100m;
+        }
+
+        if (minValue <= 0m)
+        {
+            return 0m;
+        }
+
+        return Clamp(currentValue / minValue * 100m);
+    }
+
+    private static decimal CalculateKeepBelowProgress(decimal currentValue, decimal maxValue)
+    {
+        if (currentValue <= maxValue)
+        {
+            return 100m;
+        }
+
+        if (currentValue <= 0m)
+        {
+            return 100m;
+        }
+
+        return Clamp(maxValue / currentValue * 100m);
+    }
+
+    private static decimal CalculateKeepBetweenProgress(decimal currentValue, decimal minValue, decimal maxValue)
+    {
+        if (currentValue >= minValue && currentValue <= maxValue)
+        {
+            return 100m;
+        }
+
+        if (currentValue < minValue)
+        {
+            if (minValue <= 0m)
+            {
+                return 0m;
+            }
+
+            return Clamp(currentValue / minValue * 100m);
+        }
+
+        // currentValue > maxValue
+        if (currentValue <= 0m)
+        {
+            return 100m;
+        }
+
+        return Clamp(maxValue / currentValue * 100m);
+    }
+
+    public static decimal CalculateExpectedProgress(DateTime startDate, DateTime endDate, DateTime now)
+    {
+        var totalDays = (endDate - startDate).TotalDays;
+        if (totalDays <= 0)
+        {
+            return 100m;
+        }
+
+        var elapsedDays = (now - startDate).TotalDays;
+        return Clamp((decimal)(elapsedDays / totalDays) * 100m);
+    }
+
+    private static decimal Clamp(decimal value)
+    {
+        return Math.Max(0m, Math.Min(100m, value));
+    }
+}

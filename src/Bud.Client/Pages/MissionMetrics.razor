@@ -55,6 +55,8 @@
                     <th>Nome</th>
                     <th>Tipo</th>
                     <th>Alvo</th>
+                    <th>Progresso</th>
+                    <th>Confiança</th>
                     <th>Missão</th>
                     <th style="width: 120px; text-align: center;">Ações</th>
                 </tr>
@@ -63,10 +65,38 @@
                 @foreach (var metric in metrics.Items)
                 {
                     var isDeleting = deletingMetricId == metric.Id;
+                    var progress = metricProgress.GetValueOrDefault(metric.Id);
                     <tr>
                         <td>@metric.Name</td>
                         <td>@GetMetricTypeLabel(metric.Type)</td>
                         <td>@GetTargetLabel(metric)</td>
+                        <td>
+                            @if (progress is null || !progress.HasCheckins)
+                            {
+                                <span class="muted">—</span>
+                            }
+                            else
+                            {
+                                var statusClass = GetProgressStatusClass(progress);
+                                <div class="mission-progress">
+                                    <div class="progress-bar">
+                                        <div class="progress-fill @statusClass" style="width: @($"{progress.Progress:F0}%")"></div>
+                                    </div>
+                                    <span class="progress-label">@($"{progress.Progress:F0}%")</span>
+                                </div>
+                            }
+                        </td>
+                        <td>
+                            @if (progress is null || !progress.HasCheckins)
+                            {
+                                <span class="confidence-badge no-data">Sem dados</span>
+                            }
+                            else
+                            {
+                                var (confClass, confLabel) = GetConfidenceDisplay(progress.Confidence);
+                                <span class="confidence-badge @confClass">@GetConfidenceStarsText(progress.Confidence) @confLabel</span>
+                            }
+                        </td>
                         <td>@GetMissionName(metric.MissionId)</td>
                         <td style="text-align: center;">
                             <div class="table-actions">
@@ -314,6 +344,7 @@
 @code {
     private CreateMissionMetricRequest newMetric = new();
     private PagedResult<MissionMetric>? metrics;
+    private Dictionary<Guid, MetricProgressDto> metricProgress = new();
     private List<Mission> missions = new();
     private string? createMissionId;
     private string? createMetricTypeValue;
@@ -381,10 +412,32 @@
                 : (Guid?)null;
 
             metrics = await Api.GetMissionMetricsAsync(missionId, search, 1, 20) ?? new PagedResult<MissionMetric>();
+            await LoadMetricProgress();
         }
         catch (Exception)
         {
             metrics = new PagedResult<MissionMetric>();
+            metricProgress = new();
+        }
+    }
+
+    private async Task LoadMetricProgress()
+    {
+        if (metrics is null || metrics.Items.Count == 0)
+        {
+            metricProgress = new();
+            return;
+        }
+
+        try
+        {
+            var ids = metrics.Items.Select(m => m.Id).ToList();
+            var progressList = await Api.GetMetricProgressAsync(ids);
+            metricProgress = progressList?.ToDictionary(p => p.MetricId) ?? new();
+        }
+        catch
+        {
+            metricProgress = new();
         }
     }
 
@@ -663,6 +716,39 @@
         editQuantitativeTypeValue = null;
         editMetricUnitValue = null;
         await InvokeAsync(StateHasChanged);
+    }
+
+    // ---- Progress & Confidence Helpers ----
+
+    private static string GetProgressStatusClass(MetricProgressDto progress)
+    {
+        if (!progress.HasCheckins)
+        {
+            return "no-data";
+        }
+
+        return progress.Progress switch
+        {
+            >= 70m => "on-track",
+            >= 40m => "at-risk",
+            _ => "off-track"
+        };
+    }
+
+    private static (string statusClass, string label) GetConfidenceDisplay(int confidence)
+    {
+        return confidence switch
+        {
+            >= 4 => ("on-track", "No caminho"),
+            >= 2 => ("at-risk", "Atenção"),
+            _ => ("off-track", "Em risco")
+        };
+    }
+
+    private static string GetConfidenceStarsText(int confidence)
+    {
+        var full = Math.Clamp(confidence, 0, 5);
+        return new string('\u2605', full) + new string('\u2606', 5 - full);
     }
 
     // ---- Delete Methods ----

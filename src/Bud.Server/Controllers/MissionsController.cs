@@ -16,6 +16,7 @@ namespace Bud.Server.Controllers;
 [Route("api/missions")]
 public sealed class MissionsController(
     IMissionService missionService,
+    IMissionProgressService missionProgressService,
     ApplicationDbContext dbContext,
     IAuthorizationService authorizationService,
     IValidator<CreateMissionRequest> createValidator,
@@ -201,6 +202,25 @@ public sealed class MissionsController(
         return result.IsSuccess
             ? Ok(result.Value)
             : NotFound(new ProblemDetails { Detail = result.Error });
+    }
+
+    [HttpGet("progress")]
+    [ProducesResponseType(typeof(List<MissionProgressDto>), StatusCodes.Status200OK)]
+    public async Task<ActionResult<List<MissionProgressDto>>> GetProgress(
+        [FromQuery] string ids,
+        CancellationToken cancellationToken)
+    {
+        var missionIds = new List<Guid>();
+        foreach (var part in (ids ?? string.Empty).Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
+        {
+            if (Guid.TryParse(part, out var id))
+            {
+                missionIds.Add(id);
+            }
+        }
+
+        var result = await missionProgressService.GetProgressAsync(missionIds, cancellationToken);
+        return Ok(result.Value);
     }
 
     [HttpGet("{id:guid}/metrics")]

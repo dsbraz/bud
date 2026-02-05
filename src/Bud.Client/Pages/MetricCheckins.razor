@@ -423,7 +423,7 @@
         }
 
         newCheckin.MissionMetricId = selectedCreateMetric.Id;
-        newCheckin.CheckinDate = createCheckinDate.ToDateTime(TimeOnly.MinValue, DateTimeKind.Utc);
+        newCheckin.CheckinDate = createCheckinDate.ToDateTime(TimeOnly.FromDateTime(DateTime.UtcNow), DateTimeKind.Utc);
 
         if (newCheckin.ConfidenceLevel < 1 || newCheckin.ConfidenceLevel > 5)
         {
@@ -472,7 +472,7 @@
     {
         if (selectedCheckin is null) return;
 
-        editCheckin.CheckinDate = editCheckinDate.ToDateTime(TimeOnly.MinValue, DateTimeKind.Utc);
+        editCheckin.CheckinDate = editCheckinDate.ToDateTime(TimeOnly.FromDateTime(DateTime.UtcNow), DateTimeKind.Utc);
 
         try
         {

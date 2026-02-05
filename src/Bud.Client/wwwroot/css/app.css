@@ -616,6 +616,88 @@ a {
     font-size: var(--font-size-label-md);
 }
 
+/* Mission Progress Bar */
+.mission-progress {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-2);
+}
+
+.progress-bar {
+    position: relative;
+    height: 8px;
+    width: 100px;
+    background: var(--neutral-200);
+    border-radius: var(--radius-full);
+}
+
+.progress-fill {
+    height: 100%;
+    border-radius: var(--radius-full);
+    transition: width var(--transition-slow);
+}
+
+.progress-fill.on-track {
+    background: var(--color-success);
+}
+
+.progress-fill.at-risk {
+    background: var(--color-warning);
+}
+
+.progress-fill.off-track {
+    background: var(--color-error);
+}
+
+.progress-fill.no-data {
+    background: var(--neutral-300);
+}
+
+.progress-expected {
+    position: absolute;
+    top: -2px;
+    width: 2px;
+    height: 12px;
+    background: var(--neutral-500);
+    border-radius: 1px;
+}
+
+.progress-label {
+    font-size: var(--font-size-label-sm);
+    font-weight: var(--font-weight-medium);
+    color: var(--color-text-secondary);
+    min-width: 32px;
+}
+
+/* Confidence Badge */
+.confidence-badge {
+    display: inline-block;
+    font-size: var(--font-size-label-sm);
+    padding: 2px 8px;
+    border-radius: var(--radius-full);
+    white-space: nowrap;
+}
+
+.confidence-badge.on-track {
+    background: var(--green-50);
+    color: var(--green-700);
+}
+
+.confidence-badge.at-risk {
+    background: var(--yellow-50);
+    color: var(--yellow-700);
+}
+
+.confidence-badge.off-track {
+    background: var(--red-50);
+    color: var(--red-700);
+}
+
+.confidence-badge.no-data {
+    background: var(--neutral-100);
+    color: var(--neutral-500);
+}
+
 @media (max-width: 900px) {
     .app-shell {
         grid-template-columns: 1fr;

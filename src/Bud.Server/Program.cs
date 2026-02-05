@@ -130,6 +130,7 @@ builder.Services.AddScoped<IAuthorizationHandler, OrganizationOwnerHandler>();
 builder.Services.AddScoped<IAuthorizationHandler, OrganizationWriteHandler>();
 builder.Services.AddScoped<IAuthorizationHandler, MissionScopeAccessHandler>();
 builder.Services.AddScoped<IMetricCheckinService, MetricCheckinService>();
+builder.Services.AddScoped<IMissionProgressService, MissionProgressService>();
 
 // Add Health Checks
 builder.Services.AddHealthChecks()

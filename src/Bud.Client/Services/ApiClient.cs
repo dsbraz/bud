@@ -311,6 +311,30 @@ public sealed class ApiClient
         return await _http.GetFromJsonAsync<PagedResult<MissionMetric>>(url);
     }
 
+    // Metric Progress
+    public async Task<List<MetricProgressDto>?> GetMetricProgressAsync(List<Guid> metricIds)
+    {
+        if (metricIds.Count == 0)
+        {
+            return [];
+        }
+
+        var ids = string.Join(",", metricIds);
+        return await _http.GetFromJsonAsync<List<MetricProgressDto>>($"api/mission-metrics/progress?ids={ids}");
+    }
+
+    // Mission Progress
+    public async Task<List<MissionProgressDto>?> GetMissionProgressAsync(List<Guid> missionIds)
+    {
+        if (missionIds.Count == 0)
+        {
+            return [];
+        }
+
+        var ids = string.Join(",", missionIds);
+        return await _http.GetFromJsonAsync<List<MissionProgressDto>>($"api/missions/progress?ids={ids}");
+    }
+
     // MetricCheckin methods
     public async Task<PagedResult<MetricCheckin>?> GetMetricCheckinsAsync(Guid? missionMetricId, Guid? missionId, int page = 1, int pageSize = 10)
     {

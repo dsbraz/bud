@@ -65,6 +65,8 @@
                     <th>Nome</th>
                     <th>Escopo</th>
                     <th>Período</th>
+                    <th>Progresso</th>
+                    <th>Confiança</th>
                     <th>Status</th>
                     <th style="width: 120px; text-align: center;">Ações</th>
                 </tr>
@@ -73,10 +75,43 @@
                 @foreach (var mission in missions.Items)
                 {
                     var isDeleting = deletingMissionId == mission.Id;
+                    var progress = missionProgress.GetValueOrDefault(mission.Id);
                     <tr>
                         <td>@mission.Name</td>
                         <td>@GetMissionScopeName(mission)</td>
                         <td>@mission.StartDate.ToString("yyyy-MM-dd") - @mission.EndDate.ToString("yyyy-MM-dd")</td>
+                        <td>
+                            @if (progress is null || progress.TotalMetrics == 0)
+                            {
+                                <span class="muted">—</span>
+                            }
+                            else
+                            {
+                                var statusClass = GetProgressStatusClass(progress);
+                                <div class="mission-progress">
+                                    <div class="progress-bar">
+                                        <div class="progress-fill @statusClass" style="width: @($"{progress.OverallProgress:F0}%")"></div>
+                                        @if (progress.ExpectedProgress is > 0 and < 100)
+                                        {
+                                            <div class="progress-expected" style="left: @($"{progress.ExpectedProgress:F0}%")"
+                                                 title="Esperado: @($"{progress.ExpectedProgress:F0}%")"></div>
+                                        }
+                                    </div>
+                                    <span class="progress-label">@($"{progress.OverallProgress:F0}%")</span>
+                                </div>
+                            }
+                        </td>
+                        <td>
+                            @if (progress is null || progress.MetricsWithCheckins == 0)
+                            {
+                                <span class="confidence-badge no-data">Sem dados</span>
+                            }
+                            else
+                            {
+                                var (confClass, confLabel) = GetConfidenceDisplay(progress.AverageConfidence);
+                                <span class="confidence-badge @confClass">@GetConfidenceStarsText(progress.AverageConfidence) @confLabel</span>
+                            }
+                        </td>
                         <td>@GetStatusLabel(mission.Status)</td>
                         <td style="text-align: center;">
                             <div class="table-actions">
@@ -507,6 +542,7 @@
 
     private CreateMissionRequest newMission = new();
     private PagedResult<Mission>? missions;
+    private Dictionary<Guid, MissionProgressDto> missionProgress = new();
     private List<Organization> organizations = new();
     private List<Workspace> workspaces = new();
     private List<Team> teams = new();
@@ -608,6 +644,27 @@
             : (Guid?)null;
 
         missions = await Api.GetMissionsAsync(scopeType, scopeId, search, 1, 20) ?? new PagedResult<Mission>();
+        await LoadProgress();
+    }
+
+    private async Task LoadProgress()
+    {
+        if (missions is null || missions.Items.Count == 0)
+        {
+            missionProgress = new();
+            return;
+        }
+
+        try
+        {
+            var ids = missions.Items.Select(m => m.Id).ToList();
+            var progressList = await Api.GetMissionProgressAsync(ids);
+            missionProgress = progressList?.ToDictionary(p => p.MissionId) ?? new();
+        }
+        catch
+        {
+            missionProgress = new();
+        }
     }
 
     private async Task OnCreateScopeTypeChanged(ChangeEventArgs e)
@@ -1224,6 +1281,49 @@
             deleteMetricConfirmTimer?.Dispose();
             deleteMetricConfirmTimer = null;
         }
+    }
+
+    // ---- Progress & Confidence Helpers ----
+
+    private static string GetProgressStatusClass(MissionProgressDto progress)
+    {
+        if (progress.MetricsWithCheckins == 0)
+        {
+            return "no-data";
+        }
+
+        if (progress.ExpectedProgress <= 0)
+        {
+            return "on-track";
+        }
+
+        if (progress.OverallProgress >= progress.ExpectedProgress)
+        {
+            return "on-track";
+        }
+
+        if (progress.OverallProgress >= progress.ExpectedProgress * 0.7m)
+        {
+            return "at-risk";
+        }
+
+        return "off-track";
+    }
+
+    private static (string statusClass, string label) GetConfidenceDisplay(decimal averageConfidence)
+    {
+        return averageConfidence switch
+        {
+            >= 4m => ("on-track", "No caminho"),
+            >= 2m => ("at-risk", "Atenção"),
+            _ => ("off-track", "Em risco")
+        };
+    }
+
+    private static string GetConfidenceStarsText(decimal confidence)
+    {
+        var full = (int)Math.Round(confidence);
+        return new string('★', full) + new string('☆', 5 - full);
     }
 
     // ---- Metric Display Helpers ----
