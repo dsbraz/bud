@@ -20,6 +20,7 @@ public sealed class JwtTenantProvider : ITenantProvider
 
         // Claims vêm do JWT VALIDADO pelo ASP.NET Core
         UserEmail = user.FindFirst("email")?.Value ?? user.FindFirst(ClaimTypes.Email)?.Value;
+        IsGlobalAdmin = user.IsInRole("GlobalAdmin");
 
         // Tenant (pode ser enviado via header X-Tenant-Id ou estar no claim)
         var tenantHeader = httpContext?.Request.Headers["X-Tenant-Id"].FirstOrDefault();
@@ -27,9 +28,9 @@ public sealed class JwtTenantProvider : ITenantProvider
         {
             TenantId = tenantId;
         }
-        else
+        else if (!IsGlobalAdmin)
         {
-            // Fallback: usar organization_id do claim (para single-org users)
+            // Fallback: usar organization_id do claim (apenas para single-org users)
             var orgClaim = user.FindFirst("organization_id")?.Value;
             if (Guid.TryParse(orgClaim, out var orgId))
             {
@@ -42,7 +43,5 @@ public sealed class JwtTenantProvider : ITenantProvider
         {
             CollaboratorId = collabId;
         }
-
-        IsGlobalAdmin = user.IsInRole("GlobalAdmin");
     }
 }
