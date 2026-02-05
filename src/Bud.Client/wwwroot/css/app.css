@@ -2251,6 +2251,12 @@ a {
     color: var(--neutral-500);
 }
 
+/* Outdated metric row */
+.metric-row.outdated {
+    border: 1px solid var(--red-400);
+    border-radius: var(--radius-sm);
+}
+
 .mission-card-title-wrapper {
     flex: 1;
     display: flex;

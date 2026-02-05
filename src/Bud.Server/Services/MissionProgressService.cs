@@ -51,12 +51,14 @@ public sealed class MissionProgressService(ApplicationDbContext dbContext) : IMi
             .ToDictionary(g => g.Key, g => g.OrderBy(c => c.CheckinDate).First());
 
         var now = DateTime.UtcNow;
+        var oneWeekAgo = now.AddDays(-7);
         var results = new List<MissionProgressDto>();
 
         foreach (var mission in missions)
         {
             var totalMetrics = mission.Metrics.Count;
             var metricsWithCheckins = 0;
+            var outdatedMetrics = 0;
             var progressSum = 0m;
             var confidenceSum = 0m;
 
@@ -64,11 +66,19 @@ public sealed class MissionProgressService(ApplicationDbContext dbContext) : IMi
             {
                 if (!latestCheckinByMetric.TryGetValue(metric.Id, out var latestCheckin))
                 {
+                    // No check-in at all - counts as outdated
+                    outdatedMetrics++;
                     continue;
                 }
 
                 metricsWithCheckins++;
                 confidenceSum += latestCheckin.ConfidenceLevel;
+
+                // Check if last check-in is older than 7 days
+                if (latestCheckin.CheckinDate < oneWeekAgo)
+                {
+                    outdatedMetrics++;
+                }
 
                 var metricProgress = CalculateMetricProgress(metric, latestCheckin, firstCheckins);
                 progressSum += metricProgress;
@@ -91,7 +101,8 @@ public sealed class MissionProgressService(ApplicationDbContext dbContext) : IMi
                 ExpectedProgress = Math.Round(expectedProgress, 1),
                 AverageConfidence = Math.Round(averageConfidence, 1),
                 TotalMetrics = totalMetrics,
-                MetricsWithCheckins = metricsWithCheckins
+                MetricsWithCheckins = metricsWithCheckins,
+                OutdatedMetrics = outdatedMetrics
             });
         }
 
@@ -131,6 +142,8 @@ public sealed class MissionProgressService(ApplicationDbContext dbContext) : IMi
             .GroupBy(c => c.MissionMetricId)
             .ToDictionary(g => g.Key, g => g.OrderBy(c => c.CheckinDate).First());
 
+        var now = DateTime.UtcNow;
+        var oneWeekAgo = now.AddDays(-7);
         var results = new List<MetricProgressDto>();
 
         foreach (var metric in metrics)
@@ -142,19 +155,22 @@ public sealed class MissionProgressService(ApplicationDbContext dbContext) : IMi
                     MetricId = metric.Id,
                     Progress = 0m,
                     Confidence = 0,
-                    HasCheckins = false
+                    HasCheckins = false,
+                    IsOutdated = true
                 });
                 continue;
             }
 
             var progress = CalculateMetricProgress(metric, latestCheckin, firstCheckins);
+            var isOutdated = latestCheckin.CheckinDate < oneWeekAgo;
 
             results.Add(new MetricProgressDto
             {
                 MetricId = metric.Id,
                 Progress = Math.Round(progress, 1),
                 Confidence = latestCheckin.ConfidenceLevel,
-                HasCheckins = true
+                HasCheckins = true,
+                IsOutdated = isOutdated
             });
         }
 

@@ -117,10 +117,6 @@
         <div class="summary-card-progress">
             <div class="summary-progress-bar">
                 <div class="summary-progress-fill" style="width: @GetOverallProgressDisplay()%"></div>
-                @if (GetExpectedProgressDisplay() > 0 && GetExpectedProgressDisplay() < 100)
-                {
-                    <div class="summary-progress-expected" style="left: @GetExpectedProgressDisplay()%"></div>
-                }
             </div>
         </div>
     </div>
@@ -240,7 +236,8 @@ else
                             {
                                 var metricProgress = GetMetricProgress(metric);
                                 var metricStatusClass = GetMetricStatusClass(metricProgress);
-                                <div class="metric-row">
+                                var isMetricOutdated = IsMetricOutdated(metric.Id);
+                                <div class="metric-row @(isMetricOutdated ? "outdated" : "")">
                                     <button class="metric-checkin-btn" @onclick="() => OpenCheckinModalForMetric(mission, metric)" title="Novo check-in">
                                         <svg width="18" height="18" viewBox="0 0 32 32" fill="none">
                                             <path d="M16 6V26M6 16H26" stroke="currentColor" stroke-width="3" stroke-linecap="round"/>
@@ -1436,7 +1433,7 @@ else
 
     private int GetOutdatedMetricsCount()
     {
-        return missionProgress.Values.Sum(p => p.TotalMetrics - p.MetricsWithCheckins);
+        return missionProgress.Values.Sum(p => p.OutdatedMetrics);
     }
 
     // ---- Metric Display Methods ----
@@ -1448,6 +1445,16 @@ else
             return (int)progress.Progress;
         }
         return 0;
+    }
+
+    private bool IsMetricOutdated(Guid metricId)
+    {
+        if (metricProgressCache.TryGetValue(metricId, out var progress))
+        {
+            return progress.IsOutdated;
+        }
+        // No progress data means no check-ins, which is outdated
+        return true;
     }
 
     private string GetMetricStatusClass(int progress)
