@@ -494,12 +494,12 @@
         }
     }
 
-    private void HandleDeleteClick(Guid collaboratorId)
+    private async Task HandleDeleteClick(Guid collaboratorId)
     {
         if (deletingCollaboratorId == collaboratorId)
         {
             // Segundo clique - executar exclusão
-            _ = DeleteCollaborator(collaboratorId);
+            await DeleteCollaborator(collaboratorId);
         }
         else
         {

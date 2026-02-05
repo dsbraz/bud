@@ -257,6 +257,60 @@ public sealed class ApiClient
         return await response.Content.ReadFromJsonAsync<MissionMetric>();
     }
 
+    public async Task<Mission?> UpdateMissionAsync(Guid id, UpdateMissionRequest request)
+    {
+        var response = await _http.PutAsJsonAsync($"api/missions/{id}", request);
+
+        if (!response.IsSuccessStatusCode)
+        {
+            var errorMessage = await ExtractErrorMessageAsync(response);
+            throw new HttpRequestException(errorMessage);
+        }
+
+        return await response.Content.ReadFromJsonAsync<Mission>();
+    }
+
+    public async Task DeleteMissionAsync(Guid id)
+    {
+        var response = await _http.DeleteAsync($"api/missions/{id}");
+
+        if (!response.IsSuccessStatusCode)
+        {
+            var errorMessage = await ExtractErrorMessageAsync(response);
+            throw new HttpRequestException(errorMessage);
+        }
+    }
+
+    public async Task<MissionMetric?> UpdateMissionMetricAsync(Guid id, UpdateMissionMetricRequest request)
+    {
+        var response = await _http.PutAsJsonAsync($"api/mission-metrics/{id}", request);
+
+        if (!response.IsSuccessStatusCode)
+        {
+            var errorMessage = await ExtractErrorMessageAsync(response);
+            throw new HttpRequestException(errorMessage);
+        }
+
+        return await response.Content.ReadFromJsonAsync<MissionMetric>();
+    }
+
+    public async Task DeleteMissionMetricAsync(Guid id)
+    {
+        var response = await _http.DeleteAsync($"api/mission-metrics/{id}");
+
+        if (!response.IsSuccessStatusCode)
+        {
+            var errorMessage = await ExtractErrorMessageAsync(response);
+            throw new HttpRequestException(errorMessage);
+        }
+    }
+
+    public async Task<PagedResult<MissionMetric>?> GetMissionMetricsByMissionIdAsync(Guid missionId, int page = 1, int pageSize = 100)
+    {
+        var url = $"api/missions/{missionId}/metrics?page={page}&pageSize={pageSize}";
+        return await _http.GetFromJsonAsync<PagedResult<MissionMetric>>(url);
+    }
+
     private static async Task<string> ExtractErrorMessageAsync(HttpResponseMessage response)
     {
         try
