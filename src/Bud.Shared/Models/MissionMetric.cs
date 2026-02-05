@@ -19,4 +19,6 @@ public sealed class MissionMetric : ITenantEntity
 
     // Qualitative metric fields
     public string? TargetText { get; set; }
+
+    public ICollection<MetricCheckin> Checkins { get; set; } = [];
 }

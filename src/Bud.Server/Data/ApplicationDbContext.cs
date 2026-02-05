@@ -29,6 +29,7 @@ public sealed class ApplicationDbContext : DbContext
     public DbSet<Mission> Missions => Set<Mission>();
     public DbSet<MissionMetric> MissionMetrics => Set<MissionMetric>();
     public DbSet<CollaboratorTeam> CollaboratorTeams => Set<CollaboratorTeam>();
+    public DbSet<MetricCheckin> MetricCheckins => Set<MetricCheckin>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -240,6 +241,43 @@ public sealed class ApplicationDbContext : DbContext
                 !_applyTenantFilter ||
                 (_isGlobalAdmin && _tenantId == null) ||
                 (_tenantId != null && mm.OrganizationId == _tenantId)
+            );
+
+        // MetricCheckin
+        modelBuilder.Entity<MetricCheckin>()
+            .Property(mc => mc.Note)
+            .HasMaxLength(1000);
+
+        modelBuilder.Entity<MetricCheckin>()
+            .Property(mc => mc.Text)
+            .HasMaxLength(1000);
+
+        modelBuilder.Entity<MetricCheckin>()
+            .HasOne(mc => mc.Organization)
+            .WithMany()
+            .HasForeignKey(mc => mc.OrganizationId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        modelBuilder.Entity<MetricCheckin>()
+            .HasIndex(mc => mc.OrganizationId);
+
+        modelBuilder.Entity<MetricCheckin>()
+            .HasOne(mc => mc.Collaborator)
+            .WithMany()
+            .HasForeignKey(mc => mc.CollaboratorId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        modelBuilder.Entity<MissionMetric>()
+            .HasMany(mm => mm.Checkins)
+            .WithOne(mc => mc.MissionMetric)
+            .HasForeignKey(mc => mc.MissionMetricId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        modelBuilder.Entity<MetricCheckin>()
+            .HasQueryFilter(mc =>
+                !_applyTenantFilter ||
+                (_isGlobalAdmin && _tenantId == null) ||
+                (_tenantId != null && mc.OrganizationId == _tenantId)
             );
     }
 }

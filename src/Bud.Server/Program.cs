@@ -81,6 +81,11 @@ builder.Services.AddAuthorization(options =>
         policy.RequireAuthenticatedUser();
         policy.AddRequirements(new OrganizationWriteRequirement());
     });
+    options.AddPolicy(AuthorizationPolicies.MissionScopeAccess, policy =>
+    {
+        policy.RequireAuthenticatedUser();
+        policy.AddRequirements(new MissionScopeAccessRequirement());
+    });
 });
 
 // Add Multi-Tenancy
@@ -123,6 +128,8 @@ builder.Services.AddScoped<IAuthorizationHandler, GlobalAdminHandler>();
 builder.Services.AddScoped<IAuthorizationHandler, TenantOrganizationMatchHandler>();
 builder.Services.AddScoped<IAuthorizationHandler, OrganizationOwnerHandler>();
 builder.Services.AddScoped<IAuthorizationHandler, OrganizationWriteHandler>();
+builder.Services.AddScoped<IAuthorizationHandler, MissionScopeAccessHandler>();
+builder.Services.AddScoped<IMetricCheckinService, MetricCheckinService>();
 
 // Add Health Checks
 builder.Services.AddHealthChecks()

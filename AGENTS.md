@@ -14,6 +14,16 @@ This includes:
 - Log messages that may be displayed to users
 - Comments in code should remain in English for maintainability
 
+## Design Principles
+
+**IMPORTANT: All proposed solutions must follow industry best practices and reference architectures, not just the simplest or quickest approach.** This means:
+
+- Prefer well-established design patterns and architectural standards over ad-hoc or shortcut implementations
+- Follow SOLID principles, Clean Architecture, and Domain-Driven Design where applicable
+- Prioritize maintainability, scalability, and correctness over development speed
+- When multiple approaches exist, choose the one aligned with recognized reference architectures and community best practices
+- Avoid "quick and dirty" solutions — every implementation should be production-grade and sustainable long-term
+
 ## Project Overview
 
 Bud is an ASP.NET Core 10 application with a Blazor WebAssembly frontend, using PostgreSQL as the database. The application manages organizational hierarchies and mission tracking.

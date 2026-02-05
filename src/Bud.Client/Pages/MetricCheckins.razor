@@ -1,0 +1,586 @@
+@page "/metric-checkins"
+@inject ApiClient Api
+@inject ToastService ToastService
+@inject OrganizationContext OrgContext
+@implements IDisposable
+
+<MissionsMenu />
+
+<div class="page-header">
+    <div>
+        <div class="page-kicker">Gestão</div>
+        <h1>Check-ins</h1>
+        <p class="page-subtitle">Registre o progresso das suas métricas.</p>
+    </div>
+    <button class="button primary" @onclick="OpenCreateModal">
+        <span class="button-icon-text">+</span>
+        Novo check-in
+    </button>
+</div>
+
+<div class="card">
+    <div class="card-filters">
+        <div class="form-row">
+            <label>Missão</label>
+            <select class="input" @bind="filterMissionId" @bind:after="OnMissionFilterChanged">
+                <option value="">Todas</option>
+                @foreach (var mission in missions)
+                {
+                    <option value="@mission.Id">@mission.Name</option>
+                }
+            </select>
+        </div>
+        <div class="form-row">
+            <label>Métrica</label>
+            <select class="input" @bind="filterMetricId" @bind:after="LoadCheckins">
+                <option value="">Todas</option>
+                @foreach (var metric in filterMetrics)
+                {
+                    <option value="@metric.Id">@metric.Name</option>
+                }
+            </select>
+        </div>
+        <div class="form-row" style="align-self: flex-end;">
+            <button class="button" @onclick="LoadCheckins">Atualizar</button>
+        </div>
+    </div>
+
+    @if (checkins is null)
+    {
+        <p class="muted">Carregando...</p>
+    }
+    else if (checkins.Items.Count == 0)
+    {
+        <p class="muted">Nenhum check-in encontrado.</p>
+    }
+    else
+    {
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Data</th>
+                    <th>Métrica</th>
+                    <th>Valor</th>
+                    <th>Confiança</th>
+                    <th>Nota</th>
+                    <th style="width: 120px; text-align: center;">Ações</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var checkin in checkins.Items)
+                {
+                    var isDeleting = deletingCheckinId == checkin.Id;
+                    <tr>
+                        <td>@checkin.CheckinDate.ToString("dd/MM/yyyy")</td>
+                        <td>@GetMetricName(checkin.MissionMetricId)</td>
+                        <td>@GetCheckinValue(checkin)</td>
+                        <td>
+                            <span class="confidence-stars">@GetConfidenceStars(checkin.ConfidenceLevel)</span>
+                        </td>
+                        <td class="note-cell">@(checkin.Note ?? "—")</td>
+                        <td style="text-align: center;">
+                            <div class="table-actions">
+                                <button class="button-icon" @onclick="() => OpenEditModal(checkin)"
+                                        title="Editar check-in">
+                                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                                        <path d="M11.334 2.00004C11.5091 1.82494 11.7169 1.68605 11.9457 1.59129C12.1745 1.49653 12.4197 1.44775 12.6673 1.44775C12.9149 1.44775 13.1601 1.49653 13.3889 1.59129C13.6177 1.68605 13.8256 1.82494 14.0007 2.00004C14.1758 2.17513 14.3147 2.383 14.4094 2.61178C14.5042 2.84055 14.553 3.08575 14.553 3.33337C14.553 3.58099 14.5042 3.82619 14.4094 4.05497C14.3147 4.28374 14.1758 4.49161 14.0007 4.66671L5.00065 13.6667L1.33398 14.6667L2.33398 11L11.334 2.00004Z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                                    </svg>
+                                </button>
+                                <button class="button-icon @(isDeleting ? "danger" : "")"
+                                        @onclick="() => HandleDeleteClick(checkin.Id)"
+                                        title="@(isDeleting ? "Clique novamente para confirmar" : "Excluir check-in")">
+                                    @if (isDeleting)
+                                    {
+                                        <span style="font-size: 11px; white-space: nowrap;">Confirmar?</span>
+                                    }
+                                    else
+                                    {
+                                        <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                                            <path d="M2 4H3.33333H14" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                                            <path d="M5.33398 4.00004V2.66671C5.33398 2.31309 5.47446 1.97395 5.72451 1.7239C5.97456 1.47385 6.3137 1.33337 6.66732 1.33337H9.33398C9.6876 1.33337 10.0268 1.47385 10.2768 1.7239C10.5269 1.97395 10.6673 2.31309 10.6673 2.66671V4.00004M12.6673 4.00004V13.3334C12.6673 13.687 12.5269 14.0261 12.2768 14.2762C12.0268 14.5262 11.6876 14.6667 11.334 14.6667H4.66732C4.3137 14.6667 3.97456 14.5262 3.72451 14.2762C3.47446 14.0261 3.33398 13.687 3.33398 13.3334V4.00004H12.6673Z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                                        </svg>
+                                    }
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+        <p class="muted" style="margin-top: var(--spacing-4);">Total: @checkins.Total</p>
+    }
+</div>
+
+@if (isCreateModalOpen)
+{
+    <Modal Title="Novo check-in" OnClose="CloseCreateModal" Size="lg">
+        <div class="metrics-form-container">
+            <div class="metrics-form-header">
+                <div class="form-row">
+                    <label>Missão</label>
+                    <select class="input" @bind="createMissionId" @bind:after="OnCreateMissionChanged">
+                        <option value="">Selecione uma missão</option>
+                        @foreach (var mission in missions)
+                        {
+                            <option value="@mission.Id">@mission.Name</option>
+                        }
+                    </select>
+                </div>
+                <div class="form-row">
+                    <label>Métrica</label>
+                    <select class="input" @bind="createMetricId" @bind:after="OnCreateMetricChanged">
+                        <option value="">Selecione uma métrica</option>
+                        @foreach (var metric in createMetrics)
+                        {
+                            <option value="@metric.Id">@metric.Name (@GetMetricTypeLabel(metric.Type))</option>
+                        }
+                    </select>
+                </div>
+            </div>
+
+            @if (selectedCreateMetric != null)
+            {
+                @if (selectedCreateMetric.Type == MetricType.Quantitative)
+                {
+                    <div class="form-row">
+                        <label>Valor atual @GetTargetHint(selectedCreateMetric)</label>
+                        <InputNumber class="input" @bind-Value="newCheckin.Value" placeholder="Ex: 42" />
+                    </div>
+                }
+                else
+                {
+                    <div class="form-row">
+                        <label>Texto de progresso</label>
+                        <InputText class="input" @bind-Value="newCheckin.Text" placeholder="Descreva o progresso atual" />
+                    </div>
+                }
+            }
+
+            <div class="form-row">
+                <label>Data do check-in</label>
+                <InputDate class="input" @bind-Value="createCheckinDate" />
+            </div>
+
+            <div class="form-row">
+                <label>Nível de confiança</label>
+                <div class="confidence-selector">
+                    @for (int i = 1; i <= 5; i++)
+                    {
+                        var level = i;
+                        <button type="button"
+                                class="confidence-btn @(newCheckin.ConfidenceLevel >= level ? "active" : "")"
+                                @onclick="() => newCheckin.ConfidenceLevel = level">
+                            @level
+                        </button>
+                    }
+                </div>
+            </div>
+
+            <div class="form-row">
+                <label>Nota (opcional)</label>
+                <InputText class="input" @bind-Value="newCheckin.Note" placeholder="Contexto adicional sobre o progresso" />
+            </div>
+        </div>
+
+        <div class="form-actions" style="margin-top: var(--spacing-6);">
+            <button class="button tertiary" type="button" @onclick="CloseCreateModal">Cancelar</button>
+            <button class="button primary" @onclick="CreateCheckin">Criar check-in</button>
+        </div>
+    </Modal>
+}
+
+@if (isEditModalOpen && selectedCheckin != null)
+{
+    <Modal Title="Editar check-in" OnClose="CloseEditModal" Size="lg">
+        <div class="metrics-form-container">
+            @if (editMetricType == MetricType.Quantitative)
+            {
+                <div class="form-row">
+                    <label>Valor atual</label>
+                    <InputNumber class="input" @bind-Value="editCheckin.Value" />
+                </div>
+            }
+            else
+            {
+                <div class="form-row">
+                    <label>Texto de progresso</label>
+                    <InputText class="input" @bind-Value="editCheckin.Text" placeholder="Descreva o progresso atual" />
+                </div>
+            }
+
+            <div class="form-row">
+                <label>Data do check-in</label>
+                <InputDate class="input" @bind-Value="editCheckinDate" />
+            </div>
+
+            <div class="form-row">
+                <label>Nível de confiança</label>
+                <div class="confidence-selector">
+                    @for (int i = 1; i <= 5; i++)
+                    {
+                        var level = i;
+                        <button type="button"
+                                class="confidence-btn @(editCheckin.ConfidenceLevel >= level ? "active" : "")"
+                                @onclick="() => editCheckin.ConfidenceLevel = level">
+                            @level
+                        </button>
+                    }
+                </div>
+            </div>
+
+            <div class="form-row">
+                <label>Nota (opcional)</label>
+                <InputText class="input" @bind-Value="editCheckin.Note" placeholder="Contexto adicional" />
+            </div>
+        </div>
+
+        <div class="form-actions" style="margin-top: var(--spacing-6);">
+            <button class="button tertiary" type="button" @onclick="CloseEditModal">Cancelar</button>
+            <button class="button primary" @onclick="UpdateCheckin">Salvar alterações</button>
+        </div>
+    </Modal>
+}
+
+@code {
+    private PagedResult<MetricCheckin>? checkins;
+    private List<Mission> missions = new();
+    private List<MissionMetric> allMetrics = new();
+    private List<MissionMetric> filterMetrics = new();
+
+    private string? filterMissionId;
+    private string? filterMetricId;
+
+    // Create modal
+    private bool isCreateModalOpen;
+    private CreateMetricCheckinRequest newCheckin = new();
+    private DateOnly createCheckinDate = DateOnly.FromDateTime(DateTime.Today);
+    private string? createMissionId;
+    private string? createMetricId;
+    private List<MissionMetric> createMetrics = new();
+    private MissionMetric? selectedCreateMetric;
+
+    // Edit modal
+    private bool isEditModalOpen;
+    private MetricCheckin? selectedCheckin;
+    private UpdateMetricCheckinRequest editCheckin = new();
+    private DateOnly editCheckinDate;
+    private MetricType editMetricType;
+
+    // Delete confirmation
+    private Guid? deletingCheckinId;
+    private System.Threading.Timer? deleteConfirmTimer;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadMissions();
+        await LoadAllMetrics();
+        await LoadCheckins();
+        OrgContext.OnOrganizationChanged += HandleOrganizationChanged;
+    }
+
+    private async void HandleOrganizationChanged()
+    {
+        await InvokeAsync(async () =>
+        {
+            filterMissionId = null;
+            filterMetricId = null;
+            await LoadMissions();
+            await LoadAllMetrics();
+            await LoadCheckins();
+            StateHasChanged();
+        });
+    }
+
+    public void Dispose()
+    {
+        OrgContext.OnOrganizationChanged -= HandleOrganizationChanged;
+        deleteConfirmTimer?.Dispose();
+    }
+
+    private async Task LoadMissions()
+    {
+        try
+        {
+            var result = await Api.GetMissionsAsync(null, null, null, 1, 200);
+            missions = result?.Items.ToList() ?? new List<Mission>();
+        }
+        catch (Exception)
+        {
+            missions = new List<Mission>();
+        }
+    }
+
+    private async Task LoadAllMetrics()
+    {
+        try
+        {
+            var result = await Api.GetMissionMetricsAsync(null, null, 1, 200);
+            allMetrics = result?.Items.ToList() ?? new List<MissionMetric>();
+            UpdateFilterMetrics();
+        }
+        catch (Exception)
+        {
+            allMetrics = new List<MissionMetric>();
+            filterMetrics = new List<MissionMetric>();
+        }
+    }
+
+    private void UpdateFilterMetrics()
+    {
+        if (Guid.TryParse(filterMissionId, out var missionId))
+        {
+            filterMetrics = allMetrics.Where(m => m.MissionId == missionId).ToList();
+        }
+        else
+        {
+            filterMetrics = allMetrics.ToList();
+        }
+    }
+
+    private async Task LoadCheckins()
+    {
+        try
+        {
+            var metricId = Guid.TryParse(filterMetricId, out var parsedMetricId)
+                ? parsedMetricId
+                : (Guid?)null;
+            var missionId = Guid.TryParse(filterMissionId, out var parsedMissionId)
+                ? parsedMissionId
+                : (Guid?)null;
+
+            checkins = await Api.GetMetricCheckinsAsync(metricId, metricId.HasValue ? null : missionId, 1, 20)
+                       ?? new PagedResult<MetricCheckin>();
+        }
+        catch (Exception)
+        {
+            checkins = new PagedResult<MetricCheckin>();
+        }
+    }
+
+    private async Task OnMissionFilterChanged()
+    {
+        filterMetricId = null;
+        UpdateFilterMetrics();
+        await LoadCheckins();
+    }
+
+    // ---- Create ----
+
+    private void OpenCreateModal()
+    {
+        newCheckin = new CreateMetricCheckinRequest { ConfidenceLevel = 3 };
+        createCheckinDate = DateOnly.FromDateTime(DateTime.Today);
+        createMissionId = null;
+        createMetricId = null;
+        createMetrics = new List<MissionMetric>();
+        selectedCreateMetric = null;
+        isCreateModalOpen = true;
+    }
+
+    private void CloseCreateModal() => isCreateModalOpen = false;
+
+    private async Task OnCreateMissionChanged()
+    {
+        createMetricId = null;
+        selectedCreateMetric = null;
+
+        if (Guid.TryParse(createMissionId, out var missionId))
+        {
+            try
+            {
+                var result = await Api.GetMissionMetricsByMissionIdAsync(missionId);
+                createMetrics = result?.Items.ToList() ?? new List<MissionMetric>();
+            }
+            catch
+            {
+                createMetrics = new List<MissionMetric>();
+            }
+        }
+        else
+        {
+            createMetrics = new List<MissionMetric>();
+        }
+    }
+
+    private void OnCreateMetricChanged()
+    {
+        if (Guid.TryParse(createMetricId, out var metricId))
+        {
+            selectedCreateMetric = createMetrics.FirstOrDefault(m => m.Id == metricId);
+        }
+        else
+        {
+            selectedCreateMetric = null;
+        }
+    }
+
+    private async Task CreateCheckin()
+    {
+        if (selectedCreateMetric is null)
+        {
+            ToastService.ShowError("Erro ao criar check-in", "Selecione uma métrica.");
+            return;
+        }
+
+        newCheckin.MissionMetricId = selectedCreateMetric.Id;
+        newCheckin.CheckinDate = createCheckinDate.ToDateTime(TimeOnly.MinValue, DateTimeKind.Utc);
+
+        if (newCheckin.ConfidenceLevel < 1 || newCheckin.ConfidenceLevel > 5)
+        {
+            ToastService.ShowError("Erro ao criar check-in", "Selecione o nível de confiança (1-5).");
+            return;
+        }
+
+        try
+        {
+            await Api.CreateMetricCheckinAsync(newCheckin);
+            ToastService.ShowSuccess("Check-in criado", "O check-in foi registrado com sucesso.");
+            CloseCreateModal();
+            await LoadCheckins();
+        }
+        catch (HttpRequestException ex)
+        {
+            ToastService.ShowError("Erro ao criar check-in", ex.Message);
+        }
+    }
+
+    // ---- Edit ----
+
+    private void OpenEditModal(MetricCheckin checkin)
+    {
+        selectedCheckin = checkin;
+        editCheckin = new UpdateMetricCheckinRequest
+        {
+            Value = checkin.Value,
+            Text = checkin.Text,
+            CheckinDate = checkin.CheckinDate,
+            Note = checkin.Note,
+            ConfidenceLevel = checkin.ConfidenceLevel
+        };
+        editCheckinDate = DateOnly.FromDateTime(checkin.CheckinDate);
+        editMetricType = allMetrics.FirstOrDefault(m => m.Id == checkin.MissionMetricId)?.Type ?? MetricType.Quantitative;
+        isEditModalOpen = true;
+    }
+
+    private void CloseEditModal()
+    {
+        isEditModalOpen = false;
+        selectedCheckin = null;
+    }
+
+    private async Task UpdateCheckin()
+    {
+        if (selectedCheckin is null) return;
+
+        editCheckin.CheckinDate = editCheckinDate.ToDateTime(TimeOnly.MinValue, DateTimeKind.Utc);
+
+        try
+        {
+            await Api.UpdateMetricCheckinAsync(selectedCheckin.Id, editCheckin);
+            ToastService.ShowSuccess("Check-in atualizado", "As alterações foram salvas com sucesso.");
+            CloseEditModal();
+            await LoadCheckins();
+        }
+        catch (HttpRequestException ex)
+        {
+            ToastService.ShowError("Erro ao atualizar", ex.Message);
+        }
+    }
+
+    // ---- Delete ----
+
+    private async Task HandleDeleteClick(Guid checkinId)
+    {
+        if (deletingCheckinId == checkinId)
+        {
+            await DeleteCheckin(checkinId);
+        }
+        else
+        {
+            deletingCheckinId = checkinId;
+            deleteConfirmTimer?.Dispose();
+            deleteConfirmTimer = new System.Threading.Timer(
+                _ => InvokeAsync(() =>
+                {
+                    deletingCheckinId = null;
+                    StateHasChanged();
+                }),
+                null, 3000, Timeout.Infinite);
+        }
+    }
+
+    private async Task DeleteCheckin(Guid checkinId)
+    {
+        try
+        {
+            await Api.DeleteMetricCheckinAsync(checkinId);
+            ToastService.ShowSuccess("Check-in excluído", "O check-in foi removido com sucesso.");
+            await LoadCheckins();
+        }
+        catch (HttpRequestException ex)
+        {
+            ToastService.ShowError("Erro ao excluir", ex.Message);
+        }
+        finally
+        {
+            deletingCheckinId = null;
+            deleteConfirmTimer?.Dispose();
+            deleteConfirmTimer = null;
+        }
+    }
+
+    // ---- Helpers ----
+
+    private string GetMetricName(Guid metricId)
+    {
+        return allMetrics.FirstOrDefault(m => m.Id == metricId)?.Name ?? "—";
+    }
+
+    private static string GetCheckinValue(MetricCheckin checkin)
+    {
+        if (checkin.Value.HasValue)
+            return checkin.Value.Value.ToString("G");
+        if (!string.IsNullOrWhiteSpace(checkin.Text))
+            return checkin.Text.Length > 50 ? checkin.Text[..50] + "..." : checkin.Text;
+        return "—";
+    }
+
+    private static string GetConfidenceStars(int level)
+    {
+        return new string('★', level) + new string('☆', 5 - level);
+    }
+
+    private static string GetMetricTypeLabel(MetricType type) => type switch
+    {
+        MetricType.Qualitative => "Qualitativa",
+        MetricType.Quantitative => "Quantitativa",
+        _ => type.ToString()
+    };
+
+    private static string GetTargetHint(MissionMetric metric)
+    {
+        if (metric.Type != MetricType.Quantitative || !metric.QuantitativeType.HasValue) return "";
+
+        var unit = metric.Unit.HasValue ? GetUnitLabel(metric.Unit.Value) : "";
+
+        return metric.QuantitativeType switch
+        {
+            QuantitativeMetricType.KeepAbove => $"(manter acima de {metric.MinValue} {unit})",
+            QuantitativeMetricType.KeepBelow => $"(manter abaixo de {metric.MaxValue} {unit})",
+            QuantitativeMetricType.KeepBetween => $"(manter entre {metric.MinValue} e {metric.MaxValue} {unit})",
+            QuantitativeMetricType.Achieve => $"(atingir {metric.MaxValue} {unit})",
+            QuantitativeMetricType.Reduce => $"(reduzir para {metric.MaxValue} {unit})",
+            _ => ""
+        };
+    }
+
+    private static string GetUnitLabel(MetricUnit unit) => unit switch
+    {
+        MetricUnit.Integer => "inteiro",
+        MetricUnit.Decimal => "decimal",
+        MetricUnit.Percentage => "%",
+        MetricUnit.Hours => "h",
+        MetricUnit.Points => "pts",
+        _ => unit.ToString()
+    };
+}

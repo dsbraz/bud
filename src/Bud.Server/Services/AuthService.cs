@@ -36,14 +36,35 @@ public sealed class AuthService(
                 new(ClaimTypes.Role, "GlobalAdmin")
             };
 
+            var adminCollaborator = await dbContext.Collaborators
+                .AsNoTracking()
+                .IgnoreQueryFilters()
+                .FirstOrDefaultAsync(c => c.Email == normalizedEmail, cancellationToken);
+
+            Guid? adminCollaboratorId = null;
+            Guid? adminOrgId = null;
+            var displayName = "Administrador Global";
+
+            if (adminCollaborator is not null)
+            {
+                adminClaims.Add(new("collaborator_id", adminCollaborator.Id.ToString()));
+                adminClaims.Add(new("organization_id", adminCollaborator.OrganizationId.ToString()));
+                adminClaims.Add(new(ClaimTypes.Name, adminCollaborator.FullName));
+                adminCollaboratorId = adminCollaborator.Id;
+                adminOrgId = adminCollaborator.OrganizationId;
+                displayName = adminCollaborator.FullName;
+            }
+
             var adminToken = GenerateJwtToken(adminClaims);
 
             return ServiceResult<AuthLoginResponse>.Success(new AuthLoginResponse
             {
                 Token = adminToken,
                 Email = normalizedEmail,
-                DisplayName = "Administrador Global",
-                IsGlobalAdmin = true
+                DisplayName = displayName,
+                IsGlobalAdmin = true,
+                CollaboratorId = adminCollaboratorId,
+                OrganizationId = adminOrgId
             });
         }
 

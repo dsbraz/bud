@@ -311,6 +311,52 @@ public sealed class ApiClient
         return await _http.GetFromJsonAsync<PagedResult<MissionMetric>>(url);
     }
 
+    // MetricCheckin methods
+    public async Task<PagedResult<MetricCheckin>?> GetMetricCheckinsAsync(Guid? missionMetricId, Guid? missionId, int page = 1, int pageSize = 10)
+    {
+        var metricParam = missionMetricId.HasValue ? missionMetricId.Value.ToString() : string.Empty;
+        var missionParam = missionId.HasValue ? missionId.Value.ToString() : string.Empty;
+        var url = $"api/metric-checkins?missionMetricId={Uri.EscapeDataString(metricParam)}&missionId={Uri.EscapeDataString(missionParam)}&page={page}&pageSize={pageSize}";
+        return await _http.GetFromJsonAsync<PagedResult<MetricCheckin>>(url);
+    }
+
+    public async Task<MetricCheckin?> CreateMetricCheckinAsync(CreateMetricCheckinRequest request)
+    {
+        var response = await _http.PostAsJsonAsync("api/metric-checkins", request);
+
+        if (!response.IsSuccessStatusCode)
+        {
+            var errorMessage = await ExtractErrorMessageAsync(response);
+            throw new HttpRequestException(errorMessage);
+        }
+
+        return await response.Content.ReadFromJsonAsync<MetricCheckin>();
+    }
+
+    public async Task<MetricCheckin?> UpdateMetricCheckinAsync(Guid id, UpdateMetricCheckinRequest request)
+    {
+        var response = await _http.PutAsJsonAsync($"api/metric-checkins/{id}", request);
+
+        if (!response.IsSuccessStatusCode)
+        {
+            var errorMessage = await ExtractErrorMessageAsync(response);
+            throw new HttpRequestException(errorMessage);
+        }
+
+        return await response.Content.ReadFromJsonAsync<MetricCheckin>();
+    }
+
+    public async Task DeleteMetricCheckinAsync(Guid id)
+    {
+        var response = await _http.DeleteAsync($"api/metric-checkins/{id}");
+
+        if (!response.IsSuccessStatusCode)
+        {
+            var errorMessage = await ExtractErrorMessageAsync(response);
+            throw new HttpRequestException(errorMessage);
+        }
+    }
+
     private static async Task<string> ExtractErrorMessageAsync(HttpResponseMessage response)
     {
         try

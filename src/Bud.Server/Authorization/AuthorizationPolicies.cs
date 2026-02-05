@@ -7,4 +7,5 @@ public static class AuthorizationPolicies
     public const string TenantOrganizationMatch = "TenantOrganizationMatch";
     public const string OrganizationOwner = "OrganizationOwner";
     public const string OrganizationWrite = "OrganizationWrite";
+    public const string MissionScopeAccess = "MissionScopeAccess";
 }
