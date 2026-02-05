@@ -6,17 +6,108 @@
 
 <MissionsMenu />
 
-<div class="page-header">
-    <div>
-        <div class="page-kicker">Gestão</div>
-        <h1>Missões</h1>
-        <p class="page-subtitle">Defina missões por escopo e acompanhe status.</p>
-    </div>
+<div class="missions-page-header">
+    <h1 class="missions-page-title">Minhas missões</h1>
     <button class="button primary" @onclick="OpenCreateModal">
         <span class="button-icon-text">+</span>
-        Nova missão
+        Criar missão
     </button>
 </div>
+
+@* Barra de Filtros Compacta *@
+<div class="missions-filter-bar">
+    <div class="missions-filter-left">
+        <button class="filter-chip @(showFilterPanel ? "active" : "")" @onclick="ToggleFilterPanel">
+            <svg width="16" height="16" viewBox="0 0 32 32" fill="none">
+                <path d="M28 6H4L14 17.6V26L18 28V17.6L28 6Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+            <span>Filtrar</span>
+        </button>
+        <div class="filter-chip-wrapper">
+            <button class="filter-chip @(filterStartDate.HasValue || filterEndDate.HasValue ? "active" : "")" @onclick="ToggleDatePicker">
+                <svg width="16" height="16" viewBox="0 0 32 32" fill="none">
+                    <path d="M26 4H6C4.89543 4 4 4.89543 4 6V26C4 27.1046 4.89543 28 6 28H26C27.1046 28 28 27.1046 28 26V6C28 4.89543 27.1046 4 26 4Z" stroke="currentColor" stroke-width="2"/>
+                    <path d="M22 2V6M10 2V6M4 12H28" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                </svg>
+                <span>@GetDateRangeLabel()</span>
+            </button>
+            @if (showDatePicker)
+            {
+                <div class="filter-dropdown">
+                    <div class="filter-dropdown-row">
+                        <label>Data inicial</label>
+                        <input type="date" class="input" value="@filterStartDate?.ToString("yyyy-MM-dd")" @onchange="OnStartDateChanged" />
+                    </div>
+                    <div class="filter-dropdown-row">
+                        <label>Data final</label>
+                        <input type="date" class="input" value="@filterEndDate?.ToString("yyyy-MM-dd")" @onchange="OnEndDateChanged" />
+                    </div>
+                    <button class="button small" @onclick="ApplyDateFilter">Aplicar</button>
+                </div>
+            }
+        </div>
+        <button class="filter-chip @(filterActiveOnly ? "active" : "")" @onclick="ToggleActiveFilter">
+            <svg width="16" height="16" viewBox="0 0 32 32" fill="none">
+                <path d="M16 28C22.6274 28 28 22.6274 28 16C28 9.37258 22.6274 4 16 4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                <path d="M16 10V16L20 20" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                <path d="M4 16H8M6 12L8 16L6 20" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+            <span>@GetStatusFilterLabel()</span>
+        </button>
+        @if (HasActiveFilters())
+        {
+            <button class="filter-chip-clear" @onclick="ClearFilters">
+                <svg width="16" height="16" viewBox="0 0 32 32" fill="none">
+                    <path d="M26 16L22 12M22 12L18 8M22 12L26 8M22 12L18 16" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                    <path d="M6 8L10 28H14L12 18L6 8Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+                <span>Limpar filtro</span>
+            </button>
+        }
+    </div>
+    <button class="filter-chip">
+        <svg width="16" height="16" viewBox="0 0 32 32" fill="none">
+            <rect x="4" y="6" width="8" height="8" rx="1" stroke="currentColor" stroke-width="2"/>
+            <rect x="4" y="18" width="8" height="8" rx="1" stroke="currentColor" stroke-width="2"/>
+            <rect x="20" y="6" width="8" height="8" rx="1" stroke="currentColor" stroke-width="2"/>
+            <rect x="20" y="18" width="8" height="8" rx="1" stroke="currentColor" stroke-width="2"/>
+        </svg>
+        <span>Vendo em lista</span>
+    </button>
+</div>
+
+@* Painel de Filtros Expandido *@
+@if (showFilterPanel)
+{
+    <div class="missions-filter-panel">
+        <div class="filter-panel-row">
+            <div class="filter-panel-field">
+                <label>Escopo</label>
+                <select class="input" value="@filterScopeTypeValue" @onchange="OnFilterScopeTypeChanged">
+                    <option value="">Todos</option>
+                    @foreach (var scopeType in Enum.GetValues<MissionScopeType>())
+                    {
+                        <option value="@scopeType">@GetScopeLabel(scopeType)</option>
+                    }
+                </select>
+            </div>
+            <div class="filter-panel-field">
+                <label>Referência</label>
+                <select class="input" @bind="filterScopeId" @bind:after="LoadMissions">
+                    <option value="">Todas</option>
+                    @foreach (var option in GetScopeOptions(filterScopeTypeValue))
+                    {
+                        <option value="@option.Id">@option.Name</option>
+                    }
+                </select>
+            </div>
+            <div class="filter-panel-field">
+                <label>Busca</label>
+                <InputText class="input" @bind-Value="search" @onkeyup="OnSearchKeyUp" placeholder="Buscar missões..." />
+            </div>
+        </div>
+    </div>
+}
 
 @* Cards de Resumo *@
 <div class="missions-summary">
@@ -40,39 +131,6 @@
     <div class="summary-card" style="align-items: center; text-align: center;">
         <div class="summary-card-value">@GetOutdatedMetricsCount()</div>
         <div class="summary-card-label">Indicadores desatualizados</div>
-    </div>
-</div>
-
-@* Filtros *@
-<div class="card" style="margin-bottom: var(--spacing-4);">
-    <div class="card-filters" style="border-bottom: none; padding-bottom: 0; margin-bottom: 0;">
-        <div class="form-row">
-            <label>Escopo</label>
-            <select class="input" value="@filterScopeTypeValue" @onchange="OnFilterScopeTypeChanged">
-                <option value="">Todos</option>
-                @foreach (var scopeType in Enum.GetValues<MissionScopeType>())
-                {
-                    <option value="@scopeType">@GetScopeLabel(scopeType)</option>
-                }
-            </select>
-        </div>
-        <div class="form-row">
-            <label>Referência</label>
-            <select class="input" @bind="filterScopeId" @bind:after="LoadMissions">
-                <option value="">Todas</option>
-                @foreach (var option in GetScopeOptions(filterScopeTypeValue))
-                {
-                    <option value="@option.Id">@option.Name</option>
-                }
-            </select>
-        </div>
-        <div class="form-row">
-            <label>Busca</label>
-            <InputText class="input" @bind-Value="search" />
-        </div>
-        <div class="form-row" style="align-self: flex-end;">
-            <button class="button" @onclick="LoadMissions">Atualizar</button>
-        </div>
     </div>
 </div>
 
@@ -102,25 +160,34 @@ else
             var circumference = 2 * Math.PI * 19;
             var dashOffset = circumference - (circumference * progressPercent / 100);
 
-            <div class="mission-card @(isExpanded ? "expanded" : "")">
+            <div class="mission-card @(isExpanded ? "expanded" : "") @(mission.Status == MissionStatus.Planned ? "draft" : "")">
                 <div class="mission-card-header" @onclick="async () => await ToggleExpand(mission.Id)">
                     @* Círculo de Progresso *@
                     <div class="mission-progress-circle">
                         <svg width="44" height="44" viewBox="0 0 44 44">
                             <circle class="progress-bg" cx="22" cy="22" r="19" />
-                            <circle class="progress-value @GetProgressStatusClass(progress)"
-                                    cx="22" cy="22" r="19"
-                                    stroke-dasharray="@circumference.ToString("F2", System.Globalization.CultureInfo.InvariantCulture)"
-                                    stroke-dashoffset="@dashOffset.ToString("F2", System.Globalization.CultureInfo.InvariantCulture)" />
+                            @if (mission.Status != MissionStatus.Planned)
+                            {
+                                <circle class="progress-value @GetProgressStatusClass(progress)"
+                                        cx="22" cy="22" r="19"
+                                        stroke-dasharray="@circumference.ToString("F2", System.Globalization.CultureInfo.InvariantCulture)"
+                                        stroke-dashoffset="@dashOffset.ToString("F2", System.Globalization.CultureInfo.InvariantCulture)" />
+                            }
                         </svg>
                         <div class="mission-progress-text">
-                            <span class="mission-progress-number">@progressPercent</span>
+                            <span class="mission-progress-number">@(mission.Status == MissionStatus.Planned ? "00" : progressPercent.ToString())</span>
                             <span class="mission-progress-percent">%</span>
                         </div>
                     </div>
 
                     @* Título da Missão *@
-                    <div class="mission-card-title">@mission.Name</div>
+                    <div class="mission-card-title-wrapper">
+                        @if (mission.Status == MissionStatus.Planned)
+                        {
+                            <span class="mission-draft-tag">RASCUNHO</span>
+                        }
+                        <div class="mission-card-title">@mission.Name</div>
+                    </div>
 
                     @* Ações *@
                     <div class="mission-card-actions" @onclick:stopPropagation="true">
@@ -716,6 +783,13 @@ else
     private Guid? deletingMetricId = null;
     private System.Threading.Timer? deleteMetricConfirmTimer;
 
+    // Filter panel state
+    private bool showFilterPanel = false;
+    private bool filterActiveOnly = true;
+    private DateTime? filterStartDate;
+    private DateTime? filterEndDate;
+    private bool showDatePicker = false;
+
     protected override async Task OnInitializedAsync()
     {
         newMission = new CreateMissionRequest
@@ -773,7 +847,36 @@ else
             ? parsedScopeId
             : (Guid?)null;
 
-        missions = await Api.GetMissionsAsync(scopeType, scopeId, search, 1, 20) ?? new PagedResult<Mission>();
+        var result = await Api.GetMissionsAsync(scopeType, scopeId, search, 1, 100) ?? new PagedResult<Mission>();
+
+        // Apply client-side filters
+        var filteredItems = result.Items.AsEnumerable();
+
+        // Filter by active status
+        if (filterActiveOnly)
+        {
+            filteredItems = filteredItems.Where(m => m.Status == MissionStatus.Active);
+        }
+
+        // Filter by date range
+        if (filterStartDate.HasValue)
+        {
+            filteredItems = filteredItems.Where(m => m.EndDate >= filterStartDate.Value);
+        }
+        if (filterEndDate.HasValue)
+        {
+            filteredItems = filteredItems.Where(m => m.StartDate <= filterEndDate.Value);
+        }
+
+        var filteredList = filteredItems.ToList();
+        missions = new PagedResult<Mission>
+        {
+            Items = filteredList,
+            Total = filteredList.Count,
+            Page = 1,
+            PageSize = filteredList.Count
+        };
+
         await LoadProgress();
     }
 
@@ -809,6 +912,103 @@ else
         filterScopeTypeValue = e.Value?.ToString();
         filterScopeId = null;
         await LoadMissions();
+    }
+
+    private void ToggleFilterPanel()
+    {
+        showFilterPanel = !showFilterPanel;
+    }
+
+    private async Task ClearFilters()
+    {
+        filterScopeTypeValue = null;
+        filterScopeId = null;
+        search = null;
+        filterActiveOnly = false;
+        filterStartDate = null;
+        filterEndDate = null;
+        showDatePicker = false;
+        await LoadMissions();
+    }
+
+    private bool HasActiveFilters()
+    {
+        return !string.IsNullOrEmpty(filterScopeTypeValue)
+            || !string.IsNullOrEmpty(search)
+            || filterActiveOnly
+            || filterStartDate.HasValue
+            || filterEndDate.HasValue;
+    }
+
+    private void ToggleDatePicker()
+    {
+        showDatePicker = !showDatePicker;
+    }
+
+    private void OnStartDateChanged(ChangeEventArgs e)
+    {
+        if (DateTime.TryParse(e.Value?.ToString(), out var date))
+        {
+            filterStartDate = date;
+        }
+        else
+        {
+            filterStartDate = null;
+        }
+    }
+
+    private void OnEndDateChanged(ChangeEventArgs e)
+    {
+        if (DateTime.TryParse(e.Value?.ToString(), out var date))
+        {
+            filterEndDate = date;
+        }
+        else
+        {
+            filterEndDate = null;
+        }
+    }
+
+    private async Task ApplyDateFilter()
+    {
+        showDatePicker = false;
+        await LoadMissions();
+    }
+
+    private async Task ToggleActiveFilter()
+    {
+        filterActiveOnly = !filterActiveOnly;
+        await LoadMissions();
+    }
+
+    private string GetDateRangeLabel()
+    {
+        if (filterStartDate.HasValue && filterEndDate.HasValue)
+        {
+            return $"{filterStartDate:dd/MM} - {filterEndDate:dd/MM/yyyy}";
+        }
+        if (filterStartDate.HasValue)
+        {
+            return $"A partir de {filterStartDate:dd/MM/yyyy}";
+        }
+        if (filterEndDate.HasValue)
+        {
+            return $"Até {filterEndDate:dd/MM/yyyy}";
+        }
+        return "Selecionar período";
+    }
+
+    private string GetStatusFilterLabel()
+    {
+        return filterActiveOnly ? "Status ativo" : "Todos os status";
+    }
+
+    private async Task OnSearchKeyUp(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter")
+        {
+            await LoadMissions();
+        }
     }
 
     private void OpenCreateModal()

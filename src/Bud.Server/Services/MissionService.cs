@@ -167,7 +167,9 @@ public sealed class MissionService(ApplicationDbContext dbContext) : IMissionSer
         pageSize = pageSize is < 1 or > 100 ? 10 : pageSize;
 
         // Buscar o colaborador com navegação para Team, Workspace e Organization
+        // IgnoreQueryFilters() permite encontrar o colaborador mesmo se o tenant selecionado for diferente
         var collaborator = await dbContext.Collaborators
+            .IgnoreQueryFilters()
             .AsNoTracking()
             .Include(c => c.Team!)
                 .ThenInclude(t => t.Workspace!)

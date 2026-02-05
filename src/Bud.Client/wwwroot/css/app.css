@@ -2013,6 +2013,152 @@ a {
    MISSIONS LIST - Figma-inspired Design
    ======================================== */
 
+/* Missions Page Header */
+.missions-page-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: var(--spacing-4);
+}
+
+.missions-page-title {
+    font-size: var(--font-size-title-md);
+    font-weight: var(--font-weight-medium);
+    color: var(--neutral-950);
+    margin: 0;
+}
+
+/* Filter Bar */
+.missions-filter-bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: var(--spacing-2);
+    margin-bottom: var(--spacing-4);
+}
+
+.missions-filter-left {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-2);
+}
+
+.filter-chip {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-1);
+    padding: var(--spacing-2) var(--spacing-3);
+    background: var(--color-surface);
+    border: 1px solid var(--caramel-300);
+    border-radius: var(--radius-sm);
+    font-size: var(--font-size-xs);
+    font-weight: var(--font-weight-medium);
+    color: var(--neutral-950);
+    cursor: pointer;
+    transition: all var(--transition-fast);
+    white-space: nowrap;
+}
+
+.filter-chip:hover {
+    background: var(--caramel-50);
+    border-color: var(--caramel-400);
+}
+
+.filter-chip.active {
+    background: var(--caramel-100);
+    border-color: var(--caramel-300);
+}
+
+.filter-chip svg {
+    flex-shrink: 0;
+}
+
+.filter-chip-clear {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-1);
+    padding: var(--spacing-2) var(--spacing-3);
+    background: transparent;
+    border: none;
+    font-size: var(--font-size-xs);
+    font-weight: var(--font-weight-medium);
+    color: var(--neutral-950);
+    cursor: pointer;
+    transition: all var(--transition-fast);
+    white-space: nowrap;
+}
+
+.filter-chip-clear:hover {
+    color: var(--red-600);
+}
+
+/* Filter Chip Wrapper (for dropdown) */
+.filter-chip-wrapper {
+    position: relative;
+}
+
+.filter-dropdown {
+    position: absolute;
+    top: calc(100% + 4px);
+    left: 0;
+    background: var(--color-surface);
+    border: 1px solid var(--caramel-300);
+    border-radius: var(--radius-sm);
+    padding: var(--spacing-3);
+    box-shadow: var(--shadow-md);
+    z-index: 100;
+    min-width: 200px;
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-2);
+}
+
+.filter-dropdown-row {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-1);
+}
+
+.filter-dropdown-row label {
+    font-size: var(--font-size-xs);
+    font-weight: var(--font-weight-medium);
+    color: var(--neutral-700);
+}
+
+.filter-dropdown .button.small {
+    margin-top: var(--spacing-1);
+    padding: var(--spacing-1) var(--spacing-2);
+    font-size: var(--font-size-xs);
+}
+
+/* Filter Panel */
+.missions-filter-panel {
+    background: var(--color-surface);
+    border: 1px solid var(--caramel-200);
+    border-radius: var(--radius-sm);
+    padding: var(--spacing-4);
+    margin-bottom: var(--spacing-4);
+}
+
+.filter-panel-row {
+    display: flex;
+    gap: var(--spacing-4);
+    align-items: flex-end;
+}
+
+.filter-panel-field {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-1);
+}
+
+.filter-panel-field label {
+    font-size: var(--font-size-xs);
+    font-weight: var(--font-weight-medium);
+    color: var(--neutral-700);
+}
+
 /* Summary Cards Row */
 .missions-summary {
     display: flex;
@@ -2092,6 +2238,38 @@ a {
     border-color: var(--caramel-300);
 }
 
+/* Draft/Planned Mission Style */
+.mission-card.draft {
+    border: 1px dashed var(--neutral-200);
+}
+
+.mission-card.draft:hover {
+    border-color: var(--neutral-300);
+}
+
+.mission-card.draft .mission-card-title {
+    color: var(--neutral-500);
+}
+
+.mission-card-title-wrapper {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-1);
+}
+
+.mission-draft-tag {
+    display: inline-flex;
+    align-items: center;
+    padding: var(--spacing-1) var(--spacing-2);
+    background: var(--neutral-100);
+    border-radius: var(--radius-full);
+    font-size: 10px;
+    font-weight: var(--font-weight-semibold);
+    color: var(--neutral-600);
+    width: fit-content;
+}
+
 .mission-card-header {
     display: flex;
     align-items: center;
@@ -2163,7 +2341,6 @@ a {
 
 /* Mission Title */
 .mission-card-title {
-    flex: 1;
     font-size: var(--font-size-sm);
     font-weight: var(--font-weight-bold);
     color: var(--neutral-950);
@@ -2308,14 +2485,6 @@ a {
 
 .metric-progress-fill.off-track {
     background: var(--red-500);
-}
-
-.metric-progress-marker {
-    position: absolute;
-    top: -1px;
-    width: 1px;
-    height: 10px;
-    background: var(--neutral-400);
 }
 
 .metric-progress-footer {
