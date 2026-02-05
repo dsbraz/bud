@@ -235,7 +235,8 @@ else
                             @foreach (var metric in metrics)
                             {
                                 var metricProgress = GetMetricProgress(metric);
-                                var metricStatusClass = GetMetricStatusClass(metricProgress);
+                                var expectedProgress = progress?.ExpectedProgress ?? 0m;
+                                var metricStatusClass = GetMetricStatusClass(metricProgress, expectedProgress);
                                 var isMetricOutdated = IsMetricOutdated(metric.Id);
                                 <div class="metric-row @(isMetricOutdated ? "outdated" : "")">
                                     <button class="metric-checkin-btn" @onclick="() => OpenCheckinModalForMetric(mission, metric)" title="Novo check-in">
@@ -256,7 +257,7 @@ else
                                             <div class="metric-progress-fill @metricStatusClass" style="width: @(metricProgress)%"></div>
                                         </div>
                                         <div class="metric-progress-footer">
-                                            <span class="metric-progress-status">@GetMetricStatusLabel(metricProgress, metric)</span>
+                                            <span class="metric-progress-status">@GetMetricStatusLabel(metricProgress, expectedProgress, metric)</span>
                                             <span class="metric-progress-value">@(metricProgress)%</span>
                                         </div>
                                     </div>
@@ -1457,25 +1458,50 @@ else
         return true;
     }
 
-    private string GetMetricStatusClass(int progress)
+    private static string GetMetricStatusClass(int progress, decimal expectedProgress)
     {
-        return progress switch
+        // Se ainda não há progresso esperado (missão não iniciou), considera on-track
+        if (expectedProgress <= 0)
         {
-            >= 70 => "on-track",
-            >= 40 => "at-risk",
-            _ => "off-track"
-        };
+            return "on-track";
+        }
+
+        // Compara progresso real com esperado
+        if (progress >= (int)expectedProgress)
+        {
+            return "on-track";
+        }
+
+        if (progress >= (int)(expectedProgress * 0.7m))
+        {
+            return "at-risk";
+        }
+
+        return "off-track";
     }
 
-    private string GetMetricStatusLabel(int progress, MissionMetric metric)
+    private static string GetMetricStatusLabel(int progress, decimal expectedProgress, MissionMetric metric)
     {
         if (metric.Type == MetricType.Qualitative) return "Qualitativo";
-        return progress switch
+
+        // Se ainda não há progresso esperado (missão não iniciou), considera on-track
+        if (expectedProgress <= 0)
         {
-            >= 70 => "Dentro do previsto",
-            >= 40 => "Atenção",
-            _ => "Em risco"
-        };
+            return "Dentro do previsto";
+        }
+
+        // Compara progresso real com esperado
+        if (progress >= (int)expectedProgress)
+        {
+            return "Dentro do previsto";
+        }
+
+        if (progress >= (int)(expectedProgress * 0.7m))
+        {
+            return "Atenção";
+        }
+
+        return "Em risco";
     }
 
     private MarkupString GetMetricIcon(MetricType type)
