@@ -2008,3 +2008,413 @@ a {
     text-overflow: ellipsis;
     white-space: nowrap;
 }
+
+/* ========================================
+   MISSIONS LIST - Figma-inspired Design
+   ======================================== */
+
+/* Summary Cards Row */
+.missions-summary {
+    display: flex;
+    gap: var(--spacing-2);
+    margin-bottom: var(--spacing-6);
+}
+
+.summary-card {
+    flex: 1;
+    background: var(--color-surface);
+    border: 1px solid var(--caramel-200);
+    border-radius: var(--radius-sm);
+    padding: var(--spacing-4);
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-1);
+    min-height: 107px;
+    justify-content: center;
+}
+
+.summary-card-value {
+    font-size: var(--font-size-title-md);
+    font-weight: var(--font-weight-bold);
+    color: var(--neutral-950);
+}
+
+.summary-card-label {
+    font-size: var(--font-size-xs);
+    font-weight: var(--font-weight-medium);
+    color: var(--neutral-950);
+}
+
+.summary-card-progress {
+    margin-top: var(--spacing-2);
+}
+
+.summary-progress-bar {
+    position: relative;
+    height: 12px;
+    background: var(--caramel-100);
+    border-radius: var(--radius-sm);
+    overflow: visible;
+}
+
+.summary-progress-fill {
+    height: 100%;
+    background: var(--green-500);
+    border-radius: var(--radius-sm);
+    transition: width var(--transition-slow);
+}
+
+.summary-progress-expected {
+    position: absolute;
+    top: -2px;
+    width: 2px;
+    height: 16px;
+    background: var(--neutral-700);
+    border-radius: 1px;
+}
+
+/* Mission Cards List */
+.missions-list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-4);
+}
+
+.mission-card {
+    background: var(--color-surface);
+    border: 1px solid var(--caramel-200);
+    border-radius: var(--radius-sm);
+    padding: var(--spacing-4);
+    transition: all var(--transition-fast);
+}
+
+.mission-card:hover {
+    border-color: var(--caramel-300);
+}
+
+.mission-card-header {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-6);
+    cursor: pointer;
+}
+
+/* Progress Circle */
+.mission-progress-circle {
+    position: relative;
+    width: 40px;
+    height: 40px;
+    border: 2px solid var(--neutral-200);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.mission-progress-circle svg {
+    position: absolute;
+    top: -2px;
+    left: -2px;
+    transform: rotate(-90deg);
+}
+
+.mission-progress-circle circle {
+    fill: none;
+    stroke-width: 2;
+}
+
+.mission-progress-circle .progress-bg {
+    stroke: var(--neutral-200);
+}
+
+.mission-progress-circle .progress-value {
+    stroke: var(--green-500);
+    stroke-linecap: round;
+    transition: stroke-dashoffset var(--transition-slow);
+}
+
+.mission-progress-circle .progress-value.at-risk {
+    stroke: var(--yellow-400);
+}
+
+.mission-progress-circle .progress-value.off-track {
+    stroke: var(--red-500);
+}
+
+.mission-progress-text {
+    display: flex;
+    align-items: baseline;
+    justify-content: center;
+    z-index: 1;
+}
+
+.mission-progress-number {
+    font-size: var(--font-size-xs);
+    font-weight: var(--font-weight-bold);
+    color: var(--neutral-950);
+}
+
+.mission-progress-percent {
+    font-size: 6px;
+    font-weight: var(--font-weight-bold);
+    color: var(--neutral-950);
+}
+
+/* Mission Title */
+.mission-card-title {
+    flex: 1;
+    font-size: var(--font-size-sm);
+    font-weight: var(--font-weight-bold);
+    color: var(--neutral-950);
+    line-height: 1.15;
+}
+
+/* Mission Card Actions */
+.mission-card-actions {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-1);
+}
+
+.mission-action-btn {
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: transparent;
+    border: none;
+    border-radius: var(--radius-sm);
+    color: var(--neutral-500);
+    cursor: pointer;
+    transition: all var(--transition-fast);
+}
+
+.mission-action-btn:hover {
+    background: var(--caramel-100);
+    color: var(--neutral-950);
+}
+
+.mission-expand-icon {
+    transition: transform var(--transition-fast);
+}
+
+.mission-expand-icon.expanded {
+    transform: rotate(180deg);
+}
+
+/* Mission Card Content (Expanded) */
+.mission-card-content {
+    display: none;
+    margin-top: var(--spacing-4);
+    padding-top: var(--spacing-4);
+    border-top: 1px solid var(--caramel-100);
+}
+
+.mission-card.expanded .mission-card-content {
+    display: block;
+}
+
+/* Metric Items in Expanded Card */
+.metric-row {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-8);
+    padding: var(--spacing-4);
+    background: var(--caramel-50);
+    border-radius: var(--radius-sm);
+    margin-bottom: var(--spacing-2);
+}
+
+.metric-row:last-child {
+    margin-bottom: 0;
+}
+
+.metric-row-title {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-4);
+    flex: 1;
+    min-width: 200px;
+}
+
+.metric-row-icon {
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--neutral-500);
+}
+
+.metric-row-name {
+    font-size: var(--font-size-sm);
+    font-weight: var(--font-weight-medium);
+    color: var(--neutral-950);
+}
+
+.metric-row-period {
+    width: 180px;
+    flex-shrink: 0;
+}
+
+.metric-period-label {
+    font-size: var(--font-size-xs);
+    font-weight: var(--font-weight-bold);
+    color: var(--neutral-950);
+}
+
+.metric-period-dates {
+    font-size: var(--font-size-xs);
+    color: var(--neutral-950);
+    line-height: 1.15;
+}
+
+.metric-row-progress {
+    width: 193px;
+    flex-shrink: 0;
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-1);
+}
+
+.metric-progress-target {
+    font-size: 10px;
+    font-weight: var(--font-weight-medium);
+    color: var(--neutral-950);
+}
+
+.metric-progress-bar {
+    position: relative;
+    height: 8px;
+    background: var(--neutral-200);
+    border-radius: var(--radius-sm);
+}
+
+.metric-progress-fill {
+    height: 100%;
+    border-radius: var(--radius-sm);
+    transition: width var(--transition-slow);
+}
+
+.metric-progress-fill.on-track {
+    background: var(--green-500);
+}
+
+.metric-progress-fill.at-risk {
+    background: var(--yellow-400);
+}
+
+.metric-progress-fill.off-track {
+    background: var(--red-500);
+}
+
+.metric-progress-marker {
+    position: absolute;
+    top: -1px;
+    width: 1px;
+    height: 10px;
+    background: var(--neutral-400);
+}
+
+.metric-progress-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.metric-progress-status {
+    font-size: 10px;
+    font-weight: var(--font-weight-medium);
+    color: var(--neutral-950);
+}
+
+.metric-progress-value {
+    font-size: 10px;
+    font-weight: var(--font-weight-semibold);
+    color: var(--neutral-950);
+}
+
+.metric-row-avatar {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: var(--caramel-200);
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--caramel-500);
+}
+
+/* Metric Checkin Button */
+.metric-checkin-btn {
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--orange-500);
+    color: white;
+    border: none;
+    border-radius: 50%;
+    cursor: pointer;
+    transition: all var(--transition-fast);
+    flex-shrink: 0;
+}
+
+.metric-checkin-btn:hover {
+    background: var(--orange-600);
+    transform: scale(1.1);
+}
+
+/* Mission Card Status Badge */
+.mission-status-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: var(--spacing-1) var(--spacing-2);
+    border-radius: var(--radius-full);
+    font-size: var(--font-size-xs);
+    font-weight: var(--font-weight-medium);
+}
+
+.mission-status-badge.active {
+    background: var(--green-50);
+    color: var(--green-700);
+}
+
+.mission-status-badge.planned {
+    background: var(--caramel-100);
+    color: var(--caramel-800);
+}
+
+.mission-status-badge.completed {
+    background: var(--neutral-100);
+    color: var(--neutral-700);
+}
+
+.mission-status-badge.cancelled {
+    background: var(--red-50);
+    color: var(--red-700);
+}
+
+/* Empty State */
+.missions-empty {
+    text-align: center;
+    padding: var(--spacing-10) var(--spacing-6);
+    color: var(--color-text-muted);
+}
+
+.missions-empty-icon {
+    font-size: 48px;
+    margin-bottom: var(--spacing-4);
+    opacity: 0.5;
+}
+
+/* Loading State */
+.missions-loading {
+    text-align: center;
+    padding: var(--spacing-10) var(--spacing-6);
+    color: var(--color-text-muted);
+}

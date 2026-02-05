@@ -18,8 +18,34 @@
     </button>
 </div>
 
-<div class="card">
-    <div class="card-filters">
+@* Cards de Resumo *@
+<div class="missions-summary">
+    <div class="summary-card">
+        <div class="summary-card-value">@GetOverallProgressDisplay()%</div>
+        <div class="summary-card-label">Esperado @GetExpectedProgressDisplay()%</div>
+        <div class="summary-card-progress">
+            <div class="summary-progress-bar">
+                <div class="summary-progress-fill" style="width: @GetOverallProgressDisplay()%"></div>
+                @if (GetExpectedProgressDisplay() > 0 && GetExpectedProgressDisplay() < 100)
+                {
+                    <div class="summary-progress-expected" style="left: @GetExpectedProgressDisplay()%"></div>
+                }
+            </div>
+        </div>
+    </div>
+    <div class="summary-card" style="align-items: center; text-align: center;">
+        <div class="summary-card-value">@GetActiveMissionsCount()</div>
+        <div class="summary-card-label">Missões ativas</div>
+    </div>
+    <div class="summary-card" style="align-items: center; text-align: center;">
+        <div class="summary-card-value">@GetOutdatedMetricsCount()</div>
+        <div class="summary-card-label">Indicadores desatualizados</div>
+    </div>
+</div>
+
+@* Filtros *@
+<div class="card" style="margin-bottom: var(--spacing-4);">
+    <div class="card-filters" style="border-bottom: none; padding-bottom: 0; margin-bottom: 0;">
         <div class="form-row">
             <label>Escopo</label>
             <select class="input" value="@filterScopeTypeValue" @onchange="OnFilterScopeTypeChanged">
@@ -48,103 +74,143 @@
             <button class="button" @onclick="LoadMissions">Atualizar</button>
         </div>
     </div>
+</div>
 
-    @if (missions is null)
-    {
+@* Lista de Missões em Cards *@
+@if (missions is null)
+{
+    <div class="missions-loading">
         <p class="muted">Carregando...</p>
-    }
-    else if (missions.Items.Count == 0)
-    {
+    </div>
+}
+else if (missions.Items.Count == 0)
+{
+    <div class="missions-empty">
+        <div class="missions-empty-icon">📋</div>
         <p class="muted">Nenhuma missão encontrada.</p>
-    }
-    else
-    {
-        <table class="table">
-            <thead>
-                <tr>
-                    <th>Nome</th>
-                    <th>Escopo</th>
-                    <th>Período</th>
-                    <th>Progresso</th>
-                    <th>Confiança</th>
-                    <th>Status</th>
-                    <th style="width: 120px; text-align: center;">Ações</th>
-                </tr>
-            </thead>
-            <tbody>
-                @foreach (var mission in missions.Items)
-                {
-                    var isDeleting = deletingMissionId == mission.Id;
-                    var progress = missionProgress.GetValueOrDefault(mission.Id);
-                    <tr>
-                        <td>@mission.Name</td>
-                        <td>@GetMissionScopeName(mission)</td>
-                        <td>@mission.StartDate.ToString("yyyy-MM-dd") - @mission.EndDate.ToString("yyyy-MM-dd")</td>
-                        <td>
-                            @if (progress is null || progress.TotalMetrics == 0)
+    </div>
+}
+else
+{
+    <div class="missions-list">
+        @foreach (var mission in missions.Items)
+        {
+            var progress = missionProgress.GetValueOrDefault(mission.Id);
+            var isExpanded = expandedMissions.Contains(mission.Id);
+            var isDeleting = deletingMissionId == mission.Id;
+            var progressPercent = (int)(progress?.OverallProgress ?? 0);
+            var circumference = 2 * Math.PI * 19;
+            var dashOffset = circumference - (circumference * progressPercent / 100);
+
+            <div class="mission-card @(isExpanded ? "expanded" : "")">
+                <div class="mission-card-header" @onclick="async () => await ToggleExpand(mission.Id)">
+                    @* Círculo de Progresso *@
+                    <div class="mission-progress-circle">
+                        <svg width="44" height="44" viewBox="0 0 44 44">
+                            <circle class="progress-bg" cx="22" cy="22" r="19" />
+                            <circle class="progress-value @GetProgressStatusClass(progress)"
+                                    cx="22" cy="22" r="19"
+                                    stroke-dasharray="@circumference.ToString("F2", System.Globalization.CultureInfo.InvariantCulture)"
+                                    stroke-dashoffset="@dashOffset.ToString("F2", System.Globalization.CultureInfo.InvariantCulture)" />
+                        </svg>
+                        <div class="mission-progress-text">
+                            <span class="mission-progress-number">@progressPercent</span>
+                            <span class="mission-progress-percent">%</span>
+                        </div>
+                    </div>
+
+                    @* Título da Missão *@
+                    <div class="mission-card-title">@mission.Name</div>
+
+                    @* Ações *@
+                    <div class="mission-card-actions" @onclick:stopPropagation="true">
+                        <button class="mission-action-btn" @onclick="async () => await OpenEditModal(mission)" title="Editar missão">
+                            <svg width="22" height="22" viewBox="0 0 32 32" fill="none">
+                                <path d="M22 4L28 10L10 28H4V22L22 4Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                            </svg>
+                        </button>
+                        <button class="mission-action-btn @(isDeleting ? "danger" : "")"
+                                @onclick="() => HandleDeleteClick(mission.Id)"
+                                title="@(isDeleting ? "Confirmar exclusão" : "Excluir")">
+                            @if (isDeleting)
                             {
-                                <span class="muted">—</span>
+                                <span style="font-size: 10px;">OK?</span>
                             }
                             else
                             {
-                                var statusClass = GetProgressStatusClass(progress);
-                                <div class="mission-progress">
-                                    <div class="progress-bar">
-                                        <div class="progress-fill @statusClass" style="width: @($"{progress.OverallProgress:F0}%")"></div>
-                                        @if (progress.ExpectedProgress is > 0 and < 100)
-                                        {
-                                            <div class="progress-expected" style="left: @($"{progress.ExpectedProgress:F0}%")"
-                                                 title="Esperado: @($"{progress.ExpectedProgress:F0}%")"></div>
-                                        }
+                                <svg width="22" height="22" viewBox="0 0 32 32" fill="none">
+                                    <path d="M4 8H6.66667H28" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                                    <path d="M10.6667 8V5.33333C10.6667 4.62609 10.9476 3.94781 11.4477 3.44772C11.9478 2.94762 12.6261 2.66667 13.3333 2.66667H18.6667C19.3739 2.66667 20.0522 2.94762 20.5523 3.44772C21.0524 3.94781 21.3333 4.62609 21.3333 5.33333V8M25.3333 8V26.6667C25.3333 27.3739 25.0524 28.0522 24.5523 28.5523C24.0522 29.0524 23.3739 29.3333 22.6667 29.3333H9.33333C8.62609 29.3333 7.94781 29.0524 7.44772 28.5523C6.94762 28.0522 6.66667 27.3739 6.66667 26.6667V8H25.3333Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                                </svg>
+                            }
+                        </button>
+                        <button class="mission-action-btn" @onclick="async () => await ToggleExpand(mission.Id)" title="@(isExpanded ? "Recolher" : "Expandir")">
+                            <svg class="mission-expand-icon @(isExpanded ? "expanded" : "")" width="22" height="22" viewBox="0 0 32 32" fill="none">
+                                <path d="M8 12L16 20L24 12" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+
+                @* Conteúdo Expandido - Métricas *@
+                @if (isExpanded)
+                {
+                    <div class="mission-card-content">
+                        @{
+                            var metrics = missionMetricsCache.GetValueOrDefault(mission.Id);
+                        }
+                        @if (metrics is null)
+                        {
+                            <p class="muted">Carregando métricas...</p>
+                        }
+                        else if (!metrics.Any())
+                        {
+                            <p class="muted">Nenhuma métrica associada a esta missão.</p>
+                        }
+                        else
+                        {
+                            @foreach (var metric in metrics)
+                            {
+                                var metricProgress = GetMetricProgress(metric);
+                                var metricStatusClass = GetMetricStatusClass(metricProgress);
+                                <div class="metric-row">
+                                    <button class="metric-checkin-btn" @onclick="() => OpenCheckinModalForMetric(mission, metric)" title="Novo check-in">
+                                        <svg width="18" height="18" viewBox="0 0 32 32" fill="none">
+                                            <path d="M16 6V26M6 16H26" stroke="currentColor" stroke-width="3" stroke-linecap="round"/>
+                                        </svg>
+                                    </button>
+                                    <div class="metric-row-title">
+                                        <div class="metric-row-name">@metric.Name</div>
                                     </div>
-                                    <span class="progress-label">@($"{progress.OverallProgress:F0}%")</span>
+                                    <div class="metric-row-period">
+                                        <div class="metric-period-label">@GetQuarterLabel(mission)</div>
+                                        <div class="metric-period-dates">@mission.StartDate.ToString("dd/MM/yyyy") à @mission.EndDate.ToString("dd/MM/yyyy")</div>
+                                    </div>
+                                    <div class="metric-row-progress">
+                                        <div class="metric-progress-target">@GetTargetLabel(metric)</div>
+                                        <div class="metric-progress-bar">
+                                            <div class="metric-progress-fill @metricStatusClass" style="width: @(metricProgress)%"></div>
+                                        </div>
+                                        <div class="metric-progress-footer">
+                                            <span class="metric-progress-status">@GetMetricStatusLabel(metricProgress, metric)</span>
+                                            <span class="metric-progress-value">@(metricProgress)%</span>
+                                        </div>
+                                    </div>
+                                    <div class="metric-row-avatar" title="Último check-in">
+                                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+                                            <path d="M12 12C14.21 12 16 10.21 16 8C16 5.79 14.21 4 12 4C9.79 4 8 5.79 8 8C8 10.21 9.79 12 12 12ZM12 14C9.33 14 4 15.34 4 18V20H20V18C20 15.34 14.67 14 12 14Z" fill="currentColor"/>
+                                        </svg>
+                                    </div>
                                 </div>
                             }
-                        </td>
-                        <td>
-                            @if (progress is null || progress.MetricsWithCheckins == 0)
-                            {
-                                <span class="confidence-badge no-data">Sem dados</span>
-                            }
-                            else
-                            {
-                                var (confClass, confLabel) = GetConfidenceDisplay(progress.AverageConfidence);
-                                <span class="confidence-badge @confClass">@GetConfidenceStarsText(progress.AverageConfidence) @confLabel</span>
-                            }
-                        </td>
-                        <td>@GetStatusLabel(mission.Status)</td>
-                        <td style="text-align: center;">
-                            <div class="table-actions">
-                                <button class="button-icon" @onclick="async () => await OpenEditModal(mission)"
-                                        title="Editar missão">
-                                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-                                        <path d="M11.334 2.00004C11.5091 1.82494 11.7169 1.68605 11.9457 1.59129C12.1745 1.49653 12.4197 1.44775 12.6673 1.44775C12.9149 1.44775 13.1601 1.49653 13.3889 1.59129C13.6177 1.68605 13.8256 1.82494 14.0007 2.00004C14.1758 2.17513 14.3147 2.383 14.4094 2.61178C14.5042 2.84055 14.553 3.08575 14.553 3.33337C14.553 3.58099 14.5042 3.82619 14.4094 4.05497C14.3147 4.28374 14.1758 4.49161 14.0007 4.66671L5.00065 13.6667L1.33398 14.6667L2.33398 11L11.334 2.00004Z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-                                    </svg>
-                                </button>
-                                <button class="button-icon @(isDeleting ? "danger" : "")"
-                                        @onclick="() => HandleDeleteClick(mission.Id)"
-                                        title="@(isDeleting ? "Clique novamente para confirmar" : "Excluir missão")">
-                                    @if (isDeleting)
-                                    {
-                                        <span style="font-size: 11px; white-space: nowrap;">Confirmar?</span>
-                                    }
-                                    else
-                                    {
-                                        <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-                                            <path d="M2 4H3.33333H14" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-                                            <path d="M5.33398 4.00004V2.66671C5.33398 2.31309 5.47446 1.97395 5.72451 1.7239C5.97456 1.47385 6.3137 1.33337 6.66732 1.33337H9.33398C9.6876 1.33337 10.0268 1.47385 10.2768 1.7239C10.5269 1.97395 10.6673 2.31309 10.6673 2.66671V4.00004M12.6673 4.00004V13.3334C12.6673 13.687 12.5269 14.0261 12.2768 14.2762C12.0268 14.5262 11.6876 14.6667 11.334 14.6667H4.66732C4.3137 14.6667 3.97456 14.5262 3.72451 14.2762C3.47446 14.0261 3.33398 13.687 3.33398 13.3334V4.00004H12.6673Z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-                                        </svg>
-                                    }
-                                </button>
-                            </div>
-                        </td>
-                    </tr>
+                        }
+                    </div>
                 }
-            </tbody>
-        </table>
-        <p class="muted" style="margin-top: var(--spacing-4);">Total: @missions.Total</p>
-    }
-</div>
+            </div>
+        }
+    </div>
+    <p class="muted" style="margin-top: var(--spacing-4);">Total: @missions.Total</p>
+}
 
 @if (isModalOpen)
 {
@@ -536,6 +602,56 @@
     </Modal>
 }
 
+@* Modal de Check-in *@
+@if (isCheckinModalOpen && checkinMission != null && selectedCheckinMetric != null)
+{
+    <Modal Title="Novo check-in" Breadcrumb="@selectedCheckinMetric.Name" Size="md" OnClose="CloseCheckinModal">
+        <ChildContent>
+            <div class="metrics-form-container">
+                @if (selectedCheckinMetric.Type == MetricType.Quantitative)
+                {
+                    <div class="form-row">
+                        <label>Valor atual @GetCheckinTargetHint(selectedCheckinMetric)</label>
+                        <InputNumber class="input" @bind-Value="newCheckin.Value" placeholder="Ex: 42" />
+                    </div>
+                }
+                else
+                {
+                    <div class="form-row">
+                        <label>Texto de progresso</label>
+                        <InputText class="input" @bind-Value="newCheckin.Text" placeholder="Descreva o progresso atual" />
+                    </div>
+                }
+
+                <div class="form-row">
+                    <label>Nível de confiança</label>
+                    <div class="confidence-selector">
+                        @for (int i = 1; i <= 5; i++)
+                        {
+                            var level = i;
+                            <button type="button"
+                                    class="confidence-btn @(newCheckin.ConfidenceLevel >= level ? "active" : "")"
+                                    @onclick="() => newCheckin.ConfidenceLevel = level">
+                                @level
+                            </button>
+                        }
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <label>Nota (opcional)</label>
+                    <InputText class="input" @bind-Value="newCheckin.Note" placeholder="Contexto adicional sobre o progresso" />
+                </div>
+            </div>
+
+            <div class="form-actions" style="margin-top: var(--spacing-6);">
+                <button class="button tertiary" type="button" @onclick="CloseCheckinModal">Cancelar</button>
+                <button class="button primary" @onclick="CreateCheckin">Criar check-in</button>
+            </div>
+        </ChildContent>
+    </Modal>
+}
+
 @code {
     private sealed record ScopeOption(string Id, string Name);
     private sealed record TempMetric(string Name, string Type, string Details, string? QuantitativeType = null, decimal? MinValue = null, decimal? MaxValue = null, string? TargetText = null, string? Unit = null);
@@ -565,6 +681,20 @@
     private string? newMetricTargetText;
     private string? newMetricUnit;
     private List<TempMetric> tempMetrics = new();
+
+    // Card expansion state
+    private HashSet<Guid> expandedMissions = new();
+    private Dictionary<Guid, List<MissionMetric>> missionMetricsCache = new();
+    private Dictionary<Guid, MetricProgressDto> metricProgressCache = new();
+
+    // Checkin modal state
+    private bool isCheckinModalOpen = false;
+    private Mission? checkinMission = null;
+    private List<MissionMetric> checkinMetrics = new();
+    private string? checkinMetricId;
+    private MissionMetric? selectedCheckinMetric;
+    private CreateMetricCheckinRequest newCheckin = new();
+    private DateOnly checkinDate = DateOnly.FromDateTime(DateTime.Today);
 
     // Edit modal state
     private bool isEditModalOpen = false;
@@ -1046,6 +1176,198 @@
         _ => status.ToString()
     };
 
+    // ---- Card Expansion Methods ----
+
+    private async Task ToggleExpand(Guid missionId)
+    {
+        if (expandedMissions.Contains(missionId))
+        {
+            expandedMissions.Remove(missionId);
+        }
+        else
+        {
+            expandedMissions.Add(missionId);
+            if (!missionMetricsCache.ContainsKey(missionId))
+            {
+                var metricsResult = await Api.GetMissionMetricsByMissionIdAsync(missionId);
+                var metrics = metricsResult?.Items.ToList() ?? new List<MissionMetric>();
+                missionMetricsCache[missionId] = metrics;
+
+                // Load progress for each metric
+                if (metrics.Count > 0)
+                {
+                    var metricIds = metrics.Select(m => m.Id).ToList();
+                    var progressList = await Api.GetMetricProgressAsync(metricIds);
+                    if (progressList != null)
+                    {
+                        foreach (var progress in progressList)
+                        {
+                            metricProgressCache[progress.MetricId] = progress;
+                        }
+                    }
+                    StateHasChanged();
+                }
+            }
+        }
+    }
+
+    // ---- Summary Card Methods ----
+
+    private int GetOverallProgressDisplay()
+    {
+        if (missions is null || !missionProgress.Any()) return 0;
+        var activeProgress = missionProgress.Values.Where(p => p.TotalMetrics > 0).ToList();
+        if (!activeProgress.Any()) return 0;
+        return (int)activeProgress.Average(p => p.OverallProgress);
+    }
+
+    private int GetExpectedProgressDisplay()
+    {
+        if (missions is null || !missionProgress.Any()) return 0;
+        var activeProgress = missionProgress.Values.Where(p => p.ExpectedProgress > 0).ToList();
+        if (!activeProgress.Any()) return 0;
+        return (int)activeProgress.Average(p => p.ExpectedProgress);
+    }
+
+    private int GetActiveMissionsCount()
+    {
+        return missions?.Items.Count(m => m.Status == MissionStatus.Active) ?? 0;
+    }
+
+    private int GetOutdatedMetricsCount()
+    {
+        return missionProgress.Values.Sum(p => p.TotalMetrics - p.MetricsWithCheckins);
+    }
+
+    // ---- Metric Display Methods ----
+
+    private int GetMetricProgress(MissionMetric metric)
+    {
+        if (metricProgressCache.TryGetValue(metric.Id, out var progress))
+        {
+            return (int)progress.Progress;
+        }
+        return 0;
+    }
+
+    private string GetMetricStatusClass(int progress)
+    {
+        return progress switch
+        {
+            >= 70 => "on-track",
+            >= 40 => "at-risk",
+            _ => "off-track"
+        };
+    }
+
+    private string GetMetricStatusLabel(int progress, MissionMetric metric)
+    {
+        if (metric.Type == MetricType.Qualitative) return "Qualitativo";
+        return progress switch
+        {
+            >= 70 => "Dentro do previsto",
+            >= 40 => "Atenção",
+            _ => "Em risco"
+        };
+    }
+
+    private MarkupString GetMetricIcon(MetricType type)
+    {
+        return type switch
+        {
+            MetricType.Quantitative => new MarkupString(@"<svg width=""24"" height=""24"" viewBox=""0 0 32 32"" fill=""none""><path d=""M16 4V28M4 16H28"" stroke=""currentColor"" stroke-width=""2"" stroke-linecap=""round""/></svg>"),
+            MetricType.Qualitative => new MarkupString(@"<svg width=""24"" height=""24"" viewBox=""0 0 32 32"" fill=""none""><path d=""M16 4L20 12L28 14L22 20L24 28L16 24L8 28L10 20L4 14L12 12L16 4Z"" stroke=""currentColor"" stroke-width=""2"" stroke-linecap=""round"" stroke-linejoin=""round""/></svg>"),
+            _ => new MarkupString(@"<svg width=""24"" height=""24"" viewBox=""0 0 32 32"" fill=""none""><circle cx=""16"" cy=""16"" r=""10"" stroke=""currentColor"" stroke-width=""2""/></svg>")
+        };
+    }
+
+    private string GetQuarterLabel(Mission mission)
+    {
+        var quarter = (mission.StartDate.Month - 1) / 3 + 1;
+        return $"Q{quarter} {mission.StartDate.Year}";
+    }
+
+    // ---- Checkin Modal Methods ----
+
+    private void OpenCheckinModalForMetric(Mission mission, MissionMetric metric)
+    {
+        checkinMission = mission;
+        checkinMetrics = missionMetricsCache.GetValueOrDefault(mission.Id) ?? new List<MissionMetric>();
+        checkinMetricId = metric.Id.ToString();
+        selectedCheckinMetric = metric;
+        newCheckin = new CreateMetricCheckinRequest { ConfidenceLevel = 3 };
+        checkinDate = DateOnly.FromDateTime(DateTime.Today);
+        isCheckinModalOpen = true;
+    }
+
+    private void CloseCheckinModal()
+    {
+        isCheckinModalOpen = false;
+        checkinMission = null;
+        checkinMetrics = new();
+        checkinMetricId = null;
+        selectedCheckinMetric = null;
+    }
+
+    private void OnCheckinMetricChanged()
+    {
+        if (Guid.TryParse(checkinMetricId, out var metricId))
+        {
+            selectedCheckinMetric = checkinMetrics.FirstOrDefault(m => m.Id == metricId);
+        }
+        else
+        {
+            selectedCheckinMetric = null;
+        }
+    }
+
+    private async Task CreateCheckin()
+    {
+        if (selectedCheckinMetric is null)
+        {
+            ToastService.ShowError("Erro ao criar check-in", "Selecione uma métrica.");
+            return;
+        }
+
+        if (newCheckin.ConfidenceLevel < 1 || newCheckin.ConfidenceLevel > 5)
+        {
+            ToastService.ShowError("Erro ao criar check-in", "Selecione o nível de confiança (1-5).");
+            return;
+        }
+
+        newCheckin.MissionMetricId = selectedCheckinMetric.Id;
+        newCheckin.CheckinDate = DateTime.UtcNow;
+
+        try
+        {
+            await Api.CreateMetricCheckinAsync(newCheckin);
+            ToastService.ShowSuccess("Check-in criado", "O check-in foi registrado com sucesso.");
+            CloseCheckinModal();
+            await LoadProgress();
+        }
+        catch (HttpRequestException ex)
+        {
+            ToastService.ShowError("Erro ao criar check-in", ex.Message);
+        }
+    }
+
+    private static string GetCheckinTargetHint(MissionMetric metric)
+    {
+        if (metric.Type != MetricType.Quantitative || !metric.QuantitativeType.HasValue) return "";
+
+        var unit = metric.Unit.HasValue ? GetUnitLabel(metric.Unit.Value) : "";
+
+        return metric.QuantitativeType switch
+        {
+            QuantitativeMetricType.KeepAbove => $"(manter acima de {metric.MinValue} {unit})",
+            QuantitativeMetricType.KeepBelow => $"(manter abaixo de {metric.MaxValue} {unit})",
+            QuantitativeMetricType.KeepBetween => $"(manter entre {metric.MinValue} e {metric.MaxValue} {unit})",
+            QuantitativeMetricType.Achieve => $"(atingir {metric.MaxValue} {unit})",
+            QuantitativeMetricType.Reduce => $"(reduzir para {metric.MaxValue} {unit})",
+            _ => ""
+        };
+    }
+
     private static string GetMaxValuePlaceholder(string? quantitativeType) => quantitativeType switch
     {
         "KeepBelow" or nameof(QuantitativeMetricType.KeepBelow) => "Valor máximo",
@@ -1385,4 +1707,5 @@
             _ => "—"
         };
     }
+
 }
