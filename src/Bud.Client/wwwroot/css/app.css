@@ -1279,8 +1279,30 @@ a {
 /* Mission Metrics Section */
 .mission-metrics-section {
     margin-top: var(--spacing-6);
-    padding-top: var(--spacing-6);
-    border-top: 1px solid var(--color-border-light);
+    padding: var(--spacing-5);
+    background: var(--caramel-50);
+    border: 1px solid var(--caramel-200);
+    border-radius: var(--radius-md);
+}
+
+.mission-metrics-section-header {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-2);
+    margin-bottom: var(--spacing-4);
+}
+
+.mission-metrics-section-header h3 {
+    margin: 0;
+    font-size: var(--font-size-base);
+    font-weight: var(--font-weight-semibold);
+    color: var(--neutral-800);
+}
+
+.mission-metrics-section-icon {
+    width: 20px;
+    height: 20px;
+    color: var(--caramel-600);
 }
 
 .metrics-add-button {
@@ -1321,7 +1343,10 @@ a {
     display: flex;
     flex-direction: column;
     gap: var(--spacing-3);
-    margin-top: var(--spacing-4);
+}
+
+.mission-metrics-section .metrics-list {
+    margin-top: 0;
 }
 
 .metric-item {
