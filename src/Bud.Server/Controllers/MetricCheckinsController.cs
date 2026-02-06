@@ -38,7 +38,6 @@ public sealed class MetricCheckinsController(
         }
 
         var metric = await dbContext.MissionMetrics
-            .IgnoreQueryFilters()
             .AsNoTracking()
             .Include(m => m.Mission)
             .FirstOrDefaultAsync(m => m.Id == request.MissionMetricId, cancellationToken);

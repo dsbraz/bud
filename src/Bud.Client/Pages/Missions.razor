@@ -261,8 +261,8 @@ else
                                 var expectedProgress = progress?.ExpectedProgress ?? 0m;
                                 var metricStatusClass = GetMetricStatusClass(metricProgress, expectedProgress);
                                 var isMetricOutdated = IsMetricOutdated(metric.Id);
-                                <div class="metric-row @(isMetricOutdated ? "outdated" : "")">
-                                    <button class="metric-checkin-btn" @onclick="() => OpenCheckinModalForMetric(mission, metric)" title="Novo check-in">
+                                <div class="metric-row clickable @(isMetricOutdated ? "outdated" : "")" @onclick="() => OpenCheckinHistoryModal(mission, metric)" title="Ver histórico de check-ins">
+                                    <button class="metric-checkin-btn" @onclick="() => OpenCheckinModalForMetric(mission, metric)" @onclick:stopPropagation="true" title="Novo check-in">
                                         <svg width="18" height="18" viewBox="0 0 32 32" fill="none">
                                             <path d="M16 6V26M6 16H26" stroke="currentColor" stroke-width="3" stroke-linecap="round"/>
                                         </svg>
@@ -795,6 +795,89 @@ else
     </Modal>
 }
 
+@if (isCheckinHistoryModalOpen && historyMetric != null && historyMission != null)
+{
+    <Modal Title="Histórico de check-ins" Breadcrumb="@historyMetric.Name" Size="lg" OnClose="CloseCheckinHistoryModal">
+        <ChildContent>
+            <div class="checkin-history-container">
+                <div class="checkin-history-header">
+                    <div class="checkin-history-metric-info">
+                        <div class="checkin-history-metric-name">@historyMetric.Name</div>
+                        <div class="checkin-history-metric-target">@GetTargetLabel(historyMetric)</div>
+                    </div>
+                    <button class="button primary" @onclick="OpenCheckinFromHistory">
+                        <span class="button-icon-text">+</span>
+                        Novo check-in
+                    </button>
+                </div>
+
+                @if (isLoadingCheckins)
+                {
+                    <div class="checkin-history-loading">
+                        <p class="muted">Carregando check-ins...</p>
+                    </div>
+                }
+                else if (!metricCheckins.Any())
+                {
+                    <div class="checkin-history-empty">
+                        <svg width="48" height="48" viewBox="0 0 24 24" fill="none">
+                            <path d="M12 8V12L15 15M21 12C21 16.9706 16.9706 21 12 21C7.02944 21 3 16.9706 3 12C3 7.02944 7.02944 3 12 3C16.9706 3 21 7.02944 21 12Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                        <p>Nenhum check-in registrado para esta métrica.</p>
+                        <p class="muted">Registre seu primeiro check-in para acompanhar o progresso.</p>
+                    </div>
+                }
+                else
+                {
+                    <div class="checkin-timeline">
+                        @foreach (var checkin in metricCheckins)
+                        {
+                            var confidenceClass = checkin.ConfidenceLevel >= 4 ? "high" : checkin.ConfidenceLevel >= 2 ? "medium" : "low";
+                            var collaboratorName = checkin.Collaborator?.FullName ?? "Colaborador";
+                            <div class="checkin-timeline-item">
+                                <div class="checkin-timeline-marker">
+                                    <div class="checkin-timeline-dot @confidenceClass"></div>
+                                    <div class="checkin-timeline-line"></div>
+                                </div>
+                                <div class="checkin-timeline-content">
+                                    <div class="checkin-timeline-header">
+                                        <div class="checkin-timeline-author">
+                                            <div class="checkin-timeline-avatar" title="@collaboratorName">
+                                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                                                    <path d="M12 12C14.21 12 16 10.21 16 8C16 5.79 14.21 4 12 4C9.79 4 8 5.79 8 8C8 10.21 9.79 12 12 12ZM12 14C9.33 14 4 15.34 4 18V20H20V18C20 15.34 14.67 14 12 14Z" fill="currentColor"/>
+                                                </svg>
+                                            </div>
+                                            <span class="checkin-timeline-author-name">@collaboratorName</span>
+                                        </div>
+                                        <div class="checkin-timeline-meta">
+                                            <span class="checkin-timeline-date">@checkin.CheckinDate.ToString("dd/MM/yyyy")</span>
+                                            <span class="checkin-timeline-confidence" title="Nível de confiança: @checkin.ConfidenceLevel">
+                                                @GetConfidenceStarsDisplay(checkin.ConfidenceLevel)
+                                            </span>
+                                        </div>
+                                    </div>
+                                    <div class="checkin-timeline-value">
+                                        @GetCheckinValueDisplay(checkin, historyMetric)
+                                    </div>
+                                    @if (!string.IsNullOrWhiteSpace(checkin.Note))
+                                    {
+                                        <div class="checkin-timeline-note">
+                                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+                                                <path d="M21 15C21 15.5304 20.7893 16.0391 20.4142 16.4142C20.0391 16.7893 19.5304 17 19 17H7L3 21V5C3 4.46957 3.21071 3.96086 3.58579 3.58579C3.96086 3.21071 4.46957 3 5 3H19C19.5304 3 20.0391 3.21071 20.4142 3.58579C20.7893 3.96086 21 4.46957 21 5V15Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                                            </svg>
+                                            <span>@checkin.Note</span>
+                                        </div>
+                                    }
+                                </div>
+                            </div>
+                        }
+                    </div>
+                }
+            </div>
+        </ChildContent>
+    </Modal>
+}
+
 @code {
     private sealed record ScopeOption(string Id, string Name);
     private sealed record TempMetric(string Name, string Type, string Details, string? QuantitativeType = null, decimal? MinValue = null, decimal? MaxValue = null, string? TargetText = null, string? Unit = null);
@@ -872,6 +955,13 @@ else
     private DateTime? filterStartDate;
     private DateTime? filterEndDate;
     private bool showDatePicker = false;
+
+    // Checkin history modal state
+    private bool isCheckinHistoryModalOpen = false;
+    private MissionMetric? historyMetric = null;
+    private Mission? historyMission = null;
+    private List<MetricCheckin> metricCheckins = new();
+    private bool isLoadingCheckins = false;
 
     protected override async Task OnInitializedAsync()
     {
@@ -1537,6 +1627,79 @@ else
                 }
             }
         }
+    }
+
+    // ---- Checkin History Modal Methods ----
+
+    private async Task OpenCheckinHistoryModal(Mission mission, MissionMetric metric)
+    {
+        historyMission = mission;
+        historyMetric = metric;
+        isCheckinHistoryModalOpen = true;
+        isLoadingCheckins = true;
+        metricCheckins = new List<MetricCheckin>();
+        StateHasChanged();
+
+        try
+        {
+            var result = await Api.GetMetricCheckinsAsync(metric.Id, null, 1, 50);
+            metricCheckins = result?.Items.OrderByDescending(c => c.CheckinDate).ToList() ?? new List<MetricCheckin>();
+        }
+        catch (Exception)
+        {
+            metricCheckins = new List<MetricCheckin>();
+        }
+        finally
+        {
+            isLoadingCheckins = false;
+            StateHasChanged();
+        }
+    }
+
+    private void CloseCheckinHistoryModal()
+    {
+        isCheckinHistoryModalOpen = false;
+        historyMetric = null;
+        historyMission = null;
+        metricCheckins = new List<MetricCheckin>();
+    }
+
+    private void OpenCheckinFromHistory()
+    {
+        // Capture values before closing the history modal
+        var mission = historyMission;
+        var metric = historyMetric;
+
+        // Close history modal first
+        isCheckinHistoryModalOpen = false;
+        historyMetric = null;
+        historyMission = null;
+        metricCheckins = new List<MetricCheckin>();
+
+        // Now open checkin modal with captured values
+        if (mission != null && metric != null)
+        {
+            OpenCheckinModalForMetric(mission, metric);
+        }
+    }
+
+    private static string GetConfidenceStarsDisplay(int level)
+    {
+        return new string('★', level) + new string('☆', 5 - level);
+    }
+
+    private static string GetCheckinValueDisplay(MetricCheckin checkin, MissionMetric? metric)
+    {
+        if (checkin.Value.HasValue)
+        {
+            var unit = metric?.Unit.HasValue == true ? GetUnitLabel(metric.Unit!.Value) : "";
+            return $"{checkin.Value.Value:G} {unit}".Trim();
+        }
+        if (!string.IsNullOrWhiteSpace(checkin.Text))
+        {
+            return checkin.Text;
+        }
+        return "—";
     }
 
     // ---- Summary Card Methods ----

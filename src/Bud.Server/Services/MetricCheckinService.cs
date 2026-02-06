@@ -28,6 +28,12 @@ public sealed class MetricCheckinService(ApplicationDbContext dbContext) : IMetr
             return ServiceResult<MetricCheckin>.Failure("Texto é obrigatório para métricas qualitativas.", ServiceErrorType.Validation);
         }
 
+        // Garantir que o OrganizationId da métrica está definido
+        if (metric.OrganizationId == Guid.Empty)
+        {
+            return ServiceResult<MetricCheckin>.Failure("Métrica sem organização definida.", ServiceErrorType.Validation);
+        }
+
         var checkin = new MetricCheckin
         {
             Id = Guid.NewGuid(),
@@ -98,24 +104,44 @@ public sealed class MetricCheckinService(ApplicationDbContext dbContext) : IMetr
         page = page < 1 ? 1 : page;
         pageSize = pageSize is < 1 or > 100 ? 10 : pageSize;
 
-        var query = dbContext.MetricCheckins.AsNoTracking();
+        // Buscar check-ins sem Include para evitar problemas com query filters
+        var baseQuery = dbContext.MetricCheckins.AsNoTracking();
 
         if (missionMetricId.HasValue)
         {
-            query = query.Where(mc => mc.MissionMetricId == missionMetricId.Value);
+            baseQuery = baseQuery.Where(mc => mc.MissionMetricId == missionMetricId.Value);
         }
 
         if (missionId.HasValue)
         {
-            query = query.Where(mc => mc.MissionMetric.MissionId == missionId.Value);
+            baseQuery = baseQuery.Where(mc => mc.MissionMetric.MissionId == missionId.Value);
         }
 
-        var total = await query.CountAsync(cancellationToken);
-        var items = await query
+        var total = await baseQuery.CountAsync(cancellationToken);
+        var items = await baseQuery
             .OrderByDescending(mc => mc.CheckinDate)
             .Skip((page - 1) * pageSize)
             .Take(pageSize)
             .ToListAsync(cancellationToken);
+
+        // Carregar Collaborators separadamente ignorando query filters
+        if (items.Count > 0)
+        {
+            var collaboratorIds = items.Select(c => c.CollaboratorId).Distinct().ToList();
+            var collaborators = await dbContext.Collaborators
+                .IgnoreQueryFilters()
+                .AsNoTracking()
+                .Where(c => collaboratorIds.Contains(c.Id))
+                .ToDictionaryAsync(c => c.Id, cancellationToken);
+
+            foreach (var item in items)
+            {
+                if (collaborators.TryGetValue(item.CollaboratorId, out var collaborator))
+                {
+                    item.Collaborator = collaborator;
+                }
+            }
+        }
 
         var result = new PagedResult<MetricCheckin>
         {

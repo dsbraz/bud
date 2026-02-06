@@ -2738,6 +2738,218 @@ a {
     right: var(--spacing-2);
 }
 
+/* Clickable metric row */
+.metric-row.clickable {
+    cursor: pointer;
+    transition: background-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.metric-row.clickable:hover {
+    background: var(--caramel-100);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+}
+
+/* ========================================
+   CHECKIN HISTORY MODAL - Timeline Design
+   ======================================== */
+
+.checkin-history-container {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-6);
+}
+
+.checkin-history-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-bottom: var(--spacing-4);
+    border-bottom: 1px solid var(--caramel-200);
+}
+
+.checkin-history-metric-info {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-1);
+}
+
+.checkin-history-metric-name {
+    font-size: var(--font-size-lg);
+    font-weight: var(--font-weight-semibold);
+    color: var(--neutral-950);
+}
+
+.checkin-history-metric-target {
+    font-size: var(--font-size-sm);
+    color: var(--neutral-500);
+}
+
+.checkin-history-loading,
+.checkin-history-empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: var(--spacing-8);
+    text-align: center;
+    gap: var(--spacing-2);
+    color: var(--neutral-500);
+}
+
+.checkin-history-empty svg {
+    opacity: 0.5;
+    margin-bottom: var(--spacing-2);
+}
+
+.checkin-history-empty p {
+    margin: 0;
+}
+
+/* Timeline */
+.checkin-timeline {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    max-height: 400px;
+    overflow-y: auto;
+    padding-right: var(--spacing-2);
+}
+
+.checkin-timeline-item {
+    display: flex;
+    gap: var(--spacing-4);
+    position: relative;
+}
+
+.checkin-timeline-marker {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 20px;
+    flex-shrink: 0;
+}
+
+.checkin-timeline-dot {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background: var(--neutral-300);
+    border: 2px solid var(--color-surface);
+    box-shadow: 0 0 0 2px var(--neutral-300);
+    z-index: 1;
+}
+
+.checkin-timeline-dot.high {
+    background: var(--green-500);
+    box-shadow: 0 0 0 2px var(--green-200);
+}
+
+.checkin-timeline-dot.medium {
+    background: var(--yellow-500);
+    box-shadow: 0 0 0 2px var(--yellow-200);
+}
+
+.checkin-timeline-dot.low {
+    background: var(--red-500);
+    box-shadow: 0 0 0 2px var(--red-200);
+}
+
+.checkin-timeline-line {
+    width: 2px;
+    flex: 1;
+    background: var(--caramel-200);
+    margin-top: var(--spacing-1);
+}
+
+.checkin-timeline-item:last-child .checkin-timeline-line {
+    display: none;
+}
+
+.checkin-timeline-content {
+    flex: 1;
+    padding-bottom: var(--spacing-5);
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-2);
+}
+
+.checkin-timeline-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: var(--spacing-2);
+}
+
+.checkin-timeline-author {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-2);
+}
+
+.checkin-timeline-avatar {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: var(--caramel-200);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--neutral-600);
+    flex-shrink: 0;
+}
+
+.checkin-timeline-author-name {
+    font-size: var(--font-size-sm);
+    font-weight: var(--font-weight-semibold);
+    color: var(--neutral-950);
+}
+
+.checkin-timeline-meta {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-3);
+}
+
+.checkin-timeline-date {
+    font-size: var(--font-size-xs);
+    font-weight: var(--font-weight-medium);
+    color: var(--neutral-500);
+}
+
+.checkin-timeline-confidence {
+    font-size: var(--font-size-sm);
+    color: var(--yellow-500);
+    letter-spacing: 1px;
+}
+
+.checkin-timeline-value {
+    font-size: var(--font-size-md);
+    font-weight: var(--font-weight-semibold);
+    color: var(--neutral-950);
+    background: var(--caramel-50);
+    padding: var(--spacing-3) var(--spacing-4);
+    border-radius: var(--radius-sm);
+}
+
+.checkin-timeline-note {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--spacing-2);
+    font-size: var(--font-size-sm);
+    color: var(--neutral-600);
+    padding: var(--spacing-2) var(--spacing-3);
+    background: var(--neutral-50);
+    border-radius: var(--radius-sm);
+    border-left: 3px solid var(--caramel-300);
+}
+
+.checkin-timeline-note svg {
+    flex-shrink: 0;
+    margin-top: 2px;
+    color: var(--neutral-400);
+}
+
 /* ========================================
    COLLABORATORS LIST - Figma-inspired Design
    ======================================== */
