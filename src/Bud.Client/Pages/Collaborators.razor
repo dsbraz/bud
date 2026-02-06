@@ -4,38 +4,101 @@
 @inject OrganizationContext OrgContext
 @implements IDisposable
 
-<div class="page-header">
-    <div>
-        <div class="page-kicker">Pessoas</div>
-        <h1>Colaboradores</h1>
-        <p class="page-subtitle">Cadastre colaboradores vinculados às equipes.</p>
-    </div>
+<div class="collaborators-page-header">
+    <h1 class="collaborators-page-title">Colaboradores</h1>
     <button class="button primary" @onclick="OpenCreateModal">
         <span class="button-icon-text">+</span>
         Novo colaborador
     </button>
 </div>
 
-<div class="card">
-    <div class="card-filters">
-        <div class="form-row">
-            <label>Equipe</label>
-            <select class="input" @bind="selectedTeamId" @bind:after="LoadCollaborators">
-                <option value="">Todas</option>
-                @foreach (var team in teams)
-                {
-                    <option value="@team.Id">@team.Name</option>
-                }
-            </select>
+@* Barra de Filtros Compacta *@
+<div class="collaborators-filter-bar">
+    <div class="collaborators-filter-left">
+        <button class="filter-chip @(showFilterPanel ? "active" : "")" @onclick="ToggleFilterPanel">
+            <svg width="16" height="16" viewBox="0 0 32 32" fill="none">
+                <path d="M28 6H4L14 17.6V26L18 28V17.6L28 6Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+            <span>Filtrar</span>
+        </button>
+        <div class="filter-chip-wrapper">
+            <button class="filter-chip @(!string.IsNullOrEmpty(selectedTeamId) ? "active" : "")" @onclick="ToggleTeamDropdown">
+                <svg width="16" height="16" viewBox="0 0 32 32" fill="none">
+                    <path d="M16 14C18.2091 14 20 12.2091 20 10C20 7.79086 18.2091 6 16 6C13.7909 6 12 7.79086 12 10C12 12.2091 13.7909 14 16 14Z" stroke="currentColor" stroke-width="2"/>
+                    <path d="M8 28V26C8 23.7909 9.79086 22 12 22H20C22.2091 22 24 23.7909 24 26V28" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                </svg>
+                <span>@GetTeamFilterLabel()</span>
+            </button>
+            @if (showTeamDropdown)
+            {
+                <div class="filter-dropdown">
+                    <div class="filter-dropdown-row">
+                        <label>Equipe</label>
+                        <select class="input" @bind="selectedTeamId" @bind:after="ApplyTeamFilter">
+                            <option value="">Todas</option>
+                            @foreach (var team in teams)
+                            {
+                                <option value="@team.Id">@team.Name</option>
+                            }
+                        </select>
+                    </div>
+                </div>
+            }
         </div>
-        <div class="form-row">
-            <label>Busca</label>
-            <InputText class="input" @bind-Value="search" />
-        </div>
-        <div class="form-row" style="align-self: flex-end;">
-            <button class="button" @onclick="LoadCollaborators">Atualizar</button>
+        @if (HasActiveFilters())
+        {
+            <button class="filter-chip-clear" @onclick="ClearFilters">
+                <svg width="16" height="16" viewBox="0 0 32 32" fill="none">
+                    <path d="M26 16L22 12M22 12L18 8M22 12L26 8M22 12L18 16" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                    <path d="M6 8L10 28H14L12 18L6 8Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+                <span>Limpar filtro</span>
+            </button>
+        }
+    </div>
+</div>
+
+@* Painel de Filtros Expandido *@
+@if (showFilterPanel)
+{
+    <div class="collaborators-filter-panel">
+        <div class="filter-panel-row">
+            <div class="filter-panel-field">
+                <label>Equipe</label>
+                <select class="input" @bind="selectedTeamId" @bind:after="LoadCollaborators">
+                    <option value="">Todas</option>
+                    @foreach (var team in teams)
+                    {
+                        <option value="@team.Id">@team.Name</option>
+                    }
+                </select>
+            </div>
+            <div class="filter-panel-field">
+                <label>Busca</label>
+                <InputText class="input" @bind-Value="search" @onkeyup="OnSearchKeyUp" placeholder="Buscar colaboradores..." />
+            </div>
         </div>
     </div>
+}
+
+@* Cards de Resumo *@
+<div class="collaborators-summary">
+    <div class="summary-card" style="align-items: center; text-align: center;">
+        <div class="summary-card-value">@GetTotalCollaboratorsCount()</div>
+        <div class="summary-card-label">Total de colaboradores</div>
+    </div>
+    <div class="summary-card" style="align-items: center; text-align: center;">
+        <div class="summary-card-value">@GetLeadersCount()</div>
+        <div class="summary-card-label">Líderes</div>
+    </div>
+    <div class="summary-card" style="align-items: center; text-align: center;">
+        <div class="summary-card-value">@GetContributorsCount()</div>
+        <div class="summary-card-label">Contribuidores individuais</div>
+    </div>
+</div>
+
+@* Lista de Colaboradores *@
+<div class="collaborators-table-container">
 
     @if (collaborators is null)
     {
@@ -282,6 +345,10 @@
     private string? createLeaderId;
     private bool isModalOpen = false;
 
+    // Filter panel state
+    private bool showFilterPanel = false;
+    private bool showTeamDropdown = false;
+
     // Estado do modal de edição
     private bool isEditModalOpen = false;
     private Collaborator? selectedCollaborator = null;
@@ -355,6 +422,72 @@
             ? parsedTeamId
             : (Guid?)null;
         collaborators = await Api.GetCollaboratorsAsync(filterTeamId, search, 1, 20) ?? new PagedResult<Collaborator>();
+    }
+
+    // Filter methods
+    private void ToggleFilterPanel()
+    {
+        showFilterPanel = !showFilterPanel;
+    }
+
+    private void ToggleTeamDropdown()
+    {
+        showTeamDropdown = !showTeamDropdown;
+    }
+
+    private async Task ApplyTeamFilter()
+    {
+        showTeamDropdown = false;
+        await LoadCollaborators();
+    }
+
+    private bool HasActiveFilters()
+    {
+        return !string.IsNullOrEmpty(selectedTeamId) || !string.IsNullOrEmpty(search);
+    }
+
+    private async Task ClearFilters()
+    {
+        selectedTeamId = null;
+        search = null;
+        await LoadCollaborators();
+    }
+
+    private string GetTeamFilterLabel()
+    {
+        if (Guid.TryParse(selectedTeamId, out var teamId))
+        {
+            var team = teams.FirstOrDefault(t => t.Id == teamId);
+            if (team != null)
+            {
+                return team.Name;
+            }
+        }
+        return "Todas as equipes";
+    }
+
+    private async Task OnSearchKeyUp(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter")
+        {
+            await LoadCollaborators();
+        }
+    }
+
+    // Summary card methods
+    private int GetTotalCollaboratorsCount()
+    {
+        return allCollaborators.Count;
+    }
+
+    private int GetLeadersCount()
+    {
+        return allCollaborators.Count(c => c.Role == CollaboratorRole.Leader);
+    }
+
+    private int GetContributorsCount()
+    {
+        return allCollaborators.Count(c => c.Role == CollaboratorRole.IndividualContributor);
     }
 
     private void OpenCreateModal()

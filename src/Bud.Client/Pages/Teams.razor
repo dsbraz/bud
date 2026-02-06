@@ -6,39 +6,93 @@
 
 <ManagementMenu />
 
-<div class="page-header">
-    <div>
-        <div class="page-kicker">Configurações</div>
-        <h1>Equipes</h1>
-        <p class="page-subtitle">Crie equipes e subequipes por workspace.</p>
-    </div>
+@* Header *@
+<div class="teams-page-header">
+    <h1 class="teams-page-title">Equipes</h1>
     <button class="button primary" @onclick="OpenCreateModal">
         <span class="button-icon-text">+</span>
         Nova equipe
     </button>
 </div>
 
-<div class="card">
-    <div class="card-filters">
-        <div class="form-row">
-            <label>Workspace</label>
-            <select class="input" @bind="selectedWorkspaceId" @bind:after="LoadTeams">
-                <option value="">Todos</option>
-                @foreach (var workspace in workspaces)
-                {
-                    <option value="@workspace.Id">@workspace.Name</option>
-                }
-            </select>
+@* Barra de Filtros *@
+<div class="teams-filter-bar">
+    <div class="teams-filter-left">
+        <button class="filter-chip @(showFilterPanel ? "active" : "")" @onclick="ToggleFilterPanel">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                <path d="M14.6667 2H1.33334L6.66668 8.30667V12.6667L9.33334 14V8.30667L14.6667 2Z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+            Filtrar
+        </button>
+        <div class="filter-chip-wrapper">
+            <button class="filter-chip @(!string.IsNullOrEmpty(selectedWorkspaceId) ? "active" : "")" @onclick="ToggleWorkspaceDropdown">
+                <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                    <rect x="2" y="3" width="12" height="10" rx="1" stroke="currentColor" stroke-width="1.5"/>
+                    <path d="M5 7H11" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+                    <path d="M5 10H9" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+                </svg>
+                <span>@GetWorkspaceFilterLabel()</span>
+                <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+                    <path d="M3 4.5L6 7.5L9 4.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+            </button>
+            @if (showWorkspaceDropdown)
+            {
+                <div class="filter-dropdown">
+                    <div class="filter-dropdown-row">
+                        <label>Workspace</label>
+                        <select class="input" @bind="selectedWorkspaceId">
+                            <option value="">Todos os workspaces</option>
+                            @foreach (var workspace in workspaces)
+                            {
+                                <option value="@workspace.Id">@workspace.Name</option>
+                            }
+                        </select>
+                    </div>
+                    <button class="button small" @onclick="ApplyWorkspaceFilter">Aplicar</button>
+                </div>
+            }
         </div>
-        <div class="form-row">
-            <label>Busca</label>
-            <InputText class="input" @bind-Value="search" />
-        </div>
-        <div class="form-row" style="align-self: flex-end;">
-            <button class="button" @onclick="LoadTeams">Atualizar</button>
+        @if (HasActiveFilters())
+        {
+            <button class="filter-chip" @onclick="ClearFilters">
+                Limpar filtro
+            </button>
+        }
+    </div>
+</div>
+
+@* Painel de Filtros Expansível *@
+@if (showFilterPanel)
+{
+    <div class="teams-filter-panel">
+        <div class="filter-panel-row">
+            <div class="filter-panel-field">
+                <label>Busca</label>
+                <InputText class="input" @bind-Value="search" @onkeyup="OnSearchKeyUp" placeholder="Buscar equipes..." />
+            </div>
         </div>
     </div>
+}
 
+@* Cards de Resumo *@
+<div class="teams-summary">
+    <div class="summary-card" style="align-items: center; text-align: center;">
+        <div class="summary-card-value">@GetTotalTeamsCount()</div>
+        <div class="summary-card-label">Total de equipes</div>
+    </div>
+    <div class="summary-card" style="align-items: center; text-align: center;">
+        <div class="summary-card-value">@GetRootTeamsCount()</div>
+        <div class="summary-card-label">Equipes raiz</div>
+    </div>
+    <div class="summary-card" style="align-items: center; text-align: center;">
+        <div class="summary-card-value">@GetSubTeamsCount()</div>
+        <div class="summary-card-label">Subequipes</div>
+    </div>
+</div>
+
+@* Lista de Equipes *@
+<div class="teams-table-container">
     @if (teams is null)
     {
         <p class="muted">Carregando...</p>
@@ -231,6 +285,8 @@
     private string? createWorkspaceId;
     private string? createParentTeamId;
     private bool isModalOpen = false;
+    private bool showFilterPanel = false;
+    private bool showWorkspaceDropdown = false;
 
     // Estado do modal de edição
     private bool isEditModalOpen = false;
@@ -295,6 +351,45 @@
         var result = await Api.GetCollaboratorsAsync(null, null, 1, 1000);
         collaborators = result?.Items.ToList() ?? new List<Collaborator>();
     }
+
+    // Filter methods
+    private void ToggleFilterPanel() => showFilterPanel = !showFilterPanel;
+    private void ToggleWorkspaceDropdown() => showWorkspaceDropdown = !showWorkspaceDropdown;
+
+    private async Task ApplyWorkspaceFilter()
+    {
+        showWorkspaceDropdown = false;
+        await LoadTeams();
+    }
+
+    private bool HasActiveFilters() => !string.IsNullOrEmpty(search) || !string.IsNullOrEmpty(selectedWorkspaceId);
+
+    private async Task ClearFilters()
+    {
+        search = null;
+        selectedWorkspaceId = null;
+        await LoadTeams();
+    }
+
+    private async Task OnSearchKeyUp(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter")
+            await LoadTeams();
+    }
+
+    private string GetWorkspaceFilterLabel()
+    {
+        if (string.IsNullOrEmpty(selectedWorkspaceId))
+            return "Todos os workspaces";
+
+        var workspace = workspaces.FirstOrDefault(w => w.Id.ToString() == selectedWorkspaceId);
+        return workspace?.Name ?? "Todos os workspaces";
+    }
+
+    // Summary methods
+    private int GetTotalTeamsCount() => teams?.Total ?? 0;
+    private int GetRootTeamsCount() => allTeams.Count(t => t.ParentTeamId == null);
+    private int GetSubTeamsCount() => allTeams.Count(t => t.ParentTeamId != null);
 
     private async Task OpenDetailsModal(Team team)
     {

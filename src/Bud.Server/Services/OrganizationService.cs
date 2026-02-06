@@ -178,7 +178,8 @@ public sealed class OrganizationService(
 
         if (!string.IsNullOrWhiteSpace(search))
         {
-            query = query.Where(o => o.Name.Contains(search.Trim()));
+            var term = search.Trim().ToLower();
+            query = query.Where(o => o.Name.ToLower().Contains(term));
         }
 
         var total = await query.CountAsync(cancellationToken);

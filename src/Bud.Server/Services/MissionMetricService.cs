@@ -93,7 +93,8 @@ public sealed class MissionMetricService(ApplicationDbContext dbContext) : IMiss
 
         if (!string.IsNullOrWhiteSpace(search))
         {
-            query = query.Where(m => m.Name.Contains(search.Trim()));
+            var term = search.Trim().ToLower();
+            query = query.Where(m => m.Name.ToLower().Contains(term));
         }
 
         var total = await query.CountAsync(cancellationToken);

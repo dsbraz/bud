@@ -188,8 +188,8 @@ public sealed class CollaboratorService(
 
         if (!string.IsNullOrWhiteSpace(search))
         {
-            var term = search.Trim();
-            query = query.Where(c => c.FullName.Contains(term) || c.Email.Contains(term));
+            var term = search.Trim().ToLower();
+            query = query.Where(c => c.FullName.ToLower().Contains(term) || c.Email.ToLower().Contains(term));
         }
 
         var total = await query.CountAsync(cancellationToken);
@@ -335,8 +335,8 @@ public sealed class CollaboratorService(
 
         if (!string.IsNullOrWhiteSpace(search))
         {
-            var term = search.Trim();
-            query = query.Where(t => t.Name.Contains(term) || t.Workspace.Name.Contains(term));
+            var term = search.Trim().ToLower();
+            query = query.Where(t => t.Name.ToLower().Contains(term) || t.Workspace.Name.ToLower().Contains(term));
         }
 
         var teams = await query

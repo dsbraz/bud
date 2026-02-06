@@ -6,29 +6,60 @@
 
 <ManagementMenu />
 
-<div class="page-header">
-    <div>
-        <div class="page-kicker">Configurações</div>
-        <h1>Workspaces</h1>
-        <p class="page-subtitle">Crie workspaces vinculados às organizações.</p>
-    </div>
+@* Header *@
+<div class="workspaces-page-header">
+    <h1 class="workspaces-page-title">Workspaces</h1>
     <button class="button primary" @onclick="OpenCreateModal">
         <span class="button-icon-text">+</span>
         Novo workspace
     </button>
 </div>
 
-<div class="card">
-    <div class="card-filters">
-        <div class="form-row">
-            <label>Busca</label>
-            <InputText class="input" @bind-Value="search" />
-        </div>
-        <div class="form-row" style="align-self: flex-end;">
-            <button class="button" @onclick="LoadWorkspaces">Atualizar</button>
+@* Barra de Filtros *@
+<div class="workspaces-filter-bar">
+    <div class="workspaces-filter-left">
+        <button class="filter-chip @(showFilterPanel ? "active" : "")" @onclick="ToggleFilterPanel">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                <path d="M14.6667 2H1.33334L6.66668 8.30667V12.6667L9.33334 14V8.30667L14.6667 2Z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+            Filtrar
+        </button>
+        @if (HasActiveFilters())
+        {
+            <button class="filter-chip" @onclick="ClearFilters">
+                Limpar filtro
+            </button>
+        }
+    </div>
+</div>
+
+@* Painel de Filtros Expansível *@
+@if (showFilterPanel)
+{
+    <div class="workspaces-filter-panel">
+        <div class="filter-panel-row">
+            <div class="filter-panel-field">
+                <label>Busca</label>
+                <InputText class="input" @bind-Value="search" @onkeyup="OnSearchKeyUp" placeholder="Buscar workspaces..." />
+            </div>
         </div>
     </div>
+}
 
+@* Cards de Resumo *@
+<div class="workspaces-summary">
+    <div class="summary-card" style="align-items: center; text-align: center;">
+        <div class="summary-card-value">@GetTotalWorkspacesCount()</div>
+        <div class="summary-card-label">Total de workspaces</div>
+    </div>
+    <div class="summary-card" style="align-items: center; text-align: center;">
+        <div class="summary-card-value">@GetTotalTeamsCount()</div>
+        <div class="summary-card-label">Equipes</div>
+    </div>
+</div>
+
+@* Lista de Workspaces *@
+<div class="workspaces-table-container">
     @if (workspaces is null)
     {
         <p class="muted">Carregando...</p>
@@ -161,6 +192,7 @@
     private PagedResult<Workspace>? workspaces;
     private string? search;
     private bool isModalOpen = false;
+    private bool showFilterPanel = false;
 
     // Estado do modal de edição
     private bool isEditModalOpen = false;
@@ -212,6 +244,27 @@
         var result = await Api.GetTeamsAsync(null, null, null, 1, 200);
         teams = result?.Items.ToList() ?? new List<Team>();
     }
+
+    // Filter methods
+    private void ToggleFilterPanel() => showFilterPanel = !showFilterPanel;
+
+    private bool HasActiveFilters() => !string.IsNullOrEmpty(search);
+
+    private async Task ClearFilters()
+    {
+        search = null;
+        await LoadWorkspaces();
+    }
+
+    private async Task OnSearchKeyUp(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter")
+            await LoadWorkspaces();
+    }
+
+    // Summary methods
+    private int GetTotalWorkspacesCount() => workspaces?.Total ?? 0;
+    private int GetTotalTeamsCount() => teams.Count;
 
     private void OpenDetailsModal(Workspace workspace)
     {

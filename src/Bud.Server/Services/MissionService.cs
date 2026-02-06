@@ -135,7 +135,8 @@ public sealed class MissionService(ApplicationDbContext dbContext) : IMissionSer
 
         if (!string.IsNullOrWhiteSpace(search))
         {
-            query = query.Where(m => m.Name.Contains(search.Trim()));
+            var term = search.Trim().ToLower();
+            query = query.Where(m => m.Name.ToLower().Contains(term));
         }
 
         var total = await query.CountAsync(cancellationToken);
@@ -198,7 +199,8 @@ public sealed class MissionService(ApplicationDbContext dbContext) : IMissionSer
         // Aplicar filtro de busca por nome
         if (!string.IsNullOrWhiteSpace(search))
         {
-            query = query.Where(m => m.Name.Contains(search.Trim()));
+            var term = search.Trim().ToLower();
+            query = query.Where(m => m.Name.ToLower().Contains(term));
         }
 
         // Paginação

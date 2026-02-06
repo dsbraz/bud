@@ -105,7 +105,8 @@ public sealed class WorkspaceService(
 
         if (!string.IsNullOrWhiteSpace(search))
         {
-            query = query.Where(w => w.Name.Contains(search.Trim()));
+            var term = search.Trim().ToLower();
+            query = query.Where(w => w.Name.ToLower().Contains(term));
         }
 
         var total = await query.CountAsync(cancellationToken);

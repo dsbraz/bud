@@ -2675,3 +2675,177 @@ a {
     top: var(--spacing-2);
     right: var(--spacing-2);
 }
+
+/* ========================================
+   COLLABORATORS LIST - Figma-inspired Design
+   ======================================== */
+
+/* Collaborators Page Header */
+.collaborators-page-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: var(--spacing-4);
+}
+
+.collaborators-page-title {
+    font-size: var(--font-size-title-md);
+    font-weight: var(--font-weight-medium);
+    color: var(--neutral-950);
+    margin: 0;
+}
+
+/* Filter Bar */
+.collaborators-filter-bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: var(--spacing-2);
+    margin-bottom: var(--spacing-4);
+}
+
+.collaborators-filter-left {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-2);
+}
+
+/* Filter Panel */
+.collaborators-filter-panel {
+    background: var(--color-surface);
+    border: 1px solid var(--caramel-200);
+    border-radius: var(--radius-sm);
+    padding: var(--spacing-4);
+    margin-bottom: var(--spacing-4);
+}
+
+/* Summary Cards Row */
+.collaborators-summary {
+    display: flex;
+    gap: var(--spacing-2);
+    margin-bottom: var(--spacing-6);
+}
+
+/* Table Container */
+.collaborators-table-container {
+    background: var(--color-surface);
+    border: 1px solid var(--caramel-200);
+    border-radius: var(--radius-sm);
+    padding: var(--spacing-4);
+}
+
+/* ========================================
+   WORKSPACES LIST - Figma-inspired Design
+   ======================================== */
+
+/* Workspaces Page Header */
+.workspaces-page-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: var(--spacing-4);
+}
+
+.workspaces-page-title {
+    font-size: var(--font-size-title-md);
+    font-weight: var(--font-weight-medium);
+    color: var(--neutral-950);
+    margin: 0;
+}
+
+/* Filter Bar */
+.workspaces-filter-bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: var(--spacing-2);
+    margin-bottom: var(--spacing-4);
+}
+
+.workspaces-filter-left {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-2);
+}
+
+/* Filter Panel */
+.workspaces-filter-panel {
+    background: var(--color-surface);
+    border: 1px solid var(--caramel-200);
+    border-radius: var(--radius-sm);
+    padding: var(--spacing-4);
+    margin-bottom: var(--spacing-4);
+}
+
+/* Summary Cards Row */
+.workspaces-summary {
+    display: flex;
+    gap: var(--spacing-2);
+    margin-bottom: var(--spacing-6);
+}
+
+/* Table Container */
+.workspaces-table-container {
+    background: var(--color-surface);
+    border: 1px solid var(--caramel-200);
+    border-radius: var(--radius-sm);
+    padding: var(--spacing-4);
+}
+
+/* ========================================
+   TEAMS LIST - Figma-inspired Design
+   ======================================== */
+
+/* Teams Page Header */
+.teams-page-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: var(--spacing-4);
+}
+
+.teams-page-title {
+    font-size: var(--font-size-title-md);
+    font-weight: var(--font-weight-medium);
+    color: var(--neutral-950);
+    margin: 0;
+}
+
+/* Filter Bar */
+.teams-filter-bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: var(--spacing-2);
+    margin-bottom: var(--spacing-4);
+}
+
+.teams-filter-left {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-2);
+}
+
+/* Filter Panel */
+.teams-filter-panel {
+    background: var(--color-surface);
+    border: 1px solid var(--caramel-200);
+    border-radius: var(--radius-sm);
+    padding: var(--spacing-4);
+    margin-bottom: var(--spacing-4);
+}
+
+/* Summary Cards Row */
+.teams-summary {
+    display: flex;
+    gap: var(--spacing-2);
+    margin-bottom: var(--spacing-6);
+}
+
+/* Table Container */
+.teams-table-container {
+    background: var(--color-surface);
+    border: 1px solid var(--caramel-200);
+    border-radius: var(--radius-sm);
+    padding: var(--spacing-4);
+}
