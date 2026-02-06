@@ -1,11 +1,13 @@
 using System.Net.Http;
 using System.Net.Http.Headers;
+using Microsoft.AspNetCore.Components;
 
 namespace Bud.Client.Services;
 
 public sealed class TenantDelegatingHandler(
     AuthState authState,
-    OrganizationContext orgContext) : DelegatingHandler
+    OrganizationContext orgContext,
+    NavigationManager navigationManager) : DelegatingHandler
 {
     protected override async Task<HttpResponseMessage> SendAsync(
         HttpRequestMessage request, CancellationToken cancellationToken)
@@ -35,6 +37,15 @@ public sealed class TenantDelegatingHandler(
             }
         }
 
-        return await base.SendAsync(request, cancellationToken);
+        var response = await base.SendAsync(request, cancellationToken);
+
+        // If 401 Unauthorized, clear session and redirect to login
+        if (response.StatusCode == System.Net.HttpStatusCode.Unauthorized)
+        {
+            await authState.ClearAsync();
+            navigationManager.NavigateTo("/login", forceLoad: true);
+        }
+
+        return response;
     }
 }
