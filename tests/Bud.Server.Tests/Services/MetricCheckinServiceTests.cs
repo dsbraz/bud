@@ -22,7 +22,9 @@ public class MetricCheckinServiceTests
         return new ApplicationDbContext(options, _tenantProvider);
     }
 
-    private static async Task<(Organization org, Mission mission)> CreateTestMission(ApplicationDbContext context)
+    private static async Task<(Organization org, Mission mission)> CreateTestMission(
+        ApplicationDbContext context,
+        MissionStatus status = MissionStatus.Active)
     {
         var org = new Organization { Id = Guid.NewGuid(), Name = "Test Org" };
         context.Organizations.Add(org);
@@ -33,7 +35,7 @@ public class MetricCheckinServiceTests
             Name = "Test Mission",
             StartDate = DateTime.UtcNow,
             EndDate = DateTime.UtcNow.AddDays(30),
-            Status = MissionStatus.Planned,
+            Status = status,
             OrganizationId = org.Id
         };
 
@@ -666,6 +668,117 @@ public class MetricCheckinServiceTests
         result.Value!.Items.Should().HaveCount(2);
         result.Value!.Page.Should().Be(1);
         result.Value!.PageSize.Should().Be(2);
+    }
+
+    #endregion
+
+    #region Mission Status Validation Tests
+
+    [Fact]
+    public async Task CreateAsync_WithActiveMission_ReturnsSuccess()
+    {
+        // Arrange
+        using var context = CreateInMemoryContext();
+        var service = new MetricCheckinService(context);
+        var (org, mission) = await CreateTestMission(context, MissionStatus.Active);
+        var metric = await CreateTestMetric(context, mission.Id, org.Id, MetricType.Quantitative);
+        var collaborator = await CreateTestCollaborator(context, org.Id);
+
+        var request = new CreateMetricCheckinRequest
+        {
+            MissionMetricId = metric.Id,
+            Value = 42.5m,
+            CheckinDate = DateTime.UtcNow,
+            ConfidenceLevel = 3
+        };
+
+        // Act
+        var result = await service.CreateAsync(request, collaborator.Id);
+
+        // Assert
+        result.IsSuccess.Should().BeTrue();
+        result.Value.Should().NotBeNull();
+    }
+
+    [Fact]
+    public async Task CreateAsync_WithPlannedMission_ReturnsValidationError()
+    {
+        // Arrange
+        using var context = CreateInMemoryContext();
+        var service = new MetricCheckinService(context);
+        var (org, mission) = await CreateTestMission(context, MissionStatus.Planned);
+        var metric = await CreateTestMetric(context, mission.Id, org.Id, MetricType.Quantitative);
+        var collaborator = await CreateTestCollaborator(context, org.Id);
+
+        var request = new CreateMetricCheckinRequest
+        {
+            MissionMetricId = metric.Id,
+            Value = 42.5m,
+            CheckinDate = DateTime.UtcNow,
+            ConfidenceLevel = 3
+        };
+
+        // Act
+        var result = await service.CreateAsync(request, collaborator.Id);
+
+        // Assert
+        result.IsSuccess.Should().BeFalse();
+        result.ErrorType.Should().Be(ServiceErrorType.Validation);
+        result.Error.Should().Be("Não é possível fazer check-in em métricas de missões que não estão ativas.");
+    }
+
+    [Fact]
+    public async Task CreateAsync_WithCompletedMission_ReturnsValidationError()
+    {
+        // Arrange
+        using var context = CreateInMemoryContext();
+        var service = new MetricCheckinService(context);
+        var (org, mission) = await CreateTestMission(context, MissionStatus.Completed);
+        var metric = await CreateTestMetric(context, mission.Id, org.Id, MetricType.Quantitative);
+        var collaborator = await CreateTestCollaborator(context, org.Id);
+
+        var request = new CreateMetricCheckinRequest
+        {
+            MissionMetricId = metric.Id,
+            Value = 42.5m,
+            CheckinDate = DateTime.UtcNow,
+            ConfidenceLevel = 3
+        };
+
+        // Act
+        var result = await service.CreateAsync(request, collaborator.Id);
+
+        // Assert
+        result.IsSuccess.Should().BeFalse();
+        result.ErrorType.Should().Be(ServiceErrorType.Validation);
+        result.Error.Should().Be("Não é possível fazer check-in em métricas de missões que não estão ativas.");
+    }
+
+    [Fact]
+    public async Task CreateAsync_WithCancelledMission_ReturnsValidationError()
+    {
+        // Arrange
+        using var context = CreateInMemoryContext();
+        var service = new MetricCheckinService(context);
+        var (org, mission) = await CreateTestMission(context, MissionStatus.Cancelled);
+        var metric = await CreateTestMetric(context, mission.Id, org.Id, MetricType.Quantitative);
+        var collaborator = await CreateTestCollaborator(context, org.Id);
+
+        var request = new CreateMetricCheckinRequest
+        {
+            MissionMetricId = metric.Id,
+            Value = 42.5m,
+            CheckinDate = DateTime.UtcNow,
+            ConfidenceLevel = 3
+        };
+
+        // Act
+        var result = await service.CreateAsync(request, collaborator.Id);
+
+        // Assert
+        result.IsSuccess.Should().BeFalse();
+        result.ErrorType.Should().Be(ServiceErrorType.Validation);
+        result.Error.Should().Be("Não é possível fazer check-in em métricas de missões que não estão ativas.");
     }
 
     #endregion

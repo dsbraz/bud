@@ -604,9 +604,11 @@ public class MetricCheckinsEndpointsTests : IClassFixture<CustomWebApplicationFa
     #region Scope Authorization Tests
 
     [Fact]
-    public async Task Create_WithTenantMismatch_ReturnsForbidden()
+    public async Task Create_WithTenantMismatch_ReturnsNotFound()
     {
         // Arrange: Create metric in org2, try to checkin as collaborator from org1
+        // Note: Global query filters return 404 (not found) instead of 403 (forbidden)
+        // This is more secure as it doesn't reveal the existence of resources in other tenants
         var leaderId = await GetOrCreateAdminLeader();
 
         var org1Response = await _adminClient.PostAsJsonAsync("/api/organizations",
@@ -658,7 +660,7 @@ public class MetricCheckinsEndpointsTests : IClassFixture<CustomWebApplicationFa
         var response = await tenantClient.PostAsJsonAsync("/api/metric-checkins", request);
 
         // Assert
-        response.StatusCode.Should().Be(HttpStatusCode.Forbidden);
+        response.StatusCode.Should().Be(HttpStatusCode.NotFound);
     }
 
     [Fact]

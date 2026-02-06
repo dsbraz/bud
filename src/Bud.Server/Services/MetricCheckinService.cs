@@ -11,11 +11,19 @@ public sealed class MetricCheckinService(ApplicationDbContext dbContext) : IMetr
     {
         var metric = await dbContext.MissionMetrics
             .AsNoTracking()
+            .Include(m => m.Mission)
             .FirstOrDefaultAsync(m => m.Id == request.MissionMetricId, cancellationToken);
 
         if (metric is null)
         {
             return ServiceResult<MetricCheckin>.NotFound("Métrica não encontrada.");
+        }
+
+        if (metric.Mission.Status != MissionStatus.Active)
+        {
+            return ServiceResult<MetricCheckin>.Failure(
+                "Não é possível fazer check-in em métricas de missões que não estão ativas.",
+                ServiceErrorType.Validation);
         }
 
         if (metric.Type == MetricType.Quantitative && request.Value is null)
