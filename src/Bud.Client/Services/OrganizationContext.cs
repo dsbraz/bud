@@ -16,6 +16,7 @@ public sealed class OrganizationContext(IJSRuntime jsRuntime)
     public Guid? SelectedOrganizationId => _selectedOrganizationId;
     public List<OrganizationSummaryDto> AvailableOrganizations => _availableOrganizations;
     public bool ShowAllOrganizations => _selectedOrganizationId == null;
+    public bool IsInitialized => _initialized;
 
     public async Task InitializeAsync(List<OrganizationSummaryDto> organizations)
     {

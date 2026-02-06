@@ -2593,3 +2593,85 @@ a {
     padding: var(--spacing-10) var(--spacing-6);
     color: var(--color-text-muted);
 }
+
+/* Grid View Mode */
+.missions-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: var(--spacing-4);
+}
+
+.missions-grid .mission-card {
+    display: flex;
+    flex-direction: column;
+    position: relative;
+}
+
+.missions-grid .mission-card-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--spacing-3);
+}
+
+.missions-grid .mission-progress-circle {
+    width: 56px;
+    height: 56px;
+    margin-bottom: var(--spacing-2);
+}
+
+.missions-grid .mission-progress-circle svg {
+    width: 60px;
+    height: 60px;
+}
+
+.missions-grid .mission-progress-circle circle {
+    stroke-width: 2.5;
+}
+
+.missions-grid .mission-progress-number {
+    font-size: var(--font-size-sm);
+}
+
+.missions-grid .mission-progress-percent {
+    font-size: 8px;
+}
+
+.missions-grid .mission-card-title-wrapper {
+    width: 100%;
+}
+
+.missions-grid .mission-card-actions {
+    position: absolute;
+    top: var(--spacing-3);
+    right: var(--spacing-3);
+}
+
+.missions-grid .mission-card-content {
+    margin-top: var(--spacing-3);
+    padding-top: var(--spacing-3);
+}
+
+.missions-grid .metric-row {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--spacing-2);
+}
+
+.missions-grid .metric-row-title {
+    min-width: auto;
+    width: 100%;
+}
+
+.missions-grid .metric-row-period {
+    width: 100%;
+}
+
+.missions-grid .metric-row-progress {
+    width: 100%;
+}
+
+.missions-grid .metric-row-avatar {
+    position: absolute;
+    top: var(--spacing-2);
+    right: var(--spacing-2);
+}

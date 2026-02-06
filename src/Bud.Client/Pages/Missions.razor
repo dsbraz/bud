@@ -65,14 +65,26 @@
             </button>
         }
     </div>
-    <button class="filter-chip">
-        <svg width="16" height="16" viewBox="0 0 32 32" fill="none">
-            <rect x="4" y="6" width="8" height="8" rx="1" stroke="currentColor" stroke-width="2"/>
-            <rect x="4" y="18" width="8" height="8" rx="1" stroke="currentColor" stroke-width="2"/>
-            <rect x="20" y="6" width="8" height="8" rx="1" stroke="currentColor" stroke-width="2"/>
-            <rect x="20" y="18" width="8" height="8" rx="1" stroke="currentColor" stroke-width="2"/>
-        </svg>
-        <span>Vendo em lista</span>
+    <button class="filter-chip" @onclick="ToggleViewMode">
+        @if (viewMode == "list")
+        {
+            @* Ícone de lista (linhas horizontais) *@
+            <svg width="16" height="16" viewBox="0 0 32 32" fill="none">
+                <path d="M4 8H28M4 16H28M4 24H28" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+            </svg>
+            <span>Lista</span>
+        }
+        else
+        {
+            @* Ícone de grade (4 quadrados) *@
+            <svg width="16" height="16" viewBox="0 0 32 32" fill="none">
+                <rect x="4" y="6" width="8" height="8" rx="1" stroke="currentColor" stroke-width="2"/>
+                <rect x="4" y="18" width="8" height="8" rx="1" stroke="currentColor" stroke-width="2"/>
+                <rect x="20" y="6" width="8" height="8" rx="1" stroke="currentColor" stroke-width="2"/>
+                <rect x="20" y="18" width="8" height="8" rx="1" stroke="currentColor" stroke-width="2"/>
+            </svg>
+            <span>Grade</span>
+        }
     </button>
 </div>
 
@@ -146,7 +158,7 @@ else if (missions.Items.Count == 0)
 }
 else
 {
-    <div class="missions-list">
+    <div class="@(viewMode == "list" ? "missions-list" : "missions-grid")">
         @foreach (var mission in missions.Items)
         {
             var progress = missionProgress.GetValueOrDefault(mission.Id);
@@ -733,6 +745,7 @@ else
     private string? filterScopeTypeValue;
     private string? filterScopeId;
     private string? search;
+    private string viewMode = "list"; // "list" ou "grid"
     private bool isModalOpen = false;
     private bool showResponsibleSelector = false;
     private bool showPeriodSelector = false;
@@ -800,6 +813,14 @@ else
         // Subscribe to organization changes
         OrgContext.OnOrganizationChanged += HandleOrganizationChanged;
 
+        // Aguardar inicialização do OrgContext (MainLayout pode ainda estar carregando)
+        var maxWait = 50; // 50 * 100ms = 5 segundos máximo
+        while (!OrgContext.IsInitialized && maxWait > 0)
+        {
+            await Task.Delay(100);
+            maxWait--;
+        }
+
         await LoadReferenceData();
         await LoadMissions();
     }
@@ -825,10 +846,13 @@ else
 
     private async Task LoadReferenceData()
     {
+        // Filtrar dados pelo tenant selecionado
+        var orgId = OrgContext.SelectedOrganizationId;
+
         var orgsResult = await Api.GetOrganizationsAsync(null, 1, 200);
         organizations = orgsResult?.Items.ToList() ?? new List<Organization>();
 
-        var workspacesResult = await Api.GetWorkspacesAsync(null, null, 1, 200);
+        var workspacesResult = await Api.GetWorkspacesAsync(orgId, null, 1, 200);
         workspaces = workspacesResult?.Items.ToList() ?? new List<Workspace>();
 
         var teamsResult = await Api.GetTeamsAsync(null, null, null, 1, 200);
@@ -915,6 +939,11 @@ else
     private void ToggleFilterPanel()
     {
         showFilterPanel = !showFilterPanel;
+    }
+
+    private void ToggleViewMode()
+    {
+        viewMode = viewMode == "list" ? "grid" : "list";
     }
 
     private async Task ClearFilters()
