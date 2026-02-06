@@ -49,10 +49,19 @@ public sealed class MissionService(ApplicationDbContext dbContext) : IMissionSer
             return ServiceResult<Mission>.NotFound("Missão não encontrada.");
         }
 
+        var scopeResult = await ResolveScopeAsync(request.ScopeType, request.ScopeId, cancellationToken);
+        if (scopeResult.IsFailure)
+        {
+            return ServiceResult<Mission>.NotFound(scopeResult.Error ?? "Escopo não encontrado.");
+        }
+
         mission.Name = request.Name.Trim();
+        mission.Description = request.Description?.Trim();
         mission.StartDate = NormalizeToUtc(request.StartDate);
         mission.EndDate = NormalizeToUtc(request.EndDate);
         mission.Status = request.Status;
+
+        ApplyScope(mission, request.ScopeType, request.ScopeId);
 
         await dbContext.SaveChangesAsync(cancellationToken);
 

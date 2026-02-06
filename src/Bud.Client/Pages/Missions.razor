@@ -323,9 +323,6 @@ else
                         <span class="chip-icon">📅</span>
                         <span>@GetPeriodLabel()</span>
                     </div>
-                    <div class="chip chip-more">
-                        <span>⋯</span>
-                    </div>
                 </div>
 
                 @* Responsible Selector (hidden by default) *@
@@ -514,27 +511,79 @@ else
             <EditForm Model="@editMission" OnValidSubmit="UpdateMission">
                 <DataAnnotationsValidator />
 
-                <div class="form-row">
-                    <label>Nome</label>
-                    <InputText class="input" @bind-Value="editMission.Name" />
+                @* Header Section - Mission Title & Description *@
+                <div class="mission-header">
+                    <InputText class="mission-title-input" @bind-Value="editMission.Name" placeholder="Nome da missão" />
+                    <input type="text" class="mission-subtitle-input" @bind="editMissionDescription" placeholder="Adicionar breve descrição" />
                 </div>
-                <div class="form-row">
-                    <label>Data de início</label>
-                    <InputDate class="input" @bind-Value="editMission.StartDate" />
+
+                @* Metadata Chips *@
+                <div class="chips-container">
+                    <div class="chip" @onclick="() => showEditResponsibleSelector = !showEditResponsibleSelector">
+                        <span class="chip-icon">👤</span>
+                        <span>@GetEditResponsibleLabel()</span>
+                    </div>
+                    <div class="chip" @onclick="() => showEditPeriodSelector = !showEditPeriodSelector">
+                        <span class="chip-icon">📅</span>
+                        <span>@GetEditPeriodLabel()</span>
+                    </div>
+                    <div class="chip" @onclick="() => showEditStatusSelector = !showEditStatusSelector">
+                        <span class="chip-icon">📊</span>
+                        <span>@GetStatusLabel(editMission.Status)</span>
+                    </div>
                 </div>
-                <div class="form-row">
-                    <label>Data de fim</label>
-                    <InputDate class="input" @bind-Value="editMission.EndDate" />
-                </div>
-                <div class="form-row">
-                    <label>Status</label>
-                    <select class="input" @bind="editStatusValue">
-                        @foreach (var status in Enum.GetValues<MissionStatus>())
-                        {
-                            <option value="@status">@GetStatusLabel(status)</option>
-                        }
-                    </select>
-                </div>
+
+                @* Responsible Selector (hidden by default) *@
+                @if (showEditResponsibleSelector)
+                {
+                    <div class="form-row">
+                        <label>Escopo</label>
+                        <select class="input" value="@editScopeTypeValue" @onchange="OnEditScopeTypeChanged">
+                            <option value="">Selecione</option>
+                            @foreach (var scopeType in Enum.GetValues<MissionScopeType>())
+                            {
+                                <option value="@scopeType">@GetScopeLabel(scopeType)</option>
+                            }
+                        </select>
+                    </div>
+                    <div class="form-row">
+                        <label>Referência</label>
+                        <select class="input" @bind="editScopeId">
+                            <option value="">Selecione</option>
+                            @foreach (var option in GetScopeOptions(editScopeTypeValue))
+                            {
+                                <option value="@option.Id">@option.Name</option>
+                            }
+                        </select>
+                    </div>
+                }
+
+                @* Period Selector (hidden by default) *@
+                @if (showEditPeriodSelector)
+                {
+                    <div class="form-row">
+                        <label>Data de início</label>
+                        <InputDate class="input" @bind-Value="editMission.StartDate" />
+                    </div>
+                    <div class="form-row">
+                        <label>Data de fim</label>
+                        <InputDate class="input" @bind-Value="editMission.EndDate" />
+                    </div>
+                }
+
+                @* Status Selector (hidden by default) *@
+                @if (showEditStatusSelector)
+                {
+                    <div class="form-row">
+                        <label>Status</label>
+                        <select class="input" @bind="editStatusValue">
+                            @foreach (var status in Enum.GetValues<MissionStatus>())
+                            {
+                                <option value="@status">@GetStatusLabel(status)</option>
+                            }
+                        </select>
+                    </div>
+                }
 
                 @* Métricas da missão *@
                 <div class="mission-metrics-section">
@@ -796,6 +845,12 @@ else
     private Mission? selectedMission = null;
     private UpdateMissionRequest editMission = new();
     private string? editStatusValue;
+    private string? editScopeTypeValue;
+    private string? editScopeId;
+    private string? editMissionDescription;
+    private bool showEditResponsibleSelector = false;
+    private bool showEditPeriodSelector = false;
+    private bool showEditStatusSelector = false;
 
     // Metrics within edit modal
     private List<MissionMetric> editMissionMetrics = new();
@@ -953,6 +1008,13 @@ else
         await LoadMissions();
     }
 
+    private async Task OnEditScopeTypeChanged(ChangeEventArgs e)
+    {
+        editScopeTypeValue = e.Value?.ToString();
+        editScopeId = null;
+        await InvokeAsync(StateHasChanged);
+    }
+
     private void ToggleFilterPanel()
     {
         showFilterPanel = !showFilterPanel;
@@ -1102,6 +1164,28 @@ else
         if (newMission.StartDate != DateTime.MinValue && newMission.EndDate != DateTime.MinValue)
         {
             return $"Período de início e fim: {newMission.StartDate:dd/MM/yyyy} - {newMission.EndDate:dd/MM/yyyy}";
+        }
+        return "Período de início e fim";
+    }
+
+    private string GetEditResponsibleLabel()
+    {
+        if (!string.IsNullOrEmpty(editScopeId) && Enum.TryParse<MissionScopeType>(editScopeTypeValue, out var scopeType))
+        {
+            var option = GetScopeOptions(editScopeTypeValue).FirstOrDefault(o => o.Id == editScopeId);
+            if (option != null)
+            {
+                return $"Responsável: {option.Name}";
+            }
+        }
+        return "Responsável";
+    }
+
+    private string GetEditPeriodLabel()
+    {
+        if (editMission.StartDate != DateTime.MinValue && editMission.EndDate != DateTime.MinValue)
+        {
+            return $"Período: {editMission.StartDate:dd/MM/yyyy} - {editMission.EndDate:dd/MM/yyyy}";
         }
         return "Período de início e fim";
     }
@@ -1661,12 +1745,20 @@ else
     private async Task OpenEditModal(Mission mission)
     {
         selectedMission = mission;
+
+        var (scopeType, scopeId) = GetMissionScope(mission);
+        editScopeTypeValue = scopeType.ToString();
+        editScopeId = scopeId.ToString();
+        editMissionDescription = mission.Description;
+
         editMission = new UpdateMissionRequest
         {
             Name = mission.Name,
             StartDate = mission.StartDate,
             EndDate = mission.EndDate,
-            Status = mission.Status
+            Status = mission.Status,
+            ScopeType = scopeType,
+            ScopeId = scopeId
         };
         editStatusValue = mission.Status.ToString();
 
@@ -1678,6 +1770,17 @@ else
         deletingMetricId = null;
 
         isEditModalOpen = true;
+    }
+
+    private (MissionScopeType scopeType, Guid scopeId) GetMissionScope(Mission mission)
+    {
+        if (mission.CollaboratorId.HasValue)
+            return (MissionScopeType.Collaborator, mission.CollaboratorId.Value);
+        if (mission.TeamId.HasValue)
+            return (MissionScopeType.Team, mission.TeamId.Value);
+        if (mission.WorkspaceId.HasValue)
+            return (MissionScopeType.Workspace, mission.WorkspaceId.Value);
+        return (MissionScopeType.Organization, mission.OrganizationId);
     }
 
     private void CloseEditModal()
@@ -1692,6 +1795,12 @@ else
         editMetricQuantitativeTypeValue = null;
         editMetricUnitValue = null;
         deletingMetricId = null;
+        editScopeTypeValue = null;
+        editScopeId = null;
+        editMissionDescription = null;
+        showEditResponsibleSelector = false;
+        showEditPeriodSelector = false;
+        showEditStatusSelector = false;
     }
 
     private async Task UpdateMission()
@@ -1702,6 +1811,15 @@ else
         {
             editMission.Status = status;
         }
+
+        if (Enum.TryParse<MissionScopeType>(editScopeTypeValue, out var scopeType) &&
+            Guid.TryParse(editScopeId, out var scopeId))
+        {
+            editMission.ScopeType = scopeType;
+            editMission.ScopeId = scopeId;
+        }
+
+        editMission.Description = editMissionDescription;
 
         try
         {
