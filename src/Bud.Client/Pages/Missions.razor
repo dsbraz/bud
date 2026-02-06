@@ -194,7 +194,18 @@ else
                         {
                             <span class="mission-draft-tag">RASCUNHO</span>
                         }
-                        <div class="mission-card-title">@mission.Name</div>
+                        <div class="mission-card-title-row">
+                            <div class="mission-card-title">@mission.Name</div>
+                            @if (progress != null && progress.MetricsWithCheckins > 0)
+                            {
+                                <div class="mission-confidence-badge @GetConfidenceClass(progress.AverageConfidence)" title="Nível de confiança: @GetConfidenceLabel(progress.AverageConfidence)">
+                                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" stroke-linecap="round" stroke-linejoin="round"/>
+                                    </svg>
+                                    <span>@((int)Math.Round(progress.AverageConfidence))</span>
+                                </div>
+                            }
+                        </div>
                     </div>
 
                     @* Ações *@
@@ -1907,6 +1918,26 @@ else
             >= 4m => ("on-track", "No caminho"),
             >= 2m => ("at-risk", "Atenção"),
             _ => ("off-track", "Em risco")
+        };
+    }
+
+    private static string GetConfidenceClass(decimal confidence)
+    {
+        return confidence switch
+        {
+            >= 4m => "high",
+            >= 2.5m => "medium",
+            _ => "low"
+        };
+    }
+
+    private static string GetConfidenceLabel(decimal confidence)
+    {
+        return confidence switch
+        {
+            >= 4m => "Alta",
+            >= 2.5m => "Média",
+            _ => "Baixa"
         };
     }
 

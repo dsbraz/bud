@@ -2289,6 +2289,37 @@ a {
     gap: var(--spacing-1);
 }
 
+/* Mission Confidence Badge */
+.mission-confidence-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 2px 8px;
+    border-radius: var(--radius-full);
+    font-size: 11px;
+    font-weight: var(--font-weight-medium);
+    width: fit-content;
+}
+
+.mission-confidence-badge svg {
+    flex-shrink: 0;
+}
+
+.mission-confidence-badge.high {
+    background: var(--green-100);
+    color: var(--green-700);
+}
+
+.mission-confidence-badge.medium {
+    background: var(--yellow-100);
+    color: var(--yellow-700);
+}
+
+.mission-confidence-badge.low {
+    background: var(--red-100);
+    color: var(--red-700);
+}
+
 .mission-draft-tag {
     display: inline-flex;
     align-items: center;
@@ -2376,6 +2407,12 @@ a {
     font-weight: var(--font-weight-bold);
     color: var(--neutral-950);
     line-height: 1.15;
+}
+
+.mission-card-title-row {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-2);
 }
 
 /* Mission Card Actions */
