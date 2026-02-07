@@ -1,4 +1,4 @@
-# ADR-0010: Estratégia de documentação OpenAPI semântica
+# ADR-0007: Estratégia de documentação OpenAPI semântica
 
 ## Status
 Accepted

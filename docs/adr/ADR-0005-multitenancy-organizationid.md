@@ -1,4 +1,4 @@
-# ADR-0002: Multi-tenancy por OrganizationId
+# ADR-0005: Multi-tenancy por OrganizationId
 
 ## Status
 Accepted

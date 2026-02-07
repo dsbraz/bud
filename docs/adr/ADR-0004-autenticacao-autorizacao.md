@@ -1,4 +1,4 @@
-# ADR-0008: Autenticação, autorização e políticas
+# ADR-0004: Autenticação, autorização e políticas
 
 ## Status
 Accepted

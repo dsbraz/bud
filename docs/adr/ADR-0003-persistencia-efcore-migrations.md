@@ -1,4 +1,4 @@
-# ADR-0009: Persistência com EF Core, PostgreSQL e migrations
+# ADR-0003: Persistência com EF Core, PostgreSQL e migrations
 
 ## Status
 Accepted

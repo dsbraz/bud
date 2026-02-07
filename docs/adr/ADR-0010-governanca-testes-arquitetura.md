@@ -1,4 +1,4 @@
-# ADR-0004: Governança por testes de arquitetura
+# ADR-0010: Governança por testes de arquitetura
 
 ## Status
 Accepted

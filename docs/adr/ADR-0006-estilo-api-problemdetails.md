@@ -1,4 +1,4 @@
-# ADR-0007: Estilo de API e padronização de erros
+# ADR-0006: Estilo de API e padronização de erros
 
 ## Status
 Accepted

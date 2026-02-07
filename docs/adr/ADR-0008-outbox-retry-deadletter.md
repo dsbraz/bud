@@ -1,4 +1,4 @@
-# ADR-0003: Outbox com retry/backoff e dead-letter
+# ADR-0008: Outbox com retry/backoff e dead-letter
 
 ## Status
 Accepted

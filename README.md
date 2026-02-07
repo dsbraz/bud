@@ -3,6 +3,18 @@
 Aplicação unificada em ASP.NET Core + Blazor WebAssembly (SPA),
 utilizando PostgreSQL.
 
+## Índice
+
+- [Arquitetura da aplicação](#arquitetura-da-aplicação)
+- [Como rodar](#como-rodar-com-docker)
+- [Como rodar sem Docker](#como-rodar-sem-docker)
+- [Onboarding rápido (30 min)](#onboarding-rápido-30-min)
+- [Testes](#testes)
+- [Outbox (resiliência de eventos)](#outbox-resiliência-de-eventos)
+- [Health checks](#health-checks)
+- [Endpoints principais](#endpoints-principais)
+- [Design System & Tokens](#design-system--tokens)
+
 ## Arquitetura da aplicação
 
 ### Visão geral
@@ -64,18 +76,8 @@ veja a seção **Outbox (resiliência de eventos)** abaixo.
   - `Architectural impact: yes/no`
   - `ADR: ADR-XXXX` (quando aplicável)
 
-ADRs base atuais:
-
-- `docs/adr/ADR-0006-stack-tecnologica.md`
-- `docs/adr/ADR-0001-usecases-abstractions-services.md`
-- `docs/adr/ADR-0007-estilo-api-problemdetails.md`
-- `docs/adr/ADR-0008-autenticacao-autorizacao.md`
-- `docs/adr/ADR-0009-persistencia-efcore-migrations.md`
-- `docs/adr/ADR-0002-multitenancy-organizationid.md`
-- `docs/adr/ADR-0010-openapi-semantica.md`
-- `docs/adr/ADR-0003-outbox-retry-deadletter.md`
-- `docs/adr/ADR-0004-governanca-testes-arquitetura.md`
-- `docs/adr/ADR-0005-estrategia-testes.md`
+Para lista atualizada de ADRs e ordem recomendada de leitura, consulte:
+`docs/adr/README.md`.
 
 ### Diagramas
 
@@ -127,6 +129,108 @@ sequenceDiagram
     end
 ```
 
+#### Modelo de domínio e hierarquia organizacional
+
+```mermaid
+flowchart TD
+    O[Organization]
+    W[Workspace]
+    T[Team]
+    ST[SubTeam]
+    C[Collaborator]
+    M[Mission]
+    MM[MissionMetric]
+    MC[MetricCheckin]
+
+    O --> W
+    W --> T
+    T --> ST
+    T --> C
+
+    O --> M
+    W -. escopo .-> M
+    T -. escopo .-> M
+    C -. escopo .-> M
+
+    M --> MM
+    MM --> MC
+```
+
+#### Fluxo de autenticação, tenant e autorização
+
+```mermaid
+sequenceDiagram
+    participant UI as Bud.Client
+    participant API as Bud.Server
+    participant AUTH as AuthController/AuthUseCase
+    participant TENANT as TenantRequiredMiddleware
+    participant CTRL as Controller
+
+    UI->>API: POST /api/auth/login
+    API->>AUTH: Valida e autentica por e-mail
+    AUTH-->>UI: JWT + organizações disponíveis
+
+    UI->>UI: Usuário seleciona organização (ou TODOS)
+    UI->>API: Request com Authorization: Bearer + X-Tenant-Id (opcional)
+    API->>TENANT: Valida autenticação e tenant selecionado
+    TENANT->>CTRL: Libera acesso conforme policies
+    CTRL-->>UI: Resposta filtrada por tenant
+```
+
+#### Pipeline de requisição (Controller -> UseCase -> Service)
+
+```mermaid
+flowchart LR
+    A[HTTP Request] --> B[Controller]
+    B --> C[FluentValidation]
+    C --> D[UseCase]
+    D --> E[Application Abstractions]
+    E --> F[Service Implementation]
+    F --> G[(ApplicationDbContext / PostgreSQL)]
+    D --> H[ServiceResult]
+    H --> I[Controller Mapping]
+    I --> J[HTTP Response / ProblemDetails]
+```
+
+#### Módulos do backend e dependências
+
+```mermaid
+flowchart TB
+    subgraph Host["Bud.Server Host"]
+      Controllers
+      Middleware
+      DependencyInjection
+    end
+    subgraph App["Application"]
+      UseCases
+      Abstractions
+      Pipeline
+    end
+    subgraph Domain["Domain"]
+      DomainEvents
+    end
+    subgraph Infra["Infrastructure"]
+      OutboxProcessor
+      EventSerializer
+    end
+    subgraph Data["Data"]
+      DbContext
+      Migrations
+    end
+
+    Controllers --> UseCases
+    UseCases --> Abstractions
+    Abstractions --> Services["Services (implementações)"]
+    Services --> DbContext
+    UseCases --> DomainEvents
+    DomainEvents --> OutboxProcessor
+    OutboxProcessor --> DbContext
+    DependencyInjection --> Controllers
+    DependencyInjection --> UseCases
+    DependencyInjection --> Services
+    DependencyInjection --> OutboxProcessor
+```
+
 ## Como rodar com Docker
 
 ```bash
@@ -147,6 +251,126 @@ Se você encontrar assets antigos no browser, limpe os volumes e recompile:
 docker compose down -v
 docker compose up --build
 ```
+
+## Como rodar sem Docker
+
+Pré-requisitos:
+
+- .NET SDK 10
+- PostgreSQL 16+
+
+Comandos:
+
+```bash
+dotnet restore
+dotnet build
+dotnet run --project src/Bud.Server
+```
+
+## Onboarding rápido (30 min)
+
+Objetivo: validar ponta a ponta (auth, tenant, CRUD básico e leitura) em ambiente local.
+
+### 1) Subir a aplicação
+
+Opção A (recomendada):
+
+```bash
+docker compose up --build
+```
+
+Opção B (sem Docker):
+
+```bash
+dotnet restore
+dotnet build
+dotnet run --project src/Bud.Server
+```
+
+### 2) Login e captura do token
+
+```bash
+curl -s -X POST http://localhost:8080/api/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"email":"admin@getbud.co"}'
+```
+
+Copie o `token` da resposta e exporte:
+
+```bash
+export BUD_TOKEN="<jwt>"
+```
+
+### 3) Descobrir organizações disponíveis
+
+```bash
+curl -s http://localhost:8080/api/auth/my-organizations \
+  -H "Authorization: Bearer $BUD_TOKEN"
+```
+
+Copie um `id` e exporte:
+
+```bash
+export BUD_ORG_ID="<organization-id>"
+```
+
+### 4) Smoke test de leitura tenant-scoped
+
+```bash
+curl -s "http://localhost:8080/api/missions?page=1&pageSize=10" \
+  -H "Authorization: Bearer $BUD_TOKEN" \
+  -H "X-Tenant-Id: $BUD_ORG_ID"
+```
+
+### 5) Smoke test de criação de missão
+
+```bash
+curl -s -X POST http://localhost:8080/api/missions \
+  -H "Authorization: Bearer $BUD_TOKEN" \
+  -H "X-Tenant-Id: $BUD_ORG_ID" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name":"Onboarding - Missão",
+    "description":"Validação ponta a ponta",
+    "startDate":"2026-01-01T00:00:00Z",
+    "endDate":"2026-12-31T23:59:59Z",
+    "status":"Planned",
+    "scopeType":"Organization"
+  }'
+```
+
+### 6) Debug rápido no backend
+
+- Acesse `http://localhost:8080/swagger` para executar os mesmos fluxos pela UI.
+- Consulte `GET /health/ready` para validar PostgreSQL + Outbox.
+- Em caso de erro 403, valide se o header `X-Tenant-Id` foi enviado (exceto cenário global admin em "TODOS").
+
+## Testes
+
+```bash
+# suíte completa
+dotnet test
+
+# apenas unitários
+dotnet test tests/Bud.Server.Tests
+
+# apenas integração
+dotnet test tests/Bud.Server.IntegrationTests
+```
+
+Observação:
+
+- Testes de integração usam PostgreSQL via Testcontainers.
+- Use `dotnet test --nologo` para saída mais limpa no terminal.
+
+## Documentação da API (OpenAPI/Swagger)
+
+- UI interativa (Development): `http://localhost:8080/swagger`
+- Documento OpenAPI bruto: `http://localhost:8080/openapi/v1.json`
+- A documentação é enriquecida com:
+  - `ProducesResponseType` por endpoint
+  - comentários XML (`summary`, `response`, `remarks`)
+  - metadados de conteúdo (`Consumes`/`Produces`) quando aplicável
 
 ## Design System & Tokens
 
@@ -235,14 +459,38 @@ Tudo fica sob a chave `Outbox`:
 
 O endpoint `/health/ready` considera banco e saúde do Outbox.
 
-## Endpoints básicos (criação)
+## Health checks
+
+- `GET /health/live`: liveness (sempre saudável).
+- `GET /health/ready`: readiness (PostgreSQL + Outbox).
+
+## Endpoints principais
+
+### Autenticação
+
+- `POST /api/auth/login`
+- `POST /api/auth/logout`
+- `GET /api/auth/my-organizations`
+
+### CRUD organizacional básico
 
 - POST `/api/organizations`
 - POST `/api/workspaces`
 - POST `/api/teams`
 - POST `/api/collaborators`
 
-## Endpoints básicos (listagens)
+### Missões e métricas
+
+- `POST /api/missions`
+- `GET /api/missions`
+- `GET /api/missions/progress`
+- `POST /api/mission-metrics`
+- `GET /api/mission-metrics`
+- `GET /api/mission-metrics/progress`
+- `POST /api/metric-checkins`
+- `GET /api/metric-checkins`
+
+### Listagens com paginação
 
 - GET `/api/organizations?search=&page=1&pageSize=10`
 - GET `/api/workspaces?organizationId=&search=&page=1&pageSize=10`
@@ -283,6 +531,30 @@ O endpoint `/health/ready` considera banco e saúde do Outbox.
 {
   "fullName": "Maria Silva",
   "email": "maria@acme.com",
-  "teamId": "00000000-0000-0000-0000-000000000000"
+  "teamId": "00000000-0000-0000-0000-000000000000",
+  "leaderId": null
+}
+```
+
+```json
+{
+  "name": "Aumentar NPS",
+  "description": "Melhorar satisfação do cliente",
+  "startDate": "2026-01-01T00:00:00Z",
+  "endDate": "2026-03-31T23:59:59Z",
+  "status": "Planned",
+  "scopeType": "Workspace",
+  "scopeId": "00000000-0000-0000-0000-000000000000"
+}
+```
+
+```json
+{
+  "missionMetricId": "00000000-0000-0000-0000-000000000000",
+  "value": 42.5,
+  "text": null,
+  "checkinDate": "2026-02-07T00:00:00Z",
+  "note": "Evolução semanal",
+  "confidenceLevel": 4
 }
 ```

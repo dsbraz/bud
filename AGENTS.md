@@ -1,6 +1,6 @@
 # Repository Guidelines
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+This file provides guidance to coding agents when working with code in this repository.
 
 ## Language Requirements
 
@@ -309,6 +309,13 @@ See [OrganizationsController.cs](src/Bud.Server/Controllers/OrganizationsControl
 - Controllers validate requests before calling use cases
 - **All validation error messages MUST be in Brazilian Portuguese (pt-BR)**
 
+### API Documentation (OpenAPI)
+
+- The API must expose OpenAPI/Swagger documentation in Development
+- Endpoints should include semantic documentation (summary/description/responses) via XML comments and attributes
+- Keep `ProducesResponseType`, `Consumes`, and `Produces` aligned with controller behavior
+- Request/response contracts in `Bud.Shared/Contracts` should include clear XML documentation for key fields
+
 ### Data Access
 
 - **Entity Framework Core** with PostgreSQL (Npgsql provider)
@@ -456,7 +463,7 @@ Use these for Kubernetes probes or monitoring.
 The `docker-compose.yml` configures:
 - PostgreSQL on port 5432
 - API + UI on port 8080
-- Volume mounts for hot reload during development
+- Volume mounts for fast local rebuild during development (hot reload is not the default flow)
 - Network for service communication
 
 ## Commit & Pull Request Guidelines
