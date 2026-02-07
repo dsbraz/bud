@@ -13,6 +13,7 @@ Este documento é voltado para devs que precisam:
 ## Índice
 
 - [Arquitetura da aplicação](#arquitetura-da-aplicação)
+- [Padrões arquiteturais adotados](#padrões-arquiteturais-adotados)
 - [Como contribuir](#como-contribuir)
 - [Como rodar](#como-rodar-com-docker)
 - [Como rodar sem Docker](#como-rodar-sem-docker)
@@ -44,6 +45,30 @@ O Bud segue uma arquitetura em camadas com separação explícita de responsabil
 - **Abstractions (`Application/Abstractions`)** definem portas usadas pelos UseCases.
 - **Services** implementam essas portas com regras de negócio e acesso a dados.
 - **DependencyInjection** modulariza bootstrap (`BudApi`, `BudSecurity`, `BudData`, `BudApplication`).
+
+### Padrões arquiteturais adotados
+
+- **UseCases + Ports/Adapters**  
+  Controllers delegam para UseCases, que dependem de abstrações; serviços implementam essas portas.
+  Referências: `docs/adr/ADR-0002-usecases-abstractions-services.md`.
+- **Policy-based Authorization (Requirement/Handler)**  
+  Regras de autorização centralizadas em policies e handlers, reduzindo condicionais espalhadas.
+  Referências: `docs/adr/ADR-0004-autenticacao-autorizacao.md`.
+- **Specification Pattern (consultas reutilizáveis)**  
+  Filtros de domínio encapsulados em specifications para evitar duplicação de predicados.
+  Referências: `src/Bud.Server/Domain/Common/Specifications/`.
+- **Domain Events + Subscribers**  
+  Eventos de domínio desacoplam efeitos colaterais e permitem evolução incremental de fluxos.
+  Referências: `src/Bud.Server/Domain/*/Events` e `src/Bud.Server/Application/*/Events`.
+- **UseCase Pipeline (cross-cutting concerns)**  
+  Comportamentos transversais (ex.: logging) aplicados via pipeline, sem poluir cada caso de uso.
+  Referências: `src/Bud.Server/Application/Common/Pipeline/`.
+- **Outbox Pattern (confiabilidade assíncrona)**  
+  Garante processamento assíncrono durável com retry/backoff/dead-letter.
+  Referências: `docs/adr/ADR-0008-outbox-retry-deadletter.md` e seção **Outbox (resiliência de eventos)** abaixo.
+- **Governança arquitetural por testes + ADRs**  
+  Decisões versionadas (ADR) e proteção contra regressão de fronteiras via testes de arquitetura.
+  Referências: `docs/adr/README.md` e `tests/Bud.Server.Tests/Architecture/ArchitectureTests.cs`.
 
 ### Multi-tenancy
 
