@@ -3,9 +3,17 @@
 Aplicação unificada em ASP.NET Core + Blazor WebAssembly (SPA),
 utilizando PostgreSQL.
 
+## Para quem é este README
+
+Este documento é voltado para devs que precisam:
+- entender rapidamente a arquitetura e os padrões do Bud,
+- subir o ambiente local,
+- executar fluxos principais de desenvolvimento com segurança.
+
 ## Índice
 
 - [Arquitetura da aplicação](#arquitetura-da-aplicação)
+- [Como contribuir](#como-contribuir)
 - [Como rodar](#como-rodar-com-docker)
 - [Como rodar sem Docker](#como-rodar-sem-docker)
 - [Onboarding rápido (30 min)](#onboarding-rápido-30-min)
@@ -13,7 +21,7 @@ utilizando PostgreSQL.
 - [Outbox (resiliência de eventos)](#outbox-resiliência-de-eventos)
 - [Health checks](#health-checks)
 - [Endpoints principais](#endpoints-principais)
-- [Design System & Tokens](#design-system--tokens)
+- [Sistema de Design e Tokens](#sistema-de-design-e-tokens)
 
 ## Arquitetura da aplicação
 
@@ -231,6 +239,53 @@ flowchart TB
     DependencyInjection --> OutboxProcessor
 ```
 
+#### Fronteira de responsabilidades (Client x API x Dados)
+
+```mermaid
+flowchart LR
+    subgraph Client["Bud.Client (Blazor WASM)"]
+      UI["Pages + Layout"]
+      ApiClient["ApiClient + TenantDelegatingHandler"]
+    end
+
+    subgraph Api["Bud.Server (API/Aplicação)"]
+      Controllers["Controllers"]
+      UseCases["UseCases"]
+      Services["Services + Abstractions"]
+      Authz["AuthN/AuthZ + Policies"]
+    end
+
+    subgraph Dados["Persistência"]
+      Db["ApplicationDbContext"]
+      Pg["PostgreSQL"]
+      Outbox["OutboxMessages"]
+    end
+
+    UI --> ApiClient
+    ApiClient --> Controllers
+    Controllers --> UseCases
+    UseCases --> Services
+    Controllers --> Authz
+    Services --> Db
+    Db --> Pg
+    UseCases --> Outbox
+```
+
+## Como contribuir
+
+Fluxo recomendado de contribuição para manter qualidade arquitetural e consistência:
+
+1. Crie uma branch curta e focada no objetivo da mudança.
+2. Escreva/atualize testes antes da implementação (TDD: Red -> Green -> Refactor).
+3. Implemente seguindo os padrões do projeto:
+   - Controllers -> UseCases -> Abstractions -> Services
+   - autorização por policies/handlers
+   - mensagens de erro/validação em pt-BR
+4. Atualize documentação OpenAPI (summary/description/status/errors) quando alterar contratos.
+5. Se houver mudança arquitetural, atualize/crie ADR em `docs/adr/`.
+6. Rode a suíte de testes aplicável e valide Swagger/health checks.
+7. Abra PR com impacto arquitetural explícito e referência de ADR (quando aplicável).
+
 ## Como rodar com Docker
 
 ```bash
@@ -345,6 +400,24 @@ curl -s -X POST http://localhost:8080/api/missions \
 - Consulte `GET /health/ready` para validar PostgreSQL + Outbox.
 - Em caso de erro 403, valide se o header `X-Tenant-Id` foi enviado (exceto cenário global admin em "TODOS").
 
+### 7) Troubleshooting rápido (dev local)
+
+- **Porta 8080 ocupada**  
+  Sintoma: erro ao subir `docker compose up --build` com bind em `8080`.  
+  Ação: pare o processo/serviço que está usando a porta ou altere o mapeamento no `docker-compose.yml`.
+
+- **Falha de conexão com PostgreSQL**  
+  Sintoma: `/health/ready` retorna unhealthy para banco.  
+  Ação: confirme se o container `db` subiu e se a connection string está correta (`ConnectionStrings:DefaultConnection`).
+
+- **401/403 em endpoints protegidos**  
+  Sintoma: chamadas autenticadas falham mesmo após login.  
+  Ação: verifique `Authorization: Bearer <token>` e, para endpoints tenant-scoped, envie `X-Tenant-Id`.
+
+- **Dados/artefatos antigos no browser**  
+  Sintoma: UI não reflete mudanças recentes.  
+  Ação: execute `docker compose down -v && docker compose up --build` e force reload no navegador.
+
 ## Testes
 
 ```bash
@@ -372,25 +445,25 @@ Observação:
   - comentários XML (`summary`, `response`, `remarks`)
   - metadados de conteúdo (`Consumes`/`Produces`) quando aplicável
 
-## Design System & Tokens
+## Sistema de Design e Tokens
 
-Bud 2.0 uses a comprehensive design token system based on the [Figma Style Guide](https://www.figma.com/design/j3n8YHBusCH8KEHvheGeF8/-ASSETS--Style-Guide).
+O Bud 2.0 usa um sistema de tokens de design baseado no [Figma Style Guide](https://www.figma.com/design/j3n8YHBusCH8KEHvheGeF8/-ASSETS--Style-Guide).
 
-### Brand Colors
+### Cores de marca
 
-- **Primary**: Orange (#FF6B35) - CTAs, active states, primary actions
-- **Secondary**: Wine (#E838A3) - Accents, highlights, secondary actions
+- **Primária**: Orange (#FF6B35) - CTAs, estados ativos e ações principais
+- **Secundária**: Wine (#E838A3) - acentos, destaques e ações secundárias
 
-### Typography
+### Tipografia
 
-- **Crimson Pro**: Serif font for headings and display text
-- **Plus Jakarta Sans**: Sans-serif for body text and UI components
+- **Crimson Pro**: fonte serifada para títulos e destaques
+- **Plus Jakarta Sans**: fonte sem serifa para texto e componentes de interface
 
-### Design Tokens
+### Tokens de design
 
-All design values (colors, typography, spacing, shadows) are defined as CSS custom properties in [`src/Bud.Client/wwwroot/css/tokens.css`](src/Bud.Client/wwwroot/css/tokens.css).
+Todos os valores de design (cores, tipografia, espaçamento e sombras) são definidos como propriedades CSS em [`src/Bud.Client/wwwroot/css/tokens.css`](src/Bud.Client/wwwroot/css/tokens.css).
 
-**Usage example:**
+**Exemplo de uso:**
 ```css
 .button {
     background: var(--color-brand-primary);
@@ -400,13 +473,13 @@ All design values (colors, typography, spacing, shadows) are defined as CSS cust
 }
 ```
 
-### Updating Design Tokens
+### Atualização de tokens
 
-See [DESIGN_TOKENS.md](DESIGN_TOKENS.md) for:
-- Complete token reference
-- How to update tokens from Figma
-- Token naming conventions
-- Best practices
+Veja [DESIGN_TOKENS.md](DESIGN_TOKENS.md) para:
+- Referência completa de tokens
+- Processo de atualização a partir do Figma
+- Convenções de nomenclatura
+- Boas práticas
 
 ## Migrations (EF Core)
 
@@ -466,21 +539,15 @@ O endpoint `/health/ready` considera banco e saúde do Outbox.
 
 ## Endpoints principais
 
-### Autenticação
+### Uso diário
 
 - `POST /api/auth/login`
 - `POST /api/auth/logout`
 - `GET /api/auth/my-organizations`
-
-### CRUD organizacional básico
-
 - POST `/api/organizations`
 - POST `/api/workspaces`
 - POST `/api/teams`
 - POST `/api/collaborators`
-
-### Missões e métricas
-
 - `POST /api/missions`
 - `GET /api/missions`
 - `GET /api/missions/progress`
@@ -489,20 +556,20 @@ O endpoint `/health/ready` considera banco e saúde do Outbox.
 - `GET /api/mission-metrics/progress`
 - `POST /api/metric-checkins`
 - `GET /api/metric-checkins`
-
-### Listagens com paginação
-
 - GET `/api/organizations?search=&page=1&pageSize=10`
 - GET `/api/workspaces?organizationId=&search=&page=1&pageSize=10`
 - GET `/api/teams?workspaceId=&parentTeamId=&search=&page=1&pageSize=10`
 - GET `/api/collaborators?teamId=&search=&page=1&pageSize=10`
-
-### Relacionamentos
-
 - GET `/api/organizations/{id}/workspaces`
 - GET `/api/workspaces/{id}/teams`
 - GET `/api/teams/{id}/subteams`
 - GET `/api/teams/{id}/collaborators`
+
+### Administrativos
+
+- GET `/api/outbox/dead-letters?page=1&pageSize=10`
+- POST `/api/outbox/dead-letters/{id}/reprocess`
+- POST `/api/outbox/dead-letters/reprocess`
 
 ### Exemplo de payloads
 
