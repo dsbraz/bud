@@ -5,11 +5,18 @@ namespace Bud.Server.Tests.Helpers;
 
 public sealed class TestConfiguration : IConfiguration
 {
-    private readonly Dictionary<string, string> _data;
+    private readonly Dictionary<string, string?> _data;
 
-    public TestConfiguration(Dictionary<string, string>? data = null)
+    private IConfigurationRoot BuildConfiguration()
     {
-        _data = data ?? new Dictionary<string, string>
+        return new ConfigurationBuilder()
+            .AddInMemoryCollection(_data)
+            .Build();
+    }
+
+    public TestConfiguration(Dictionary<string, string?>? data = null)
+    {
+        _data = data ?? new Dictionary<string, string?>
         {
             ["Jwt:Key"] = "test-secret-key-for-unit-tests-minimum-32-characters",
             ["Jwt:Issuer"] = "bud-test",
@@ -25,16 +32,16 @@ public sealed class TestConfiguration : IConfiguration
 
     public IConfigurationSection GetSection(string key)
     {
-        throw new NotImplementedException();
+        return BuildConfiguration().GetSection(key);
     }
 
     public IEnumerable<IConfigurationSection> GetChildren()
     {
-        throw new NotImplementedException();
+        return BuildConfiguration().GetChildren();
     }
 
     public IChangeToken GetReloadToken()
     {
-        throw new NotImplementedException();
+        return new ConfigurationReloadToken();
     }
 }

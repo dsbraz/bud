@@ -1,5 +1,6 @@
 using Bud.Server.Data;
 using Bud.Server.Settings;
+using Bud.Server.Domain.Common.Specifications;
 using Bud.Shared.Contracts;
 using Bud.Shared.Models;
 using Microsoft.EntityFrameworkCore;
@@ -171,16 +172,10 @@ public sealed class OrganizationService(
 
     public async Task<ServiceResult<PagedResult<Organization>>> GetAllAsync(string? search, int page, int pageSize, CancellationToken cancellationToken = default)
     {
-        page = page < 1 ? 1 : page;
-        pageSize = pageSize is < 1 or > 100 ? 10 : pageSize;
+        (page, pageSize) = PaginationNormalizer.Normalize(page, pageSize);
 
         var query = dbContext.Organizations.AsNoTracking();
-
-        if (!string.IsNullOrWhiteSpace(search))
-        {
-            var term = search.Trim().ToLower();
-            query = query.Where(o => o.Name.ToLower().Contains(term));
-        }
+        query = new OrganizationSearchSpecification(search, dbContext.Database.IsNpgsql()).Apply(query);
 
         var total = await query.CountAsync(cancellationToken);
         var items = await query
@@ -203,8 +198,7 @@ public sealed class OrganizationService(
 
     public async Task<ServiceResult<PagedResult<Workspace>>> GetWorkspacesAsync(Guid id, int page, int pageSize, CancellationToken cancellationToken = default)
     {
-        page = page < 1 ? 1 : page;
-        pageSize = pageSize is < 1 or > 100 ? 10 : pageSize;
+        (page, pageSize) = PaginationNormalizer.Normalize(page, pageSize);
 
         var organizationExists = await dbContext.Organizations.AnyAsync(o => o.Id == id, cancellationToken);
         if (!organizationExists)
@@ -236,8 +230,7 @@ public sealed class OrganizationService(
 
     public async Task<ServiceResult<PagedResult<Collaborator>>> GetCollaboratorsAsync(Guid id, int page, int pageSize, CancellationToken cancellationToken = default)
     {
-        page = page < 1 ? 1 : page;
-        pageSize = pageSize is < 1 or > 100 ? 10 : pageSize;
+        (page, pageSize) = PaginationNormalizer.Normalize(page, pageSize);
 
         var organizationExists = await dbContext.Organizations.AnyAsync(o => o.Id == id, cancellationToken);
         if (!organizationExists)

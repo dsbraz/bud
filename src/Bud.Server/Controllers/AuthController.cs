@@ -1,4 +1,4 @@
-using Bud.Server.Services;
+using Bud.Server.Application.Auth;
 using Bud.Shared.Contracts;
 using FluentValidation;
 using Microsoft.AspNetCore.Mvc;
@@ -7,9 +7,20 @@ namespace Bud.Server.Controllers;
 
 [ApiController]
 [Route("api/auth")]
-public sealed class AuthController(IAuthService authService, IValidator<AuthLoginRequest> loginValidator) : ControllerBase
+[Produces("application/json")]
+public sealed class AuthController(
+    IAuthCommandUseCase authCommandUseCase,
+    IAuthQueryUseCase authQueryUseCase,
+    IValidator<AuthLoginRequest> loginValidator) : ApiControllerBase
 {
+    /// <summary>
+    /// Realiza login por e-mail e retorna token JWT.
+    /// </summary>
+    /// <response code="200">Login realizado com sucesso.</response>
+    /// <response code="400">Payload inválido.</response>
+    /// <response code="404">Usuário não encontrado.</response>
     [HttpPost("login")]
+    [Consumes("application/json")]
     [ProducesResponseType(typeof(AuthLoginResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ValidationProblemDetails), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
@@ -18,21 +29,17 @@ public sealed class AuthController(IAuthService authService, IValidator<AuthLogi
         var validationResult = await loginValidator.ValidateAsync(request, cancellationToken);
         if (!validationResult.IsValid)
         {
-            return ValidationProblem(new ValidationProblemDetails(
-                validationResult.ToDictionary()));
+            return ValidationProblemFrom(validationResult);
         }
 
-        var result = await authService.LoginAsync(request, cancellationToken);
-        if (result.IsFailure)
-        {
-            return result.ErrorType == ServiceErrorType.NotFound
-                ? NotFound(new ProblemDetails { Detail = result.Error })
-                : BadRequest(new ProblemDetails { Detail = result.Error });
-        }
-
-        return Ok(result.Value);
+        var result = await authCommandUseCase.LoginAsync(request, cancellationToken);
+        return FromResultOk(result);
     }
 
+    /// <summary>
+    /// Encerra a sessão do usuário no cliente.
+    /// </summary>
+    /// <response code="204">Logout concluído.</response>
     [HttpPost("logout")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     public IActionResult Logout()
@@ -40,6 +47,11 @@ public sealed class AuthController(IAuthService authService, IValidator<AuthLogi
         return NoContent();
     }
 
+    /// <summary>
+    /// Lista organizações disponíveis para o usuário autenticado.
+    /// </summary>
+    /// <response code="200">Lista retornada com sucesso.</response>
+    /// <response code="400">Cabeçalho de e-mail ausente ou inválido.</response>
     [HttpGet("my-organizations")]
     [ProducesResponseType(typeof(List<OrganizationSummaryDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
@@ -47,13 +59,7 @@ public sealed class AuthController(IAuthService authService, IValidator<AuthLogi
         [FromHeader(Name = "X-User-Email")] string email,
         CancellationToken cancellationToken)
     {
-        var result = await authService.GetMyOrganizationsAsync(email, cancellationToken);
-
-        if (result.IsFailure)
-        {
-            return BadRequest(new ProblemDetails { Detail = result.Error });
-        }
-
-        return Ok(result.Value);
+        var result = await authQueryUseCase.GetMyOrganizationsAsync(email, cancellationToken);
+        return FromResultOk(result);
     }
 }

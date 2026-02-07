@@ -1,24 +1,29 @@
 using Bud.Server.Data;
+using Bud.Server.Domain.Common.Specifications;
 using Bud.Shared.Contracts;
 using Bud.Shared.Models;
 using Microsoft.EntityFrameworkCore;
 
 namespace Bud.Server.Services;
 
-public sealed class MissionService(ApplicationDbContext dbContext) : IMissionService
+public sealed class MissionService(
+    ApplicationDbContext dbContext,
+    IMissionScopeResolver missionScopeResolver) : IMissionService
 {
+    public MissionService(ApplicationDbContext dbContext)
+        : this(dbContext, new MissionScopeResolver(dbContext))
+    {
+    }
+
     public async Task<ServiceResult<Mission>> CreateAsync(CreateMissionRequest request, CancellationToken cancellationToken = default)
     {
-        var scopeResult = await ResolveScopeAsync(request.ScopeType, request.ScopeId, cancellationToken);
-        if (scopeResult.IsFailure)
+        var scopeResolution = await missionScopeResolver.ResolveScopeOrganizationIdAsync(
+            request.ScopeType,
+            request.ScopeId,
+            cancellationToken: cancellationToken);
+        if (!scopeResolution.IsSuccess)
         {
-            return ServiceResult<Mission>.NotFound(scopeResult.Error ?? "Escopo não encontrado.");
-        }
-
-        var organizationId = await ResolveOrganizationIdAsync(request.ScopeType, request.ScopeId, cancellationToken);
-        if (organizationId is null)
-        {
-            return ServiceResult<Mission>.NotFound("Não foi possível determinar a organização para o escopo fornecido.");
+            return ServiceResult<Mission>.NotFound(scopeResolution.Error ?? "Escopo não encontrado.");
         }
 
         var mission = new Mission
@@ -29,7 +34,7 @@ public sealed class MissionService(ApplicationDbContext dbContext) : IMissionSer
             StartDate = NormalizeToUtc(request.StartDate),
             EndDate = NormalizeToUtc(request.EndDate),
             Status = request.Status,
-            OrganizationId = organizationId.Value,
+            OrganizationId = scopeResolution.Value,
         };
 
         ApplyScope(mission, request.ScopeType, request.ScopeId);
@@ -49,19 +54,27 @@ public sealed class MissionService(ApplicationDbContext dbContext) : IMissionSer
             return ServiceResult<Mission>.NotFound("Missão não encontrada.");
         }
 
-        var scopeResult = await ResolveScopeAsync(request.ScopeType, request.ScopeId, cancellationToken);
-        if (scopeResult.IsFailure)
-        {
-            return ServiceResult<Mission>.NotFound(scopeResult.Error ?? "Escopo não encontrado.");
-        }
-
         mission.Name = request.Name.Trim();
         mission.Description = request.Description?.Trim();
         mission.StartDate = NormalizeToUtc(request.StartDate);
         mission.EndDate = NormalizeToUtc(request.EndDate);
         mission.Status = request.Status;
 
-        ApplyScope(mission, request.ScopeType, request.ScopeId);
+        var shouldUpdateScope = request.ScopeId != Guid.Empty;
+        if (shouldUpdateScope)
+        {
+            var scopeResolution = await missionScopeResolver.ResolveScopeOrganizationIdAsync(
+                request.ScopeType,
+                request.ScopeId,
+                cancellationToken: cancellationToken);
+            if (!scopeResolution.IsSuccess)
+            {
+                return ServiceResult<Mission>.NotFound(scopeResolution.Error ?? "Escopo não encontrado.");
+            }
+
+            mission.OrganizationId = scopeResolution.Value;
+            ApplyScope(mission, request.ScopeType, request.ScopeId);
+        }
 
         await dbContext.SaveChangesAsync(cancellationToken);
 
@@ -102,51 +115,12 @@ public sealed class MissionService(ApplicationDbContext dbContext) : IMissionSer
         int pageSize,
         CancellationToken cancellationToken = default)
     {
-        page = page < 1 ? 1 : page;
-        pageSize = pageSize is < 1 or > 100 ? 10 : pageSize;
+        (page, pageSize) = PaginationNormalizer.Normalize(page, pageSize);
 
         var query = dbContext.Missions.AsNoTracking();
 
-        if (scopeType.HasValue)
-        {
-            if (scopeId.HasValue)
-            {
-                query = scopeType.Value switch
-                {
-                    // Org-scoped missions: OrganizationId matches AND no other scope FK is set
-                    MissionScopeType.Organization => query.Where(m =>
-                        m.OrganizationId == scopeId.Value &&
-                        m.WorkspaceId == null &&
-                        m.TeamId == null &&
-                        m.CollaboratorId == null),
-                    MissionScopeType.Workspace => query.Where(m => m.WorkspaceId == scopeId.Value),
-                    MissionScopeType.Team => query.Where(m => m.TeamId == scopeId.Value),
-                    MissionScopeType.Collaborator => query.Where(m => m.CollaboratorId == scopeId.Value),
-                    _ => query
-                };
-            }
-            else
-            {
-                // Filter by scope level (without specific entity)
-                query = scopeType.Value switch
-                {
-                    MissionScopeType.Organization => query.Where(m =>
-                        m.WorkspaceId == null &&
-                        m.TeamId == null &&
-                        m.CollaboratorId == null),
-                    MissionScopeType.Workspace => query.Where(m => m.WorkspaceId != null),
-                    MissionScopeType.Team => query.Where(m => m.TeamId != null),
-                    MissionScopeType.Collaborator => query.Where(m => m.CollaboratorId != null),
-                    _ => query
-                };
-            }
-        }
-
-        if (!string.IsNullOrWhiteSpace(search))
-        {
-            var term = search.Trim().ToLower();
-            query = query.Where(m => m.Name.ToLower().Contains(term));
-        }
+        query = new MissionScopeSpecification(scopeType, scopeId).Apply(query);
+        query = new MissionSearchSpecification(search, dbContext.Database.IsNpgsql()).Apply(query);
 
         var total = await query.CountAsync(cancellationToken);
         var items = await query
@@ -173,8 +147,7 @@ public sealed class MissionService(ApplicationDbContext dbContext) : IMissionSer
         int pageSize,
         CancellationToken cancellationToken = default)
     {
-        page = page < 1 ? 1 : page;
-        pageSize = pageSize is < 1 or > 100 ? 10 : pageSize;
+        (page, pageSize) = PaginationNormalizer.Normalize(page, pageSize);
 
         // Buscar o colaborador com navegação para Team, Workspace e Organization
         // IgnoreQueryFilters() permite encontrar o colaborador mesmo se o tenant selecionado for diferente
@@ -206,11 +179,7 @@ public sealed class MissionService(ApplicationDbContext dbContext) : IMissionSer
                 (m.OrganizationId == organizationId && m.WorkspaceId == null && m.TeamId == null && m.CollaboratorId == null));
 
         // Aplicar filtro de busca por nome
-        if (!string.IsNullOrWhiteSpace(search))
-        {
-            var term = search.Trim().ToLower();
-            query = query.Where(m => m.Name.ToLower().Contains(term));
-        }
+        query = new MissionSearchSpecification(search, dbContext.Database.IsNpgsql()).Apply(query);
 
         // Paginação
         var total = await query.CountAsync(cancellationToken);
@@ -234,8 +203,7 @@ public sealed class MissionService(ApplicationDbContext dbContext) : IMissionSer
 
     public async Task<ServiceResult<PagedResult<MissionMetric>>> GetMetricsAsync(Guid id, int page, int pageSize, CancellationToken cancellationToken = default)
     {
-        page = page < 1 ? 1 : page;
-        pageSize = pageSize is < 1 or > 100 ? 10 : pageSize;
+        (page, pageSize) = PaginationNormalizer.Normalize(page, pageSize);
 
         var missionExists = await dbContext.Missions.AnyAsync(m => m.Id == id, cancellationToken);
         if (!missionExists)
@@ -265,46 +233,6 @@ public sealed class MissionService(ApplicationDbContext dbContext) : IMissionSer
         return ServiceResult<PagedResult<MissionMetric>>.Success(result);
     }
 
-    private async Task<ServiceResult> ResolveScopeAsync(MissionScopeType scopeType, Guid scopeId, CancellationToken cancellationToken)
-    {
-        var exists = scopeType switch
-        {
-            MissionScopeType.Organization => await dbContext.Organizations.AnyAsync(o => o.Id == scopeId, cancellationToken),
-            MissionScopeType.Workspace => await dbContext.Workspaces.AnyAsync(w => w.Id == scopeId, cancellationToken),
-            MissionScopeType.Team => await dbContext.Teams.AnyAsync(t => t.Id == scopeId, cancellationToken),
-            MissionScopeType.Collaborator => await dbContext.Collaborators.AnyAsync(c => c.Id == scopeId, cancellationToken),
-            _ => false
-        };
-
-        if (!exists)
-        {
-            return ServiceResult.NotFound(GetScopeNotFoundMessage(scopeType));
-        }
-
-        return ServiceResult.Success();
-    }
-
-    private async Task<Guid?> ResolveOrganizationIdAsync(MissionScopeType scopeType, Guid scopeId, CancellationToken cancellationToken)
-    {
-        return scopeType switch
-        {
-            MissionScopeType.Organization => scopeId,
-            MissionScopeType.Workspace => await dbContext.Workspaces
-                .Where(w => w.Id == scopeId)
-                .Select(w => (Guid?)w.OrganizationId)
-                .FirstOrDefaultAsync(cancellationToken),
-            MissionScopeType.Team => await dbContext.Teams
-                .Where(t => t.Id == scopeId)
-                .Select(t => (Guid?)t.OrganizationId)
-                .FirstOrDefaultAsync(cancellationToken),
-            MissionScopeType.Collaborator => await dbContext.Collaborators
-                .Where(c => c.Id == scopeId)
-                .Select(c => (Guid?)c.OrganizationId)
-                .FirstOrDefaultAsync(cancellationToken),
-            _ => null
-        };
-    }
-
     private static void ApplyScope(Mission mission, MissionScopeType scopeType, Guid scopeId)
     {
         // OrganizationId is always set as tenant discriminator (set in CreateAsync)
@@ -330,18 +258,6 @@ public sealed class MissionService(ApplicationDbContext dbContext) : IMissionSer
         }
     }
 
-    private static string GetScopeNotFoundMessage(MissionScopeType scopeType)
-    {
-        return scopeType switch
-        {
-            MissionScopeType.Organization => "Organização não encontrada.",
-            MissionScopeType.Workspace => "Workspace não encontrado.",
-            MissionScopeType.Team => "Time não encontrado.",
-            MissionScopeType.Collaborator => "Colaborador não encontrado.",
-            _ => "Escopo não encontrado."
-        };
-    }
-
     private static DateTime NormalizeToUtc(DateTime value)
     {
         return value.Kind switch
@@ -351,4 +267,5 @@ public sealed class MissionService(ApplicationDbContext dbContext) : IMissionSer
             _ => value.ToUniversalTime()
         };
     }
+
 }

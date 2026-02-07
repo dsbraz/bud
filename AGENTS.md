@@ -31,11 +31,14 @@ Bud is an ASP.NET Core 10 application with a Blazor WebAssembly frontend, using 
 ## Project Structure
 
 - **Bud.Server** (`src/Bud.Server`): ASP.NET Core API hosting both the API endpoints and the Blazor WebAssembly app
-  - `Controllers/`: REST endpoints for organizations, workspaces, teams, collaborators
-  - `Models/`: EF Core entities
+  - `Controllers/`: REST endpoints for organizations, workspaces, teams, collaborators, missions, outbox
+  - `Application/`: use cases (`Command/Query`), abstractions (ports), pipeline behaviors, events
+  - `Domain/`: domain events and domain-specific contracts
+  - `Infrastructure/`: outbox processing, serialization, and background workers
   - `Data/`: `ApplicationDbContext`, EF Core configuration, and `DbSeeder`
+  - `DependencyInjection/`: modular composition (`Bud*CompositionExtensions`)
   - `Migrations/`: database migrations
-  - `Services/`: business logic layer
+  - `Services/`: domain/application service implementations and supporting helpers
   - `Validators/`: FluentValidation validators
   - `Middleware/`: global exception handling and other middleware
   - `MultiTenancy/`: tenant isolation infrastructure (`ITenantProvider`, `JwtTenantProvider`, `TenantSaveChangesInterceptor`, `TenantRequiredMiddleware`)
@@ -243,9 +246,9 @@ public void Dispose()
 - The selection combo is always visible in the sidebar (except on auth pages)
 - Global admin can see "TODOS", regular users see only their organizations
 
-### Service Layer Pattern
+### Application/UseCase Pattern
 
-All business logic lives in services that return `ServiceResult` or `ServiceResult<T>`:
+Controllers orchestrate requests through `UseCases` (`Command`/`Query`) and use `ServiceResult`/`ServiceResult<T>` from `Application.Common.Results`:
 
 ```csharp
 public sealed class ServiceResult<T>
@@ -258,6 +261,8 @@ public sealed class ServiceResult<T>
 ```
 
 **Important:**
+- Use case contracts should live in `Application/*` and depend on ports from `Application/Abstractions`
+- Service implementations can live in `Services/*` but controllers should depend on `UseCases`, not services
 - Controllers must check `result.ErrorType` to return appropriate HTTP status codes:
   - `NotFound` → 404
   - `Validation` → 400
@@ -268,9 +273,9 @@ public sealed class ServiceResult<T>
 
 Controllers use primary constructors and follow this pattern:
 
-1. Inject the service interface and FluentValidation validators via primary constructor
+1. Inject use case interfaces and FluentValidation validators via primary constructor
 2. Validate the request using FluentValidation
-3. Call the service method
+3. Call the use case method
 4. Map `ServiceResult` to appropriate HTTP responses
 5. **All error messages in `ProblemDetails` MUST be in Brazilian Portuguese (pt-BR)**
 
@@ -294,14 +299,14 @@ See [OrganizationsController.cs](src/Bud.Server/Controllers/OrganizationsControl
 **Diretrizes:**
 - Evite checagens diretas de `IsGlobalAdmin` e `TenantId` nos serviços quando houver policy equivalente
 - Mantenha mensagens de erro em pt-BR
-- Para novas regras, crie um `Requirement` + `Handler` e registre no `Program.cs`
+- Para novas regras, crie um `Requirement` + `Handler` e registre na composição de segurança (`BudSecurityCompositionExtensions`)
 
 ### Validation
 
 - **FluentValidation** is used for all request validation
 - Validators are in `src/Bud.Server/Validators/`
-- Each validator must be registered in DI (see [Program.cs](src/Bud.Server/Program.cs))
-- Controllers validate requests before calling services
+- Each validator must be registered in DI (see [BudApplicationCompositionExtensions.cs](src/Bud.Server/DependencyInjection/BudApplicationCompositionExtensions.cs))
+- Controllers validate requests before calling use cases
 - **All validation error messages MUST be in Brazilian Portuguese (pt-BR)**
 
 ### Data Access
@@ -413,12 +418,13 @@ Enforced by `.editorconfig` and `Directory.Build.props`:
 4. Create a migration: `dotnet ef migrations add AddEntityName --project src/Bud.Server`
 5. Create request/response contracts in `src/Bud.Shared/Contracts/`
 6. Create FluentValidation validators in `src/Bud.Server/Validators/`
-7. Create service interface and implementation in `src/Bud.Server/Services/`
+7. Create/adjust use case contracts in `src/Bud.Server/Application/*`
+8. Create service interface in `src/Bud.Server/Application/Abstractions/` and implementation in `src/Bud.Server/Services/`
    - If tenant-scoped: resolve and set `OrganizationId` from the parent entity in `CreateAsync`
-8. Register service in [Program.cs](src/Bud.Server/Program.cs) DI configuration
-9. Create controller in `src/Bud.Server/Controllers/`
-10. Write unit tests in `tests/Bud.Server.Tests/`
-11. Write integration tests in `tests/Bud.Server.IntegrationTests/`
+9. Register implementations and use cases in [BudApplicationCompositionExtensions.cs](src/Bud.Server/DependencyInjection/BudApplicationCompositionExtensions.cs)
+10. Create controller in `src/Bud.Server/Controllers/`
+11. Write unit tests in `tests/Bud.Server.Tests/`
+12. Write integration tests in `tests/Bud.Server.IntegrationTests/`
 
 ### Adding a New Blazor Page
 
@@ -432,7 +438,7 @@ Enforced by `.editorconfig` and `Directory.Build.props`:
 
 The API exposes two health check endpoints:
 - `/health/live` - Liveness probe (always returns healthy)
-- `/health/ready` - Readiness probe (checks PostgreSQL connection)
+- `/health/ready` - Readiness probe (checks PostgreSQL + Outbox health)
 
 Use these for Kubernetes probes or monitoring.
 
@@ -442,6 +448,7 @@ Use these for Kubernetes probes or monitoring.
 
 - Development settings: `src/Bud.Server/appsettings.Development.json`
 - Connection string key: `ConnectionStrings:DefaultConnection`
+- Outbox health and processing settings: `Outbox:HealthCheck:*`, `Outbox:Processing:*`
 - Environment variables override appsettings (useful in Docker)
 
 ### Docker Compose
@@ -459,13 +466,25 @@ The `docker-compose.yml` configures:
   - Summary of changes
   - Linked issues (if any)
   - Screenshots for UI changes
+  - ADR reference when architecture is impacted (`docs/adr/ADR-XXXX-*.md`)
+
+### ADR Governance
+
+- Any architectural change must add or update an ADR in `docs/adr/`
+- ADR status must be explicit (`Accepted`, `Proposed`, `Superseded`, `Deprecated`)
+- PR description should include: "Architectural impact: yes/no"
 
 ## Key Files to Reference
 
 - **Service pattern:** [OrganizationService.cs](src/Bud.Server/Services/OrganizationService.cs)
+- **Use case pattern:** [MissionCommandUseCase.cs](src/Bud.Server/Application/Missions/MissionCommandUseCase.cs), [MissionQueryUseCase.cs](src/Bud.Server/Application/Missions/MissionQueryUseCase.cs)
+- **Application ports:** [IOrganizationService.cs](src/Bud.Server/Application/Abstractions/IOrganizationService.cs)
 - **Controller pattern:** [OrganizationsController.cs](src/Bud.Server/Controllers/OrganizationsController.cs)
 - **Validation pattern:** [OrganizationValidators.cs](src/Bud.Server/Validators/OrganizationValidators.cs)
 - **Error handling:** [GlobalExceptionHandler.cs](src/Bud.Server/Middleware/GlobalExceptionHandler.cs)
+- **Outbox:** [OutboxEventProcessor.cs](src/Bud.Server/Infrastructure/Events/OutboxEventProcessor.cs), [OutboxProcessorBackgroundService.cs](src/Bud.Server/Infrastructure/Events/OutboxProcessorBackgroundService.cs), [OutboxController.cs](src/Bud.Server/Controllers/OutboxController.cs)
+- **Architecture governance:** [ArchitectureTests.cs](tests/Bud.Server.Tests/Architecture/ArchitectureTests.cs)
+- **ADR index:** [docs/adr/README.md](docs/adr/README.md)
 - **Client API calls:** [ApiClient.cs](src/Bud.Client/Services/ApiClient.cs)
 - **Multi-tenancy (backend):** [ITenantProvider.cs](src/Bud.Server/MultiTenancy/ITenantProvider.cs), [JwtTenantProvider.cs](src/Bud.Server/MultiTenancy/JwtTenantProvider.cs), [TenantRequiredMiddleware.cs](src/Bud.Server/MultiTenancy/TenantRequiredMiddleware.cs)
 - **Authorization services:** [OrganizationAuthorizationService.cs](src/Bud.Server/Services/OrganizationAuthorizationService.cs), [TenantAuthorizationService.cs](src/Bud.Server/Services/TenantAuthorizationService.cs)

@@ -81,8 +81,7 @@ public sealed class MissionMetricService(ApplicationDbContext dbContext) : IMiss
 
     public async Task<ServiceResult<PagedResult<MissionMetric>>> GetAllAsync(Guid? missionId, string? search, int page, int pageSize, CancellationToken cancellationToken = default)
     {
-        page = page < 1 ? 1 : page;
-        pageSize = pageSize is < 1 or > 100 ? 10 : pageSize;
+        (page, pageSize) = PaginationNormalizer.Normalize(page, pageSize);
 
         var query = dbContext.MissionMetrics.AsNoTracking();
 
@@ -91,11 +90,7 @@ public sealed class MissionMetricService(ApplicationDbContext dbContext) : IMiss
             query = query.Where(m => m.MissionId == missionId.Value);
         }
 
-        if (!string.IsNullOrWhiteSpace(search))
-        {
-            var term = search.Trim().ToLower();
-            query = query.Where(m => m.Name.ToLower().Contains(term));
-        }
+        query = ApplyMetricNameSearch(query, search);
 
         var total = await query.CountAsync(cancellationToken);
         var items = await query
@@ -132,5 +127,15 @@ public sealed class MissionMetricService(ApplicationDbContext dbContext) : IMiss
         metric.MaxValue = maxValue;
         metric.Unit = unit;
         metric.TargetText = null;
+    }
+
+    private IQueryable<MissionMetric> ApplyMetricNameSearch(IQueryable<MissionMetric> query, string? search)
+    {
+        return SearchQueryHelper.ApplyCaseInsensitiveSearch(
+            query,
+            search,
+            dbContext.Database.IsNpgsql(),
+            (q, pattern) => q.Where(m => EF.Functions.ILike(m.Name, pattern)),
+            (q, term) => q.Where(m => m.Name.Contains(term, StringComparison.OrdinalIgnoreCase)));
     }
 }

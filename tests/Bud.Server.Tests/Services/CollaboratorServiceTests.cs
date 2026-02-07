@@ -531,12 +531,54 @@ public class CollaboratorServiceTests
         var service = new CollaboratorService(context, _tenantProvider);
 
         // Act
-        var result = await service.GetAvailableTeamsAsync(collaborator.Id, "Alpha");
+        var result = await service.GetAvailableTeamsAsync(collaborator.Id, "alpha");
 
         // Assert
         result.IsSuccess.Should().BeTrue();
-        result.Value.Should().HaveCount(1);
-        result.Value.First().Name.Should().Be("Alpha Team");
+        result.Value.Should().NotBeNull();
+        var teams = result.Value!;
+        teams.Should().HaveCount(1);
+        teams[0].Name.Should().Be("Alpha Team");
+    }
+
+    [Fact]
+    public async Task GetAllAsync_WithCaseInsensitiveSearch_FiltersByNameAndEmail()
+    {
+        // Arrange
+        using var context = CreateInMemoryContext();
+        var (org, _, _) = await CreateTestHierarchy(context);
+
+        context.Collaborators.AddRange(
+            new Collaborator
+            {
+                Id = Guid.NewGuid(),
+                FullName = "ALICE Johnson",
+                Email = "alice@example.com",
+                OrganizationId = org.Id
+            },
+            new Collaborator
+            {
+                Id = Guid.NewGuid(),
+                FullName = "Bob Smith",
+                Email = "bob@example.com",
+                OrganizationId = org.Id
+            });
+        await context.SaveChangesAsync();
+
+        var service = new CollaboratorService(context, _tenantProvider);
+
+        // Act
+        var byName = await service.GetAllAsync(null, "alice", 1, 10);
+        var byEmail = await service.GetAllAsync(null, "ALICE@EXAMPLE.COM", 1, 10);
+
+        // Assert
+        byName.IsSuccess.Should().BeTrue();
+        byName.Value!.Items.Should().HaveCount(1);
+        byName.Value.Items[0].FullName.Should().Be("ALICE Johnson");
+
+        byEmail.IsSuccess.Should().BeTrue();
+        byEmail.Value!.Items.Should().HaveCount(1);
+        byEmail.Value.Items[0].Email.Should().Be("alice@example.com");
     }
 
     [Fact]

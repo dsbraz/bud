@@ -109,8 +109,7 @@ public sealed class MetricCheckinService(ApplicationDbContext dbContext) : IMetr
 
     public async Task<ServiceResult<PagedResult<MetricCheckin>>> GetAllAsync(Guid? missionMetricId, Guid? missionId, int page, int pageSize, CancellationToken cancellationToken = default)
     {
-        page = page < 1 ? 1 : page;
-        pageSize = pageSize is < 1 or > 100 ? 10 : pageSize;
+        (page, pageSize) = PaginationNormalizer.Normalize(page, pageSize);
 
         // Buscar check-ins sem Include para evitar problemas com query filters
         var baseQuery = dbContext.MetricCheckins.AsNoTracking();

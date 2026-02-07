@@ -237,6 +237,29 @@ public class WorkspaceServiceTests
         result.Value!.Items.Should().HaveCount(3);
     }
 
+    [Fact]
+    public async Task GetAllAsync_WithCaseInsensitiveSearch_FiltersCorrectly()
+    {
+        // Arrange
+        _tenantProvider.IsGlobalAdmin = true;
+        using var context = CreateInMemoryContext();
+        var org = new Organization { Id = Guid.NewGuid(), Name = "Test Org" };
+        context.Organizations.Add(org);
+        context.Workspaces.AddRange(
+            new Workspace { Id = Guid.NewGuid(), Name = "ALPHA Workspace", OrganizationId = org.Id },
+            new Workspace { Id = Guid.NewGuid(), Name = "Beta Workspace", OrganizationId = org.Id });
+        await context.SaveChangesAsync();
+        var service = new WorkspaceService(context);
+
+        // Act
+        var result = await service.GetAllAsync(org.Id, "alpha", 1, 10);
+
+        // Assert
+        result.IsSuccess.Should().BeTrue();
+        result.Value!.Items.Should().HaveCount(1);
+        result.Value.Items[0].Name.Should().Be("ALPHA Workspace");
+    }
+
     #endregion
 
     #region GetByIdAsync Tests

@@ -2167,8 +2167,13 @@ else
 
     // ---- Progress & Confidence Helpers ----
 
-    private static string GetProgressStatusClass(MissionProgressDto progress)
+    private static string GetProgressStatusClass(MissionProgressDto? progress)
     {
+        if (progress is null)
+        {
+            return "no-data";
+        }
+
         if (progress.MetricsWithCheckins == 0)
         {
             return "no-data";

@@ -122,8 +122,7 @@ public sealed class TeamService(ApplicationDbContext dbContext) : ITeamService
 
     public async Task<ServiceResult<PagedResult<Team>>> GetAllAsync(Guid? workspaceId, Guid? parentTeamId, string? search, int page, int pageSize, CancellationToken cancellationToken = default)
     {
-        page = page < 1 ? 1 : page;
-        pageSize = pageSize is < 1 or > 100 ? 10 : pageSize;
+        (page, pageSize) = PaginationNormalizer.Normalize(page, pageSize);
 
         var query = dbContext.Teams.AsNoTracking();
 
@@ -137,11 +136,7 @@ public sealed class TeamService(ApplicationDbContext dbContext) : ITeamService
             query = query.Where(t => t.ParentTeamId == parentTeamId.Value);
         }
 
-        if (!string.IsNullOrWhiteSpace(search))
-        {
-            var term = search.Trim().ToLower();
-            query = query.Where(t => t.Name.ToLower().Contains(term));
-        }
+        query = ApplyTeamNameSearch(query, search);
 
         var total = await query.CountAsync(cancellationToken);
         var items = await query
@@ -163,8 +158,7 @@ public sealed class TeamService(ApplicationDbContext dbContext) : ITeamService
 
     public async Task<ServiceResult<PagedResult<Team>>> GetSubTeamsAsync(Guid id, int page, int pageSize, CancellationToken cancellationToken = default)
     {
-        page = page < 1 ? 1 : page;
-        pageSize = pageSize is < 1 or > 100 ? 10 : pageSize;
+        (page, pageSize) = PaginationNormalizer.Normalize(page, pageSize);
 
         var teamExists = await dbContext.Teams.AnyAsync(t => t.Id == id, cancellationToken);
         if (!teamExists)
@@ -196,8 +190,7 @@ public sealed class TeamService(ApplicationDbContext dbContext) : ITeamService
 
     public async Task<ServiceResult<PagedResult<Collaborator>>> GetCollaboratorsAsync(Guid id, int page, int pageSize, CancellationToken cancellationToken = default)
     {
-        page = page < 1 ? 1 : page;
-        pageSize = pageSize is < 1 or > 100 ? 10 : pageSize;
+        (page, pageSize) = PaginationNormalizer.Normalize(page, pageSize);
 
         var teamExists = await dbContext.Teams.AnyAsync(t => t.Id == id, cancellationToken);
         if (!teamExists)
@@ -321,8 +314,7 @@ public sealed class TeamService(ApplicationDbContext dbContext) : ITeamService
 
         if (!string.IsNullOrWhiteSpace(search))
         {
-            var term = search.Trim().ToLower();
-            query = query.Where(c => c.FullName.ToLower().Contains(term) || c.Email.ToLower().Contains(term));
+            query = ApplyCollaboratorSearch(query, search);
         }
 
         var collaborators = await query
@@ -338,5 +330,29 @@ public sealed class TeamService(ApplicationDbContext dbContext) : ITeamService
             .ToListAsync(cancellationToken);
 
         return ServiceResult<List<CollaboratorSummaryDto>>.Success(collaborators);
+    }
+
+    private IQueryable<Team> ApplyTeamNameSearch(IQueryable<Team> query, string? search)
+    {
+        return SearchQueryHelper.ApplyCaseInsensitiveSearch(
+            query,
+            search,
+            dbContext.Database.IsNpgsql(),
+            (q, pattern) => q.Where(t => EF.Functions.ILike(t.Name, pattern)),
+            (q, term) => q.Where(t => t.Name.Contains(term, StringComparison.OrdinalIgnoreCase)));
+    }
+
+    private IQueryable<Collaborator> ApplyCollaboratorSearch(IQueryable<Collaborator> query, string? search)
+    {
+        return SearchQueryHelper.ApplyCaseInsensitiveSearch(
+            query,
+            search,
+            dbContext.Database.IsNpgsql(),
+            (q, pattern) => q.Where(c =>
+                EF.Functions.ILike(c.FullName, pattern) ||
+                EF.Functions.ILike(c.Email, pattern)),
+            (q, term) => q.Where(c =>
+                c.FullName.Contains(term, StringComparison.OrdinalIgnoreCase) ||
+                c.Email.Contains(term, StringComparison.OrdinalIgnoreCase)));
     }
 }

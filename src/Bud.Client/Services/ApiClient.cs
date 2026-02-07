@@ -21,7 +21,15 @@ public sealed class ApiClient
 
     public async Task<PagedResult<Organization>?> GetOrganizationsAsync(string? search, int page = 1, int pageSize = 10)
     {
-        var url = $"api/organizations?search={Uri.EscapeDataString(search ?? string.Empty)}&page={page}&pageSize={pageSize}";
+        var queryParams = new List<string>();
+
+        if (!string.IsNullOrEmpty(search))
+            queryParams.Add($"search={Uri.EscapeDataString(search)}");
+
+        queryParams.Add($"page={page}");
+        queryParams.Add($"pageSize={pageSize}");
+
+        var url = $"api/organizations?{string.Join("&", queryParams)}";
         return await _http.GetFromJsonAsync<PagedResult<Organization>>(url);
     }
 
@@ -74,8 +82,17 @@ public sealed class ApiClient
 
     public async Task<PagedResult<Workspace>?> GetWorkspacesAsync(Guid? organizationId, string? search, int page = 1, int pageSize = 10)
     {
-        var orgParam = organizationId.HasValue ? organizationId.Value.ToString() : string.Empty;
-        var url = $"api/workspaces?organizationId={Uri.EscapeDataString(orgParam)}&search={Uri.EscapeDataString(search ?? string.Empty)}&page={page}&pageSize={pageSize}";
+        var queryParams = new List<string>();
+
+        if (organizationId.HasValue)
+            queryParams.Add($"organizationId={organizationId.Value}");
+        if (!string.IsNullOrEmpty(search))
+            queryParams.Add($"search={Uri.EscapeDataString(search)}");
+
+        queryParams.Add($"page={page}");
+        queryParams.Add($"pageSize={pageSize}");
+
+        var url = $"api/workspaces?{string.Join("&", queryParams)}";
         return await _http.GetFromJsonAsync<PagedResult<Workspace>>(url);
     }
 
@@ -124,9 +141,19 @@ public sealed class ApiClient
 
     public async Task<PagedResult<Team>?> GetTeamsAsync(Guid? workspaceId, Guid? parentTeamId, string? search, int page = 1, int pageSize = 10)
     {
-        var workspaceParam = workspaceId.HasValue ? workspaceId.Value.ToString() : string.Empty;
-        var parentParam = parentTeamId.HasValue ? parentTeamId.Value.ToString() : string.Empty;
-        var url = $"api/teams?workspaceId={Uri.EscapeDataString(workspaceParam)}&parentTeamId={Uri.EscapeDataString(parentParam)}&search={Uri.EscapeDataString(search ?? string.Empty)}&page={page}&pageSize={pageSize}";
+        var queryParams = new List<string>();
+
+        if (workspaceId.HasValue)
+            queryParams.Add($"workspaceId={workspaceId.Value}");
+        if (parentTeamId.HasValue)
+            queryParams.Add($"parentTeamId={parentTeamId.Value}");
+        if (!string.IsNullOrEmpty(search))
+            queryParams.Add($"search={Uri.EscapeDataString(search)}");
+
+        queryParams.Add($"page={page}");
+        queryParams.Add($"pageSize={pageSize}");
+
+        var url = $"api/teams?{string.Join("&", queryParams)}";
         return await _http.GetFromJsonAsync<PagedResult<Team>>(url);
     }
 
@@ -169,8 +196,17 @@ public sealed class ApiClient
 
     public async Task<PagedResult<Collaborator>?> GetCollaboratorsAsync(Guid? teamId, string? search, int page = 1, int pageSize = 10)
     {
-        var teamParam = teamId.HasValue ? teamId.Value.ToString() : string.Empty;
-        var url = $"api/collaborators?teamId={Uri.EscapeDataString(teamParam)}&search={Uri.EscapeDataString(search ?? string.Empty)}&page={page}&pageSize={pageSize}";
+        var queryParams = new List<string>();
+
+        if (teamId.HasValue)
+            queryParams.Add($"teamId={teamId.Value}");
+        if (!string.IsNullOrEmpty(search))
+            queryParams.Add($"search={Uri.EscapeDataString(search)}");
+
+        queryParams.Add($"page={page}");
+        queryParams.Add($"pageSize={pageSize}");
+
+        var url = $"api/collaborators?{string.Join("&", queryParams)}";
         return await _http.GetFromJsonAsync<PagedResult<Collaborator>>(url);
     }
 
@@ -218,10 +254,19 @@ public sealed class ApiClient
         int page = 1,
         int pageSize = 10)
     {
-        var scopeTypeParam = scopeType.HasValue ? scopeType.Value.ToString() : string.Empty;
-        var scopeIdParam = scopeId.HasValue ? scopeId.Value.ToString() : string.Empty;
-        var url =
-            $"api/missions?scopeType={Uri.EscapeDataString(scopeTypeParam)}&scopeId={Uri.EscapeDataString(scopeIdParam)}&search={Uri.EscapeDataString(search ?? string.Empty)}&page={page}&pageSize={pageSize}";
+        var queryParams = new List<string>();
+
+        if (scopeType.HasValue)
+            queryParams.Add($"scopeType={scopeType.Value}");
+        if (scopeId.HasValue)
+            queryParams.Add($"scopeId={scopeId.Value}");
+        if (!string.IsNullOrEmpty(search))
+            queryParams.Add($"search={Uri.EscapeDataString(search)}");
+
+        queryParams.Add($"page={page}");
+        queryParams.Add($"pageSize={pageSize}");
+
+        var url = $"api/missions?{string.Join("&", queryParams)}";
         return await _http.GetFromJsonAsync<PagedResult<Mission>>(url);
     }
 
@@ -244,9 +289,17 @@ public sealed class ApiClient
 
     public async Task<PagedResult<MissionMetric>?> GetMissionMetricsAsync(Guid? missionId, string? search, int page = 1, int pageSize = 10)
     {
-        var missionParam = missionId.HasValue ? missionId.Value.ToString() : string.Empty;
-        var url =
-            $"api/mission-metrics?missionId={Uri.EscapeDataString(missionParam)}&search={Uri.EscapeDataString(search ?? string.Empty)}&page={page}&pageSize={pageSize}";
+        var queryParams = new List<string>();
+
+        if (missionId.HasValue)
+            queryParams.Add($"missionId={missionId.Value}");
+        if (!string.IsNullOrEmpty(search))
+            queryParams.Add($"search={Uri.EscapeDataString(search)}");
+
+        queryParams.Add($"page={page}");
+        queryParams.Add($"pageSize={pageSize}");
+
+        var url = $"api/mission-metrics?{string.Join("&", queryParams)}";
         return await _http.GetFromJsonAsync<PagedResult<MissionMetric>>(url);
     }
 
@@ -338,9 +391,17 @@ public sealed class ApiClient
     // MetricCheckin methods
     public async Task<PagedResult<MetricCheckin>?> GetMetricCheckinsAsync(Guid? missionMetricId, Guid? missionId, int page = 1, int pageSize = 10)
     {
-        var metricParam = missionMetricId.HasValue ? missionMetricId.Value.ToString() : string.Empty;
-        var missionParam = missionId.HasValue ? missionId.Value.ToString() : string.Empty;
-        var url = $"api/metric-checkins?missionMetricId={Uri.EscapeDataString(metricParam)}&missionId={Uri.EscapeDataString(missionParam)}&page={page}&pageSize={pageSize}";
+        var queryParams = new List<string>();
+
+        if (missionMetricId.HasValue)
+            queryParams.Add($"missionMetricId={missionMetricId.Value}");
+        if (missionId.HasValue)
+            queryParams.Add($"missionId={missionId.Value}");
+
+        queryParams.Add($"page={page}");
+        queryParams.Add($"pageSize={pageSize}");
+
+        var url = $"api/metric-checkins?{string.Join("&", queryParams)}";
         return await _http.GetFromJsonAsync<PagedResult<MetricCheckin>>(url);
     }
 

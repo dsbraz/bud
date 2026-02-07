@@ -462,6 +462,65 @@ public class MissionServiceTests
 
     #endregion
 
+    #region Update Tests
+
+    [Fact]
+    public async Task UpdateMission_WithoutScopeInRequest_KeepsExistingScope()
+    {
+        // Arrange
+        using var context = CreateInMemoryContext();
+        var service = new MissionService(context);
+
+        var org = new Organization { Id = Guid.NewGuid(), Name = "Test Org" };
+        var workspace = new Workspace
+        {
+            Id = Guid.NewGuid(),
+            Name = "Main Workspace",
+            OrganizationId = org.Id
+        };
+
+        var mission = new Mission
+        {
+            Id = Guid.NewGuid(),
+            Name = "Original Mission",
+            StartDate = DateTime.UtcNow,
+            EndDate = DateTime.UtcNow.AddDays(10),
+            Status = MissionStatus.Planned,
+            OrganizationId = org.Id,
+            WorkspaceId = workspace.Id
+        };
+
+        context.Organizations.Add(org);
+        context.Workspaces.Add(workspace);
+        context.Missions.Add(mission);
+        await context.SaveChangesAsync();
+
+        var request = new UpdateMissionRequest
+        {
+            Name = "Updated Mission",
+            Description = "Updated description",
+            StartDate = mission.StartDate,
+            EndDate = mission.EndDate,
+            Status = MissionStatus.Active
+            // ScopeType/ScopeId intentionally omitted to keep current scope
+        };
+
+        // Act
+        var result = await service.UpdateAsync(mission.Id, request);
+
+        // Assert
+        result.IsSuccess.Should().BeTrue();
+        result.Value.Should().NotBeNull();
+        result.Value!.Name.Should().Be("Updated Mission");
+        result.Value.Status.Should().Be(MissionStatus.Active);
+        result.Value.OrganizationId.Should().Be(org.Id);
+        result.Value.WorkspaceId.Should().Be(workspace.Id);
+        result.Value.TeamId.Should().BeNull();
+        result.Value.CollaboratorId.Should().BeNull();
+    }
+
+    #endregion
+
     #region NormalizeToUtc Tests
 
     [Fact]
@@ -664,6 +723,45 @@ public class MissionServiceTests
     }
 
     [Fact]
+    public async Task GetAllAsync_WithCaseInsensitiveSearch_FiltersCorrectly()
+    {
+        // Arrange
+        using var context = CreateInMemoryContext();
+        var service = new MissionService(context);
+
+        var org = new Organization { Id = Guid.NewGuid(), Name = "Test Org" };
+        context.Organizations.Add(org);
+        context.Missions.AddRange(
+            new Mission
+            {
+                Id = Guid.NewGuid(),
+                Name = "IMPORTANT Mission",
+                StartDate = DateTime.UtcNow,
+                EndDate = DateTime.UtcNow.AddDays(7),
+                Status = MissionStatus.Planned,
+                OrganizationId = org.Id
+            },
+            new Mission
+            {
+                Id = Guid.NewGuid(),
+                Name = "Regular Mission",
+                StartDate = DateTime.UtcNow,
+                EndDate = DateTime.UtcNow.AddDays(7),
+                Status = MissionStatus.Planned,
+                OrganizationId = org.Id
+            });
+        await context.SaveChangesAsync();
+
+        // Act
+        var result = await service.GetAllAsync(null, null, "important", 1, 10);
+
+        // Assert
+        result.IsSuccess.Should().BeTrue();
+        result.Value!.Items.Should().HaveCount(1);
+        result.Value.Items[0].Name.Should().Be("IMPORTANT Mission");
+    }
+
+    [Fact]
     public async Task GetMyMissions_WithSearchFilter_FiltersCorrectly()
     {
         // Arrange
@@ -730,6 +828,74 @@ public class MissionServiceTests
         result.IsSuccess.Should().BeTrue();
         result.Value!.Items.Should().HaveCount(1);
         result.Value!.Items[0].Name.Should().Be("Important Mission");
+    }
+
+    [Fact]
+    public async Task GetMyMissions_WithCaseInsensitiveSearch_FiltersCorrectly()
+    {
+        // Arrange
+        using var context = CreateInMemoryContext();
+        var service = new MissionService(context);
+
+        var org = new Organization { Id = Guid.NewGuid(), Name = "Test Org" };
+        var workspace = new Workspace
+        {
+            Id = Guid.NewGuid(),
+            Name = "Test Workspace",
+            OrganizationId = org.Id
+        };
+        var team = new Team
+        {
+            Id = Guid.NewGuid(),
+            Name = "Test Team",
+            WorkspaceId = workspace.Id,
+            OrganizationId = org.Id
+        };
+        var collaborator = new Collaborator
+        {
+            Id = Guid.NewGuid(),
+            FullName = "Test User",
+            Email = "test@example.com",
+            TeamId = team.Id,
+            OrganizationId = org.Id
+        };
+
+        context.Organizations.Add(org);
+        context.Workspaces.Add(workspace);
+        context.Teams.Add(team);
+        context.Collaborators.Add(collaborator);
+
+        context.Missions.AddRange(
+            new Mission
+            {
+                Id = Guid.NewGuid(),
+                Name = "IMPORTANT Mission",
+                StartDate = DateTime.UtcNow,
+                EndDate = DateTime.UtcNow.AddDays(7),
+                Status = MissionStatus.Planned,
+                OrganizationId = org.Id,
+                CollaboratorId = collaborator.Id
+            },
+            new Mission
+            {
+                Id = Guid.NewGuid(),
+                Name = "Regular Task",
+                StartDate = DateTime.UtcNow,
+                EndDate = DateTime.UtcNow.AddDays(7),
+                Status = MissionStatus.Planned,
+                OrganizationId = org.Id,
+                CollaboratorId = collaborator.Id
+            });
+
+        await context.SaveChangesAsync();
+
+        // Act
+        var result = await service.GetMyMissionsAsync(collaborator.Id, "important", 1, 10);
+
+        // Assert
+        result.IsSuccess.Should().BeTrue();
+        result.Value!.Items.Should().HaveCount(1);
+        result.Value.Items[0].Name.Should().Be("IMPORTANT Mission");
     }
 
     [Fact]

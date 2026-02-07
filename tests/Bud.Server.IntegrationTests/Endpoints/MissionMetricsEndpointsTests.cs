@@ -3,6 +3,7 @@ using System.Net.Http.Json;
 using Bud.Shared.Contracts;
 using Bud.Shared.Models;
 using FluentAssertions;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Xunit;
@@ -386,6 +387,35 @@ public class MissionMetricsEndpointsTests : IClassFixture<CustomWebApplicationFa
         result.Should().NotBeNull();
         result!.Items.Should().HaveCount(1);
         result.Items.Should().OnlyContain(m => m.MissionId == mission1.Id);
+    }
+
+    [Fact]
+    public async Task GetAll_WithSearchTooLong_ReturnsBadRequest()
+    {
+        // Arrange
+        var search = new string('a', 201);
+
+        // Act
+        var response = await _client.GetAsync($"/api/mission-metrics?search={search}");
+
+        // Assert
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        var problem = await response.Content.ReadFromJsonAsync<ProblemDetails>();
+        problem.Should().NotBeNull();
+        problem!.Detail.Should().Be("O parâmetro 'search' deve ter no máximo 200 caracteres.");
+    }
+
+    [Fact]
+    public async Task GetProgress_WithInvalidIds_ReturnsBadRequest()
+    {
+        // Act
+        var response = await _client.GetAsync("/api/mission-metrics/progress?ids=abc");
+
+        // Assert
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        var problem = await response.Content.ReadFromJsonAsync<ProblemDetails>();
+        problem.Should().NotBeNull();
+        problem!.Detail.Should().Be("O parâmetro 'ids' contém valores inválidos. Informe GUIDs separados por vírgula.");
     }
 
     [Fact]

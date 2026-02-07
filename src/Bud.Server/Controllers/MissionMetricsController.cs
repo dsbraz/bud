@@ -1,28 +1,36 @@
 using Bud.Server.Authorization;
-using Bud.Server.Authorization.ResourceScopes;
-using Bud.Server.Data;
-using Bud.Server.Services;
+using Bud.Server.Application.MissionMetrics;
 using Bud.Shared.Contracts;
 using Bud.Shared.Models;
 using FluentValidation;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
 
 namespace Bud.Server.Controllers;
 
 [ApiController]
 [Authorize(Policy = AuthorizationPolicies.TenantSelected)]
 [Route("api/mission-metrics")]
+[Produces("application/json")]
 public sealed class MissionMetricsController(
-    IMissionMetricService metricService,
-    IMissionProgressService missionProgressService,
-    ApplicationDbContext dbContext,
-    IAuthorizationService authorizationService,
+    IMissionMetricCommandUseCase missionMetricCommandUseCase,
+    IMissionMetricQueryUseCase missionMetricQueryUseCase,
     IValidator<CreateMissionMetricRequest> createValidator,
-    IValidator<UpdateMissionMetricRequest> updateValidator) : ControllerBase
+    IValidator<UpdateMissionMetricRequest> updateValidator) : ApiControllerBase
 {
+    /// <summary>
+    /// Cria uma nova métrica de missão.
+    /// </summary>
+    /// <remarks>
+    /// Exemplo de payload:
+    /// { "missionId": "GUID", "name": "Receita recorrente", "type": "Quantitative", "initialValue": 100, "targetValue": 200 }
+    /// </remarks>
+    /// <response code="201">Métrica criada com sucesso.</response>
+    /// <response code="400">Payload inválido ou erro de validação.</response>
+    /// <response code="404">Missão não encontrada.</response>
+    /// <response code="403">Sem permissão para criar métrica.</response>
     [HttpPost]
+    [Consumes("application/json")]
     [ProducesResponseType(typeof(MissionMetric), StatusCodes.Status201Created)]
     [ProducesResponseType(typeof(ValidationProblemDetails), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
@@ -32,47 +40,22 @@ public sealed class MissionMetricsController(
         var validationResult = await createValidator.ValidateAsync(request, cancellationToken);
         if (!validationResult.IsValid)
         {
-            return ValidationProblem(new ValidationProblemDetails(
-                validationResult.ToDictionary()));
+            return ValidationProblemFrom(validationResult);
         }
 
-        var mission = await dbContext.Missions
-            .IgnoreQueryFilters()
-            .AsNoTracking()
-            .FirstOrDefaultAsync(m => m.Id == request.MissionId, cancellationToken);
-
-        if (mission is null)
-        {
-            return NotFound(new ProblemDetails { Detail = "Missão não encontrada." });
-        }
-
-        var authResult = await authorizationService.AuthorizeAsync(
-            User,
-            new OrganizationResource(mission.OrganizationId),
-            AuthorizationPolicies.TenantOrganizationMatch);
-
-        if (!authResult.Succeeded)
-        {
-            return StatusCode(StatusCodes.Status403Forbidden, new ProblemDetails
-            {
-                Title = "Acesso negado",
-                Detail = "Você não tem permissão para criar métricas nesta missão."
-            });
-        }
-
-        var result = await metricService.CreateAsync(request, cancellationToken);
-
-        if (result.IsFailure)
-        {
-            return result.ErrorType == ServiceErrorType.NotFound
-                ? NotFound(new ProblemDetails { Detail = result.Error })
-                : BadRequest(new ProblemDetails { Detail = result.Error });
-        }
-
-        return CreatedAtAction(nameof(GetById), new { id = result.Value!.Id }, result.Value);
+        var result = await missionMetricCommandUseCase.CreateAsync(User, request, cancellationToken);
+        return FromResult(result, metric => CreatedAtAction(nameof(GetById), new { id = metric.Id }, metric));
     }
 
+    /// <summary>
+    /// Atualiza uma métrica de missão.
+    /// </summary>
+    /// <response code="200">Métrica atualizada com sucesso.</response>
+    /// <response code="400">Payload inválido ou erro de validação.</response>
+    /// <response code="404">Métrica não encontrada.</response>
+    /// <response code="403">Sem permissão para atualizar métrica.</response>
     [HttpPut("{id:guid}")]
+    [Consumes("application/json")]
     [ProducesResponseType(typeof(MissionMetric), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
     [ProducesResponseType(typeof(ValidationProblemDetails), StatusCodes.Status400BadRequest)]
@@ -82,121 +65,73 @@ public sealed class MissionMetricsController(
         var validationResult = await updateValidator.ValidateAsync(request, cancellationToken);
         if (!validationResult.IsValid)
         {
-            return ValidationProblem(new ValidationProblemDetails(
-                validationResult.ToDictionary()));
+            return ValidationProblemFrom(validationResult);
         }
 
-        var metric = await dbContext.MissionMetrics
-            .IgnoreQueryFilters()
-            .AsNoTracking()
-            .FirstOrDefaultAsync(m => m.Id == id, cancellationToken);
-
-        if (metric is null)
-        {
-            return NotFound(new ProblemDetails { Detail = "Métrica da missão não encontrada." });
-        }
-
-        var authResult = await authorizationService.AuthorizeAsync(
-            User,
-            new OrganizationResource(metric.OrganizationId),
-            AuthorizationPolicies.TenantOrganizationMatch);
-
-        if (!authResult.Succeeded)
-        {
-            return StatusCode(StatusCodes.Status403Forbidden, new ProblemDetails
-            {
-                Title = "Acesso negado",
-                Detail = "Você não tem permissão para atualizar métricas nesta missão."
-            });
-        }
-
-        var result = await metricService.UpdateAsync(id, request, cancellationToken);
-
-        if (result.IsFailure)
-        {
-            return result.ErrorType == ServiceErrorType.NotFound
-                ? NotFound(new ProblemDetails { Detail = result.Error })
-                : BadRequest(new ProblemDetails { Detail = result.Error });
-        }
-
-        return Ok(result.Value);
+        var result = await missionMetricCommandUseCase.UpdateAsync(User, id, request, cancellationToken);
+        return FromResultOk(result);
     }
 
+    /// <summary>
+    /// Exclui uma métrica de missão.
+    /// </summary>
+    /// <response code="204">Métrica removida com sucesso.</response>
+    /// <response code="404">Métrica não encontrada.</response>
+    /// <response code="403">Sem permissão para excluir métrica.</response>
     [HttpDelete("{id:guid}")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status403Forbidden)]
     public async Task<IActionResult> Delete(Guid id, CancellationToken cancellationToken)
     {
-        var metric = await dbContext.MissionMetrics
-            .IgnoreQueryFilters()
-            .AsNoTracking()
-            .FirstOrDefaultAsync(m => m.Id == id, cancellationToken);
-
-        if (metric is null)
-        {
-            return NotFound(new ProblemDetails { Detail = "Métrica da missão não encontrada." });
-        }
-
-        var authResult = await authorizationService.AuthorizeAsync(
-            User,
-            new OrganizationResource(metric.OrganizationId),
-            AuthorizationPolicies.TenantOrganizationMatch);
-
-        if (!authResult.Succeeded)
-        {
-            return StatusCode(StatusCodes.Status403Forbidden, new ProblemDetails
-            {
-                Title = "Acesso negado",
-                Detail = "Você não tem permissão para excluir métricas nesta missão."
-            });
-        }
-
-        var result = await metricService.DeleteAsync(id, cancellationToken);
-
-        if (result.IsFailure)
-        {
-            return result.ErrorType == ServiceErrorType.NotFound
-                ? NotFound(new ProblemDetails { Detail = result.Error })
-                : BadRequest(new ProblemDetails { Detail = result.Error });
-        }
-
-        return NoContent();
+        var result = await missionMetricCommandUseCase.DeleteAsync(User, id, cancellationToken);
+        return FromResult(result, NoContent);
     }
 
+    /// <summary>
+    /// Busca uma métrica de missão por identificador.
+    /// </summary>
+    /// <response code="200">Métrica encontrada.</response>
+    /// <response code="404">Métrica não encontrada.</response>
     [HttpGet("{id:guid}")]
     [ProducesResponseType(typeof(MissionMetric), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
     public async Task<ActionResult<MissionMetric>> GetById(Guid id, CancellationToken cancellationToken)
     {
-        var result = await metricService.GetByIdAsync(id, cancellationToken);
-
-        return result.IsSuccess
-            ? Ok(result.Value)
-            : NotFound(new ProblemDetails { Detail = result.Error });
+        var result = await missionMetricQueryUseCase.GetByIdAsync(id, cancellationToken);
+        return FromResultOk(result);
     }
 
+    /// <summary>
+    /// Calcula o progresso das métricas informadas.
+    /// </summary>
+    /// <response code="200">Progresso calculado com sucesso.</response>
+    /// <response code="400">Parâmetro metricIds inválido.</response>
     [HttpGet("progress")]
     [ProducesResponseType(typeof(List<MetricProgressDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
     public async Task<ActionResult<List<MetricProgressDto>>> GetProgress(
         [FromQuery] string ids,
         CancellationToken cancellationToken)
     {
-        var metricIds = new List<Guid>();
-        foreach (var part in (ids ?? string.Empty).Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
+        var parseResult = ParseGuidCsv(ids, "ids");
+        if (parseResult.Failure is not null)
         {
-            if (Guid.TryParse(part, out var id))
-            {
-                metricIds.Add(id);
-            }
+            return parseResult.Failure;
         }
 
-        var result = await missionProgressService.GetMetricProgressAsync(metricIds, cancellationToken);
-        return Ok(result.Value);
+        var result = await missionMetricQueryUseCase.GetProgressAsync(parseResult.Values!, cancellationToken);
+        return FromResultOk(result);
     }
 
+    /// <summary>
+    /// Lista métricas por missão com paginação.
+    /// </summary>
+    /// <response code="200">Lista paginada retornada com sucesso.</response>
+    /// <response code="400">Parâmetros inválidos.</response>
     [HttpGet]
     [ProducesResponseType(typeof(PagedResult<MissionMetric>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
     public async Task<ActionResult<PagedResult<MissionMetric>>> GetAll(
         [FromQuery] Guid? missionId,
         [FromQuery] string? search,
@@ -204,7 +139,19 @@ public sealed class MissionMetricsController(
         [FromQuery] int pageSize = 10,
         CancellationToken cancellationToken = default)
     {
-        var result = await metricService.GetAllAsync(missionId, search, page, pageSize, cancellationToken);
-        return Ok(result.Value);
+        var searchValidation = ValidateAndNormalizeSearch(search);
+        if (searchValidation.Failure is not null)
+        {
+            return searchValidation.Failure;
+        }
+
+        var paginationValidation = ValidatePagination(page, pageSize, maxPageSize: 200);
+        if (paginationValidation is not null)
+        {
+            return paginationValidation;
+        }
+
+        var result = await missionMetricQueryUseCase.GetAllAsync(missionId, searchValidation.Value, page, pageSize, cancellationToken);
+        return FromResultOk(result);
     }
 }

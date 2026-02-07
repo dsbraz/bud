@@ -904,13 +904,15 @@ public class MissionProgressServiceTests
         var service = new MissionProgressService(context);
         var result = await service.GetMetricProgressAsync([metric1.Id, metric2.Id]);
 
-        result.Value.Should().HaveCount(2);
+        result.Value.Should().NotBeNull();
+        var progresses = result.Value!;
+        progresses.Should().HaveCount(2);
 
-        var progress1 = result.Value!.First(p => p.MetricId == metric1.Id);
+        var progress1 = progresses.First(p => p.MetricId == metric1.Id);
         progress1.Progress.Should().Be(50m);
         progress1.Confidence.Should().Be(3);
 
-        var progress2 = result.Value.First(p => p.MetricId == metric2.Id);
+        var progress2 = progresses.First(p => p.MetricId == metric2.Id);
         progress2.Progress.Should().Be(100m); // 80 >= 70
         progress2.Confidence.Should().Be(5);
     }
