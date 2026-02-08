@@ -377,14 +377,27 @@
         OrgContext.OnOrganizationChanged += HandleOrganizationChanged;
     }
 
-    private async void HandleOrganizationChanged()
+    private void HandleOrganizationChanged()
     {
-        await LoadTeams();
-        await LoadWorkspaces();
-        await LoadLeaders();
-        await LoadCollaborators();
-        await LoadAllCollaborators();
-        StateHasChanged();
+        _ = HandleOrganizationChangedAsync();
+    }
+
+    private async Task HandleOrganizationChangedAsync()
+    {
+        try
+        {
+            await LoadTeams();
+            await LoadWorkspaces();
+            await LoadLeaders();
+            await LoadCollaborators();
+            await LoadAllCollaborators();
+            await InvokeAsync(StateHasChanged);
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"Erro ao atualizar colaboradores por troca de organização: {ex.Message}");
+            ToastService.ShowError("Erro ao atualizar colaboradores", "Não foi possível atualizar os dados da organização selecionada.");
+        }
     }
 
     public void Dispose()
@@ -534,11 +547,13 @@
         }
         catch (HttpRequestException ex)
         {
-            ToastService.ShowError("Erro ao criar colaborador", ex.Message);
+            Console.Error.WriteLine($"Erro HTTP ao criar colaborador: {ex.Message}");
+            ToastService.ShowError("Erro ao criar colaborador", "Não foi possível criar o colaborador. Verifique os dados e tente novamente.");
         }
         catch (Exception ex)
         {
-            ToastService.ShowError("Erro inesperado", ex.Message);
+            Console.Error.WriteLine($"Erro inesperado ao criar colaborador: {ex.Message}");
+            ToastService.ShowError("Erro inesperado", "Não foi possível criar o colaborador. Tente novamente.");
         }
     }
 
@@ -619,11 +634,13 @@
         }
         catch (HttpRequestException ex)
         {
-            ToastService.ShowError("Erro ao atualizar", ex.Message);
+            Console.Error.WriteLine($"Erro HTTP ao atualizar colaborador: {ex.Message}");
+            ToastService.ShowError("Erro ao atualizar", "Não foi possível atualizar o colaborador. Verifique os dados e tente novamente.");
         }
         catch (Exception ex)
         {
-            ToastService.ShowError("Erro inesperado", ex.Message);
+            Console.Error.WriteLine($"Erro inesperado ao atualizar colaborador: {ex.Message}");
+            ToastService.ShowError("Erro inesperado", "Não foi possível atualizar o colaborador. Tente novamente.");
         }
     }
 
@@ -665,11 +682,13 @@
         }
         catch (HttpRequestException ex)
         {
-            ToastService.ShowError("Erro ao excluir", ex.Message);
+            Console.Error.WriteLine($"Erro HTTP ao excluir colaborador: {ex.Message}");
+            ToastService.ShowError("Erro ao excluir", "Não foi possível excluir o colaborador. Tente novamente.");
         }
         catch (Exception ex)
         {
-            ToastService.ShowError("Erro inesperado", ex.Message);
+            Console.Error.WriteLine($"Erro inesperado ao excluir colaborador: {ex.Message}");
+            ToastService.ShowError("Erro inesperado", "Não foi possível excluir o colaborador. Tente novamente.");
         }
         finally
         {

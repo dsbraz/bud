@@ -373,15 +373,28 @@
         OrgContext.OnOrganizationChanged += HandleOrganizationChanged;
     }
 
-    private async void HandleOrganizationChanged()
+    private void HandleOrganizationChanged()
     {
-        await InvokeAsync(async () =>
+        _ = HandleOrganizationChangedAsync();
+    }
+
+    private async Task HandleOrganizationChangedAsync()
+    {
+        try
         {
-            filterMissionId = null;
-            await LoadMissions();
-            await LoadMetrics();
-            StateHasChanged();
-        });
+            await InvokeAsync(async () =>
+            {
+                filterMissionId = null;
+                await LoadMissions();
+                await LoadMetrics();
+                StateHasChanged();
+            });
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"Erro ao atualizar métricas por troca de organização: {ex.Message}");
+            ToastService.ShowError("Erro ao atualizar métricas", "Não foi possível atualizar os dados da organização selecionada.");
+        }
     }
 
     public void Dispose()
@@ -397,9 +410,11 @@
             var result = await Api.GetMissionsAsync(null, null, null, 1, 100);
             missions = result?.Items.ToList() ?? new List<Mission>();
         }
-        catch (Exception)
+        catch (Exception ex)
         {
+            Console.Error.WriteLine($"Erro ao carregar missões para métricas: {ex.Message}");
             missions = new List<Mission>();
+            ToastService.ShowError("Erro ao carregar missões", "Não foi possível carregar as missões.");
         }
     }
 
@@ -414,10 +429,12 @@
             metrics = await Api.GetMissionMetricsAsync(missionId, search, 1, 20) ?? new PagedResult<MissionMetric>();
             await LoadMetricProgress();
         }
-        catch (Exception)
+        catch (Exception ex)
         {
+            Console.Error.WriteLine($"Erro ao carregar métricas: {ex.Message}");
             metrics = new PagedResult<MissionMetric>();
             metricProgress = new();
+            ToastService.ShowError("Erro ao carregar métricas", "Não foi possível carregar as métricas.");
         }
     }
 
@@ -435,8 +452,9 @@
             var progressList = await Api.GetMetricProgressAsync(ids);
             metricProgress = progressList?.ToDictionary(p => p.MetricId) ?? new();
         }
-        catch
+        catch (Exception ex)
         {
+            Console.Error.WriteLine($"Erro ao carregar progresso das métricas: {ex.Message}");
             metricProgress = new();
         }
     }
@@ -702,7 +720,8 @@
         }
         catch (HttpRequestException ex)
         {
-            ToastService.ShowError("Erro ao atualizar", ex.Message);
+            Console.Error.WriteLine($"Erro HTTP ao atualizar métrica: {ex.Message}");
+            ToastService.ShowError("Erro ao atualizar", "Não foi possível atualizar a métrica. Verifique os dados e tente novamente.");
         }
     }
 
@@ -786,7 +805,8 @@
         }
         catch (HttpRequestException ex)
         {
-            ToastService.ShowError("Erro ao excluir", ex.Message);
+            Console.Error.WriteLine($"Erro HTTP ao excluir métrica: {ex.Message}");
+            ToastService.ShowError("Erro ao excluir", "Não foi possível excluir a métrica. Tente novamente.");
         }
         finally
         {

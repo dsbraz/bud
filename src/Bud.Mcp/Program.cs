@@ -3,6 +3,7 @@ using Bud.Mcp.Configuration;
 using Bud.Mcp.Http;
 using Bud.Mcp.Protocol;
 using Bud.Mcp.Tools;
+using Bud.Mcp.Tools.Generation;
 using Microsoft.Extensions.Configuration;
 
 var environment = Environment.GetEnvironmentVariable("DOTNET_ENVIRONMENT") ?? "Production";
@@ -14,6 +15,14 @@ var configuration = new ConfigurationBuilder()
     .Build();
 
 var options = BudMcpOptions.FromConfiguration(configuration);
+
+var commandRunner = new ToolCatalogCommandRunner();
+var commandResult = await commandRunner.TryExecuteAsync(args, options);
+if (commandResult.Handled)
+{
+    Environment.ExitCode = commandResult.ExitCode;
+    return;
+}
 
 using var httpClient = new HttpClient
 {

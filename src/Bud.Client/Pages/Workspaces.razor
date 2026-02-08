@@ -215,11 +215,24 @@
         OrgContext.OnOrganizationChanged += HandleOrganizationChanged;
     }
 
-    private async void HandleOrganizationChanged()
+    private void HandleOrganizationChanged()
     {
-        await LoadWorkspaces();
-        await LoadTeams();
-        StateHasChanged();
+        _ = HandleOrganizationChangedAsync();
+    }
+
+    private async Task HandleOrganizationChangedAsync()
+    {
+        try
+        {
+            await LoadWorkspaces();
+            await LoadTeams();
+            await InvokeAsync(StateHasChanged);
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"Erro ao atualizar workspaces por troca de organização: {ex.Message}");
+            ToastService.ShowError("Erro ao atualizar workspaces", "Não foi possível atualizar os dados da organização selecionada.");
+        }
     }
 
     public void Dispose()
@@ -317,11 +330,13 @@
         }
         catch (HttpRequestException ex)
         {
-            ToastService.ShowError("Erro ao criar workspace", ex.Message);
+            Console.Error.WriteLine($"Erro HTTP ao criar workspace: {ex.Message}");
+            ToastService.ShowError("Erro ao criar workspace", "Não foi possível criar o workspace. Verifique os dados e tente novamente.");
         }
         catch (Exception ex)
         {
-            ToastService.ShowError("Erro inesperado", ex.Message);
+            Console.Error.WriteLine($"Erro inesperado ao criar workspace: {ex.Message}");
+            ToastService.ShowError("Erro inesperado", "Não foi possível criar o workspace. Tente novamente.");
         }
     }
 
@@ -358,11 +373,13 @@
         }
         catch (HttpRequestException ex)
         {
-            ToastService.ShowError("Erro ao atualizar", ex.Message);
+            Console.Error.WriteLine($"Erro HTTP ao atualizar workspace: {ex.Message}");
+            ToastService.ShowError("Erro ao atualizar", "Não foi possível atualizar o workspace. Verifique os dados e tente novamente.");
         }
         catch (Exception ex)
         {
-            ToastService.ShowError("Erro inesperado", ex.Message);
+            Console.Error.WriteLine($"Erro inesperado ao atualizar workspace: {ex.Message}");
+            ToastService.ShowError("Erro inesperado", "Não foi possível atualizar o workspace. Tente novamente.");
         }
     }
 
@@ -403,11 +420,13 @@
         }
         catch (HttpRequestException ex)
         {
-            ToastService.ShowError("Erro ao excluir", ex.Message);
+            Console.Error.WriteLine($"Erro HTTP ao excluir workspace: {ex.Message}");
+            ToastService.ShowError("Erro ao excluir", "Não foi possível excluir o workspace. Tente novamente.");
         }
         catch (Exception ex)
         {
-            ToastService.ShowError("Erro inesperado", ex.Message);
+            Console.Error.WriteLine($"Erro inesperado ao excluir workspace: {ex.Message}");
+            ToastService.ShowError("Erro inesperado", "Não foi possível excluir o workspace. Tente novamente.");
         }
         finally
         {

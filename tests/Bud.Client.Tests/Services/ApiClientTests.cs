@@ -1,6 +1,7 @@
 using System.Net;
 using System.Text;
 using Bud.Client.Services;
+using Bud.Shared.Contracts;
 using Bud.Shared.Models;
 using FluentAssertions;
 using Xunit;
@@ -104,6 +105,53 @@ public sealed class ApiClientTests
 
         handler.LastRequest.Should().NotBeNull();
         handler.LastRequest!.RequestUri!.PathAndQuery.Should().Be("/api/metric-checkins?page=1&pageSize=100");
+    }
+
+    [Fact]
+    public async Task CreateMissionAsync_WhenApiReturnsProblemDetails_ThrowsHttpRequestExceptionWithDetail()
+    {
+        var handler = new CapturingHandler(_ =>
+            new HttpResponseMessage(HttpStatusCode.BadRequest)
+            {
+                Content = new StringContent("""
+                    {"detail":"Escopo inválido para criação da missão."}
+                    """, Encoding.UTF8, "application/json")
+            });
+
+        var client = CreateClient(handler);
+        var request = new CreateMissionRequest
+        {
+            Name = "Missão teste",
+            StartDate = DateTime.UtcNow,
+            EndDate = DateTime.UtcNow.AddDays(1),
+            Status = MissionStatus.Planned,
+            ScopeType = MissionScopeType.Organization,
+            ScopeId = Guid.NewGuid()
+        };
+
+        Func<Task> act = async () => await client.CreateMissionAsync(request);
+
+        await act.Should()
+            .ThrowAsync<HttpRequestException>()
+            .WithMessage("Escopo inválido para criação da missão.");
+    }
+
+    [Fact]
+    public async Task LogoutAsync_WhenApiFails_ThrowsHttpRequestExceptionWithFallbackMessage()
+    {
+        var handler = new CapturingHandler(_ =>
+            new HttpResponseMessage(HttpStatusCode.InternalServerError)
+            {
+                Content = new StringContent("{}", Encoding.UTF8, "application/json")
+            });
+
+        var client = CreateClient(handler);
+
+        Func<Task> act = async () => await client.LogoutAsync();
+
+        await act.Should()
+            .ThrowAsync<HttpRequestException>()
+            .WithMessage("Erro do servidor (500).");
     }
 
     private static CapturingHandler CreateSuccessHandler()

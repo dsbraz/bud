@@ -60,7 +60,7 @@ public sealed class StdioJsonRpcServer(McpToolService toolService)
         }
     }
 
-    private async Task<JsonNode> HandleMethodAsync(string method, JsonElement root, CancellationToken cancellationToken)
+    private async Task<JsonObject> HandleMethodAsync(string method, JsonElement root, CancellationToken cancellationToken)
     {
         return method switch
         {
@@ -72,7 +72,7 @@ public sealed class StdioJsonRpcServer(McpToolService toolService)
         };
     }
 
-    private static JsonNode InitializeResult()
+    private static JsonObject InitializeResult()
     {
         return new JsonObject
         {
@@ -89,7 +89,7 @@ public sealed class StdioJsonRpcServer(McpToolService toolService)
         };
     }
 
-    private JsonNode ToolsListResult()
+    private JsonObject ToolsListResult()
     {
         var tools = new JsonArray();
         foreach (var tool in _toolService.GetTools())
@@ -105,7 +105,7 @@ public sealed class StdioJsonRpcServer(McpToolService toolService)
         return new JsonObject { ["tools"] = tools };
     }
 
-    private async Task<JsonNode> ToolsCallResultAsync(JsonElement root, CancellationToken cancellationToken)
+    private async Task<JsonObject> ToolsCallResultAsync(JsonElement root, CancellationToken cancellationToken)
     {
         if (!root.TryGetProperty("params", out var paramsNode))
         {
@@ -158,7 +158,7 @@ public sealed class StdioJsonRpcServer(McpToolService toolService)
         }
     }
 
-    private static JsonNode ToolResult(JsonNode payload, bool isError)
+    private static JsonObject ToolResult(JsonNode payload, bool isError)
     {
         return new JsonObject
         {

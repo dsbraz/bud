@@ -987,16 +987,29 @@ else
         await LoadMissions();
     }
 
-    private async void HandleOrganizationChanged()
+    private void HandleOrganizationChanged()
     {
-        await InvokeAsync(async () =>
+        _ = HandleOrganizationChangedAsync();
+    }
+
+    private async Task HandleOrganizationChangedAsync()
+    {
+        try
         {
-            filterScopeTypeValue = null;
-            filterScopeId = null;
-            await LoadReferenceData();
-            await LoadMissions();
-            StateHasChanged();
-        });
+            await InvokeAsync(async () =>
+            {
+                filterScopeTypeValue = null;
+                filterScopeId = null;
+                await LoadReferenceData();
+                await LoadMissions();
+                StateHasChanged();
+            });
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"Erro ao atualizar missões por troca de organização: {ex.Message}");
+            ToastService.ShowError("Erro ao atualizar missões", "Não foi possível atualizar os dados da organização selecionada.");
+        }
     }
 
     public void Dispose()
@@ -1078,8 +1091,9 @@ else
             var progressList = await Api.GetMissionProgressAsync(ids);
             missionProgress = progressList?.ToDictionary(p => p.MissionId) ?? new();
         }
-        catch
+        catch (Exception ex)
         {
+            Console.Error.WriteLine($"Erro ao carregar progresso das missões: {ex.Message}");
             missionProgress = new();
         }
     }
@@ -1365,24 +1379,46 @@ else
         var failedCount = 0;
         foreach (var tempMetric in tempMetrics)
         {
+            if (!EnumParsingHelper.TryParseEnum<MetricType>(tempMetric.Type, out var metricType))
+            {
+                failedCount++;
+                continue;
+            }
+
             var metricRequest = new CreateMissionMetricRequest
             {
                 MissionId = createdMission.Id,
                 Name = tempMetric.Name,
-                Type = Enum.Parse<MetricType>(tempMetric.Type)
+                Type = metricType
             };
 
             if (tempMetric.Type == "Quantitative")
             {
                 if (!string.IsNullOrEmpty(tempMetric.QuantitativeType))
                 {
-                    metricRequest.QuantitativeType = Enum.Parse<QuantitativeMetricType>(tempMetric.QuantitativeType);
+                    if (EnumParsingHelper.TryParseEnum<QuantitativeMetricType>(tempMetric.QuantitativeType, out var quantitativeType))
+                    {
+                        metricRequest.QuantitativeType = quantitativeType;
+                    }
+                    else
+                    {
+                        failedCount++;
+                        continue;
+                    }
                 }
                 metricRequest.MinValue = tempMetric.MinValue;
                 metricRequest.MaxValue = tempMetric.MaxValue;
                 if (!string.IsNullOrEmpty(tempMetric.Unit))
                 {
-                    metricRequest.Unit = Enum.Parse<MetricUnit>(tempMetric.Unit);
+                    if (EnumParsingHelper.TryParseEnum<MetricUnit>(tempMetric.Unit, out var unit))
+                    {
+                        metricRequest.Unit = unit;
+                    }
+                    else
+                    {
+                        failedCount++;
+                        continue;
+                    }
                 }
             }
             else
@@ -1394,8 +1430,9 @@ else
             {
                 await Api.CreateMissionMetricAsync(metricRequest);
             }
-            catch (Exception)
+            catch (Exception ex)
             {
+                Console.Error.WriteLine($"Erro ao criar métrica temporária para missão {createdMission.Id}: {ex.Message}");
                 failedCount++;
             }
         }
@@ -1645,9 +1682,11 @@ else
             var result = await Api.GetMetricCheckinsAsync(metric.Id, null, 1, 50);
             metricCheckins = result?.Items.OrderByDescending(c => c.CheckinDate).ToList() ?? new List<MetricCheckin>();
         }
-        catch (Exception)
+        catch (Exception ex)
         {
+            Console.Error.WriteLine($"Erro ao carregar histórico de check-ins da métrica {metric.Id}: {ex.Message}");
             metricCheckins = new List<MetricCheckin>();
+            ToastService.ShowError("Erro ao carregar histórico", "Não foi possível carregar o histórico de check-ins desta métrica.");
         }
         finally
         {
@@ -1873,7 +1912,8 @@ else
         }
         catch (HttpRequestException ex)
         {
-            ToastService.ShowError("Erro ao criar check-in", ex.Message);
+            Console.Error.WriteLine($"Erro HTTP ao criar check-in em missão: {ex.Message}");
+            ToastService.ShowError("Erro ao criar check-in", "Não foi possível criar o check-in. Verifique os dados e tente novamente.");
         }
     }
 
@@ -1993,7 +2033,8 @@ else
         }
         catch (HttpRequestException ex)
         {
-            ToastService.ShowError("Erro ao atualizar", ex.Message);
+            Console.Error.WriteLine($"Erro HTTP ao atualizar missão: {ex.Message}");
+            ToastService.ShowError("Erro ao atualizar", "Não foi possível atualizar a missão. Verifique os dados e tente novamente.");
         }
     }
 
@@ -2030,7 +2071,8 @@ else
         }
         catch (HttpRequestException ex)
         {
-            ToastService.ShowError("Erro ao excluir", ex.Message);
+            Console.Error.WriteLine($"Erro HTTP ao excluir missão: {ex.Message}");
+            ToastService.ShowError("Erro ao excluir", "Não foi possível excluir a missão. Tente novamente.");
         }
         finally
         {
@@ -2101,7 +2143,8 @@ else
         }
         catch (HttpRequestException ex)
         {
-            ToastService.ShowError("Erro ao atualizar métrica", ex.Message);
+            Console.Error.WriteLine($"Erro HTTP ao atualizar métrica da missão: {ex.Message}");
+            ToastService.ShowError("Erro ao atualizar métrica", "Não foi possível atualizar a métrica. Verifique os dados e tente novamente.");
         }
     }
 
@@ -2155,7 +2198,8 @@ else
         }
         catch (HttpRequestException ex)
         {
-            ToastService.ShowError("Erro ao excluir métrica", ex.Message);
+            Console.Error.WriteLine($"Erro HTTP ao excluir métrica da missão: {ex.Message}");
+            ToastService.ShowError("Erro ao excluir métrica", "Não foi possível excluir a métrica. Tente novamente.");
         }
         finally
         {

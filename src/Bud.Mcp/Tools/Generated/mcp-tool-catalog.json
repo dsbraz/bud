@@ -1,0 +1,247 @@
+{
+  "version": 1,
+  "tools": [
+    {
+      "name": "mission_create",
+      "description": "Cria uma missão.",
+      "inputSchema": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["name", "startDate", "endDate", "status", "scopeType", "scopeId"],
+        "properties": {
+          "name": { "type": "string" },
+          "description": { "type": ["null", "string"] },
+          "startDate": { "type": "string", "format": "date-time" },
+          "endDate": { "type": "string", "format": "date-time" },
+          "status": { "type": "integer" },
+          "scopeType": { "type": "integer" },
+          "scopeId": { "type": "string", "format": "uuid" }
+        }
+      }
+    },
+    {
+      "name": "mission_get",
+      "description": "Busca uma missão por ID.",
+      "inputSchema": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id"],
+        "properties": {
+          "id": { "type": "string", "format": "uuid" }
+        }
+      }
+    },
+    {
+      "name": "mission_list",
+      "description": "Lista missões com filtros.",
+      "inputSchema": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "scopeType": { "type": "integer" },
+          "scopeId": { "type": "string", "format": "uuid" },
+          "search": { "type": "string" },
+          "page": { "type": "integer", "default": 1 },
+          "pageSize": { "type": "integer", "default": 10 }
+        }
+      }
+    },
+    {
+      "name": "mission_update",
+      "description": "Atualiza uma missão.",
+      "inputSchema": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "payload"],
+        "properties": {
+          "id": { "type": "string", "format": "uuid" },
+          "payload": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "name": { "type": "string" },
+              "description": { "type": ["null", "string"] },
+              "startDate": { "type": "string", "format": "date-time" },
+              "endDate": { "type": "string", "format": "date-time" },
+              "status": { "type": "integer" },
+              "scopeType": { "type": "integer" },
+              "scopeId": { "type": "string", "format": "uuid" }
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "mission_delete",
+      "description": "Remove uma missão.",
+      "inputSchema": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id"],
+        "properties": {
+          "id": { "type": "string", "format": "uuid" }
+        }
+      }
+    },
+    {
+      "name": "mission_metric_create",
+      "description": "Cria uma métrica de missão.",
+      "inputSchema": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["missionId", "name", "type"],
+        "properties": {
+          "missionId": { "type": "string", "format": "uuid" },
+          "name": { "type": "string" },
+          "type": { "type": "integer" },
+          "quantitativeType": { "type": ["null", "integer"] },
+          "minValue": { "type": ["null", "number"] },
+          "maxValue": { "type": ["null", "number"] },
+          "unit": { "type": ["null", "integer"] },
+          "targetText": { "type": ["null", "string"] }
+        }
+      }
+    },
+    {
+      "name": "mission_metric_get",
+      "description": "Busca uma métrica por ID.",
+      "inputSchema": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id"],
+        "properties": {
+          "id": { "type": "string", "format": "uuid" }
+        }
+      }
+    },
+    {
+      "name": "mission_metric_list",
+      "description": "Lista métricas de missão.",
+      "inputSchema": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "missionId": { "type": "string", "format": "uuid" },
+          "search": { "type": "string" },
+          "page": { "type": "integer", "default": 1 },
+          "pageSize": { "type": "integer", "default": 10 }
+        }
+      }
+    },
+    {
+      "name": "mission_metric_update",
+      "description": "Atualiza uma métrica de missão.",
+      "inputSchema": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "payload"],
+        "properties": {
+          "id": { "type": "string", "format": "uuid" },
+          "payload": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "name": { "type": "string" },
+              "type": { "type": "integer" },
+              "quantitativeType": { "type": ["null", "integer"] },
+              "minValue": { "type": ["null", "number"] },
+              "maxValue": { "type": ["null", "number"] },
+              "unit": { "type": ["null", "integer"] },
+              "targetText": { "type": ["null", "string"] }
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "mission_metric_delete",
+      "description": "Remove uma métrica de missão.",
+      "inputSchema": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id"],
+        "properties": {
+          "id": { "type": "string", "format": "uuid" }
+        }
+      }
+    },
+    {
+      "name": "metric_checkin_create",
+      "description": "Cria um check-in de métrica.",
+      "inputSchema": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["missionMetricId", "checkinDate", "confidenceLevel"],
+        "properties": {
+          "missionMetricId": { "type": "string", "format": "uuid" },
+          "value": { "type": ["null", "number"] },
+          "text": { "type": ["null", "string"] },
+          "checkinDate": { "type": "string", "format": "date-time" },
+          "note": { "type": ["null", "string"] },
+          "confidenceLevel": { "type": "integer" }
+        }
+      }
+    },
+    {
+      "name": "metric_checkin_get",
+      "description": "Busca um check-in por ID.",
+      "inputSchema": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id"],
+        "properties": {
+          "id": { "type": "string", "format": "uuid" }
+        }
+      }
+    },
+    {
+      "name": "metric_checkin_list",
+      "description": "Lista check-ins com filtros.",
+      "inputSchema": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "missionMetricId": { "type": "string", "format": "uuid" },
+          "missionId": { "type": "string", "format": "uuid" },
+          "page": { "type": "integer", "default": 1 },
+          "pageSize": { "type": "integer", "default": 10 }
+        }
+      }
+    },
+    {
+      "name": "metric_checkin_update",
+      "description": "Atualiza um check-in.",
+      "inputSchema": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "payload"],
+        "properties": {
+          "id": { "type": "string", "format": "uuid" },
+          "payload": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "value": { "type": ["null", "number"] },
+              "text": { "type": ["null", "string"] },
+              "checkinDate": { "type": "string", "format": "date-time" },
+              "note": { "type": ["null", "string"] },
+              "confidenceLevel": { "type": "integer" }
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "metric_checkin_delete",
+      "description": "Remove um check-in.",
+      "inputSchema": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id"],
+        "properties": {
+          "id": { "type": "string", "format": "uuid" }
+        }
+      }
+    }
+  ]
+}

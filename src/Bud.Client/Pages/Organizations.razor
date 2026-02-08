@@ -300,10 +300,23 @@ else
         OrgContext.OnOrganizationChanged += HandleOrganizationChanged;
     }
 
-    private async void HandleOrganizationChanged()
+    private void HandleOrganizationChanged()
     {
-        await LoadOrganizations();
-        StateHasChanged();
+        _ = HandleOrganizationChangedAsync();
+    }
+
+    private async Task HandleOrganizationChangedAsync()
+    {
+        try
+        {
+            await LoadOrganizations();
+            await InvokeAsync(StateHasChanged);
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"Erro ao atualizar organizações por troca de contexto: {ex.Message}");
+            ToastService.ShowError("Erro ao atualizar organizações", "Não foi possível atualizar a lista de organizações.");
+        }
     }
 
     private async Task LoadLeaders(Guid? organizationId = null)
@@ -314,7 +327,7 @@ else
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"Erro ao carregar líderes: {ex.Message}");
+            Console.Error.WriteLine($"Erro ao carregar líderes: {ex.Message}");
             leaders = new List<LeaderCollaboratorResponse>();
         }
     }
@@ -399,11 +412,13 @@ else
         }
         catch (HttpRequestException ex)
         {
-            ToastService.ShowError("Erro ao criar organização", ex.Message);
+            Console.Error.WriteLine($"Erro HTTP ao criar organização: {ex.Message}");
+            ToastService.ShowError("Erro ao criar organização", "Não foi possível criar a organização. Verifique os dados e tente novamente.");
         }
         catch (Exception ex)
         {
-            ToastService.ShowError("Erro inesperado", ex.Message);
+            Console.Error.WriteLine($"Erro inesperado ao criar organização: {ex.Message}");
+            ToastService.ShowError("Erro inesperado", "Não foi possível criar a organização. Tente novamente.");
         }
         finally
         {
@@ -439,11 +454,13 @@ else
         }
         catch (HttpRequestException ex)
         {
-            ToastService.ShowError("Erro ao atualizar organização", ex.Message);
+            Console.Error.WriteLine($"Erro HTTP ao atualizar organização: {ex.Message}");
+            ToastService.ShowError("Erro ao atualizar organização", "Não foi possível atualizar a organização. Verifique os dados e tente novamente.");
         }
         catch (Exception ex)
         {
-            ToastService.ShowError("Erro inesperado", ex.Message);
+            Console.Error.WriteLine($"Erro inesperado ao atualizar organização: {ex.Message}");
+            ToastService.ShowError("Erro inesperado", "Não foi possível atualizar a organização. Tente novamente.");
         }
         finally
         {
@@ -492,11 +509,13 @@ else
         }
         catch (HttpRequestException ex)
         {
-            ToastService.ShowError("Erro ao excluir organização", ex.Message);
+            Console.Error.WriteLine($"Erro HTTP ao excluir organização: {ex.Message}");
+            ToastService.ShowError("Erro ao excluir organização", "Não foi possível excluir a organização. Tente novamente.");
         }
         catch (Exception ex)
         {
-            ToastService.ShowError("Erro inesperado", ex.Message);
+            Console.Error.WriteLine($"Erro inesperado ao excluir organização: {ex.Message}");
+            ToastService.ShowError("Erro inesperado", "Não foi possível excluir a organização. Tente novamente.");
         }
     }
 
@@ -530,7 +549,7 @@ else
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"Erro ao carregar workspaces: {ex.Message}");
+            Console.Error.WriteLine($"Erro ao carregar workspaces: {ex.Message}");
             ToastService.ShowError("Erro", "Não foi possível carregar os workspaces.");
             orgWorkspaces = new PagedResult<Workspace> { Items = Array.Empty<Workspace>() };
         }
@@ -544,7 +563,7 @@ else
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"Erro ao carregar colaboradores: {ex.Message}");
+            Console.Error.WriteLine($"Erro ao carregar colaboradores: {ex.Message}");
             ToastService.ShowError("Erro", "Não foi possível carregar os colaboradores.");
             orgCollaborators = new PagedResult<Collaborator> { Items = Array.Empty<Collaborator>() };
         }
@@ -562,7 +581,7 @@ else
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"Erro ao atualizar lista de organizações: {ex.Message}");
+            Console.Error.WriteLine($"Erro ao atualizar lista de organizações: {ex.Message}");
         }
     }
 

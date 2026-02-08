@@ -96,7 +96,7 @@ public sealed class BudApiSession(HttpClient httpClient, BudMcpOptions options)
         return request;
     }
 
-    private HttpRequestMessage CreateBaseRequest(HttpMethod method, string relativePath)
+    private static HttpRequestMessage CreateBaseRequest(HttpMethod method, string relativePath)
     {
         return new HttpRequestMessage(method, relativePath);
     }

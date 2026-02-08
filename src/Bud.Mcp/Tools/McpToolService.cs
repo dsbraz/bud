@@ -1,8 +1,8 @@
 using Bud.Mcp.Auth;
 using Bud.Mcp.Http;
+using Bud.Mcp.Tools.Generation;
 using Bud.Shared.Contracts;
 using Bud.Shared.Models;
-using System.Reflection;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Text.Json.Serialization;
@@ -18,9 +18,26 @@ public sealed class McpToolService(BudApiClient budApiClient, BudApiSession sess
         WriteIndented = false
     };
 
-    private static readonly NullabilityInfoContext NullabilityContext = new();
+    private static readonly HashSet<string> DomainToolNames = new(StringComparer.Ordinal)
+    {
+        "mission_create",
+        "mission_get",
+        "mission_list",
+        "mission_update",
+        "mission_delete",
+        "mission_metric_create",
+        "mission_metric_get",
+        "mission_metric_list",
+        "mission_metric_update",
+        "mission_metric_delete",
+        "metric_checkin_create",
+        "metric_checkin_get",
+        "metric_checkin_list",
+        "metric_checkin_update",
+        "metric_checkin_delete"
+    };
 
-    private static readonly IReadOnlyList<McpToolDefinition> ToolDefinitions =
+    private static readonly List<McpToolDefinition> ToolDefinitions =
     [
         CreateTool("auth_login", "Autentica o usuário da sessão MCP com e-mail.", new JsonObject
         {
@@ -76,65 +93,46 @@ public sealed class McpToolService(BudApiClient budApiClient, BudApiSession sess
             {
                 ["action"] = new JsonObject { ["type"] = "string" }
             }
-        }),
-        CreateTool("mission_create", "Cria uma missão.", SchemaFor<CreateMissionRequest>()),
-        CreateTool("mission_get", "Busca uma missão por ID.", IdSchema()),
-        CreateTool("mission_list", "Lista missões com filtros.", new JsonObject
-        {
-            ["type"] = "object",
-            ["additionalProperties"] = false,
-            ["properties"] = new JsonObject
-            {
-                ["scopeType"] = EnumSchema<MissionScopeType>(),
-                ["scopeId"] = new JsonObject { ["type"] = "string", ["format"] = "uuid" },
-                ["search"] = new JsonObject { ["type"] = "string" },
-                ["page"] = new JsonObject { ["type"] = "integer", ["default"] = 1, ["minimum"] = 1 },
-                ["pageSize"] = new JsonObject { ["type"] = "integer", ["default"] = 10, ["minimum"] = 1 }
-            }
-        }),
-        CreateTool("mission_update", "Atualiza uma missão.", IdWithPayloadSchema<UpdateMissionRequest>()),
-        CreateTool("mission_delete", "Remove uma missão.", IdSchema()),
-        CreateTool("mission_metric_create", "Cria uma métrica de missão.", SchemaFor<CreateMissionMetricRequest>()),
-        CreateTool("mission_metric_get", "Busca uma métrica por ID.", IdSchema()),
-        CreateTool("mission_metric_list", "Lista métricas de missão.", new JsonObject
-        {
-            ["type"] = "object",
-            ["additionalProperties"] = false,
-            ["properties"] = new JsonObject
-            {
-                ["missionId"] = new JsonObject { ["type"] = "string", ["format"] = "uuid" },
-                ["search"] = new JsonObject { ["type"] = "string" },
-                ["page"] = new JsonObject { ["type"] = "integer", ["default"] = 1, ["minimum"] = 1 },
-                ["pageSize"] = new JsonObject { ["type"] = "integer", ["default"] = 10, ["minimum"] = 1 }
-            }
-        }),
-        CreateTool("mission_metric_update", "Atualiza uma métrica de missão.", IdWithPayloadSchema<UpdateMissionMetricRequest>()),
-        CreateTool("mission_metric_delete", "Remove uma métrica de missão.", IdSchema()),
-        CreateTool("metric_checkin_create", "Cria um check-in de métrica.", SchemaFor<CreateMetricCheckinRequest>()),
-        CreateTool("metric_checkin_get", "Busca um check-in por ID.", IdSchema()),
-        CreateTool("metric_checkin_list", "Lista check-ins com filtros.", new JsonObject
-        {
-            ["type"] = "object",
-            ["additionalProperties"] = false,
-            ["properties"] = new JsonObject
-            {
-                ["missionMetricId"] = new JsonObject { ["type"] = "string", ["format"] = "uuid" },
-                ["missionId"] = new JsonObject { ["type"] = "string", ["format"] = "uuid" },
-                ["page"] = new JsonObject { ["type"] = "integer", ["default"] = 1, ["minimum"] = 1 },
-                ["pageSize"] = new JsonObject { ["type"] = "integer", ["default"] = 10, ["minimum"] = 1 }
-            }
-        }),
-        CreateTool("metric_checkin_update", "Atualiza um check-in.", IdWithPayloadSchema<UpdateMetricCheckinRequest>()),
-        CreateTool("metric_checkin_delete", "Remove um check-in.", IdSchema())
+        })
     ];
 
-    private static readonly IReadOnlyDictionary<string, McpToolDefinition> ToolMap =
-        ToolDefinitions.ToDictionary(tool => tool.Name, StringComparer.Ordinal);
+    private static readonly Dictionary<string, McpToolDefinition> ToolMap = new(StringComparer.Ordinal);
+
+    static McpToolService()
+    {
+        for (var i = 0; i < ToolDefinitions.Count; i++)
+        {
+            ToolMap[ToolDefinitions[i].Name] = ToolDefinitions[i];
+        }
+
+        var generatedTools = McpToolCatalogStore.LoadToolsOrThrow();
+        var requiredValidationErrors = ToolCatalogContractValidator.ValidateRequiredFields(generatedTools);
+        if (requiredValidationErrors.Count > 0)
+        {
+            throw new InvalidOperationException(
+                "Catálogo MCP inválido para tools de domínio: " + string.Join(" ", requiredValidationErrors));
+        }
+
+        var generatedToolMap = generatedTools.ToDictionary(tool => tool.Name, tool => tool, StringComparer.Ordinal);
+
+        foreach (var domainToolName in DomainToolNames)
+        {
+            if (!generatedToolMap.TryGetValue(domainToolName, out var generatedTool))
+            {
+                throw new InvalidOperationException(
+                    $"Catálogo MCP não contém a tool de domínio obrigatória '{domainToolName}'.");
+            }
+
+            ToolDefinitions.Add(generatedTool);
+            ToolMap[domainToolName] = generatedTool;
+        }
+    }
 
     private readonly BudApiClient _budApiClient = budApiClient;
     private readonly BudApiSession _session = session;
+    private readonly IReadOnlyList<McpToolDefinition> _toolDefinitions = ToolDefinitions;
 
-    public IReadOnlyList<McpToolDefinition> GetTools() => ToolDefinitions;
+    public IReadOnlyList<McpToolDefinition> GetTools() => _toolDefinitions;
 
     public async Task<JsonNode> ExecuteAsync(string name, JsonElement arguments, CancellationToken cancellationToken = default)
     {
@@ -245,7 +243,7 @@ public sealed class McpToolService(BudApiClient budApiClient, BudApiSession sess
         };
     }
 
-    private static JsonNode HelpActionSchema(JsonElement arguments)
+    private static JsonObject HelpActionSchema(JsonElement arguments)
     {
         var action = TryGetString(arguments, "action");
         if (string.IsNullOrWhiteSpace(action))
@@ -341,48 +339,6 @@ public sealed class McpToolService(BudApiClient budApiClient, BudApiSession sess
     }
 
     private static McpToolDefinition CreateTool(string name, string description, JsonObject schema) => new(name, description, schema);
-
-    private static JsonObject IdSchema() =>
-        new()
-        {
-            ["type"] = "object",
-            ["additionalProperties"] = false,
-            ["required"] = new JsonArray("id"),
-            ["properties"] = new JsonObject
-            {
-                ["id"] = new JsonObject { ["type"] = "string", ["format"] = "uuid" }
-            }
-        };
-
-    private static JsonObject IdWithPayloadSchema<TPayload>() =>
-        new()
-        {
-            ["type"] = "object",
-            ["additionalProperties"] = false,
-            ["required"] = new JsonArray("id", "payload"),
-            ["properties"] = new JsonObject
-            {
-                ["id"] = new JsonObject { ["type"] = "string", ["format"] = "uuid" },
-                ["payload"] = SchemaFor<TPayload>()
-            }
-        };
-
-    private static JsonObject SchemaFor<T>() => BuildObjectSchema(typeof(T));
-
-    private static JsonObject EnumSchema<TEnum>() where TEnum : struct, Enum
-    {
-        var values = new JsonArray();
-        foreach (var value in Enum.GetNames<TEnum>())
-        {
-            values.Add(value);
-        }
-
-        return new JsonObject
-        {
-            ["type"] = "string",
-            ["enum"] = values
-        };
-    }
 
     private static Guid ParseId(JsonElement arguments) => ParseGuid(arguments, "id");
 
@@ -569,148 +525,6 @@ public sealed class McpToolService(BudApiClient budApiClient, BudApiSession sess
         }
 
         throw new InvalidOperationException($"Valor inválido para {propertyName}.");
-    }
-
-    private static JsonObject BuildObjectSchema(Type type)
-    {
-        var properties = new JsonObject();
-        var required = new JsonArray();
-
-        var publicProperties = type.GetProperties(BindingFlags.Public | BindingFlags.Instance)
-            .Where(property => property.CanRead && property.CanWrite)
-            .OrderBy(property => property.MetadataToken);
-
-        foreach (var property in publicProperties)
-        {
-            var propertySchema = BuildPropertySchema(property.PropertyType);
-            properties[ToCamelCase(property.Name)] = propertySchema;
-
-            if (IsRequired(property))
-            {
-                required.Add(ToCamelCase(property.Name));
-            }
-        }
-
-        var schema = new JsonObject
-        {
-            ["type"] = "object",
-            ["additionalProperties"] = false,
-            ["properties"] = properties,
-            ["description"] = $"Payload compatível com {type.Name}."
-        };
-
-        if (required.Count > 0)
-        {
-            schema["required"] = required;
-        }
-
-        return schema;
-    }
-
-    private static JsonObject BuildPropertySchema(Type type)
-    {
-        var underlying = Nullable.GetUnderlyingType(type) ?? type;
-
-        if (underlying.IsEnum)
-        {
-            var values = new JsonArray();
-            foreach (var enumName in Enum.GetNames(underlying))
-            {
-                values.Add(enumName);
-            }
-
-            return new JsonObject
-            {
-                ["type"] = "string",
-                ["enum"] = values
-            };
-        }
-
-        if (underlying == typeof(Guid))
-        {
-            return new JsonObject
-            {
-                ["type"] = "string",
-                ["format"] = "uuid"
-            };
-        }
-
-        if (underlying == typeof(DateTime) || underlying == typeof(DateTimeOffset))
-        {
-            return new JsonObject
-            {
-                ["type"] = "string",
-                ["format"] = "date-time"
-            };
-        }
-
-        if (underlying == typeof(string))
-        {
-            return new JsonObject { ["type"] = "string" };
-        }
-
-        if (underlying == typeof(bool))
-        {
-            return new JsonObject { ["type"] = "boolean" };
-        }
-
-        if (underlying == typeof(byte) ||
-            underlying == typeof(sbyte) ||
-            underlying == typeof(short) ||
-            underlying == typeof(ushort) ||
-            underlying == typeof(int) ||
-            underlying == typeof(uint) ||
-            underlying == typeof(long) ||
-            underlying == typeof(ulong))
-        {
-            return new JsonObject { ["type"] = "integer" };
-        }
-
-        if (underlying == typeof(float) ||
-            underlying == typeof(double) ||
-            underlying == typeof(decimal))
-        {
-            return new JsonObject { ["type"] = "number" };
-        }
-
-        if (underlying.IsClass)
-        {
-            return BuildObjectSchema(underlying);
-        }
-
-        return new JsonObject { ["type"] = "string" };
-    }
-
-    private static bool IsRequired(PropertyInfo propertyInfo)
-    {
-        var type = propertyInfo.PropertyType;
-        if (Nullable.GetUnderlyingType(type) is not null)
-        {
-            return false;
-        }
-
-        if (type.IsValueType)
-        {
-            return true;
-        }
-
-        var nullability = NullabilityContext.Create(propertyInfo);
-        return nullability.WriteState == NullabilityState.NotNull;
-    }
-
-    private static string ToCamelCase(string value)
-    {
-        if (string.IsNullOrEmpty(value) || !char.IsUpper(value[0]))
-        {
-            return value;
-        }
-
-        if (value.Length == 1)
-        {
-            return value.ToLowerInvariant();
-        }
-
-        return char.ToLowerInvariant(value[0]) + value[1..];
     }
 
     private static JsonObject BuildActionHelp(McpToolDefinition tool)

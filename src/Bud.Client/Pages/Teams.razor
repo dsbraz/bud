@@ -315,12 +315,25 @@
         OrgContext.OnOrganizationChanged += HandleOrganizationChanged;
     }
 
-    private async void HandleOrganizationChanged()
+    private void HandleOrganizationChanged()
     {
-        await LoadWorkspaces();
-        await LoadTeams();
-        await LoadCollaborators();
-        StateHasChanged();
+        _ = HandleOrganizationChangedAsync();
+    }
+
+    private async Task HandleOrganizationChangedAsync()
+    {
+        try
+        {
+            await LoadWorkspaces();
+            await LoadTeams();
+            await LoadCollaborators();
+            await InvokeAsync(StateHasChanged);
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"Erro ao atualizar equipes por troca de organização: {ex.Message}");
+            ToastService.ShowError("Erro ao atualizar equipes", "Não foi possível atualizar os dados da organização selecionada.");
+        }
     }
 
     public void Dispose()
@@ -468,11 +481,13 @@
         }
         catch (HttpRequestException ex)
         {
-            ToastService.ShowError("Erro ao criar equipe", ex.Message);
+            Console.Error.WriteLine($"Erro HTTP ao criar equipe: {ex.Message}");
+            ToastService.ShowError("Erro ao criar equipe", "Não foi possível criar a equipe. Verifique os dados e tente novamente.");
         }
         catch (Exception ex)
         {
-            ToastService.ShowError("Erro inesperado", ex.Message);
+            Console.Error.WriteLine($"Erro inesperado ao criar equipe: {ex.Message}");
+            ToastService.ShowError("Erro inesperado", "Não foi possível criar a equipe. Tente novamente.");
         }
     }
 
@@ -538,11 +553,13 @@
         }
         catch (HttpRequestException ex)
         {
-            ToastService.ShowError("Erro ao atualizar", ex.Message);
+            Console.Error.WriteLine($"Erro HTTP ao atualizar equipe: {ex.Message}");
+            ToastService.ShowError("Erro ao atualizar", "Não foi possível atualizar a equipe. Verifique os dados e tente novamente.");
         }
         catch (Exception ex)
         {
-            ToastService.ShowError("Erro inesperado", ex.Message);
+            Console.Error.WriteLine($"Erro inesperado ao atualizar equipe: {ex.Message}");
+            ToastService.ShowError("Erro inesperado", "Não foi possível atualizar a equipe. Tente novamente.");
         }
     }
 
@@ -595,11 +612,13 @@
         }
         catch (HttpRequestException ex)
         {
-            ToastService.ShowError("Erro ao excluir", ex.Message);
+            Console.Error.WriteLine($"Erro HTTP ao excluir equipe: {ex.Message}");
+            ToastService.ShowError("Erro ao excluir", "Não foi possível excluir a equipe. Tente novamente.");
         }
         catch (Exception ex)
         {
-            ToastService.ShowError("Erro inesperado", ex.Message);
+            Console.Error.WriteLine($"Erro inesperado ao excluir equipe: {ex.Message}");
+            ToastService.ShowError("Erro inesperado", "Não foi possível excluir a equipe. Tente novamente.");
         }
         finally
         {

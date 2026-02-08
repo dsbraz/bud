@@ -278,17 +278,30 @@
         OrgContext.OnOrganizationChanged += HandleOrganizationChanged;
     }
 
-    private async void HandleOrganizationChanged()
+    private void HandleOrganizationChanged()
     {
-        await InvokeAsync(async () =>
+        _ = HandleOrganizationChangedAsync();
+    }
+
+    private async Task HandleOrganizationChangedAsync()
+    {
+        try
         {
-            filterMissionId = null;
-            filterMetricId = null;
-            await LoadMissions();
-            await LoadAllMetrics();
-            await LoadCheckins();
-            StateHasChanged();
-        });
+            await InvokeAsync(async () =>
+            {
+                filterMissionId = null;
+                filterMetricId = null;
+                await LoadMissions();
+                await LoadAllMetrics();
+                await LoadCheckins();
+                StateHasChanged();
+            });
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"Erro ao atualizar check-ins por troca de organização: {ex.Message}");
+            ToastService.ShowError("Erro ao atualizar check-ins", "Não foi possível atualizar os dados da organização selecionada.");
+        }
     }
 
     public void Dispose()
@@ -304,9 +317,11 @@
             var result = await Api.GetMissionsAsync(null, null, null, 1, 100);
             missions = result?.Items.ToList() ?? new List<Mission>();
         }
-        catch (Exception)
+        catch (Exception ex)
         {
+            Console.Error.WriteLine($"Erro ao carregar missões para check-ins: {ex.Message}");
             missions = new List<Mission>();
+            ToastService.ShowError("Erro ao carregar missões", "Não foi possível carregar as missões.");
         }
     }
 
@@ -318,10 +333,12 @@
             allMetrics = result?.Items.ToList() ?? new List<MissionMetric>();
             UpdateFilterMetrics();
         }
-        catch (Exception)
+        catch (Exception ex)
         {
+            Console.Error.WriteLine($"Erro ao carregar métricas para check-ins: {ex.Message}");
             allMetrics = new List<MissionMetric>();
             filterMetrics = new List<MissionMetric>();
+            ToastService.ShowError("Erro ao carregar métricas", "Não foi possível carregar as métricas.");
         }
     }
 
@@ -351,9 +368,11 @@
             checkins = await Api.GetMetricCheckinsAsync(metricId, metricId.HasValue ? null : missionId, 1, 20)
                        ?? new PagedResult<MetricCheckin>();
         }
-        catch (Exception)
+        catch (Exception ex)
         {
+            Console.Error.WriteLine($"Erro ao carregar check-ins: {ex.Message}");
             checkins = new PagedResult<MetricCheckin>();
+            ToastService.ShowError("Erro ao carregar check-ins", "Não foi possível carregar os check-ins.");
         }
     }
 
@@ -391,8 +410,9 @@
                 var result = await Api.GetMissionMetricsByMissionIdAsync(missionId);
                 createMetrics = result?.Items.ToList() ?? new List<MissionMetric>();
             }
-            catch
+            catch (Exception ex)
             {
+                Console.Error.WriteLine($"Erro ao carregar métricas da missão selecionada: {ex.Message}");
                 createMetrics = new List<MissionMetric>();
             }
         }
@@ -440,7 +460,8 @@
         }
         catch (HttpRequestException ex)
         {
-            ToastService.ShowError("Erro ao criar check-in", ex.Message);
+            Console.Error.WriteLine($"Erro HTTP ao criar check-in: {ex.Message}");
+            ToastService.ShowError("Erro ao criar check-in", "Não foi possível criar o check-in. Verifique os dados e tente novamente.");
         }
     }
 
@@ -483,7 +504,8 @@
         }
         catch (HttpRequestException ex)
         {
-            ToastService.ShowError("Erro ao atualizar", ex.Message);
+            Console.Error.WriteLine($"Erro HTTP ao atualizar check-in: {ex.Message}");
+            ToastService.ShowError("Erro ao atualizar", "Não foi possível atualizar o check-in. Verifique os dados e tente novamente.");
         }
     }
 
@@ -519,7 +541,8 @@
         }
         catch (HttpRequestException ex)
         {
-            ToastService.ShowError("Erro ao excluir", ex.Message);
+            Console.Error.WriteLine($"Erro HTTP ao excluir check-in: {ex.Message}");
+            ToastService.ShowError("Erro ao excluir", "Não foi possível excluir o check-in. Tente novamente.");
         }
         finally
         {
