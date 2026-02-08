@@ -3,6 +3,7 @@ using System.Net.Http.Json;
 using Bud.Shared.Contracts;
 using Bud.Shared.Models;
 using FluentAssertions;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Xunit;
@@ -102,6 +103,19 @@ public class TeamsEndpointsTests : IClassFixture<CustomWebApplicationFactory>
     }
 
     #region Create Tests
+
+    [Fact]
+    public async Task GetAll_WithInvalidPageSize_ReturnsBadRequest()
+    {
+        // Act
+        var response = await _client.GetAsync("/api/teams?page=1&pageSize=101");
+
+        // Assert
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        var problem = await response.Content.ReadFromJsonAsync<ProblemDetails>();
+        problem.Should().NotBeNull();
+        problem!.Detail.Should().Be("O parâmetro 'pageSize' deve estar entre 1 e 100.");
+    }
 
     [Fact]
     public async Task Create_WithValidParentTeam_ReturnsCreated()

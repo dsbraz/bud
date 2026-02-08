@@ -135,7 +135,7 @@ public sealed class CollaboratorsController(
             return searchValidation.Failure;
         }
 
-        var paginationValidation = ValidatePagination(page, pageSize, maxPageSize: 1000);
+        var paginationValidation = ValidatePagination(page, pageSize);
         if (paginationValidation is not null)
         {
             return paginationValidation;

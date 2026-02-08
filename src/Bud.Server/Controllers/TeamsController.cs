@@ -122,7 +122,7 @@ public sealed class TeamsController(
             return searchValidation.Failure;
         }
 
-        var paginationValidation = ValidatePagination(page, pageSize, maxPageSize: 200);
+        var paginationValidation = ValidatePagination(page, pageSize);
         if (paginationValidation is not null)
         {
             return paginationValidation;

@@ -7,6 +7,7 @@ namespace Bud.Client.Services;
 
 public sealed class ApiClient
 {
+    private const int MaxPageSize = 100;
     private readonly HttpClient _http;
 
     public ApiClient(HttpClient http)
@@ -21,6 +22,8 @@ public sealed class ApiClient
 
     public async Task<PagedResult<Organization>?> GetOrganizationsAsync(string? search, int page = 1, int pageSize = 10)
     {
+        (page, pageSize) = NormalizePagination(page, pageSize);
+
         var queryParams = new List<string>();
 
         if (!string.IsNullOrEmpty(search))
@@ -82,6 +85,8 @@ public sealed class ApiClient
 
     public async Task<PagedResult<Workspace>?> GetWorkspacesAsync(Guid? organizationId, string? search, int page = 1, int pageSize = 10)
     {
+        (page, pageSize) = NormalizePagination(page, pageSize);
+
         var queryParams = new List<string>();
 
         if (organizationId.HasValue)
@@ -98,6 +103,7 @@ public sealed class ApiClient
 
     public async Task<PagedResult<Collaborator>?> GetOrganizationCollaboratorsAsync(Guid organizationId, int page = 1, int pageSize = 10)
     {
+        (page, pageSize) = NormalizePagination(page, pageSize);
         var url = $"api/organizations/{organizationId}/collaborators?page={page}&pageSize={pageSize}";
         return await _http.GetFromJsonAsync<PagedResult<Collaborator>>(url);
     }
@@ -141,6 +147,8 @@ public sealed class ApiClient
 
     public async Task<PagedResult<Team>?> GetTeamsAsync(Guid? workspaceId, Guid? parentTeamId, string? search, int page = 1, int pageSize = 10)
     {
+        (page, pageSize) = NormalizePagination(page, pageSize);
+
         var queryParams = new List<string>();
 
         if (workspaceId.HasValue)
@@ -196,6 +204,8 @@ public sealed class ApiClient
 
     public async Task<PagedResult<Collaborator>?> GetCollaboratorsAsync(Guid? teamId, string? search, int page = 1, int pageSize = 10)
     {
+        (page, pageSize) = NormalizePagination(page, pageSize);
+
         var queryParams = new List<string>();
 
         if (teamId.HasValue)
@@ -254,6 +264,8 @@ public sealed class ApiClient
         int page = 1,
         int pageSize = 10)
     {
+        (page, pageSize) = NormalizePagination(page, pageSize);
+
         var queryParams = new List<string>();
 
         if (scopeType.HasValue)
@@ -283,12 +295,15 @@ public sealed class ApiClient
         int page = 1,
         int pageSize = 10)
     {
+        (page, pageSize) = NormalizePagination(page, pageSize);
         var url = $"api/missions/my-missions/{collaboratorId}?search={Uri.EscapeDataString(search ?? string.Empty)}&page={page}&pageSize={pageSize}";
         return await _http.GetFromJsonAsync<PagedResult<Mission>>(url);
     }
 
     public async Task<PagedResult<MissionMetric>?> GetMissionMetricsAsync(Guid? missionId, string? search, int page = 1, int pageSize = 10)
     {
+        (page, pageSize) = NormalizePagination(page, pageSize);
+
         var queryParams = new List<string>();
 
         if (missionId.HasValue)
@@ -360,6 +375,7 @@ public sealed class ApiClient
 
     public async Task<PagedResult<MissionMetric>?> GetMissionMetricsByMissionIdAsync(Guid missionId, int page = 1, int pageSize = 100)
     {
+        (page, pageSize) = NormalizePagination(page, pageSize);
         var url = $"api/missions/{missionId}/metrics?page={page}&pageSize={pageSize}";
         return await _http.GetFromJsonAsync<PagedResult<MissionMetric>>(url);
     }
@@ -391,6 +407,8 @@ public sealed class ApiClient
     // MetricCheckin methods
     public async Task<PagedResult<MetricCheckin>?> GetMetricCheckinsAsync(Guid? missionMetricId, Guid? missionId, int page = 1, int pageSize = 10)
     {
+        (page, pageSize) = NormalizePagination(page, pageSize);
+
         var queryParams = new List<string>();
 
         if (missionMetricId.HasValue)
@@ -562,5 +580,12 @@ public sealed class ApiClient
             url += $"?search={Uri.EscapeDataString(search)}";
         }
         return await _http.GetFromJsonAsync<List<CollaboratorSummaryDto>>(url);
+    }
+
+    private static (int Page, int PageSize) NormalizePagination(int page, int pageSize)
+    {
+        var normalizedPage = Math.Max(1, page);
+        var normalizedPageSize = Math.Clamp(pageSize, 1, MaxPageSize);
+        return (normalizedPage, normalizedPageSize);
     }
 }

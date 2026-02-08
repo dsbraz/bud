@@ -1014,13 +1014,13 @@ else
         var orgsResult = await Api.GetOrganizationsAsync(null, 1, 100);
         organizations = orgsResult?.Items.ToList() ?? new List<Organization>();
 
-        var workspacesResult = await Api.GetWorkspacesAsync(orgId, null, 1, 200);
+        var workspacesResult = await Api.GetWorkspacesAsync(orgId, null, 1, 100);
         workspaces = workspacesResult?.Items.ToList() ?? new List<Workspace>();
 
-        var teamsResult = await Api.GetTeamsAsync(null, null, null, 1, 200);
+        var teamsResult = await Api.GetTeamsAsync(null, null, null, 1, 100);
         teams = teamsResult?.Items.ToList() ?? new List<Team>();
 
-        var collaboratorsResult = await Api.GetCollaboratorsAsync(null, null, 1, 200);
+        var collaboratorsResult = await Api.GetCollaboratorsAsync(null, null, 1, 100);
         collaborators = collaboratorsResult?.Items.ToList() ?? new List<Collaborator>();
     }
 

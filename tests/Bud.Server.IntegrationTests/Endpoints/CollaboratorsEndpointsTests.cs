@@ -3,6 +3,7 @@ using System.Net.Http.Json;
 using Bud.Shared.Contracts;
 using Bud.Shared.Models;
 using FluentAssertions;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Xunit;
@@ -18,6 +19,17 @@ public class CollaboratorsEndpointsTests : IClassFixture<CustomWebApplicationFac
     {
         _factory = factory;
         _adminClient = factory.CreateGlobalAdminClient();
+    }
+
+    [Fact]
+    public async Task GetAll_WithInvalidPageSize_ReturnsBadRequest()
+    {
+        var response = await _adminClient.GetAsync("/api/collaborators?page=1&pageSize=101");
+
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        var problem = await response.Content.ReadFromJsonAsync<ProblemDetails>();
+        problem.Should().NotBeNull();
+        problem!.Detail.Should().Be("O parâmetro 'pageSize' deve estar entre 1 e 100.");
     }
 
     [Fact]
