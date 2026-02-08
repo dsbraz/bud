@@ -241,7 +241,7 @@
 
     private async Task LoadTeams()
     {
-        var result = await Api.GetTeamsAsync(null, null, null, 1, 200);
+        var result = await Api.GetTeamsAsync(null, null, null, 1, 100);
         teams = result?.Items.ToList() ?? new List<Team>();
     }
 

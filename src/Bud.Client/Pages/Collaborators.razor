@@ -395,13 +395,13 @@
 
     private async Task LoadTeams()
     {
-        var result = await Api.GetTeamsAsync(null, null, null, 1, 200);
+        var result = await Api.GetTeamsAsync(null, null, null, 1, 100);
         teams = result?.Items.ToList() ?? new List<Team>();
     }
 
     private async Task LoadWorkspaces()
     {
-        var result = await Api.GetWorkspacesAsync(OrgContext.SelectedOrganizationId, null, 1, 200);
+        var result = await Api.GetWorkspacesAsync(OrgContext.SelectedOrganizationId, null, 1, 100);
         workspaces = result?.Items.ToList() ?? new List<Workspace>();
     }
 
@@ -412,7 +412,7 @@
 
     private async Task LoadAllCollaborators()
     {
-        var result = await Api.GetCollaboratorsAsync(null, null, 1, 1000);
+        var result = await Api.GetCollaboratorsAsync(null, null, 1, 100);
         allCollaborators = result?.Items.ToList() ?? new List<Collaborator>();
     }
 

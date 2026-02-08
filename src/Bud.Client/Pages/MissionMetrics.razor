@@ -394,7 +394,7 @@
     {
         try
         {
-            var result = await Api.GetMissionsAsync(null, null, null, 1, 200);
+            var result = await Api.GetMissionsAsync(null, null, null, 1, 100);
             missions = result?.Items.ToList() ?? new List<Mission>();
         }
         catch (Exception)

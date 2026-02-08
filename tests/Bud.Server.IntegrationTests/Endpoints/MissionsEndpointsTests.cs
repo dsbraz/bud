@@ -354,6 +354,19 @@ public class MissionsEndpointsTests : IClassFixture<CustomWebApplicationFactory>
     }
 
     [Fact]
+    public async Task GetAll_WithInvalidPageSize_ReturnsBadRequest()
+    {
+        // Act
+        var response = await _client.GetAsync("/api/missions?page=1&pageSize=101");
+
+        // Assert
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        var problem = await response.Content.ReadFromJsonAsync<ProblemDetails>();
+        problem.Should().NotBeNull();
+        problem!.Detail.Should().Be("O parâmetro 'pageSize' deve estar entre 1 e 100.");
+    }
+
+    [Fact]
     public async Task GetAll_WithSearchTooLong_ReturnsBadRequest()
     {
         // Arrange

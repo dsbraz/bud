@@ -342,13 +342,13 @@
             : (Guid?)null;
         teams = await Api.GetTeamsAsync(filterWorkspaceId, null, search, 1, 20) ?? new PagedResult<Team>();
 
-        var allTeamsResult = await Api.GetTeamsAsync(null, null, null, 1, 200);
+        var allTeamsResult = await Api.GetTeamsAsync(null, null, null, 1, 100);
         allTeams = allTeamsResult?.Items.ToList() ?? new List<Team>();
     }
 
     private async Task LoadCollaborators()
     {
-        var result = await Api.GetCollaboratorsAsync(null, null, 1, 1000);
+        var result = await Api.GetCollaboratorsAsync(null, null, 1, 100);
         collaborators = result?.Items.ToList() ?? new List<Collaborator>();
     }
 
@@ -417,7 +417,7 @@
 
         if (Guid.TryParse(createWorkspaceId, out var workspaceId))
         {
-            var result = await Api.GetTeamsAsync(workspaceId, null, null, 1, 200);
+            var result = await Api.GetTeamsAsync(workspaceId, null, null, 1, 100);
             parentTeams = result?.Items.ToList() ?? new List<Team>();
         }
     }
@@ -487,7 +487,7 @@
         editParentTeamId = team.ParentTeamId?.ToString() ?? "";
 
         // Carregar equipes do mesmo workspace para seleção de equipe pai
-        var result = await Api.GetTeamsAsync(team.WorkspaceId, null, null, 1, 200);
+        var result = await Api.GetTeamsAsync(team.WorkspaceId, null, null, 1, 100);
         editParentTeams = result?.Items.ToList() ?? new List<Team>();
 
         // Load collaborators for TransferList
