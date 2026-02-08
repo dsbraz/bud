@@ -31,6 +31,7 @@ This file provides guidance to coding agents when working with code in this repo
 - Update tests together with production code changes.
 - Keep OpenAPI semantic documentation aligned with implementation.
 - Update or create ADR when architectural behavior changes.
+- For `Bud.Mcp`, keep tool schemas explicit (`required`, field types/formats/enums) and propagate API validation details (`errors` by field) in tool errors.
 
 ### SHOULD
 
@@ -117,7 +118,7 @@ Bud is an ASP.NET Core 10 application with a Blazor WebAssembly frontend, using 
 
 - **Bud.Mcp** (`src/Bud.Mcp`): MCP server (`stdio`) para integração com agentes
   - `Protocol/`: infraestrutura JSON-RPC/MCP over stdio
-  - `Tools/`: definição e execução de ferramentas MCP
+  - `Tools/`: definição e execução de ferramentas MCP (incluindo `help_action_schema` e `session_bootstrap` para descoberta orientada)
   - `Auth/`: sessão/autenticação e contexto de tenant (com login dinâmico por tool `auth_login`; `BUD_USER_EMAIL` opcional)
   - `Http/`: cliente para consumo dos endpoints do `Bud.Server`
 

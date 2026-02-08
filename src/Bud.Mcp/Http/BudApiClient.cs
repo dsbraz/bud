@@ -11,7 +11,8 @@ namespace Bud.Mcp.Http;
 
 public sealed class BudApiClient(HttpClient httpClient, BudApiSession session)
 {
-    private static readonly JsonSerializerOptions JsonOptions = new()
+    private static readonly JsonSerializerOptions RequestJsonOptions = new(JsonSerializerDefaults.Web);
+    private static readonly JsonSerializerOptions ResponseJsonOptions = new()
     {
         PropertyNameCaseInsensitive = true,
         Converters = { new JsonStringEnumConverter() }
@@ -91,7 +92,7 @@ public sealed class BudApiClient(HttpClient httpClient, BudApiSession session)
     private async Task<TResponse> PostAsync<TRequest, TResponse>(string path, TRequest payload, CancellationToken cancellationToken)
     {
         using var request = _session.CreateDomainRequest(HttpMethod.Post, path);
-        request.Content = JsonContent.Create(payload, options: JsonOptions);
+        request.Content = JsonContent.Create(payload, options: RequestJsonOptions);
         using var response = await _httpClient.SendAsync(request, cancellationToken);
         return await ReadSuccessResponseOrThrowAsync<TResponse>(response, cancellationToken);
     }
@@ -99,7 +100,7 @@ public sealed class BudApiClient(HttpClient httpClient, BudApiSession session)
     private async Task<TResponse> PutAsync<TRequest, TResponse>(string path, TRequest payload, CancellationToken cancellationToken)
     {
         using var request = _session.CreateDomainRequest(HttpMethod.Put, path);
-        request.Content = JsonContent.Create(payload, options: JsonOptions);
+        request.Content = JsonContent.Create(payload, options: RequestJsonOptions);
         using var response = await _httpClient.SendAsync(request, cancellationToken);
         return await ReadSuccessResponseOrThrowAsync<TResponse>(response, cancellationToken);
     }
@@ -121,7 +122,7 @@ public sealed class BudApiClient(HttpClient httpClient, BudApiSession session)
             throw await BudApiException.FromHttpResponseAsync(response, cancellationToken);
         }
 
-        var payload = await response.Content.ReadFromJsonAsync<T>(JsonOptions, cancellationToken);
+        var payload = await response.Content.ReadFromJsonAsync<T>(ResponseJsonOptions, cancellationToken);
         if (payload is null)
         {
             throw new InvalidOperationException("Resposta da API Bud inválida ou vazia.");

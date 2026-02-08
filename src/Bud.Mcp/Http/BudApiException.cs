@@ -3,9 +3,18 @@ using System.Text.Json;
 
 namespace Bud.Mcp.Http;
 
-public sealed class BudApiException(string message, HttpStatusCode statusCode) : Exception(message)
+public sealed class BudApiException(
+    string message,
+    HttpStatusCode statusCode,
+    string? title = null,
+    string? detail = null,
+    IReadOnlyDictionary<string, IReadOnlyList<string>>? validationErrors = null) : Exception(message)
 {
     public HttpStatusCode StatusCode { get; } = statusCode;
+    public string? Title { get; } = title;
+    public string? Detail { get; } = detail;
+    public IReadOnlyDictionary<string, IReadOnlyList<string>> ValidationErrors { get; } =
+        validationErrors ?? new Dictionary<string, IReadOnlyList<string>>(StringComparer.Ordinal);
 
     public static async Task<BudApiException> FromHttpResponseAsync(HttpResponseMessage response, CancellationToken cancellationToken = default)
     {
@@ -21,32 +30,24 @@ public sealed class BudApiException(string message, HttpStatusCode statusCode) :
         {
             using var document = JsonDocument.Parse(body);
             var root = document.RootElement;
+            var title = TryGetPropertyString(root, "title", out var titleValue) ? titleValue : null;
+            var detail = TryGetPropertyString(root, "detail", out var detailValue) ? detailValue : null;
+            var errors = ExtractValidationErrors(root);
 
-            if (TryGetPropertyString(root, "detail", out var detail))
+            if (errors.Count > 0)
             {
-                return new BudApiException(detail!, response.StatusCode);
+                var message = BuildValidationMessage(errors);
+                return new BudApiException(message, response.StatusCode, title, detail, errors);
             }
 
-            if (TryGetPropertyString(root, "title", out var title))
+            if (!string.IsNullOrWhiteSpace(detail))
             {
-                return new BudApiException(title!, response.StatusCode);
+                return new BudApiException(detail!, response.StatusCode, title, detail, errors);
             }
 
-            if (root.TryGetProperty("errors", out var errors) && errors.ValueKind == JsonValueKind.Object)
+            if (!string.IsNullOrWhiteSpace(title))
             {
-                foreach (var property in errors.EnumerateObject())
-                {
-                    if (property.Value.ValueKind != JsonValueKind.Array)
-                    {
-                        continue;
-                    }
-
-                    var firstError = property.Value.EnumerateArray().FirstOrDefault();
-                    if (firstError.ValueKind == JsonValueKind.String)
-                    {
-                        return new BudApiException(firstError.GetString() ?? fallbackMessage, response.StatusCode);
-                    }
-                }
+                return new BudApiException(title!, response.StatusCode, title, detail, errors);
             }
         }
         catch (JsonException)
@@ -55,6 +56,45 @@ public sealed class BudApiException(string message, HttpStatusCode statusCode) :
         }
 
         return new BudApiException(fallbackMessage, response.StatusCode);
+    }
+
+    private static Dictionary<string, IReadOnlyList<string>> ExtractValidationErrors(JsonElement root)
+    {
+        if (!root.TryGetProperty("errors", out var errors) || errors.ValueKind != JsonValueKind.Object)
+        {
+            return new Dictionary<string, IReadOnlyList<string>>(StringComparer.Ordinal);
+        }
+
+        var validationErrors = new Dictionary<string, IReadOnlyList<string>>(StringComparer.Ordinal);
+
+        foreach (var property in errors.EnumerateObject())
+        {
+            if (property.Value.ValueKind != JsonValueKind.Array)
+            {
+                continue;
+            }
+
+            var messages = property.Value
+                .EnumerateArray()
+                .Where(item => item.ValueKind == JsonValueKind.String)
+                .Select(item => item.GetString())
+                .Where(message => !string.IsNullOrWhiteSpace(message))
+                .Cast<string>()
+                .ToList();
+
+            if (messages.Count > 0)
+            {
+                validationErrors[property.Name] = messages;
+            }
+        }
+
+        return validationErrors;
+    }
+
+    private static string BuildValidationMessage(IReadOnlyDictionary<string, IReadOnlyList<string>> errors)
+    {
+        var entries = errors.Select(error => $"{error.Key}: {string.Join(" | ", error.Value)}");
+        return $"Falha de validação: {string.Join("; ", entries)}";
     }
 
     private static bool TryGetPropertyString(JsonElement root, string propertyName, out string? value)

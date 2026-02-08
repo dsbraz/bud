@@ -394,9 +394,18 @@ docker exec -i bud-mcp dotnet /src/src/Bud.Mcp/bin/Debug/net10.0/Bud.Mcp.dll
 - `auth_whoami`
 - `tenant_list_available`
 - `tenant_set_current`
+- `session_bootstrap`
+- `help_action_schema`
 - `mission_create`, `mission_get`, `mission_list`, `mission_update`, `mission_delete`
 - `mission_metric_create`, `mission_metric_get`, `mission_metric_list`, `mission_metric_update`, `mission_metric_delete`
 - `metric_checkin_create`, `metric_checkin_get`, `metric_checkin_list`, `metric_checkin_update`, `metric_checkin_delete`
+
+### Descoberta de parâmetros e bootstrap de sessão no MCP
+
+- `auth_login` retorna `whoami`, `requiresTenantForDomainTools` e `nextSteps` para orientar o agente nos próximos passos.
+- `session_bootstrap` retorna snapshot de sessão (`whoami`, `availableTenants`, tenant atual) e `starterSchemas` para fluxos de criação.
+- `help_action_schema` retorna `required`, `inputSchema` e `example` para uma ação específica (ou todas as ações, quando `action` não é informado).
+- Em erro de validação da API, o MCP retorna `statusCode`, `title`, `detail` e `errors` por campo quando disponível.
 
 ## Onboarding rápido (30 min)
 

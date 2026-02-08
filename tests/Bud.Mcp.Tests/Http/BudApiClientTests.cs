@@ -65,6 +65,13 @@ public sealed class BudApiClientTests
                 request.Headers.TryGetValues("X-Tenant-Id", out var tenantValues).Should().BeTrue();
                 tenantValues!.Single().Should().Be(tenantId.ToString());
 
+                var payload = JsonDocument.Parse(request.Content!.ReadAsStringAsync().GetAwaiter().GetResult()).RootElement;
+                payload.TryGetProperty("request", out _).Should().BeFalse();
+                payload.GetProperty("status").ValueKind.Should().Be(JsonValueKind.Number);
+                payload.GetProperty("status").GetInt32().Should().Be((int)MissionStatus.Active);
+                payload.GetProperty("scopeType").ValueKind.Should().Be(JsonValueKind.Number);
+                payload.GetProperty("scopeType").GetInt32().Should().Be((int)MissionScopeType.Organization);
+
                 return JsonResponse(new Mission
                 {
                     Id = responseMissionId,

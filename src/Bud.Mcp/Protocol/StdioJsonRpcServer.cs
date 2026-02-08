@@ -129,11 +129,32 @@ public sealed class StdioJsonRpcServer(McpToolService toolService)
         }
         catch (Exception ex) when (ex is BudApiException or InvalidOperationException or TimeoutException or HttpRequestException)
         {
-            return ToolResult(new JsonObject
+            var payload = new JsonObject
             {
                 ["message"] = ex.Message,
                 ["tool"] = toolName
-            }, isError: true);
+            };
+
+            if (ex is BudApiException budApiException)
+            {
+                payload["statusCode"] = (int)budApiException.StatusCode;
+                if (!string.IsNullOrWhiteSpace(budApiException.Title))
+                {
+                    payload["title"] = budApiException.Title;
+                }
+
+                if (!string.IsNullOrWhiteSpace(budApiException.Detail))
+                {
+                    payload["detail"] = budApiException.Detail;
+                }
+
+                if (budApiException.ValidationErrors.Count > 0)
+                {
+                    payload["errors"] = ToJsonErrors(budApiException.ValidationErrors);
+                }
+            }
+
+            return ToolResult(payload, isError: true);
         }
     }
 
@@ -151,6 +172,23 @@ public sealed class StdioJsonRpcServer(McpToolService toolService)
             },
             ["isError"] = isError
         };
+    }
+
+    private static JsonObject ToJsonErrors(IReadOnlyDictionary<string, IReadOnlyList<string>> validationErrors)
+    {
+        var jsonErrors = new JsonObject();
+        foreach (var (key, messages) in validationErrors)
+        {
+            var jsonMessages = new JsonArray();
+            foreach (var message in messages)
+            {
+                jsonMessages.Add(message);
+            }
+
+            jsonErrors[key] = jsonMessages;
+        }
+
+        return jsonErrors;
     }
 
     private static async Task<ReadResult?> ReadMessageAsync(Stream stream, CancellationToken cancellationToken)
