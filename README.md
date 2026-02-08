@@ -17,6 +17,7 @@ Este documento é voltado para devs que precisam:
 - [Como contribuir](#como-contribuir)
 - [Como rodar](#como-rodar-com-docker)
 - [Como rodar sem Docker](#como-rodar-sem-docker)
+- [Servidor MCP (Missões e Métricas)](#servidor-mcp-missões-e-métricas)
 - [Onboarding rápido (30 min)](#onboarding-rápido-30-min)
 - [Testes](#testes)
 - [Outbox (resiliência de eventos)](#outbox-resiliência-de-eventos)
@@ -346,6 +347,56 @@ dotnet restore
 dotnet build
 dotnet run --project src/Bud.Server
 ```
+
+## Servidor MCP (Missões e Métricas)
+
+O repositório inclui um servidor MCP em `src/Bud.Mcp`, executado em `stdio`, pensado para rodar como sidecar Docker e consumir a API do `Bud.Server`.
+
+### Configuração (`appsettings` + override por ambiente)
+
+O `Bud.Mcp` lê configuração na seguinte ordem:
+1. `appsettings.json`
+2. `appsettings.{DOTNET_ENVIRONMENT}.json`
+3. variáveis de ambiente (override)
+
+Chaves suportadas:
+- `BudMcp:ApiBaseUrl` (ou `BUD_API_BASE_URL`)
+- `BudMcp:UserEmail` (ou `BUD_USER_EMAIL`) opcional, para login automático no boot
+- `BudMcp:DefaultTenantId` (ou `BUD_DEFAULT_TENANT_ID`)
+- `BudMcp:HttpTimeoutSeconds` (ou `BUD_HTTP_TIMEOUT_SECONDS`)
+
+### Subindo via Docker Compose
+
+```bash
+docker compose up --build
+```
+
+O serviço `mcp` é criado no compose com `stdin_open`/`tty`, usando:
+- `Dockerfile` (target `dev-mcp`; mantém container pronto para `docker exec`)
+- `DOTNET_ENVIRONMENT=Development` (usa `src/Bud.Mcp/appsettings.Development.json`)
+- sem usuário fixo; a autenticação é feita por tool `auth_login`
+
+Compile o MCP no container antes de conectar o cliente:
+
+```bash
+docker exec -i bud-mcp dotnet build /src/src/Bud.Mcp/Bud.Mcp.csproj
+```
+
+Quando usado por clientes MCP (ex.: Claude Desktop), execute o binário compilado (não `dotnet run`) para evitar logs de build no canal JSON-RPC:
+
+```bash
+docker exec -i bud-mcp dotnet /src/src/Bud.Mcp/bin/Debug/net10.0/Bud.Mcp.dll
+```
+
+### Ferramentas MCP disponíveis
+
+- `auth_login`
+- `auth_whoami`
+- `tenant_list_available`
+- `tenant_set_current`
+- `mission_create`, `mission_get`, `mission_list`, `mission_update`, `mission_delete`
+- `mission_metric_create`, `mission_metric_get`, `mission_metric_list`, `mission_metric_update`, `mission_metric_delete`
+- `metric_checkin_create`, `metric_checkin_get`, `metric_checkin_list`, `metric_checkin_update`, `metric_checkin_delete`
 
 ## Onboarding rápido (30 min)
 

@@ -15,7 +15,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-      target: dev
+      target: dev-web
     container_name: bud-web
     environment:
       ASPNETCORE_ENVIRONMENT: Development
@@ -30,6 +30,26 @@ services:
       - dotnet_bin:/tmp/bin
     depends_on:
       - db
+
+  mcp:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: dev-mcp
+    container_name: bud-mcp
+    environment:
+      DOTNET_ENVIRONMENT: Development
+    command: ["tail", "-f", "/dev/null"]
+    volumes:
+      - ./src:/src/src
+      - ./Directory.Build.props:/src/Directory.Build.props
+      - nuget_cache:/root/.nuget/packages
+      - dotnet_obj:/tmp/obj
+      - dotnet_bin:/tmp/bin
+    stdin_open: true
+    tty: true
+    depends_on:
+      - web
 
 volumes:
   postgres_data:

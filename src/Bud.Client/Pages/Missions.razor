@@ -1011,7 +1011,7 @@ else
         // Filtrar dados pelo tenant selecionado
         var orgId = OrgContext.SelectedOrganizationId;
 
-        var orgsResult = await Api.GetOrganizationsAsync(null, 1, 200);
+        var orgsResult = await Api.GetOrganizationsAsync(null, 1, 100);
         organizations = orgsResult?.Items.ToList() ?? new List<Organization>();
 
         var workspacesResult = await Api.GetWorkspacesAsync(orgId, null, 1, 200);

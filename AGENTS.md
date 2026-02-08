@@ -115,9 +115,16 @@ Bud is an ASP.NET Core 10 application with a Blazor WebAssembly frontend, using 
   - `Models/`: Domain entities
   - `Contracts/`: Request/response DTOs
 
+- **Bud.Mcp** (`src/Bud.Mcp`): MCP server (`stdio`) para integração com agentes
+  - `Protocol/`: infraestrutura JSON-RPC/MCP over stdio
+  - `Tools/`: definição e execução de ferramentas MCP
+  - `Auth/`: sessão/autenticação e contexto de tenant (com login dinâmico por tool `auth_login`; `BUD_USER_EMAIL` opcional)
+  - `Http/`: cliente para consumo dos endpoints do `Bud.Server`
+
 - **Tests**:
   - `tests/Bud.Server.Tests/`: Unit tests (xUnit, Moq, FluentAssertions)
   - `tests/Bud.Server.IntegrationTests/`: Integration tests with WebApplicationFactory
+  - `tests/Bud.Mcp.Tests/`: Unit tests do servidor MCP
 
 - **Root**: `docker-compose.yml`, `README.md`, `AGENTS.md`
 
@@ -549,3 +556,5 @@ The `docker-compose.yml` configures:
 - **Authentication:** [AuthService.cs](src/Bud.Server/Services/AuthService.cs)
 - **Multi-tenancy (frontend):** [OrganizationContext.cs](src/Bud.Client/Services/OrganizationContext.cs), [MainLayout.razor](src/Bud.Client/Layout/MainLayout.razor), [TenantDelegatingHandler.cs](src/Bud.Client/Services/TenantDelegatingHandler.cs)
 - **Tenant entity marker:** [ITenantEntity.cs](src/Bud.Shared/Models/ITenantEntity.cs)
+- **MCP entrypoint:** [Program.cs](src/Bud.Mcp/Program.cs)
+- **MCP tools:** [McpToolService.cs](src/Bud.Mcp/Tools/McpToolService.cs)
