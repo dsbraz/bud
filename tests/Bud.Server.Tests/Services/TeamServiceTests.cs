@@ -823,12 +823,49 @@ public class TeamServiceTests
         var service = new TeamService(context);
 
         // Act
-        var result = await service.GetAvailableCollaboratorsAsync(team.Id, "Alice");
+        var result = await service.GetAvailableCollaboratorsAsync(team.Id, "alice");
 
         // Assert
         result.IsSuccess.Should().BeTrue();
-        result.Value.Should().HaveCount(1);
-        result.Value.First().FullName.Should().Be("Alice Smith");
+        result.Value.Should().NotBeNull();
+        var collaborators = result.Value!;
+        collaborators.Should().HaveCount(1);
+        collaborators[0].FullName.Should().Be("Alice Smith");
+    }
+
+    [Fact]
+    public async Task GetAllAsync_WithCaseInsensitiveSearch_FiltersCorrectly()
+    {
+        // Arrange
+        using var context = CreateInMemoryContext();
+        var (org, workspace) = await CreateTestHierarchy(context);
+
+        context.Teams.AddRange(
+            new Team
+            {
+                Id = Guid.NewGuid(),
+                Name = "ALPHA Team",
+                OrganizationId = org.Id,
+                WorkspaceId = workspace.Id
+            },
+            new Team
+            {
+                Id = Guid.NewGuid(),
+                Name = "Beta Team",
+                OrganizationId = org.Id,
+                WorkspaceId = workspace.Id
+            });
+        await context.SaveChangesAsync();
+
+        var service = new TeamService(context);
+
+        // Act
+        var result = await service.GetAllAsync(workspace.Id, null, "alpha", 1, 10);
+
+        // Assert
+        result.IsSuccess.Should().BeTrue();
+        result.Value!.Items.Should().HaveCount(1);
+        result.Value.Items[0].Name.Should().Be("ALPHA Team");
     }
 
     [Fact]

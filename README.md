@@ -3,6 +3,314 @@
 Aplicação unificada em ASP.NET Core + Blazor WebAssembly (SPA),
 utilizando PostgreSQL.
 
+## Para quem é este README
+
+Este documento é voltado para devs que precisam:
+- entender rapidamente a arquitetura e os padrões do Bud,
+- subir o ambiente local,
+- executar fluxos principais de desenvolvimento com segurança.
+
+## Índice
+
+- [Arquitetura da aplicação](#arquitetura-da-aplicação)
+- [Padrões arquiteturais adotados](#padrões-arquiteturais-adotados)
+- [Como contribuir](#como-contribuir)
+- [Como rodar](#como-rodar-com-docker)
+- [Como rodar sem Docker](#como-rodar-sem-docker)
+- [Onboarding rápido (30 min)](#onboarding-rápido-30-min)
+- [Testes](#testes)
+- [Outbox (resiliência de eventos)](#outbox-resiliência-de-eventos)
+- [Health checks](#health-checks)
+- [Endpoints principais](#endpoints-principais)
+- [Sistema de Design e Tokens](#sistema-de-design-e-tokens)
+
+## Arquitetura da aplicação
+
+### Visão geral
+
+O Bud segue uma arquitetura em camadas com separação explícita de responsabilidades:
+
+- **API/Host (`Bud.Server`)**: exposição HTTP, autenticação/autorização, middleware e composição de dependências.
+- **Application**: casos de uso (`Command/Query`), contratos de entrada/saída e regras de orquestração.
+- **Domain**: eventos e conceitos de domínio.
+- **Infrastructure**: implementação de capacidades técnicas (Outbox, processamento em background, serialização de eventos).
+- **Data**: EF Core (`ApplicationDbContext`), mapeamentos e migrations.
+- **Client (`Bud.Client`)**: SPA Blazor WASM com consumo da API.
+- **Shared (`Bud.Shared`)**: contratos e modelos compartilhados entre cliente e servidor.
+
+### Organização do backend (Bud.Server)
+
+- **Controllers** recebem requests, validam payloads (FluentValidation) e delegam para UseCases.
+- **UseCases** centralizam o fluxo da aplicação e retornam `ServiceResult`/`ServiceResult<T>`.
+- **Abstractions (`Application/Abstractions`)** definem portas usadas pelos UseCases.
+- **Services** implementam essas portas com regras de negócio e acesso a dados.
+- **DependencyInjection** modulariza bootstrap (`BudApi`, `BudSecurity`, `BudData`, `BudApplication`).
+
+### Padrões arquiteturais adotados
+
+- **UseCases + Ports/Adapters**  
+  Controllers delegam para UseCases, que dependem de abstrações; serviços implementam essas portas.
+  Referências: `docs/adr/ADR-0002-usecases-abstractions-services.md`.
+- **Policy-based Authorization (Requirement/Handler)**  
+  Regras de autorização centralizadas em policies e handlers, reduzindo condicionais espalhadas.
+  Referências: `docs/adr/ADR-0004-autenticacao-autorizacao.md`.
+- **Specification Pattern (consultas reutilizáveis)**  
+  Filtros de domínio encapsulados em specifications para evitar duplicação de predicados.
+  Referências: `src/Bud.Server/Domain/Common/Specifications/`.
+- **Domain Events + Subscribers**  
+  Eventos de domínio desacoplam efeitos colaterais e permitem evolução incremental de fluxos.
+  Referências: `src/Bud.Server/Domain/*/Events` e `src/Bud.Server/Application/*/Events`.
+- **UseCase Pipeline (cross-cutting concerns)**  
+  Comportamentos transversais (ex.: logging) aplicados via pipeline, sem poluir cada caso de uso.
+  Referências: `src/Bud.Server/Application/Common/Pipeline/`.
+- **Outbox Pattern (confiabilidade assíncrona)**  
+  Garante processamento assíncrono durável com retry/backoff/dead-letter.
+  Referências: `docs/adr/ADR-0008-outbox-retry-deadletter.md` e seção **Outbox (resiliência de eventos)** abaixo.
+- **Governança arquitetural por testes + ADRs**  
+  Decisões versionadas (ADR) e proteção contra regressão de fronteiras via testes de arquitetura.
+  Referências: `docs/adr/README.md` e `tests/Bud.Server.Tests/Architecture/ArchitectureTests.cs`.
+
+### Multi-tenancy
+
+Isolamento por organização (`OrganizationId`) com:
+
+- `ITenantProvider` para resolver tenant do contexto autenticado.
+- Query filters globais do EF Core.
+- `TenantRequiredMiddleware` para reforçar seleção/autorização de tenant em `/api/*`.
+- Cabeçalho `X-Tenant-Id` enviado pelo client quando uma organização específica está selecionada.
+
+### Fluxo de requisição (resumo)
+
+1. Request chega no controller.
+2. Payload é validado.
+3. Controller chama o UseCase correspondente.
+4. UseCase aplica regras de autorização/orquestração e delega para portas/serviços.
+5. Serviço persiste/consulta via `ApplicationDbContext`.
+6. Resultado (`ServiceResult`) é mapeado para resposta HTTP.
+
+### Outbox e processamento assíncrono
+
+Visão geral no fluxo arquitetural. Para detalhes operacionais (endpoints e configuração),
+veja a seção **Outbox (resiliência de eventos)** abaixo.
+
+### Testes e governança arquitetural
+
+- **Unit tests**: regras de negócio, validações, use cases e componentes de infraestrutura.
+- **Integration tests**: ciclo HTTP completo com PostgreSQL em container.
+- **Architecture tests**: evitam regressão de fronteira entre camadas (ex.: controller depender de service legado).
+- **ADRs**: decisões arquiteturais versionadas em `docs/adr/`.
+
+### ADRs e fluxo de PR
+
+- Toda mudança arquitetural deve criar/atualizar ADR.
+- ADRs seguem convenção `docs/adr/ADR-XXXX-*.md`.
+- Índice e convenções: `docs/adr/README.md`.
+- No PR, inclua explicitamente:
+  - `Architectural impact: yes/no`
+  - `ADR: ADR-XXXX` (quando aplicável)
+
+Para lista atualizada de ADRs e ordem recomendada de leitura, consulte:
+`docs/adr/README.md`.
+
+### Diagramas
+
+#### Arquitetura e fluxo principal
+
+```mermaid
+flowchart LR
+    A[Bud.Client<br/>Blazor WASM] -->|HTTP + JWT + X-Tenant-Id| B[Bud.Server Controllers]
+    B --> C[Application UseCases<br/>Command/Query]
+    C --> D[Application Abstractions]
+    D --> E[Services]
+    E --> F[(PostgreSQL<br/>ApplicationDbContext)]
+    C --> G[Domain Events]
+    G --> H[OutboxDomainEventDispatcher]
+    H --> I[(OutboxMessages)]
+    J[OutboxProcessorBackgroundService] --> K[OutboxEventProcessor]
+    K --> I
+    K --> L[IDomainEventSubscriber handlers]
+```
+
+#### Sequência de processamento do Outbox
+
+```mermaid
+sequenceDiagram
+    participant U as Usuário/Client
+    participant C as Controller
+    participant UC as UseCase
+    participant S as Service
+    participant DB as PostgreSQL
+    participant W as Outbox Worker
+
+    U->>C: Requisição de comando (create/update/delete)
+    C->>UC: Executa caso de uso
+    UC->>S: Executa regra de negócio
+    S->>DB: Persiste entidade
+    UC->>DB: Persiste evento em OutboxMessages
+    C-->>U: Resposta HTTP (sucesso)
+
+    loop polling interval
+        W->>DB: Busca mensagens pendentes elegíveis
+        W->>W: Desserializa evento e executa subscribers
+        alt Sucesso
+            W->>DB: Marca ProcessedOnUtc
+        else Falha transitória
+            W->>DB: Incrementa RetryCount e agenda NextAttemptOnUtc (backoff)
+        else Limite de tentativas
+            W->>DB: Marca DeadLetteredOnUtc
+        end
+    end
+```
+
+#### Modelo de domínio e hierarquia organizacional
+
+```mermaid
+flowchart TD
+    O[Organization]
+    W[Workspace]
+    T[Team]
+    ST[SubTeam]
+    C[Collaborator]
+    M[Mission]
+    MM[MissionMetric]
+    MC[MetricCheckin]
+
+    O --> W
+    W --> T
+    T --> ST
+    T --> C
+
+    O --> M
+    W -. escopo .-> M
+    T -. escopo .-> M
+    C -. escopo .-> M
+
+    M --> MM
+    MM --> MC
+```
+
+#### Fluxo de autenticação, tenant e autorização
+
+```mermaid
+sequenceDiagram
+    participant UI as Bud.Client
+    participant API as Bud.Server
+    participant AUTH as AuthController/AuthUseCase
+    participant TENANT as TenantRequiredMiddleware
+    participant CTRL as Controller
+
+    UI->>API: POST /api/auth/login
+    API->>AUTH: Valida e autentica por e-mail
+    AUTH-->>UI: JWT + organizações disponíveis
+
+    UI->>UI: Usuário seleciona organização (ou TODOS)
+    UI->>API: Request com Authorization: Bearer + X-Tenant-Id (opcional)
+    API->>TENANT: Valida autenticação e tenant selecionado
+    TENANT->>CTRL: Libera acesso conforme policies
+    CTRL-->>UI: Resposta filtrada por tenant
+```
+
+#### Pipeline de requisição (Controller -> UseCase -> Service)
+
+```mermaid
+flowchart LR
+    A[HTTP Request] --> B[Controller]
+    B --> C[FluentValidation]
+    C --> D[UseCase]
+    D --> E[Application Abstractions]
+    E --> F[Service Implementation]
+    F --> G[(ApplicationDbContext / PostgreSQL)]
+    D --> H[ServiceResult]
+    H --> I[Controller Mapping]
+    I --> J[HTTP Response / ProblemDetails]
+```
+
+#### Módulos do backend e dependências
+
+```mermaid
+flowchart TB
+    subgraph Host["Bud.Server Host"]
+      Controllers
+      Middleware
+      DependencyInjection
+    end
+    subgraph App["Application"]
+      UseCases
+      Abstractions
+      Pipeline
+    end
+    subgraph Domain["Domain"]
+      DomainEvents
+    end
+    subgraph Infra["Infrastructure"]
+      OutboxProcessor
+      EventSerializer
+    end
+    subgraph Data["Data"]
+      DbContext
+      Migrations
+    end
+
+    Controllers --> UseCases
+    UseCases --> Abstractions
+    Abstractions --> Services["Services (implementações)"]
+    Services --> DbContext
+    UseCases --> DomainEvents
+    DomainEvents --> OutboxProcessor
+    OutboxProcessor --> DbContext
+    DependencyInjection --> Controllers
+    DependencyInjection --> UseCases
+    DependencyInjection --> Services
+    DependencyInjection --> OutboxProcessor
+```
+
+#### Fronteira de responsabilidades (Client x API x Dados)
+
+```mermaid
+flowchart LR
+    subgraph Client["Bud.Client (Blazor WASM)"]
+      UI["Pages + Layout"]
+      ApiClient["ApiClient + TenantDelegatingHandler"]
+    end
+
+    subgraph Api["Bud.Server (API/Aplicação)"]
+      Controllers["Controllers"]
+      UseCases["UseCases"]
+      Services["Services + Abstractions"]
+      Authz["AuthN/AuthZ + Policies"]
+    end
+
+    subgraph Dados["Persistência"]
+      Db["ApplicationDbContext"]
+      Pg["PostgreSQL"]
+      Outbox["OutboxMessages"]
+    end
+
+    UI --> ApiClient
+    ApiClient --> Controllers
+    Controllers --> UseCases
+    UseCases --> Services
+    Controllers --> Authz
+    Services --> Db
+    Db --> Pg
+    UseCases --> Outbox
+```
+
+## Como contribuir
+
+Fluxo recomendado de contribuição para manter qualidade arquitetural e consistência:
+
+1. Crie uma branch curta e focada no objetivo da mudança.
+2. Escreva/atualize testes antes da implementação (TDD: Red -> Green -> Refactor).
+3. Implemente seguindo os padrões do projeto:
+   - Controllers -> UseCases -> Abstractions -> Services
+   - autorização por policies/handlers
+   - mensagens de erro/validação em pt-BR
+4. Atualize documentação OpenAPI (summary/description/status/errors) quando alterar contratos.
+5. Se houver mudança arquitetural, atualize/crie ADR em `docs/adr/`.
+6. Rode a suíte de testes aplicável e valide Swagger/health checks.
+7. Abra PR com impacto arquitetural explícito e referência de ADR (quando aplicável).
+
 ## Como rodar com Docker
 
 ```bash
@@ -24,25 +332,163 @@ docker compose down -v
 docker compose up --build
 ```
 
-## Design System & Tokens
+## Como rodar sem Docker
 
-Bud 2.0 uses a comprehensive design token system based on the [Figma Style Guide](https://www.figma.com/design/j3n8YHBusCH8KEHvheGeF8/-ASSETS--Style-Guide).
+Pré-requisitos:
 
-### Brand Colors
+- .NET SDK 10
+- PostgreSQL 16+
 
-- **Primary**: Orange (#FF6B35) - CTAs, active states, primary actions
-- **Secondary**: Wine (#E838A3) - Accents, highlights, secondary actions
+Comandos:
 
-### Typography
+```bash
+dotnet restore
+dotnet build
+dotnet run --project src/Bud.Server
+```
 
-- **Crimson Pro**: Serif font for headings and display text
-- **Plus Jakarta Sans**: Sans-serif for body text and UI components
+## Onboarding rápido (30 min)
 
-### Design Tokens
+Objetivo: validar ponta a ponta (auth, tenant, CRUD básico e leitura) em ambiente local.
 
-All design values (colors, typography, spacing, shadows) are defined as CSS custom properties in [`src/Bud.Client/wwwroot/css/tokens.css`](src/Bud.Client/wwwroot/css/tokens.css).
+### 1) Subir a aplicação
 
-**Usage example:**
+Opção A (recomendada):
+
+```bash
+docker compose up --build
+```
+
+Opção B (sem Docker):
+
+```bash
+dotnet restore
+dotnet build
+dotnet run --project src/Bud.Server
+```
+
+### 2) Login e captura do token
+
+```bash
+curl -s -X POST http://localhost:8080/api/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"email":"admin@getbud.co"}'
+```
+
+Copie o `token` da resposta e exporte:
+
+```bash
+export BUD_TOKEN="<jwt>"
+```
+
+### 3) Descobrir organizações disponíveis
+
+```bash
+curl -s http://localhost:8080/api/auth/my-organizations \
+  -H "Authorization: Bearer $BUD_TOKEN"
+```
+
+Copie um `id` e exporte:
+
+```bash
+export BUD_ORG_ID="<organization-id>"
+```
+
+### 4) Smoke test de leitura tenant-scoped
+
+```bash
+curl -s "http://localhost:8080/api/missions?page=1&pageSize=10" \
+  -H "Authorization: Bearer $BUD_TOKEN" \
+  -H "X-Tenant-Id: $BUD_ORG_ID"
+```
+
+### 5) Smoke test de criação de missão
+
+```bash
+curl -s -X POST http://localhost:8080/api/missions \
+  -H "Authorization: Bearer $BUD_TOKEN" \
+  -H "X-Tenant-Id: $BUD_ORG_ID" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name":"Onboarding - Missão",
+    "description":"Validação ponta a ponta",
+    "startDate":"2026-01-01T00:00:00Z",
+    "endDate":"2026-12-31T23:59:59Z",
+    "status":"Planned",
+    "scopeType":"Organization"
+  }'
+```
+
+### 6) Debug rápido no backend
+
+- Acesse `http://localhost:8080/swagger` para executar os mesmos fluxos pela UI.
+- Consulte `GET /health/ready` para validar PostgreSQL + Outbox.
+- Em caso de erro 403, valide se o header `X-Tenant-Id` foi enviado (exceto cenário global admin em "TODOS").
+
+### 7) Troubleshooting rápido (dev local)
+
+- **Porta 8080 ocupada**  
+  Sintoma: erro ao subir `docker compose up --build` com bind em `8080`.  
+  Ação: pare o processo/serviço que está usando a porta ou altere o mapeamento no `docker-compose.yml`.
+
+- **Falha de conexão com PostgreSQL**  
+  Sintoma: `/health/ready` retorna unhealthy para banco.  
+  Ação: confirme se o container `db` subiu e se a connection string está correta (`ConnectionStrings:DefaultConnection`).
+
+- **401/403 em endpoints protegidos**  
+  Sintoma: chamadas autenticadas falham mesmo após login.  
+  Ação: verifique `Authorization: Bearer <token>` e, para endpoints tenant-scoped, envie `X-Tenant-Id`.
+
+- **Dados/artefatos antigos no browser**  
+  Sintoma: UI não reflete mudanças recentes.  
+  Ação: execute `docker compose down -v && docker compose up --build` e force reload no navegador.
+
+## Testes
+
+```bash
+# suíte completa
+dotnet test
+
+# apenas unitários
+dotnet test tests/Bud.Server.Tests
+
+# apenas integração
+dotnet test tests/Bud.Server.IntegrationTests
+```
+
+Observação:
+
+- Testes de integração usam PostgreSQL via Testcontainers.
+- Use `dotnet test --nologo` para saída mais limpa no terminal.
+
+## Documentação da API (OpenAPI/Swagger)
+
+- UI interativa (Development): `http://localhost:8080/swagger`
+- Documento OpenAPI bruto: `http://localhost:8080/openapi/v1.json`
+- A documentação é enriquecida com:
+  - `ProducesResponseType` por endpoint
+  - comentários XML (`summary`, `response`, `remarks`)
+  - metadados de conteúdo (`Consumes`/`Produces`) quando aplicável
+
+## Sistema de Design e Tokens
+
+O Bud 2.0 usa um sistema de tokens de design baseado no [Figma Style Guide](https://www.figma.com/design/j3n8YHBusCH8KEHvheGeF8/-ASSETS--Style-Guide).
+
+### Cores de marca
+
+- **Primária**: Orange (#FF6B35) - CTAs, estados ativos e ações principais
+- **Secundária**: Wine (#E838A3) - acentos, destaques e ações secundárias
+
+### Tipografia
+
+- **Crimson Pro**: fonte serifada para títulos e destaques
+- **Plus Jakarta Sans**: fonte sem serifa para texto e componentes de interface
+
+### Tokens de design
+
+Todos os valores de design (cores, tipografia, espaçamento e sombras) são definidos como propriedades CSS em [`src/Bud.Client/wwwroot/css/tokens.css`](src/Bud.Client/wwwroot/css/tokens.css).
+
+**Exemplo de uso:**
 ```css
 .button {
     background: var(--color-brand-primary);
@@ -52,13 +498,13 @@ All design values (colors, typography, spacing, shadows) are defined as CSS cust
 }
 ```
 
-### Updating Design Tokens
+### Atualização de tokens
 
-See [DESIGN_TOKENS.md](DESIGN_TOKENS.md) for:
-- Complete token reference
-- How to update tokens from Figma
-- Token naming conventions
-- Best practices
+Veja [DESIGN_TOKENS.md](DESIGN_TOKENS.md) para:
+- Referência completa de tokens
+- Processo de atualização a partir do Figma
+- Convenções de nomenclatura
+- Boas práticas
 
 ## Migrations (EF Core)
 
@@ -73,26 +519,82 @@ docker run --rm -v "$(pwd)/src":/src -w /src/Bud.Server --network bud_default \
 
 No ambiente Development, a API tenta aplicar migrations automaticamente no startup.
 
-## Endpoints básicos (criação)
+## Outbox (resiliência de eventos)
 
+O projeto usa Outbox para garantir processamento assíncrono confiável de eventos de domínio.
+
+- Persistência transacional de eventos em `OutboxMessages`
+- Worker em background para processamento
+- Retry com backoff exponencial
+- Dead-letter após esgotar tentativas
+- Endpoints administrativos para consulta e reprocessamento
+
+### Endpoints de Outbox (admin)
+
+- GET `/api/outbox/dead-letters?page=1&pageSize=10`
+- POST `/api/outbox/dead-letters/{id}/reprocess`
+- POST `/api/outbox/dead-letters/reprocess`
+
+### Configuração (`appsettings`)
+
+Tudo fica sob a chave `Outbox`:
+
+```json
+"Outbox": {
+  "HealthCheck": {
+    "MaxDeadLetters": 0,
+    "MaxOldestPendingAge": "00:15:00"
+  },
+  "Processing": {
+    "MaxRetries": 5,
+    "BaseRetryDelay": "00:00:05",
+    "MaxRetryDelay": "00:05:00",
+    "BatchSize": 100,
+    "PollingInterval": "00:00:05"
+  }
+}
+```
+
+O endpoint `/health/ready` considera banco e saúde do Outbox.
+
+## Health checks
+
+- `GET /health/live`: liveness (sempre saudável).
+- `GET /health/ready`: readiness (PostgreSQL + Outbox).
+
+## Endpoints principais
+
+### Uso diário
+
+- `POST /api/auth/login`
+- `POST /api/auth/logout`
+- `GET /api/auth/my-organizations`
 - POST `/api/organizations`
 - POST `/api/workspaces`
 - POST `/api/teams`
 - POST `/api/collaborators`
-
-## Endpoints básicos (listagens)
-
+- `POST /api/missions`
+- `GET /api/missions`
+- `GET /api/missions/progress`
+- `POST /api/mission-metrics`
+- `GET /api/mission-metrics`
+- `GET /api/mission-metrics/progress`
+- `POST /api/metric-checkins`
+- `GET /api/metric-checkins`
 - GET `/api/organizations?search=&page=1&pageSize=10`
 - GET `/api/workspaces?organizationId=&search=&page=1&pageSize=10`
 - GET `/api/teams?workspaceId=&parentTeamId=&search=&page=1&pageSize=10`
 - GET `/api/collaborators?teamId=&search=&page=1&pageSize=10`
-
-### Relacionamentos
-
 - GET `/api/organizations/{id}/workspaces`
 - GET `/api/workspaces/{id}/teams`
 - GET `/api/teams/{id}/subteams`
 - GET `/api/teams/{id}/collaborators`
+
+### Administrativos
+
+- GET `/api/outbox/dead-letters?page=1&pageSize=10`
+- POST `/api/outbox/dead-letters/{id}/reprocess`
+- POST `/api/outbox/dead-letters/reprocess`
 
 ### Exemplo de payloads
 
@@ -121,6 +623,30 @@ No ambiente Development, a API tenta aplicar migrations automaticamente no start
 {
   "fullName": "Maria Silva",
   "email": "maria@acme.com",
-  "teamId": "00000000-0000-0000-0000-000000000000"
+  "teamId": "00000000-0000-0000-0000-000000000000",
+  "leaderId": null
+}
+```
+
+```json
+{
+  "name": "Aumentar NPS",
+  "description": "Melhorar satisfação do cliente",
+  "startDate": "2026-01-01T00:00:00Z",
+  "endDate": "2026-03-31T23:59:59Z",
+  "status": "Planned",
+  "scopeType": "Workspace",
+  "scopeId": "00000000-0000-0000-0000-000000000000"
+}
+```
+
+```json
+{
+  "missionMetricId": "00000000-0000-0000-0000-000000000000",
+  "value": 42.5,
+  "text": null,
+  "checkinDate": "2026-02-07T00:00:00Z",
+  "note": "Evolução semanal",
+  "confidenceLevel": 4
 }
 ```

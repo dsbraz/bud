@@ -207,7 +207,17 @@
 
     private string GetUserRole()
     {
-        // TODO: Implementar quando tiver role do usuário
-        return "Admin";
+        if (AuthState.Session is null)
+            return "Sem perfil";
+
+        if (AuthState.Session.IsGlobalAdmin)
+            return "Administrador Global";
+
+        return AuthState.Session.Role switch
+        {
+            Bud.Shared.Models.CollaboratorRole.Leader => "Líder",
+            Bud.Shared.Models.CollaboratorRole.IndividualContributor => "Colaborador",
+            _ => "Sem perfil"
+        };
     }
 }

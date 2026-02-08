@@ -93,8 +93,7 @@ public sealed class WorkspaceService(
 
     public async Task<ServiceResult<PagedResult<Workspace>>> GetAllAsync(Guid? organizationId, string? search, int page, int pageSize, CancellationToken cancellationToken = default)
     {
-        page = page < 1 ? 1 : page;
-        pageSize = pageSize is < 1 or > 100 ? 10 : pageSize;
+        (page, pageSize) = PaginationNormalizer.Normalize(page, pageSize);
 
         var query = dbContext.Workspaces.AsNoTracking();
 
@@ -103,11 +102,7 @@ public sealed class WorkspaceService(
             query = query.Where(w => w.OrganizationId == organizationId.Value);
         }
 
-        if (!string.IsNullOrWhiteSpace(search))
-        {
-            var term = search.Trim().ToLower();
-            query = query.Where(w => w.Name.ToLower().Contains(term));
-        }
+        query = ApplyWorkspaceNameSearch(query, search);
 
         var total = await query.CountAsync(cancellationToken);
         var items = await query
@@ -129,8 +124,7 @@ public sealed class WorkspaceService(
 
     public async Task<ServiceResult<PagedResult<Team>>> GetTeamsAsync(Guid id, int page, int pageSize, CancellationToken cancellationToken = default)
     {
-        page = page < 1 ? 1 : page;
-        pageSize = pageSize is < 1 or > 100 ? 10 : pageSize;
+        (page, pageSize) = PaginationNormalizer.Normalize(page, pageSize);
 
         var workspace = await dbContext.Workspaces
             .AsNoTracking()
@@ -161,5 +155,15 @@ public sealed class WorkspaceService(
         };
 
         return ServiceResult<PagedResult<Team>>.Success(result);
+    }
+
+    private IQueryable<Workspace> ApplyWorkspaceNameSearch(IQueryable<Workspace> query, string? search)
+    {
+        return SearchQueryHelper.ApplyCaseInsensitiveSearch(
+            query,
+            search,
+            dbContext.Database.IsNpgsql(),
+            (q, pattern) => q.Where(w => EF.Functions.ILike(w.Name, pattern)),
+            (q, term) => q.Where(w => w.Name.Contains(term, StringComparison.OrdinalIgnoreCase)));
     }
 }

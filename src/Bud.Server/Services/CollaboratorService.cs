@@ -173,8 +173,7 @@ public sealed class CollaboratorService(
 
     public async Task<ServiceResult<PagedResult<Collaborator>>> GetAllAsync(Guid? teamId, string? search, int page, int pageSize, CancellationToken cancellationToken = default)
     {
-        page = page < 1 ? 1 : page;
-        pageSize = pageSize is < 1 or > 100 ? 10 : pageSize;
+        (page, pageSize) = PaginationNormalizer.Normalize(page, pageSize);
 
         var query = dbContext.Collaborators.AsNoTracking();
 
@@ -186,11 +185,7 @@ public sealed class CollaboratorService(
             query = query.Where(c => teamCollaboratorIds.Contains(c.Id));
         }
 
-        if (!string.IsNullOrWhiteSpace(search))
-        {
-            var term = search.Trim().ToLower();
-            query = query.Where(c => c.FullName.ToLower().Contains(term) || c.Email.ToLower().Contains(term));
-        }
+        query = ApplyCollaboratorSearch(query, search);
 
         var total = await query.CountAsync(cancellationToken);
         var items = await query
@@ -335,8 +330,7 @@ public sealed class CollaboratorService(
 
         if (!string.IsNullOrWhiteSpace(search))
         {
-            var term = search.Trim().ToLower();
-            query = query.Where(t => t.Name.ToLower().Contains(term) || t.Workspace.Name.ToLower().Contains(term));
+            query = ApplyTeamSearch(query, search);
         }
 
         var teams = await query
@@ -351,5 +345,33 @@ public sealed class CollaboratorService(
             .ToListAsync(cancellationToken);
 
         return ServiceResult<List<TeamSummaryDto>>.Success(teams);
+    }
+
+    private IQueryable<Collaborator> ApplyCollaboratorSearch(IQueryable<Collaborator> query, string? search)
+    {
+        return SearchQueryHelper.ApplyCaseInsensitiveSearch(
+            query,
+            search,
+            dbContext.Database.IsNpgsql(),
+            (q, pattern) => q.Where(c =>
+                EF.Functions.ILike(c.FullName, pattern) ||
+                EF.Functions.ILike(c.Email, pattern)),
+            (q, term) => q.Where(c =>
+                c.FullName.Contains(term, StringComparison.OrdinalIgnoreCase) ||
+                c.Email.Contains(term, StringComparison.OrdinalIgnoreCase)));
+    }
+
+    private IQueryable<Team> ApplyTeamSearch(IQueryable<Team> query, string? search)
+    {
+        return SearchQueryHelper.ApplyCaseInsensitiveSearch(
+            query,
+            search,
+            dbContext.Database.IsNpgsql(),
+            (q, pattern) => q.Where(t =>
+                EF.Functions.ILike(t.Name, pattern) ||
+                EF.Functions.ILike(t.Workspace.Name, pattern)),
+            (q, term) => q.Where(t =>
+                t.Name.Contains(term, StringComparison.OrdinalIgnoreCase) ||
+                t.Workspace.Name.Contains(term, StringComparison.OrdinalIgnoreCase)));
     }
 }

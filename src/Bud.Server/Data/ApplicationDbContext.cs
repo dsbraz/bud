@@ -30,6 +30,7 @@ public sealed class ApplicationDbContext : DbContext
     public DbSet<MissionMetric> MissionMetrics => Set<MissionMetric>();
     public DbSet<CollaboratorTeam> CollaboratorTeams => Set<CollaboratorTeam>();
     public DbSet<MetricCheckin> MetricCheckins => Set<MetricCheckin>();
+    public DbSet<OutboxMessage> OutboxMessages => Set<OutboxMessage>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -279,5 +280,24 @@ public sealed class ApplicationDbContext : DbContext
                 (_isGlobalAdmin && _tenantId == null) ||
                 (_tenantId != null && mc.OrganizationId == _tenantId)
             );
+
+        // Outbox
+        modelBuilder.Entity<OutboxMessage>()
+            .HasKey(o => o.Id);
+
+        modelBuilder.Entity<OutboxMessage>()
+            .Property(o => o.EventType)
+            .HasMaxLength(1000);
+
+        modelBuilder.Entity<OutboxMessage>()
+            .Property(o => o.Payload)
+            .HasColumnType("text");
+
+        modelBuilder.Entity<OutboxMessage>()
+            .Property(o => o.Error)
+            .HasColumnType("text");
+
+        modelBuilder.Entity<OutboxMessage>()
+            .HasIndex(o => new { o.ProcessedOnUtc, o.DeadLetteredOnUtc, o.NextAttemptOnUtc, o.OccurredOnUtc });
     }
 }

@@ -258,6 +258,42 @@ public class MissionMetricServiceTests
     }
 
     [Fact]
+    public async Task GetAllAsync_WithCaseInsensitiveSearch_FiltersCorrectly()
+    {
+        // Arrange
+        using var context = CreateInMemoryContext();
+        var service = new MissionMetricService(context);
+        var mission = await CreateTestMission(context);
+
+        context.MissionMetrics.AddRange(
+            new MissionMetric
+            {
+                Id = Guid.NewGuid(),
+                Name = "ALPHA Metric",
+                Type = MetricType.Qualitative,
+                MissionId = mission.Id,
+                OrganizationId = mission.OrganizationId
+            },
+            new MissionMetric
+            {
+                Id = Guid.NewGuid(),
+                Name = "Beta Metric",
+                Type = MetricType.Qualitative,
+                MissionId = mission.Id,
+                OrganizationId = mission.OrganizationId
+            });
+        await context.SaveChangesAsync();
+
+        // Act
+        var result = await service.GetAllAsync(mission.Id, "alpha", 1, 10);
+
+        // Assert
+        result.IsSuccess.Should().BeTrue();
+        result.Value!.Items.Should().HaveCount(1);
+        result.Value.Items[0].Name.Should().Be("ALPHA Metric");
+    }
+
+    [Fact]
     public async Task UpdateMetric_WithInvalidId_ReturnsNotFoundInPortuguese()
     {
         // Arrange
