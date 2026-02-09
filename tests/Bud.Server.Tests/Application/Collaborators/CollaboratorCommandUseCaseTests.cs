@@ -1,3 +1,4 @@
+using System.Security.Claims;
 using Bud.Server.Application.Collaborators;
 using Bud.Server.Application.Common.Authorization;
 using Bud.Server.Application.Common.ReadModel;
@@ -7,7 +8,6 @@ using Bud.Shared.Contracts;
 using Bud.Shared.Models;
 using FluentAssertions;
 using Moq;
-using System.Security.Claims;
 using Xunit;
 
 namespace Bud.Server.Tests.Application.Collaborators;

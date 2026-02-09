@@ -1,7 +1,7 @@
+using System.Net;
 using Bud.Mcp.Configuration;
 using Bud.Mcp.Tests.Helpers;
 using Bud.Mcp.Tools.Generation;
-using System.Net;
 
 namespace Bud.Mcp.Tests.Tools.Generation;
 

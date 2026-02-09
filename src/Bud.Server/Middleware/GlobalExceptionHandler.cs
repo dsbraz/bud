@@ -1,6 +1,7 @@
 using FluentValidation;
 using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.AspNetCore.Mvc;
+using Bud.Server.Logging;
 
 namespace Bud.Server.Middleware;
 
@@ -11,7 +12,7 @@ public sealed class GlobalExceptionHandler(ILogger<GlobalExceptionHandler> logge
         Exception exception,
         CancellationToken cancellationToken)
     {
-        logger.LogError(exception, "Ocorreu uma exceção não tratada: {Message}", exception.Message);
+        logger.LogUnhandledException(exception);
 
         var problemDetails = exception switch
         {

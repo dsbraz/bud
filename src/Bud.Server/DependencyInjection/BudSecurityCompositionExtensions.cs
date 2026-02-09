@@ -1,10 +1,10 @@
+using System.Text;
 using Bud.Server.Authorization;
 using Bud.Server.Authorization.Handlers;
 using Bud.Server.Authorization.Requirements;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.IdentityModel.Tokens;
-using System.Text;
 
 namespace Bud.Server.DependencyInjection;
 

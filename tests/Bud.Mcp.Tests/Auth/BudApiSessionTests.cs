@@ -1,5 +1,5 @@
-using Bud.Mcp.Tests.Helpers;
 using System.Text.Json;
+using Bud.Mcp.Tests.Helpers;
 
 namespace Bud.Mcp.Tests.Auth;
 

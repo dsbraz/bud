@@ -1,0 +1,15 @@
+<div class="workspaces-summary">
+    <div class="summary-card" style="align-items: center; text-align: center;">
+        <div class="summary-card-value">@TotalWorkspaces</div>
+        <div class="summary-card-label">Total de workspaces</div>
+    </div>
+    <div class="summary-card" style="align-items: center; text-align: center;">
+        <div class="summary-card-value">@TotalTeams</div>
+        <div class="summary-card-label">Equipes</div>
+    </div>
+</div>
+
+@code {
+    [Parameter] public int TotalWorkspaces { get; set; }
+    [Parameter] public int TotalTeams { get; set; }
+}

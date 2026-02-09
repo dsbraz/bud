@@ -1,10 +1,10 @@
+using System.Security.Claims;
 using Bud.Server.Authorization;
 using Bud.Server.Authorization.Handlers;
 using Bud.Server.Authorization.Requirements;
 using Bud.Server.Tests.Helpers;
 using FluentAssertions;
 using Microsoft.AspNetCore.Authorization;
-using System.Security.Claims;
 using Xunit;
 
 namespace Bud.Server.Tests.Authorization;

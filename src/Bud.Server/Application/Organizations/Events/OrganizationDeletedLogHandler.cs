@@ -1,6 +1,7 @@
 using Bud.Server.Application.Common.Events;
 using Bud.Server.Domain.Organizations.Events;
 using Microsoft.Extensions.Logging;
+using Bud.Server.Logging;
 
 namespace Bud.Server.Application.Organizations.Events;
 
@@ -8,7 +9,7 @@ public sealed class OrganizationDeletedLogHandler(ILogger<OrganizationDeletedLog
 {
     public Task HandleAsync(OrganizationDeletedDomainEvent domainEvent, CancellationToken cancellationToken = default)
     {
-        logger.LogInformation("Evento OrganizationDeleted processado. OrganizationId={OrganizationId}", domainEvent.OrganizationId);
+        logger.LogOrganizationDeletedProcessed(domainEvent.OrganizationId);
         return Task.CompletedTask;
     }
 }

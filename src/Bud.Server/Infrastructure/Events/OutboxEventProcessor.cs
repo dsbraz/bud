@@ -1,9 +1,9 @@
+using System.Reflection;
 using Bud.Server.Application.Common.Events;
 using Bud.Server.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
-using System.Reflection;
 
 namespace Bud.Server.Infrastructure.Events;
 

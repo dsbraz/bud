@@ -1,3 +1,4 @@
+using System.Security.Claims;
 using Bud.Server.Application.Common.Authorization;
 using Bud.Server.Application.Common.Events;
 using Bud.Server.Application.Common.Pipeline;
@@ -5,7 +6,6 @@ using Bud.Server.Application.Common.ReadModel;
 using Bud.Server.Domain.Missions.Events;
 using Bud.Shared.Contracts;
 using Bud.Shared.Models;
-using System.Security.Claims;
 
 namespace Bud.Server.Application.Missions;
 

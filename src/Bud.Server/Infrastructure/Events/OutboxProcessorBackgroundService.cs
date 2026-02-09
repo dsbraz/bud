@@ -1,6 +1,7 @@
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using Bud.Server.Logging;
 using Microsoft.Extensions.Options;
 
 namespace Bud.Server.Infrastructure.Events;
@@ -27,7 +28,7 @@ public sealed class OutboxProcessorBackgroundService(
             }
             catch (Exception ex)
             {
-                logger.LogError(ex, "Falha ao processar mensagens de outbox.");
+                logger.LogOutboxProcessingFailed(ex);
             }
 
             var pollingInterval = processingOptions.Value.PollingInterval <= TimeSpan.Zero

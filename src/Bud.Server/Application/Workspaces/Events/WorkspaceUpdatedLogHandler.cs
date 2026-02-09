@@ -1,6 +1,7 @@
 using Bud.Server.Application.Common.Events;
 using Bud.Server.Domain.Workspaces.Events;
 using Microsoft.Extensions.Logging;
+using Bud.Server.Logging;
 
 namespace Bud.Server.Application.Workspaces.Events;
 
@@ -8,7 +9,7 @@ public sealed class WorkspaceUpdatedLogHandler(ILogger<WorkspaceUpdatedLogHandle
 {
     public Task HandleAsync(WorkspaceUpdatedDomainEvent domainEvent, CancellationToken cancellationToken = default)
     {
-        logger.LogInformation("Evento WorkspaceUpdated processado. WorkspaceId={WorkspaceId} OrganizationId={OrganizationId}", domainEvent.WorkspaceId, domainEvent.OrganizationId);
+        logger.LogWorkspaceUpdatedProcessed(domainEvent.WorkspaceId, domainEvent.OrganizationId);
         return Task.CompletedTask;
     }
 }

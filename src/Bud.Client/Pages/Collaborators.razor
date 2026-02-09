@@ -4,13 +4,12 @@
 @inject OrganizationContext OrgContext
 @implements IDisposable
 
-<div class="collaborators-page-header">
-    <h1 class="collaborators-page-title">Colaboradores</h1>
-    <button class="button primary" @onclick="OpenCreateModal">
-        <span class="button-icon-text">+</span>
-        Novo colaborador
-    </button>
-</div>
+<ManagementPageHeader
+    Kicker="Gestão"
+    Title="Colaboradores"
+    Subtitle="Gerencie colaboradores e vínculos de liderança."
+    PrimaryActionText="Novo colaborador"
+    OnPrimaryAction="OpenCreateModal" />
 
 @* Barra de Filtros Compacta *@
 <div class="collaborators-filter-bar">
@@ -81,35 +80,18 @@
     </div>
 }
 
-@* Cards de Resumo *@
-<div class="collaborators-summary">
-    <div class="summary-card" style="align-items: center; text-align: center;">
-        <div class="summary-card-value">@GetTotalCollaboratorsCount()</div>
-        <div class="summary-card-label">Total de colaboradores</div>
-    </div>
-    <div class="summary-card" style="align-items: center; text-align: center;">
-        <div class="summary-card-value">@GetLeadersCount()</div>
-        <div class="summary-card-label">Líderes</div>
-    </div>
-    <div class="summary-card" style="align-items: center; text-align: center;">
-        <div class="summary-card-value">@GetContributorsCount()</div>
-        <div class="summary-card-label">Contribuidores individuais</div>
-    </div>
-</div>
+<CollaboratorsSummaryCards
+    TotalCollaborators="GetTotalCollaboratorsCount()"
+    Leaders="GetLeadersCount()"
+    Contributors="GetContributorsCount()" />
 
 @* Lista de Colaboradores *@
 <div class="collaborators-table-container">
-
-    @if (collaborators is null)
-    {
-        <p class="muted">Carregando...</p>
-    }
-    else if (collaborators.Items.Count == 0)
-    {
-        <p class="muted">Nenhum colaborador encontrado.</p>
-    }
-    else
-    {
+    <PagedTableSection
+        IsLoading="@(collaborators is null)"
+        IsEmpty="@(collaborators is not null && collaborators.Items.Count == 0)"
+        Total="@(collaborators?.Total ?? 0)"
+        EmptyText="Nenhum colaborador encontrado.">
         <table class="table">
             <thead>
                 <tr>
@@ -121,7 +103,7 @@
                 </tr>
             </thead>
             <tbody>
-                @foreach (var collaborator in collaborators.Items)
+                @foreach (var collaborator in collaborators!.Items)
                 {
                     var leader = collaborator.LeaderId.HasValue
                         ? allCollaborators.FirstOrDefault(c => c.Id == collaborator.LeaderId.Value)
@@ -133,38 +115,19 @@
                         <td>@GetRoleLabel(collaborator.Role)</td>
                         <td>@(leader?.FullName ?? "—")</td>
                         <td style="text-align: center;">
-                            <div class="table-actions">
-                                <button class="button-icon" @onclick="async () => await OpenEditModal(collaborator)"
-                                        @onclick:stopPropagation="true"
-                                        title="Editar colaborador">
-                                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-                                        <path d="M11.334 2.00004C11.5091 1.82494 11.7169 1.68605 11.9457 1.59129C12.1745 1.49653 12.4197 1.44775 12.6673 1.44775C12.9149 1.44775 13.1601 1.49653 13.3889 1.59129C13.6177 1.68605 13.8256 1.82494 14.0007 2.00004C14.1758 2.17513 14.3147 2.383 14.4094 2.61178C14.5042 2.84055 14.553 3.08575 14.553 3.33337C14.553 3.58099 14.5042 3.82619 14.4094 4.05497C14.3147 4.28374 14.1758 4.49161 14.0007 4.66671L5.00065 13.6667L1.33398 14.6667L2.33398 11L11.334 2.00004Z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-                                    </svg>
-                                </button>
-                                <button class="button-icon @(isDeleting ? "danger" : "")"
-                                        @onclick="() => HandleDeleteClick(collaborator.Id)"
-                                        @onclick:stopPropagation="true"
-                                        title="@(isDeleting ? "Clique novamente para confirmar" : "Excluir colaborador")">
-                                    @if (isDeleting)
-                                    {
-                                        <span style="font-size: 11px; white-space: nowrap;">Confirmar?</span>
-                                    }
-                                    else
-                                    {
-                                        <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-                                            <path d="M2 4H3.33333H14" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-                                            <path d="M5.33398 4.00004V2.66671C5.33398 2.31309 5.47446 1.97395 5.72451 1.7239C5.97456 1.47385 6.3137 1.33337 6.66732 1.33337H9.33398C9.6876 1.33337 10.0268 1.47385 10.2768 1.7239C10.5269 1.97395 10.6673 2.31309 10.6673 2.66671V4.00004M12.6673 4.00004V13.3334C12.6673 13.687 12.5269 14.0261 12.2768 14.2762C12.0268 14.5262 11.6876 14.6667 11.334 14.6667H4.66732C4.3137 14.6667 3.97456 14.5262 3.72451 14.2762C3.47446 14.0261 3.33398 13.687 3.33398 13.3334V4.00004H12.6673Z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-                                        </svg>
-                                    }
-                                </button>
-                            </div>
+                            <CrudRowActions
+                                StopPropagation="true"
+                                EditTitle="Editar colaborador"
+                                OnEdit="@(async () => await OpenEditModal(collaborator))"
+                                IsDeleteConfirming="@isDeleting"
+                                DeleteTitle="Excluir colaborador"
+                                OnDelete="@(() => HandleDeleteClick(collaborator.Id))" />
                         </td>
                     </tr>
                 }
             </tbody>
         </table>
-        <p class="muted" style="margin-top: var(--spacing-4);">Total: @collaborators.Total</p>
-    }
+    </PagedTableSection>
 </div>
 
 @if (isModalOpen)
@@ -533,28 +496,24 @@
         newCollaborator.TeamId = null;
         newCollaborator.LeaderId = Guid.TryParse(createLeaderId, out var leaderId) ? leaderId : null;
 
-        try
-        {
-            await Api.CreateCollaboratorAsync(newCollaborator);
-            var createdCollaboratorName = newCollaborator.FullName;
-            newCollaborator = new CreateCollaboratorRequest();
-            createLeaderId = null;
-            await LoadCollaborators();
-            await LoadAllCollaborators();
+        await UiOperationRunner.RunAsync(
+            async () =>
+            {
+                await Api.CreateCollaboratorAsync(newCollaborator);
+                var createdCollaboratorName = newCollaborator.FullName;
+                newCollaborator = new CreateCollaboratorRequest();
+                createLeaderId = null;
+                await LoadCollaborators();
+                await LoadAllCollaborators();
 
-            ToastService.ShowSuccess("Colaborador criado com sucesso!", $"O colaborador '{createdCollaboratorName}' foi criado.");
-            CloseModal();
-        }
-        catch (HttpRequestException ex)
-        {
-            Console.Error.WriteLine($"Erro HTTP ao criar colaborador: {ex.Message}");
-            ToastService.ShowError("Erro ao criar colaborador", "Não foi possível criar o colaborador. Verifique os dados e tente novamente.");
-        }
-        catch (Exception ex)
-        {
-            Console.Error.WriteLine($"Erro inesperado ao criar colaborador: {ex.Message}");
-            ToastService.ShowError("Erro inesperado", "Não foi possível criar o colaborador. Tente novamente.");
-        }
+                ToastService.ShowSuccess("Colaborador criado com sucesso!", $"O colaborador '{createdCollaboratorName}' foi criado.");
+                CloseModal();
+            },
+            ToastService,
+            "Erro ao criar colaborador",
+            "Não foi possível criar o colaborador. Verifique os dados e tente novamente.",
+            operationContext: "criação de colaborador",
+            unexpectedErrorMessage: "Não foi possível criar o colaborador. Tente novamente.");
     }
 
     private async Task OpenEditModal(Collaborator collaborator)
@@ -612,36 +571,32 @@
 
         editCollaborator.LeaderId = Guid.TryParse(editLeaderId, out var leaderId) ? leaderId : null;
 
-        try
-        {
-            var result = await Api.UpdateCollaboratorAsync(selectedCollaborator.Id, editCollaborator);
-            if (result != null)
+        await UiOperationRunner.RunAsync(
+            async () =>
             {
-                // Update teams if modified
-                if (teamsModified)
+                var result = await Api.UpdateCollaboratorAsync(selectedCollaborator.Id, editCollaborator);
+                if (result != null)
                 {
-                    await Api.UpdateCollaboratorTeamsAsync(selectedCollaborator.Id, new UpdateCollaboratorTeamsRequest
+                    // Update teams if modified
+                    if (teamsModified)
                     {
-                        TeamIds = assignedTeamsForEdit.Select(t => t.Id).ToList()
-                    });
-                }
+                        await Api.UpdateCollaboratorTeamsAsync(selectedCollaborator.Id, new UpdateCollaboratorTeamsRequest
+                        {
+                            TeamIds = assignedTeamsForEdit.Select(t => t.Id).ToList()
+                        });
+                    }
 
-                ToastService.ShowSuccess("Colaborador atualizado", "As alterações foram salvas com sucesso.");
-                CloseEditModal();
-                await LoadCollaborators();
-                await LoadAllCollaborators();
-            }
-        }
-        catch (HttpRequestException ex)
-        {
-            Console.Error.WriteLine($"Erro HTTP ao atualizar colaborador: {ex.Message}");
-            ToastService.ShowError("Erro ao atualizar", "Não foi possível atualizar o colaborador. Verifique os dados e tente novamente.");
-        }
-        catch (Exception ex)
-        {
-            Console.Error.WriteLine($"Erro inesperado ao atualizar colaborador: {ex.Message}");
-            ToastService.ShowError("Erro inesperado", "Não foi possível atualizar o colaborador. Tente novamente.");
-        }
+                    ToastService.ShowSuccess("Colaborador atualizado", "As alterações foram salvas com sucesso.");
+                    CloseEditModal();
+                    await LoadCollaborators();
+                    await LoadAllCollaborators();
+                }
+            },
+            ToastService,
+            "Erro ao atualizar",
+            "Não foi possível atualizar o colaborador. Verifique os dados e tente novamente.",
+            operationContext: "atualização de colaborador",
+            unexpectedErrorMessage: "Não foi possível atualizar o colaborador. Tente novamente.");
     }
 
     private async Task HandleDeleteClick(Guid collaboratorId)
@@ -675,20 +630,19 @@
     {
         try
         {
-            await Api.DeleteCollaboratorAsync(collaboratorId);
-            ToastService.ShowSuccess("Colaborador excluído", "O colaborador foi removido com sucesso.");
-            await LoadCollaborators();
-            await LoadAllCollaborators();
-        }
-        catch (HttpRequestException ex)
-        {
-            Console.Error.WriteLine($"Erro HTTP ao excluir colaborador: {ex.Message}");
-            ToastService.ShowError("Erro ao excluir", "Não foi possível excluir o colaborador. Tente novamente.");
-        }
-        catch (Exception ex)
-        {
-            Console.Error.WriteLine($"Erro inesperado ao excluir colaborador: {ex.Message}");
-            ToastService.ShowError("Erro inesperado", "Não foi possível excluir o colaborador. Tente novamente.");
+            await UiOperationRunner.RunAsync(
+                async () =>
+                {
+                    await Api.DeleteCollaboratorAsync(collaboratorId);
+                    ToastService.ShowSuccess("Colaborador excluído", "O colaborador foi removido com sucesso.");
+                    await LoadCollaborators();
+                    await LoadAllCollaborators();
+                },
+                ToastService,
+                "Erro ao excluir",
+                "Não foi possível excluir o colaborador. Tente novamente.",
+                operationContext: "exclusão de colaborador",
+                unexpectedErrorMessage: "Não foi possível excluir o colaborador. Tente novamente.");
         }
         finally
         {

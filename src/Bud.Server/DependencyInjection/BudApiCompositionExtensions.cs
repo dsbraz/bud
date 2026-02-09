@@ -1,9 +1,9 @@
+using System.Reflection;
+using Bud.Server.Infrastructure.Serialization;
 using Bud.Server.Middleware;
 using Bud.Server.Settings;
-using Bud.Server.Infrastructure.Serialization;
 using Bud.Server.Validators;
 using FluentValidation;
-using System.Reflection;
 
 namespace Bud.Server.DependencyInjection;
 

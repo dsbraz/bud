@@ -6,17 +6,12 @@
 
 <MissionsMenu />
 
-<div class="page-header">
-    <div>
-        <div class="page-kicker">Gestão</div>
-        <h1>Métricas</h1>
-        <p class="page-subtitle">Defina métricas para suas missões.</p>
-    </div>
-    <button class="button primary" @onclick="OpenCreateModal">
-        <span class="button-icon-text">+</span>
-        Nova métrica
-    </button>
-</div>
+<ManagementPageHeader
+    Kicker="Gestão"
+    Title="Métricas"
+    Subtitle="Defina métricas para suas missões."
+    PrimaryActionText="Nova métrica"
+    OnPrimaryAction="OpenCreateModal" />
 
 <div class="card">
     <div class="card-filters">
@@ -39,16 +34,11 @@
         </div>
     </div>
 
-    @if (metrics is null)
-    {
-        <p class="muted">Carregando...</p>
-    }
-    else if (metrics.Items.Count == 0)
-    {
-        <p class="muted">Nenhuma métrica encontrada.</p>
-    }
-    else
-    {
+    <PagedTableSection
+        IsLoading="@(metrics is null)"
+        IsEmpty="@(metrics is not null && metrics.Items.Count == 0)"
+        Total="@(metrics?.Total ?? 0)"
+        EmptyText="Nenhuma métrica encontrada.">
         <table class="table">
             <thead>
                 <tr>
@@ -62,7 +52,7 @@
                 </tr>
             </thead>
             <tbody>
-                @foreach (var metric in metrics.Items)
+                @foreach (var metric in metrics!.Items)
                 {
                     var isDeleting = deletingMetricId == metric.Id;
                     var progress = metricProgress.GetValueOrDefault(metric.Id);
@@ -99,36 +89,18 @@
                         </td>
                         <td>@GetMissionName(metric.MissionId)</td>
                         <td style="text-align: center;">
-                            <div class="table-actions">
-                                <button class="button-icon" @onclick="() => OpenEditMetricModal(metric)"
-                                        title="Editar métrica">
-                                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-                                        <path d="M11.334 2.00004C11.5091 1.82494 11.7169 1.68605 11.9457 1.59129C12.1745 1.49653 12.4197 1.44775 12.6673 1.44775C12.9149 1.44775 13.1601 1.49653 13.3889 1.59129C13.6177 1.68605 13.8256 1.82494 14.0007 2.00004C14.1758 2.17513 14.3147 2.383 14.4094 2.61178C14.5042 2.84055 14.553 3.08575 14.553 3.33337C14.553 3.58099 14.5042 3.82619 14.4094 4.05497C14.3147 4.28374 14.1758 4.49161 14.0007 4.66671L5.00065 13.6667L1.33398 14.6667L2.33398 11L11.334 2.00004Z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-                                    </svg>
-                                </button>
-                                <button class="button-icon @(isDeleting ? "danger" : "")"
-                                        @onclick="() => HandleDeleteMetricClick(metric.Id)"
-                                        title="@(isDeleting ? "Clique novamente para confirmar" : "Excluir métrica")">
-                                    @if (isDeleting)
-                                    {
-                                        <span style="font-size: 11px; white-space: nowrap;">Confirmar?</span>
-                                    }
-                                    else
-                                    {
-                                        <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-                                            <path d="M2 4H3.33333H14" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-                                            <path d="M5.33398 4.00004V2.66671C5.33398 2.31309 5.47446 1.97395 5.72451 1.7239C5.97456 1.47385 6.3137 1.33337 6.66732 1.33337H9.33398C9.6876 1.33337 10.0268 1.47385 10.2768 1.7239C10.5269 1.97395 10.6673 2.31309 10.6673 2.66671V4.00004M12.6673 4.00004V13.3334C12.6673 13.687 12.5269 14.0261 12.2768 14.2762C12.0268 14.5262 11.6876 14.6667 11.334 14.6667H4.66732C4.3137 14.6667 3.97456 14.5262 3.72451 14.2762C3.47446 14.0261 3.33398 13.687 3.33398 13.3334V4.00004H12.6673Z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-                                        </svg>
-                                    }
-                                </button>
-                            </div>
+                            <CrudRowActions
+                                EditTitle="Editar métrica"
+                                OnEdit="@(() => OpenEditMetricModal(metric))"
+                                IsDeleteConfirming="@isDeleting"
+                                DeleteTitle="Excluir métrica"
+                                OnDelete="@(() => HandleDeleteMetricClick(metric.Id))" />
                         </td>
                     </tr>
                 }
             </tbody>
         </table>
-        <p class="muted" style="margin-top: var(--spacing-4);">Total: @metrics.Total</p>
-    }
+    </PagedTableSection>
 </div>
 
 @if (isModalOpen)
@@ -488,22 +460,49 @@
 
     private async Task CreateMetric()
     {
+        const string errorTitle = "Erro ao criar métrica";
+
+        if (!TryPrepareMetricForCreate(errorTitle, out _))
+        {
+            return;
+        }
+
+        await UiOperationRunner.RunAsync(
+            async () =>
+            {
+                await Api.CreateMissionMetricAsync(newMetric);
+                var createdMetricName = newMetric.Name;
+                ResetCreateMetricForm();
+                await LoadMetrics();
+
+                ToastService.ShowSuccess("Métrica criada com sucesso!", $"A métrica '{createdMetricName}' foi criada.");
+                CloseModal();
+            },
+            ToastService,
+            errorTitle,
+            "Não foi possível criar a métrica. Verifique os dados e tente novamente.",
+            "criação de métrica");
+    }
+
+    private bool TryPrepareMetricForCreate(string errorTitle, out MetricType metricType)
+    {
+        metricType = default;
+
         if (!Guid.TryParse(createMissionId, out var missionId))
         {
-            ToastService.ShowError("Erro ao criar métrica", "Selecione uma missão.");
-            return;
+            ToastService.ShowError(errorTitle, "Selecione uma missão.");
+            return false;
         }
 
         if (string.IsNullOrWhiteSpace(newMetric.Name))
         {
-            ToastService.ShowError("Erro ao criar métrica", "Informe o nome da métrica.");
-            return;
+            ToastService.ShowError(errorTitle, "Informe o nome da métrica.");
+            return false;
         }
 
-        if (!Enum.TryParse<MetricType>(createMetricTypeValue, out var metricType))
+        if (!TryParseMetricType(createMetricTypeValue, errorTitle, "Selecione o tipo da metrica.", out metricType))
         {
-            ToastService.ShowError("Erro ao criar métrica", "Selecione o tipo da metrica.");
-            return;
+            return false;
         }
 
         newMetric.MissionId = missionId;
@@ -513,79 +512,92 @@
         {
             if (string.IsNullOrWhiteSpace(newMetric.TargetText))
             {
-                ToastService.ShowError("Erro ao criar métrica", "Informe o texto alvo.");
-                return;
+                ToastService.ShowError(errorTitle, "Informe o texto alvo.");
+                return false;
             }
+
+            return true;
         }
-        else
+
+        return TryPrepareQuantitativeMetricForCreate(errorTitle);
+    }
+
+    private bool TryPrepareQuantitativeMetricForCreate(string errorTitle)
+    {
+        if (!Enum.TryParse<QuantitativeMetricType>(createQuantitativeTypeValue, out var quantitativeType))
         {
-            if (!Enum.TryParse<QuantitativeMetricType>(createQuantitativeTypeValue, out var quantitativeType))
-            {
-                ToastService.ShowError("Erro ao criar métrica", "Selecione o tipo de métrica quantitativa.");
-                return;
-            }
-
-            newMetric.QuantitativeType = quantitativeType;
-
-            if (quantitativeType == QuantitativeMetricType.KeepAbove && newMetric.MinValue is null)
-            {
-                ToastService.ShowError("Erro ao criar métrica", "Informe o valor mínimo.");
-                return;
-            }
-
-            if (quantitativeType == QuantitativeMetricType.KeepBelow && newMetric.MaxValue is null)
-            {
-                ToastService.ShowError("Erro ao criar métrica", "Informe o valor máximo.");
-                return;
-            }
-
-            if (quantitativeType == QuantitativeMetricType.KeepBetween)
-            {
-                if (newMetric.MinValue is null || newMetric.MaxValue is null)
-                {
-                    ToastService.ShowError("Erro ao criar métrica", "Informe os valores mínimo e máximo.");
-                    return;
-                }
-
-                if (newMetric.MinValue >= newMetric.MaxValue)
-                {
-                    ToastService.ShowError("Erro ao criar métrica", "O valor mínimo deve ser menor que o valor máximo.");
-                    return;
-                }
-            }
-
-            if (quantitativeType == QuantitativeMetricType.Achieve && newMetric.MaxValue is null)
-            {
-                ToastService.ShowError("Erro ao criar métrica", "Informe o valor alvo.");
-                return;
-            }
-
-            if (quantitativeType == QuantitativeMetricType.Reduce && newMetric.MaxValue is null)
-            {
-                ToastService.ShowError("Erro ao criar métrica", "Informe o valor alvo.");
-                return;
-            }
-
-            if (!Enum.TryParse<MetricUnit>(createMetricUnitValue, out var metricUnit))
-            {
-                ToastService.ShowError("Erro ao criar métrica", "Selecione a unidade.");
-                return;
-            }
-
-            newMetric.Unit = metricUnit;
+            ToastService.ShowError(errorTitle, "Selecione o tipo de métrica quantitativa.");
+            return false;
         }
 
-        await Api.CreateMissionMetricAsync(newMetric);
-        var createdMetricName = newMetric.Name;
+        newMetric.QuantitativeType = quantitativeType;
+
+        if (quantitativeType == QuantitativeMetricType.KeepAbove && newMetric.MinValue is null)
+        {
+            ToastService.ShowError(errorTitle, "Informe o valor mínimo.");
+            return false;
+        }
+
+        if (quantitativeType == QuantitativeMetricType.KeepBelow && newMetric.MaxValue is null)
+        {
+            ToastService.ShowError(errorTitle, "Informe o valor máximo.");
+            return false;
+        }
+
+        if (quantitativeType == QuantitativeMetricType.KeepBetween)
+        {
+            if (newMetric.MinValue is null || newMetric.MaxValue is null)
+            {
+                ToastService.ShowError(errorTitle, "Informe os valores mínimo e máximo.");
+                return false;
+            }
+
+            if (newMetric.MinValue >= newMetric.MaxValue)
+            {
+                ToastService.ShowError(errorTitle, "O valor mínimo deve ser menor que o valor máximo.");
+                return false;
+            }
+        }
+
+        if ((quantitativeType == QuantitativeMetricType.Achieve || quantitativeType == QuantitativeMetricType.Reduce) &&
+            newMetric.MaxValue is null)
+        {
+            ToastService.ShowError(errorTitle, "Informe o valor alvo.");
+            return false;
+        }
+
+        if (!Enum.TryParse<MetricUnit>(createMetricUnitValue, out var metricUnit))
+        {
+            ToastService.ShowError(errorTitle, "Selecione a unidade.");
+            return false;
+        }
+
+        newMetric.Unit = metricUnit;
+        return true;
+    }
+
+    private bool TryParseMetricType(
+        string? metricTypeValue,
+        string errorTitle,
+        string errorMessage,
+        out MetricType metricType)
+    {
+        if (!Enum.TryParse(metricTypeValue, out metricType))
+        {
+            ToastService.ShowError(errorTitle, errorMessage);
+            return false;
+        }
+
+        return true;
+    }
+
+    private void ResetCreateMetricForm()
+    {
         newMetric = new CreateMissionMetricRequest();
         createMissionId = null;
         createMetricTypeValue = null;
         createQuantitativeTypeValue = null;
         createMetricUnitValue = null;
-        await LoadMetrics();
-
-        ToastService.ShowSuccess("Métrica criada com sucesso!", $"A métrica '{createdMetricName}' foi criada.");
-        CloseModal();
     }
 
     private string GetMissionName(Guid missionId)
@@ -593,63 +605,15 @@
         return missions.FirstOrDefault(m => m.Id == missionId)?.Name ?? "—";
     }
 
-    private static string GetMetricTypeLabel(MetricType type) => type switch
-    {
-        MetricType.Qualitative => "Qualitativa",
-        MetricType.Quantitative => "Quantitativa",
-        _ => type.ToString()
-    };
+    private static string GetMetricTypeLabel(MetricType type) => MissionMetricDisplayHelper.GetMetricTypeLabel(type);
 
-    private static string GetQuantitativeTypeLabel(QuantitativeMetricType type) => type switch
-    {
-        QuantitativeMetricType.KeepAbove => "Manter acima",
-        QuantitativeMetricType.KeepBelow => "Manter abaixo",
-        QuantitativeMetricType.KeepBetween => "Manter entre",
-        QuantitativeMetricType.Achieve => "Atingir",
-        QuantitativeMetricType.Reduce => "Reduzir",
-        _ => type.ToString()
-    };
+    private static string GetQuantitativeTypeLabel(QuantitativeMetricType type) => MissionMetricDisplayHelper.GetQuantitativeTypeLabel(type);
 
-    private static string GetQuantitativeTypeIcon(QuantitativeMetricType type) => type switch
-    {
-        QuantitativeMetricType.KeepAbove => "↑",
-        QuantitativeMetricType.KeepBelow => "↓",
-        QuantitativeMetricType.KeepBetween => "↕",
-        QuantitativeMetricType.Achieve => "→",
-        QuantitativeMetricType.Reduce => "↘",
-        _ => ""
-    };
+    private static string GetQuantitativeTypeIcon(QuantitativeMetricType type) => MissionMetricDisplayHelper.GetQuantitativeTypeIcon(type);
 
-    private static string GetUnitLabel(MetricUnit unit) => unit switch
-    {
-        MetricUnit.Integer => "Inteiro",
-        MetricUnit.Decimal => "Decimal",
-        MetricUnit.Percentage => "Percentual",
-        MetricUnit.Hours => "Horas",
-        MetricUnit.Points => "Pontos",
-        _ => unit.ToString()
-    };
+    private static string GetUnitLabel(MetricUnit unit) => MissionMetricDisplayHelper.GetUnitLabel(unit);
 
-    private static string GetTargetLabel(MissionMetric metric)
-    {
-        if (metric.Type == MetricType.Qualitative)
-        {
-            return metric.TargetText ?? "—";
-        }
-
-        var unit = metric.Unit.HasValue ? GetUnitLabel(metric.Unit.Value) : "";
-        var quantType = metric.QuantitativeType.HasValue ? GetQuantitativeTypeLabel(metric.QuantitativeType.Value) : "—";
-
-        return metric.QuantitativeType switch
-        {
-            QuantitativeMetricType.KeepAbove => $"{quantType} {metric.MinValue} {unit}",
-            QuantitativeMetricType.KeepBelow => $"{quantType} {metric.MaxValue} {unit}",
-            QuantitativeMetricType.KeepBetween => $"{quantType} {metric.MinValue} e {metric.MaxValue} {unit}",
-            QuantitativeMetricType.Achieve => $"{quantType} {metric.MaxValue} {unit}",
-            QuantitativeMetricType.Reduce => $"{quantType} para {metric.MaxValue} {unit}",
-            _ => "—"
-        };
-    }
+    private static string GetTargetLabel(MissionMetric metric) => MissionMetricDisplayHelper.GetTargetLabel(metric);
 
     private static string GetMaxValuePlaceholderForMetrics(string? quantitativeType) => quantitativeType switch
     {
@@ -695,9 +659,8 @@
     {
         if (selectedMetric == null) return;
 
-        if (!Enum.TryParse<MetricType>(editMetricTypeValue, out var metricType))
+        if (!TryParseMetricType(editMetricTypeValue, "Erro ao atualizar métrica", "Selecione o tipo da métrica.", out var metricType))
         {
-            ToastService.ShowError("Erro ao atualizar métrica", "Selecione o tipo da métrica.");
             return;
         }
 
@@ -711,18 +674,18 @@
                 editMetric.Unit = unit;
         }
 
-        try
-        {
-            await Api.UpdateMissionMetricAsync(selectedMetric.Id, editMetric);
-            ToastService.ShowSuccess("Métrica atualizada", "As alterações foram salvas com sucesso.");
-            CloseEditMetricModal();
-            await LoadMetrics();
-        }
-        catch (HttpRequestException ex)
-        {
-            Console.Error.WriteLine($"Erro HTTP ao atualizar métrica: {ex.Message}");
-            ToastService.ShowError("Erro ao atualizar", "Não foi possível atualizar a métrica. Verifique os dados e tente novamente.");
-        }
+        await UiOperationRunner.RunAsync(
+            async () =>
+            {
+                await Api.UpdateMissionMetricAsync(selectedMetric.Id, editMetric);
+                ToastService.ShowSuccess("Métrica atualizada", "As alterações foram salvas com sucesso.");
+                CloseEditMetricModal();
+                await LoadMetrics();
+            },
+            ToastService,
+            "Erro ao atualizar",
+            "Não foi possível atualizar a métrica. Verifique os dados e tente novamente.",
+            "atualização de métrica");
     }
 
     private async Task OnEditMetricTypeChanged(ChangeEventArgs e)
@@ -739,36 +702,11 @@
 
     // ---- Progress & Confidence Helpers ----
 
-    private static string GetProgressStatusClass(MetricProgressDto progress)
-    {
-        if (!progress.HasCheckins)
-        {
-            return "no-data";
-        }
+    private static string GetProgressStatusClass(MetricProgressDto progress) => MissionProgressDisplayHelper.GetMetricProgressStatusClass(progress);
 
-        return progress.Progress switch
-        {
-            >= 70m => "on-track",
-            >= 40m => "at-risk",
-            _ => "off-track"
-        };
-    }
+    private static (string statusClass, string label) GetConfidenceDisplay(int confidence) => MissionProgressDisplayHelper.GetConfidenceDisplay(confidence);
 
-    private static (string statusClass, string label) GetConfidenceDisplay(int confidence)
-    {
-        return confidence switch
-        {
-            >= 4 => ("on-track", "No caminho"),
-            >= 2 => ("at-risk", "Atenção"),
-            _ => ("off-track", "Em risco")
-        };
-    }
-
-    private static string GetConfidenceStarsText(int confidence)
-    {
-        var full = Math.Clamp(confidence, 0, 5);
-        return new string('\u2605', full) + new string('\u2606', 5 - full);
-    }
+    private static string GetConfidenceStarsText(int confidence) => MissionProgressDisplayHelper.GetConfidenceStarsText(confidence);
 
     // ---- Delete Methods ----
 
@@ -780,18 +718,7 @@
         }
         else
         {
-            deletingMetricId = metricId;
-            deleteMetricConfirmTimer?.Dispose();
-            deleteMetricConfirmTimer = new System.Threading.Timer(
-                _ => InvokeAsync(() =>
-                {
-                    deletingMetricId = null;
-                    StateHasChanged();
-                }),
-                null,
-                3000,
-                Timeout.Infinite
-            );
+            ArmMetricDeleteConfirmation(metricId);
         }
     }
 
@@ -799,20 +726,43 @@
     {
         try
         {
-            await Api.DeleteMissionMetricAsync(metricId);
-            ToastService.ShowSuccess("Métrica excluída", "A métrica foi removida com sucesso.");
-            await LoadMetrics();
-        }
-        catch (HttpRequestException ex)
-        {
-            Console.Error.WriteLine($"Erro HTTP ao excluir métrica: {ex.Message}");
-            ToastService.ShowError("Erro ao excluir", "Não foi possível excluir a métrica. Tente novamente.");
+            await UiOperationRunner.RunAsync(
+                async () =>
+                {
+                    await Api.DeleteMissionMetricAsync(metricId);
+                    ToastService.ShowSuccess("Métrica excluída", "A métrica foi removida com sucesso.");
+                    await LoadMetrics();
+                },
+                ToastService,
+                "Erro ao excluir",
+                "Não foi possível excluir a métrica. Tente novamente.",
+                "exclusão de métrica");
         }
         finally
         {
-            deletingMetricId = null;
-            deleteMetricConfirmTimer?.Dispose();
-            deleteMetricConfirmTimer = null;
+            ClearMetricDeleteConfirmation();
         }
+    }
+
+    private void ArmMetricDeleteConfirmation(Guid metricId)
+    {
+        deletingMetricId = metricId;
+        deleteMetricConfirmTimer?.Dispose();
+        deleteMetricConfirmTimer = new System.Threading.Timer(
+            _ => InvokeAsync(() =>
+            {
+                deletingMetricId = null;
+                StateHasChanged();
+            }),
+            null,
+            3000,
+            Timeout.Infinite);
+    }
+
+    private void ClearMetricDeleteConfirmation()
+    {
+        deletingMetricId = null;
+        deleteMetricConfirmTimer?.Dispose();
+        deleteMetricConfirmTimer = null;
     }
 }

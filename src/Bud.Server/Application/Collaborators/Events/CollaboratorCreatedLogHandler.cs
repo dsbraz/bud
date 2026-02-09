@@ -1,6 +1,7 @@
 using Bud.Server.Application.Common.Events;
 using Bud.Server.Domain.Collaborators.Events;
 using Microsoft.Extensions.Logging;
+using Bud.Server.Logging;
 
 namespace Bud.Server.Application.Collaborators.Events;
 
@@ -8,9 +9,7 @@ public sealed class CollaboratorCreatedLogHandler(ILogger<CollaboratorCreatedLog
 {
     public Task HandleAsync(CollaboratorCreatedDomainEvent domainEvent, CancellationToken cancellationToken = default)
     {
-        logger.LogInformation("Evento CollaboratorCreated processado. CollaboratorId={CollaboratorId} OrganizationId={OrganizationId}",
-            domainEvent.CollaboratorId,
-            domainEvent.OrganizationId);
+        logger.LogCollaboratorCreatedProcessed(domainEvent.CollaboratorId, domainEvent.OrganizationId);
         return Task.CompletedTask;
     }
 }

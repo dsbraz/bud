@@ -1,7 +1,7 @@
+using System.Net.Http.Json;
 using Bud.Mcp.Configuration;
 using Bud.Mcp.Http;
 using Bud.Shared.Contracts;
-using System.Net.Http.Json;
 
 namespace Bud.Mcp.Auth;
 

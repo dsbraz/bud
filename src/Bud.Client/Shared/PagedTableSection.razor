@@ -1,0 +1,22 @@
+@if (IsLoading)
+{
+    <p class="muted">@LoadingText</p>
+}
+else if (IsEmpty)
+{
+    <p class="muted">@EmptyText</p>
+}
+else
+{
+    @ChildContent
+    <p class="muted" style="margin-top: var(--spacing-4);">Total: @Total</p>
+}
+
+@code {
+    [Parameter] public bool IsLoading { get; set; }
+    [Parameter] public bool IsEmpty { get; set; }
+    [Parameter] public int Total { get; set; }
+    [Parameter] public string LoadingText { get; set; } = "Carregando...";
+    [Parameter] public string EmptyText { get; set; } = "Nenhum registro encontrado.";
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+}

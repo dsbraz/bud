@@ -1,4 +1,5 @@
 using Bud.Server.Data;
+using Bud.Server.Logging;
 using Microsoft.EntityFrameworkCore;
 
 namespace Bud.Server.DependencyInjection;
@@ -29,18 +30,18 @@ public static class WebApplicationExtensions
             }
             catch (Exception ex)
             {
-                logger.LogWarning(ex, "Migration attempt {Attempt} failed.", attempt);
+                logger.LogMigrationAttemptFailed(ex, attempt);
                 Thread.Sleep(TimeSpan.FromSeconds(3));
             }
         }
 
         if (!migrated)
         {
-            logger.LogError("Database migration failed after {Attempts} attempts.", maxAttempts);
+            logger.LogMigrationFailedAfterAttempts(maxAttempts);
             return;
         }
 
         await DbSeeder.SeedAsync(dbContext);
-        logger.LogInformation("Database seed completed.");
+        logger.LogDatabaseSeedCompleted();
     }
 }

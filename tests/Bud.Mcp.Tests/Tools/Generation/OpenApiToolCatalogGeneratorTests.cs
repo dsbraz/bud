@@ -1,5 +1,5 @@
-using Bud.Mcp.Tools.Generation;
 using System.Text.Json.Nodes;
+using Bud.Mcp.Tools.Generation;
 
 namespace Bud.Mcp.Tests.Tools.Generation;
 

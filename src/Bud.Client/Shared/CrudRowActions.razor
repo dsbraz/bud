@@ -1,0 +1,31 @@
+<div class="table-actions">
+    <EditIconButton
+        OnClick="OnEdit"
+        StopPropagation="@StopPropagation"
+        Disabled="@EditDisabled"
+        Title="@EditTitle" />
+
+    <ConfirmDeleteButton
+        IsConfirming="@IsDeleteConfirming"
+        OnClick="OnDelete"
+        StopPropagation="@StopPropagation"
+        Disabled="@DeleteDisabled"
+        NormalTitle="@DeleteTitle"
+        ConfirmTitle="@DeleteConfirmTitle"
+        ConfirmText="@DeleteConfirmText" />
+</div>
+
+@code {
+    [Parameter] public bool StopPropagation { get; set; } = true;
+
+    [Parameter] public bool EditDisabled { get; set; }
+    [Parameter] public string EditTitle { get; set; } = "Editar";
+    [Parameter] public EventCallback OnEdit { get; set; }
+
+    [Parameter] public bool IsDeleteConfirming { get; set; }
+    [Parameter] public bool DeleteDisabled { get; set; }
+    [Parameter] public string DeleteTitle { get; set; } = "Excluir";
+    [Parameter] public string DeleteConfirmTitle { get; set; } = "Clique novamente para confirmar";
+    [Parameter] public string DeleteConfirmText { get; set; } = "Confirmar?";
+    [Parameter] public EventCallback OnDelete { get; set; }
+}

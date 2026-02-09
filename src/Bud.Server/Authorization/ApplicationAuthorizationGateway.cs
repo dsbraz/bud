@@ -1,7 +1,7 @@
+using System.Security.Claims;
 using Bud.Server.Application.Common.Authorization;
 using Bud.Server.Authorization.ResourceScopes;
 using Microsoft.AspNetCore.Authorization;
-using System.Security.Claims;
 
 namespace Bud.Server.Authorization;
 

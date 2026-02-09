@@ -6,14 +6,12 @@
 
 <ManagementMenu />
 
-@* Header *@
-<div class="teams-page-header">
-    <h1 class="teams-page-title">Equipes</h1>
-    <button class="button primary" @onclick="OpenCreateModal">
-        <span class="button-icon-text">+</span>
-        Nova equipe
-    </button>
-</div>
+<ManagementPageHeader
+    Kicker="Gestão"
+    Title="Equipes"
+    Subtitle="Gerencie equipes e subequipes."
+    PrimaryActionText="Nova equipe"
+    OnPrimaryAction="OpenCreateModal" />
 
 @* Barra de Filtros *@
 <div class="teams-filter-bar">
@@ -75,34 +73,18 @@
     </div>
 }
 
-@* Cards de Resumo *@
-<div class="teams-summary">
-    <div class="summary-card" style="align-items: center; text-align: center;">
-        <div class="summary-card-value">@GetTotalTeamsCount()</div>
-        <div class="summary-card-label">Total de equipes</div>
-    </div>
-    <div class="summary-card" style="align-items: center; text-align: center;">
-        <div class="summary-card-value">@GetRootTeamsCount()</div>
-        <div class="summary-card-label">Equipes raiz</div>
-    </div>
-    <div class="summary-card" style="align-items: center; text-align: center;">
-        <div class="summary-card-value">@GetSubTeamsCount()</div>
-        <div class="summary-card-label">Subequipes</div>
-    </div>
-</div>
+<TeamsSummaryCards
+    TotalTeams="GetTotalTeamsCount()"
+    RootTeams="GetRootTeamsCount()"
+    SubTeams="GetSubTeamsCount()" />
 
 @* Lista de Equipes *@
 <div class="teams-table-container">
-    @if (teams is null)
-    {
-        <p class="muted">Carregando...</p>
-    }
-    else if (teams.Items.Count == 0)
-    {
-        <p class="muted">Nenhuma equipe encontrada.</p>
-    }
-    else
-    {
+    <PagedTableSection
+        IsLoading="@(teams is null)"
+        IsEmpty="@(teams is not null && teams.Items.Count == 0)"
+        Total="@(teams?.Total ?? 0)"
+        EmptyText="Nenhuma equipe encontrada.">
         <table class="table">
             <thead>
                 <tr>
@@ -113,7 +95,7 @@
                 </tr>
             </thead>
             <tbody>
-                @foreach (var team in teams.Items)
+                @foreach (var team in teams!.Items)
                 {
                     var workspace = workspaces.FirstOrDefault(w => w.Id == team.WorkspaceId);
                     var parent = allTeams.FirstOrDefault(t => t.Id == team.ParentTeamId);
@@ -123,38 +105,19 @@
                         <td>@(workspace?.Name ?? "—")</td>
                         <td>@(parent?.Name ?? "—")</td>
                         <td style="text-align: center;">
-                            <div class="table-actions">
-                                <button class="button-icon" @onclick="() => OpenEditModal(team)"
-                                        @onclick:stopPropagation="true"
-                                        title="Editar equipe">
-                                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-                                        <path d="M11.334 2.00004C11.5091 1.82494 11.7169 1.68605 11.9457 1.59129C12.1745 1.49653 12.4197 1.44775 12.6673 1.44775C12.9149 1.44775 13.1601 1.49653 13.3889 1.59129C13.6177 1.68605 13.8256 1.82494 14.0007 2.00004C14.1758 2.17513 14.3147 2.383 14.4094 2.61178C14.5042 2.84055 14.553 3.08575 14.553 3.33337C14.553 3.58099 14.5042 3.82619 14.4094 4.05497C14.3147 4.28374 14.1758 4.49161 14.0007 4.66671L5.00065 13.6667L1.33398 14.6667L2.33398 11L11.334 2.00004Z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-                                    </svg>
-                                </button>
-                                <button class="button-icon @(isDeleting ? "danger" : "")"
-                                        @onclick="() => HandleDeleteClick(team.Id)"
-                                        @onclick:stopPropagation="true"
-                                        title="@(isDeleting ? "Clique novamente para confirmar" : "Excluir equipe")">
-                                    @if (isDeleting)
-                                    {
-                                        <span style="font-size: 11px; white-space: nowrap;">Confirmar?</span>
-                                    }
-                                    else
-                                    {
-                                        <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-                                            <path d="M2 4H3.33333H14" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-                                            <path d="M5.33398 4.00004V2.66671C5.33398 2.31309 5.47446 1.97395 5.72451 1.7239C5.97456 1.47385 6.3137 1.33337 6.66732 1.33337H9.33398C9.6876 1.33337 10.0268 1.47385 10.2768 1.7239C10.5269 1.97395 10.6673 2.31309 10.6673 2.66671V4.00004M12.6673 4.00004V13.3334C12.6673 13.687 12.5269 14.0261 12.2768 14.2762C12.0268 14.5262 11.6876 14.6667 11.334 14.6667H4.66732C4.3137 14.6667 3.97456 14.5262 3.72451 14.2762C3.47446 14.0261 3.33398 13.687 3.33398 13.3334V4.00004H12.6673Z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-                                        </svg>
-                                    }
-                                </button>
-                            </div>
+                            <CrudRowActions
+                                StopPropagation="true"
+                                EditTitle="Editar equipe"
+                                OnEdit="@(() => OpenEditModal(team))"
+                                IsDeleteConfirming="@isDeleting"
+                                DeleteTitle="Excluir equipe"
+                                OnDelete="@(() => HandleDeleteClick(team.Id))" />
                         </td>
                     </tr>
                 }
             </tbody>
         </table>
-        <p class="muted" style="margin-top: var(--spacing-4);">Total: @teams.Total</p>
-    }
+    </PagedTableSection>
 </div>
 
 @if (isModalOpen)
@@ -466,29 +429,25 @@
         newTeam.WorkspaceId = workspaceId;
         newTeam.ParentTeamId = Guid.TryParse(createParentTeamId, out var parentId) ? parentId : null;
 
-        try
-        {
-            await Api.CreateTeamAsync(newTeam);
-            var createdTeamName = newTeam.Name;
-            newTeam = new CreateTeamRequest();
-            createWorkspaceId = null;
-            createParentTeamId = null;
-            parentTeams.Clear();
-            await LoadTeams();
+        await UiOperationRunner.RunAsync(
+            async () =>
+            {
+                await Api.CreateTeamAsync(newTeam);
+                var createdTeamName = newTeam.Name;
+                newTeam = new CreateTeamRequest();
+                createWorkspaceId = null;
+                createParentTeamId = null;
+                parentTeams.Clear();
+                await LoadTeams();
 
-            ToastService.ShowSuccess("Equipe criada com sucesso!", $"A equipe '{createdTeamName}' foi criada.");
-            CloseModal();
-        }
-        catch (HttpRequestException ex)
-        {
-            Console.Error.WriteLine($"Erro HTTP ao criar equipe: {ex.Message}");
-            ToastService.ShowError("Erro ao criar equipe", "Não foi possível criar a equipe. Verifique os dados e tente novamente.");
-        }
-        catch (Exception ex)
-        {
-            Console.Error.WriteLine($"Erro inesperado ao criar equipe: {ex.Message}");
-            ToastService.ShowError("Erro inesperado", "Não foi possível criar a equipe. Tente novamente.");
-        }
+                ToastService.ShowSuccess("Equipe criada com sucesso!", $"A equipe '{createdTeamName}' foi criada.");
+                CloseModal();
+            },
+            ToastService,
+            "Erro ao criar equipe",
+            "Não foi possível criar a equipe. Verifique os dados e tente novamente.",
+            operationContext: "criação de equipe",
+            unexpectedErrorMessage: "Não foi possível criar a equipe. Tente novamente.");
     }
 
     private async Task OpenEditModal(Team team)
@@ -531,36 +490,32 @@
 
         editTeam.ParentTeamId = Guid.TryParse(editParentTeamId, out var parentId) ? parentId : null;
 
-        try
-        {
-            var result = await Api.UpdateTeamAsync(selectedTeam.Id, editTeam);
-            if (result != null)
+        await UiOperationRunner.RunAsync(
+            async () =>
             {
-                // Update collaborators if modified
-                if (collaboratorsModified)
+                var result = await Api.UpdateTeamAsync(selectedTeam.Id, editTeam);
+                if (result != null)
                 {
-                    await Api.UpdateTeamCollaboratorsAsync(selectedTeam.Id, new UpdateTeamCollaboratorsRequest
+                    // Update collaborators if modified
+                    if (collaboratorsModified)
                     {
-                        CollaboratorIds = assignedCollaboratorsForEdit.Select(c => c.Id).ToList()
-                    });
-                }
+                        await Api.UpdateTeamCollaboratorsAsync(selectedTeam.Id, new UpdateTeamCollaboratorsRequest
+                        {
+                            CollaboratorIds = assignedCollaboratorsForEdit.Select(c => c.Id).ToList()
+                        });
+                    }
 
-                ToastService.ShowSuccess("Equipe atualizada", "As alterações foram salvas com sucesso.");
-                CloseEditModal();
-                await LoadTeams();
-                await LoadCollaborators();
-            }
-        }
-        catch (HttpRequestException ex)
-        {
-            Console.Error.WriteLine($"Erro HTTP ao atualizar equipe: {ex.Message}");
-            ToastService.ShowError("Erro ao atualizar", "Não foi possível atualizar a equipe. Verifique os dados e tente novamente.");
-        }
-        catch (Exception ex)
-        {
-            Console.Error.WriteLine($"Erro inesperado ao atualizar equipe: {ex.Message}");
-            ToastService.ShowError("Erro inesperado", "Não foi possível atualizar a equipe. Tente novamente.");
-        }
+                    ToastService.ShowSuccess("Equipe atualizada", "As alterações foram salvas com sucesso.");
+                    CloseEditModal();
+                    await LoadTeams();
+                    await LoadCollaborators();
+                }
+            },
+            ToastService,
+            "Erro ao atualizar",
+            "Não foi possível atualizar a equipe. Verifique os dados e tente novamente.",
+            operationContext: "atualização de equipe",
+            unexpectedErrorMessage: "Não foi possível atualizar a equipe. Tente novamente.");
     }
 
     private void OnCollaboratorsChanged(List<CollaboratorSummaryDto> collaborators)
@@ -606,19 +561,18 @@
     {
         try
         {
-            await Api.DeleteTeamAsync(teamId);
-            ToastService.ShowSuccess("Equipe excluída", "A equipe foi removida com sucesso.");
-            await LoadTeams();
-        }
-        catch (HttpRequestException ex)
-        {
-            Console.Error.WriteLine($"Erro HTTP ao excluir equipe: {ex.Message}");
-            ToastService.ShowError("Erro ao excluir", "Não foi possível excluir a equipe. Tente novamente.");
-        }
-        catch (Exception ex)
-        {
-            Console.Error.WriteLine($"Erro inesperado ao excluir equipe: {ex.Message}");
-            ToastService.ShowError("Erro inesperado", "Não foi possível excluir a equipe. Tente novamente.");
+            await UiOperationRunner.RunAsync(
+                async () =>
+                {
+                    await Api.DeleteTeamAsync(teamId);
+                    ToastService.ShowSuccess("Equipe excluída", "A equipe foi removida com sucesso.");
+                    await LoadTeams();
+                },
+                ToastService,
+                "Erro ao excluir",
+                "Não foi possível excluir a equipe. Tente novamente.",
+                operationContext: "exclusão de equipe",
+                unexpectedErrorMessage: "Não foi possível excluir a equipe. Tente novamente.");
         }
         finally
         {

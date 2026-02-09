@@ -1,6 +1,7 @@
 using Bud.Server.Application.Common.Events;
 using Bud.Server.Domain.Organizations.Events;
 using Microsoft.Extensions.Logging;
+using Bud.Server.Logging;
 
 namespace Bud.Server.Application.Organizations.Events;
 
@@ -8,7 +9,7 @@ public sealed class OrganizationCreatedLogHandler(ILogger<OrganizationCreatedLog
 {
     public Task HandleAsync(OrganizationCreatedDomainEvent domainEvent, CancellationToken cancellationToken = default)
     {
-        logger.LogInformation("Evento OrganizationCreated processado. OrganizationId={OrganizationId}", domainEvent.OrganizationId);
+        logger.LogOrganizationCreatedProcessed(domainEvent.OrganizationId);
         return Task.CompletedTask;
     }
 }

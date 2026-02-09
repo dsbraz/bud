@@ -6,13 +6,7 @@
 
 <MissionsMenu />
 
-<div class="missions-page-header">
-    <h1 class="missions-page-title">Minhas missões</h1>
-    <button class="button primary" @onclick="OpenCreateModal">
-        <span class="button-icon-text">+</span>
-        Criar missão
-    </button>
-</div>
+<MissionsPageHeader Title="Minhas missões" OnCreate="OpenCreateModal" />
 
 @* Barra de Filtros Compacta *@
 <div class="missions-filter-bar">
@@ -122,25 +116,11 @@
 }
 
 @* Cards de Resumo *@
-<div class="missions-summary">
-    <div class="summary-card">
-        <div class="summary-card-value">@GetOverallProgressDisplay()%</div>
-        <div class="summary-card-label">Esperado @GetExpectedProgressDisplay()%</div>
-        <div class="summary-card-progress">
-            <div class="summary-progress-bar">
-                <div class="summary-progress-fill" style="width: @GetOverallProgressDisplay()%"></div>
-            </div>
-        </div>
-    </div>
-    <div class="summary-card" style="align-items: center; text-align: center;">
-        <div class="summary-card-value">@GetActiveMissionsCount()</div>
-        <div class="summary-card-label">Missões ativas</div>
-    </div>
-    <div class="summary-card" style="align-items: center; text-align: center;">
-        <div class="summary-card-value">@GetOutdatedMetricsCount()</div>
-        <div class="summary-card-label">Indicadores desatualizados</div>
-    </div>
-</div>
+<MissionsSummaryCards
+    OverallProgress="GetOverallProgressDisplay()"
+    ExpectedProgress="GetExpectedProgressDisplay()"
+    ActiveMissions="GetActiveMissionsCount()"
+    OutdatedMetrics="GetOutdatedMetricsCount()" />
 
 @* Lista de Missões em Cards *@
 @if (missions is null)
@@ -707,28 +687,12 @@ else
                                             <div class="metric-name">@metric.Name</div>
                                             <div class="metric-details">@GetTargetLabel(metric)</div>
                                         </div>
-                                        <div class="table-actions">
-                                            <button type="button" class="button-icon" @onclick="() => StartEditingMetric(metric)" title="Editar métrica">
-                                                <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-                                                    <path d="M11.334 2.00004C11.5091 1.82494 11.7169 1.68605 11.9457 1.59129C12.1745 1.49653 12.4197 1.44775 12.6673 1.44775C12.9149 1.44775 13.1601 1.49653 13.3889 1.59129C13.6177 1.68605 13.8256 1.82494 14.0007 2.00004C14.1758 2.17513 14.3147 2.383 14.4094 2.61178C14.5042 2.84055 14.553 3.08575 14.553 3.33337C14.553 3.58099 14.5042 3.82619 14.4094 4.05497C14.3147 4.28374 14.1758 4.49161 14.0007 4.66671L5.00065 13.6667L1.33398 14.6667L2.33398 11L11.334 2.00004Z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-                                                </svg>
-                                            </button>
-                                            <button type="button" class="button-icon @(isDeletingMetric ? "danger" : "")"
-                                                    @onclick="() => HandleDeleteMetricClick(metric.Id)"
-                                                    title="@(isDeletingMetric ? "Clique novamente para confirmar" : "Excluir métrica")">
-                                                @if (isDeletingMetric)
-                                                {
-                                                    <span style="font-size: 11px; white-space: nowrap;">Confirmar?</span>
-                                                }
-                                                else
-                                                {
-                                                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-                                                        <path d="M2 4H3.33333H14" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-                                                        <path d="M5.33398 4.00004V2.66671C5.33398 2.31309 5.47446 1.97395 5.72451 1.7239C5.97456 1.47385 6.3137 1.33337 6.66732 1.33337H9.33398C9.6876 1.33337 10.0268 1.47385 10.2768 1.7239C10.5269 1.97395 10.6673 2.31309 10.6673 2.66671V4.00004M12.6673 4.00004V13.3334C12.6673 13.687 12.5269 14.0261 12.2768 14.2762C12.0268 14.5262 11.6876 14.6667 11.334 14.6667H4.66732C4.3137 14.6667 3.97456 14.5262 3.72451 14.2762C3.47446 14.0261 3.33398 13.687 3.33398 13.3334V4.00004H12.6673Z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-                                                    </svg>
-                                                }
-                                            </button>
-                                        </div>
+                                        <CrudRowActions
+                                            EditTitle="Editar métrica"
+                                            OnEdit="@(() => StartEditingMetric(metric))"
+                                            IsDeleteConfirming="@isDeletingMetric"
+                                            DeleteTitle="Excluir métrica"
+                                            OnDelete="@(() => HandleDeleteMetricClick(metric.Id))" />
                                     </div>
                                 }
                             }
@@ -877,6 +841,7 @@ else
         </ChildContent>
     </Modal>
 }
+
 
 @code {
     private sealed record ScopeOption(string Id, string Name);
@@ -1296,54 +1261,20 @@ else
 
     private async Task SaveDraft()
     {
-        if (!Enum.TryParse<MissionScopeType>(createScopeTypeValue, out var scopeType))
+        if (!TryValidateMissionCreation("Erro ao salvar rascunho", out var scopeType, out var scopeId))
         {
-            ToastService.ShowError("Erro ao salvar rascunho", "Selecione o escopo.");
             return;
         }
 
-        if (!Guid.TryParse(createScopeId, out var scopeId))
-        {
-            ToastService.ShowError("Erro ao salvar rascunho", "Selecione a referência do escopo.");
-            return;
-        }
-
-        if (string.IsNullOrWhiteSpace(newMission.Name))
-        {
-            ToastService.ShowError("Erro ao salvar rascunho", "Informe o nome da missão.");
-            return;
-        }
-
-        if (newMission.EndDate < newMission.StartDate)
-        {
-            ToastService.ShowError("Erro ao salvar rascunho", "A data de fim precisa ser igual ou maior que a data de início.");
-            return;
-        }
-
-        FlushPendingMetric();
-
-        newMission.ScopeType = scopeType;
-        newMission.ScopeId = scopeId;
-        newMission.Description = missionDescription;
-        newMission.Status = MissionStatus.Planned;
-
-        var createdMission = await Api.CreateMissionAsync(newMission);
-
-        // Create metrics for the mission
-        await CreateMetricsForMission(createdMission);
-
-        newMission = new CreateMissionRequest
-        {
-            StartDate = DateTime.Today,
-            EndDate = DateTime.Today.AddDays(7),
-            Status = MissionStatus.Planned
-        };
-        createScopeTypeValue = null;
-        createScopeId = null;
-        await LoadMissions();
-
-        ToastService.ShowSuccess("Rascunho salvo com sucesso!", "A missão foi salva como rascunho.");
-        CloseModal();
+        await CreateMissionWithStatusAsync(
+            scopeType,
+            scopeId,
+            MissionStatus.Planned,
+            "Rascunho salvo com sucesso!",
+            _ => "A missão foi salva como rascunho.",
+            "Erro ao salvar rascunho",
+            "Não foi possível salvar o rascunho da missão. Verifique os dados e tente novamente.",
+            "salvamento de rascunho de missão");
     }
 
     private void FlushPendingMetric()
@@ -1520,54 +1451,95 @@ else
 
     private async Task CreateMission()
     {
-        if (!Enum.TryParse<MissionScopeType>(createScopeTypeValue, out var scopeType))
+        if (!TryValidateMissionCreation("Erro ao criar missão", out var scopeType, out var scopeId))
         {
-            ToastService.ShowError("Erro ao criar missão", "Selecione o escopo.");
             return;
         }
 
-        if (!Guid.TryParse(createScopeId, out var scopeId))
+        await CreateMissionWithStatusAsync(
+            scopeType,
+            scopeId,
+            MissionStatus.Active,
+            "Missão criada com sucesso!",
+            createdMission => $"A missão '{createdMission?.Name}' foi criada e está ativa.",
+            "Erro ao criar missão",
+            "Não foi possível criar a missão. Verifique os dados e tente novamente.",
+            "criação de missão");
+    }
+
+    private bool TryValidateMissionCreation(string errorTitle, out MissionScopeType scopeType, out Guid scopeId)
+    {
+        scopeType = default;
+        scopeId = Guid.Empty;
+
+        if (!Enum.TryParse<MissionScopeType>(createScopeTypeValue, out scopeType))
         {
-            ToastService.ShowError("Erro ao criar missão", "Selecione a referência do escopo.");
-            return;
+            ToastService.ShowError(errorTitle, "Selecione o escopo.");
+            return false;
+        }
+
+        if (!Guid.TryParse(createScopeId, out scopeId))
+        {
+            ToastService.ShowError(errorTitle, "Selecione a referência do escopo.");
+            return false;
         }
 
         if (string.IsNullOrWhiteSpace(newMission.Name))
         {
-            ToastService.ShowError("Erro ao criar missão", "Informe o nome da missão.");
-            return;
+            ToastService.ShowError(errorTitle, "Informe o nome da missão.");
+            return false;
         }
 
         if (newMission.EndDate < newMission.StartDate)
         {
-            ToastService.ShowError("Erro ao criar missão", "A data de fim precisa ser igual ou maior que a data de início.");
-            return;
+            ToastService.ShowError(errorTitle, "A data de fim precisa ser igual ou maior que a data de início.");
+            return false;
         }
 
+        return true;
+    }
+
+    private async Task CreateMissionWithStatusAsync(
+        MissionScopeType scopeType,
+        Guid scopeId,
+        MissionStatus status,
+        string successTitle,
+        Func<Mission?, string> successMessageFactory,
+        string errorTitle,
+        string errorMessage,
+        string operationContext)
+    {
         FlushPendingMetric();
 
-        newMission.ScopeType = scopeType;
-        newMission.ScopeId = scopeId;
-        newMission.Description = missionDescription;
-        newMission.Status = MissionStatus.Active;
+        await UiOperationRunner.RunAsync(
+            async () =>
+            {
+                newMission.ScopeType = scopeType;
+                newMission.ScopeId = scopeId;
+                newMission.Description = missionDescription;
+                newMission.Status = status;
 
-        var createdMission = await Api.CreateMissionAsync(newMission);
+                var createdMission = await Api.CreateMissionAsync(newMission);
+                await CreateMetricsForMission(createdMission);
 
-        // Create metrics for the mission
-        await CreateMetricsForMission(createdMission);
+                newMission = new CreateMissionRequest
+                {
+                    StartDate = DateTime.Today,
+                    EndDate = DateTime.Today.AddDays(7),
+                    Status = MissionStatus.Planned
+                };
+                createScopeTypeValue = null;
+                createScopeId = null;
 
-        newMission = new CreateMissionRequest
-        {
-            StartDate = DateTime.Today,
-            EndDate = DateTime.Today.AddDays(7),
-            Status = MissionStatus.Planned
-        };
-        createScopeTypeValue = null;
-        createScopeId = null;
-        await LoadMissions();
+                await LoadMissions();
 
-        ToastService.ShowSuccess("Missão criada com sucesso!", $"A missão '{createdMission?.Name}' foi criada e está ativa.");
-        CloseModal();
+                ToastService.ShowSuccess(successTitle, successMessageFactory(createdMission));
+                CloseModal();
+            },
+            ToastService,
+            errorTitle,
+            errorMessage,
+            operationContext);
     }
 
     private IEnumerable<ScopeOption> GetScopeOptions(string? scopeTypeValue)
@@ -1903,36 +1875,21 @@ else
         newCheckin.MissionMetricId = selectedCheckinMetric.Id;
         newCheckin.CheckinDate = DateTime.UtcNow;
 
-        try
-        {
-            await Api.CreateMetricCheckinAsync(newCheckin);
-            ToastService.ShowSuccess("Check-in criado", "O check-in foi registrado com sucesso.");
-            CloseCheckinModal();
-            await LoadProgress();
-        }
-        catch (HttpRequestException ex)
-        {
-            Console.Error.WriteLine($"Erro HTTP ao criar check-in em missão: {ex.Message}");
-            ToastService.ShowError("Erro ao criar check-in", "Não foi possível criar o check-in. Verifique os dados e tente novamente.");
-        }
+        await UiOperationRunner.RunAsync(
+            async () =>
+            {
+                await Api.CreateMetricCheckinAsync(newCheckin);
+                ToastService.ShowSuccess("Check-in criado", "O check-in foi registrado com sucesso.");
+                CloseCheckinModal();
+                await LoadProgress();
+            },
+            ToastService,
+            "Erro ao criar check-in",
+            "Não foi possível criar o check-in. Verifique os dados e tente novamente.",
+            "criação de check-in em missão");
     }
 
-    private static string GetCheckinTargetHint(MissionMetric metric)
-    {
-        if (metric.Type != MetricType.Quantitative || !metric.QuantitativeType.HasValue) return "";
-
-        var unit = metric.Unit.HasValue ? GetUnitLabel(metric.Unit.Value) : "";
-
-        return metric.QuantitativeType switch
-        {
-            QuantitativeMetricType.KeepAbove => $"(manter acima de {metric.MinValue} {unit})",
-            QuantitativeMetricType.KeepBelow => $"(manter abaixo de {metric.MaxValue} {unit})",
-            QuantitativeMetricType.KeepBetween => $"(manter entre {metric.MinValue} e {metric.MaxValue} {unit})",
-            QuantitativeMetricType.Achieve => $"(atingir {metric.MaxValue} {unit})",
-            QuantitativeMetricType.Reduce => $"(reduzir para {metric.MaxValue} {unit})",
-            _ => ""
-        };
-    }
+    private static string GetCheckinTargetHint(MissionMetric metric) => MissionMetricDisplayHelper.GetCheckinTargetHint(metric);
 
     private static string GetMaxValuePlaceholder(string? quantitativeType) => quantitativeType switch
     {
@@ -2024,18 +1981,18 @@ else
 
         editMission.Description = editMissionDescription;
 
-        try
-        {
-            await Api.UpdateMissionAsync(selectedMission.Id, editMission);
-            ToastService.ShowSuccess("Missão atualizada", "As alterações foram salvas com sucesso.");
-            CloseEditModal();
-            await LoadMissions();
-        }
-        catch (HttpRequestException ex)
-        {
-            Console.Error.WriteLine($"Erro HTTP ao atualizar missão: {ex.Message}");
-            ToastService.ShowError("Erro ao atualizar", "Não foi possível atualizar a missão. Verifique os dados e tente novamente.");
-        }
+        await UiOperationRunner.RunAsync(
+            async () =>
+            {
+                await Api.UpdateMissionAsync(selectedMission.Id, editMission);
+                ToastService.ShowSuccess("Missão atualizada", "As alterações foram salvas com sucesso.");
+                CloseEditModal();
+                await LoadMissions();
+            },
+            ToastService,
+            "Erro ao atualizar",
+            "Não foi possível atualizar a missão. Verifique os dados e tente novamente.",
+            "atualização de missão");
     }
 
     private async Task HandleDeleteClick(Guid missionId)
@@ -2046,18 +2003,7 @@ else
         }
         else
         {
-            deletingMissionId = missionId;
-            deleteConfirmTimer?.Dispose();
-            deleteConfirmTimer = new System.Threading.Timer(
-                _ => InvokeAsync(() =>
-                {
-                    deletingMissionId = null;
-                    StateHasChanged();
-                }),
-                null,
-                3000,
-                Timeout.Infinite
-            );
+            ArmMissionDeleteConfirmation(missionId);
         }
     }
 
@@ -2065,20 +2011,21 @@ else
     {
         try
         {
-            await Api.DeleteMissionAsync(missionId);
-            ToastService.ShowSuccess("Missão excluída", "A missão foi removida com sucesso.");
-            await LoadMissions();
-        }
-        catch (HttpRequestException ex)
-        {
-            Console.Error.WriteLine($"Erro HTTP ao excluir missão: {ex.Message}");
-            ToastService.ShowError("Erro ao excluir", "Não foi possível excluir a missão. Tente novamente.");
+            await UiOperationRunner.RunAsync(
+                async () =>
+                {
+                    await Api.DeleteMissionAsync(missionId);
+                    ToastService.ShowSuccess("Missão excluída", "A missão foi removida com sucesso.");
+                    await LoadMissions();
+                },
+                ToastService,
+                "Erro ao excluir",
+                "Não foi possível excluir a missão. Tente novamente.",
+                "exclusão de missão");
         }
         finally
         {
-            deletingMissionId = null;
-            deleteConfirmTimer?.Dispose();
-            deleteConfirmTimer = null;
+            ClearMissionDeleteConfirmation();
         }
     }
 
@@ -2131,21 +2078,21 @@ else
                 editMetric.Unit = unit;
         }
 
-        try
-        {
-            await Api.UpdateMissionMetricAsync(editingMetricId.Value, editMetric);
-            ToastService.ShowSuccess("Métrica atualizada", "A métrica foi salva com sucesso.");
+        await UiOperationRunner.RunAsync(
+            async () =>
+            {
+                await Api.UpdateMissionMetricAsync(editingMetricId.Value, editMetric);
+                ToastService.ShowSuccess("Métrica atualizada", "A métrica foi salva com sucesso.");
 
-            var metricsResult = await Api.GetMissionMetricsByMissionIdAsync(selectedMission.Id);
-            editMissionMetrics = metricsResult?.Items.ToList() ?? new();
+                var metricsResult = await Api.GetMissionMetricsByMissionIdAsync(selectedMission.Id);
+                editMissionMetrics = metricsResult?.Items.ToList() ?? new();
 
-            CancelEditingMetric();
-        }
-        catch (HttpRequestException ex)
-        {
-            Console.Error.WriteLine($"Erro HTTP ao atualizar métrica da missão: {ex.Message}");
-            ToastService.ShowError("Erro ao atualizar métrica", "Não foi possível atualizar a métrica. Verifique os dados e tente novamente.");
-        }
+                CancelEditingMetric();
+            },
+            ToastService,
+            "Erro ao atualizar métrica",
+            "Não foi possível atualizar a métrica. Verifique os dados e tente novamente.",
+            "atualização de métrica da missão");
     }
 
     private async Task OnEditMetricTypeChanged(ChangeEventArgs e)
@@ -2168,18 +2115,7 @@ else
         }
         else
         {
-            deletingMetricId = metricId;
-            deleteMetricConfirmTimer?.Dispose();
-            deleteMetricConfirmTimer = new System.Threading.Timer(
-                _ => InvokeAsync(() =>
-                {
-                    deletingMetricId = null;
-                    StateHasChanged();
-                }),
-                null,
-                3000,
-                Timeout.Infinite
-            );
+            ArmMetricDeleteConfirmation(metricId);
         }
     }
 
@@ -2187,154 +2123,95 @@ else
     {
         try
         {
-            await Api.DeleteMissionMetricAsync(metricId);
-            ToastService.ShowSuccess("Métrica excluída", "A métrica foi removida com sucesso.");
+            await UiOperationRunner.RunAsync(
+                async () =>
+                {
+                    await Api.DeleteMissionMetricAsync(metricId);
+                    ToastService.ShowSuccess("Métrica excluída", "A métrica foi removida com sucesso.");
 
-            if (selectedMission != null)
-            {
-                var metricsResult = await Api.GetMissionMetricsByMissionIdAsync(selectedMission.Id);
-                editMissionMetrics = metricsResult?.Items.ToList() ?? new();
-            }
-        }
-        catch (HttpRequestException ex)
-        {
-            Console.Error.WriteLine($"Erro HTTP ao excluir métrica da missão: {ex.Message}");
-            ToastService.ShowError("Erro ao excluir métrica", "Não foi possível excluir a métrica. Tente novamente.");
+                    if (selectedMission != null)
+                    {
+                        var metricsResult = await Api.GetMissionMetricsByMissionIdAsync(selectedMission.Id);
+                        editMissionMetrics = metricsResult?.Items.ToList() ?? new();
+                    }
+                },
+                ToastService,
+                "Erro ao excluir métrica",
+                "Não foi possível excluir a métrica. Tente novamente.",
+                "exclusão de métrica da missão");
         }
         finally
         {
-            deletingMetricId = null;
-            deleteMetricConfirmTimer?.Dispose();
-            deleteMetricConfirmTimer = null;
+            ClearMetricDeleteConfirmation();
         }
+    }
+
+    private void ArmMissionDeleteConfirmation(Guid missionId)
+    {
+        deletingMissionId = missionId;
+        deleteConfirmTimer?.Dispose();
+        deleteConfirmTimer = new System.Threading.Timer(
+            _ => InvokeAsync(() =>
+            {
+                deletingMissionId = null;
+                StateHasChanged();
+            }),
+            null,
+            3000,
+            Timeout.Infinite);
+    }
+
+    private void ClearMissionDeleteConfirmation()
+    {
+        deletingMissionId = null;
+        deleteConfirmTimer?.Dispose();
+        deleteConfirmTimer = null;
+    }
+
+    private void ArmMetricDeleteConfirmation(Guid metricId)
+    {
+        deletingMetricId = metricId;
+        deleteMetricConfirmTimer?.Dispose();
+        deleteMetricConfirmTimer = new System.Threading.Timer(
+            _ => InvokeAsync(() =>
+            {
+                deletingMetricId = null;
+                StateHasChanged();
+            }),
+            null,
+            3000,
+            Timeout.Infinite);
+    }
+
+    private void ClearMetricDeleteConfirmation()
+    {
+        deletingMetricId = null;
+        deleteMetricConfirmTimer?.Dispose();
+        deleteMetricConfirmTimer = null;
     }
 
     // ---- Progress & Confidence Helpers ----
 
-    private static string GetProgressStatusClass(MissionProgressDto? progress)
-    {
-        if (progress is null)
-        {
-            return "no-data";
-        }
+    private static string GetProgressStatusClass(MissionProgressDto? progress) => MissionProgressDisplayHelper.GetMissionProgressStatusClass(progress);
 
-        if (progress.MetricsWithCheckins == 0)
-        {
-            return "no-data";
-        }
+    private static (string statusClass, string label) GetConfidenceDisplay(decimal averageConfidence) => MissionProgressDisplayHelper.GetConfidenceDisplay(averageConfidence);
 
-        if (progress.ExpectedProgress <= 0)
-        {
-            return "on-track";
-        }
+    private static string GetConfidenceClass(decimal confidence) => MissionProgressDisplayHelper.GetConfidenceClass(confidence);
 
-        if (progress.OverallProgress >= progress.ExpectedProgress)
-        {
-            return "on-track";
-        }
+    private static string GetConfidenceLabel(decimal confidence) => MissionProgressDisplayHelper.GetConfidenceLabel(confidence);
 
-        if (progress.OverallProgress >= progress.ExpectedProgress * 0.7m)
-        {
-            return "at-risk";
-        }
-
-        return "off-track";
-    }
-
-    private static (string statusClass, string label) GetConfidenceDisplay(decimal averageConfidence)
-    {
-        return averageConfidence switch
-        {
-            >= 4m => ("on-track", "No caminho"),
-            >= 2m => ("at-risk", "Atenção"),
-            _ => ("off-track", "Em risco")
-        };
-    }
-
-    private static string GetConfidenceClass(decimal confidence)
-    {
-        return confidence switch
-        {
-            >= 4m => "high",
-            >= 2.5m => "medium",
-            _ => "low"
-        };
-    }
-
-    private static string GetConfidenceLabel(decimal confidence)
-    {
-        return confidence switch
-        {
-            >= 4m => "Alta",
-            >= 2.5m => "Média",
-            _ => "Baixa"
-        };
-    }
-
-    private static string GetConfidenceStarsText(decimal confidence)
-    {
-        var full = (int)Math.Round(confidence);
-        return new string('★', full) + new string('☆', 5 - full);
-    }
+    private static string GetConfidenceStarsText(decimal confidence) => MissionProgressDisplayHelper.GetConfidenceStarsText(confidence);
 
     // ---- Metric Display Helpers ----
 
-    private static string GetMetricTypeLabel(MetricType type) => type switch
-    {
-        MetricType.Qualitative => "Qualitativa",
-        MetricType.Quantitative => "Quantitativa",
-        _ => type.ToString()
-    };
+    private static string GetMetricTypeLabel(MetricType type) => MissionMetricDisplayHelper.GetMetricTypeLabel(type);
 
-    private static string GetQuantitativeTypeLabel(QuantitativeMetricType type) => type switch
-    {
-        QuantitativeMetricType.KeepAbove => "Manter acima",
-        QuantitativeMetricType.KeepBelow => "Manter abaixo",
-        QuantitativeMetricType.KeepBetween => "Manter entre",
-        QuantitativeMetricType.Achieve => "Atingir",
-        QuantitativeMetricType.Reduce => "Reduzir",
-        _ => type.ToString()
-    };
+    private static string GetQuantitativeTypeLabel(QuantitativeMetricType type) => MissionMetricDisplayHelper.GetQuantitativeTypeLabel(type);
 
-    private static string GetQuantitativeTypeIcon(QuantitativeMetricType type) => type switch
-    {
-        QuantitativeMetricType.KeepAbove => "↑",
-        QuantitativeMetricType.KeepBelow => "↓",
-        QuantitativeMetricType.KeepBetween => "↕",
-        QuantitativeMetricType.Achieve => "→",
-        QuantitativeMetricType.Reduce => "↘",
-        _ => ""
-    };
+    private static string GetQuantitativeTypeIcon(QuantitativeMetricType type) => MissionMetricDisplayHelper.GetQuantitativeTypeIcon(type);
 
-    private static string GetUnitLabel(MetricUnit unit) => unit switch
-    {
-        MetricUnit.Integer => "Inteiro",
-        MetricUnit.Decimal => "Decimal",
-        MetricUnit.Percentage => "Percentual",
-        MetricUnit.Hours => "Horas",
-        MetricUnit.Points => "Pontos",
-        _ => unit.ToString()
-    };
+    private static string GetUnitLabel(MetricUnit unit) => MissionMetricDisplayHelper.GetUnitLabel(unit);
 
-    private static string GetTargetLabel(MissionMetric metric)
-    {
-        if (metric.Type == MetricType.Qualitative)
-        {
-            return metric.TargetText ?? "—";
-        }
-
-        var unit = metric.Unit.HasValue ? GetUnitLabel(metric.Unit.Value) : "";
-        var quantType = metric.QuantitativeType.HasValue ? GetQuantitativeTypeLabel(metric.QuantitativeType.Value) : "—";
-
-        return metric.QuantitativeType switch
-        {
-            QuantitativeMetricType.KeepAbove => $"{quantType} {metric.MinValue} {unit}",
-            QuantitativeMetricType.KeepBelow => $"{quantType} {metric.MaxValue} {unit}",
-            QuantitativeMetricType.KeepBetween => $"{quantType} {metric.MinValue} e {metric.MaxValue} {unit}",
-            QuantitativeMetricType.Achieve => $"{quantType} {metric.MaxValue} {unit}",
-            QuantitativeMetricType.Reduce => $"{quantType} para {metric.MaxValue} {unit}",
-            _ => "—"
-        };
-    }
+    private static string GetTargetLabel(MissionMetric metric) => MissionMetricDisplayHelper.GetTargetLabel(metric);
 
 }

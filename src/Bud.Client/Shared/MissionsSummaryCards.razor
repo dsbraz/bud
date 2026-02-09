@@ -1,0 +1,26 @@
+<div class="missions-summary">
+    <div class="summary-card">
+        <div class="summary-card-value">@OverallProgress%</div>
+        <div class="summary-card-label">Esperado @ExpectedProgress%</div>
+        <div class="summary-card-progress">
+            <div class="summary-progress-bar">
+                <div class="summary-progress-fill" style="width: @OverallProgress%"></div>
+            </div>
+        </div>
+    </div>
+    <div class="summary-card" style="align-items: center; text-align: center;">
+        <div class="summary-card-value">@ActiveMissions</div>
+        <div class="summary-card-label">Missões ativas</div>
+    </div>
+    <div class="summary-card" style="align-items: center; text-align: center;">
+        <div class="summary-card-value">@OutdatedMetrics</div>
+        <div class="summary-card-label">Indicadores desatualizados</div>
+    </div>
+</div>
+
+@code {
+    [Parameter] public int OverallProgress { get; set; }
+    [Parameter] public int ExpectedProgress { get; set; }
+    [Parameter] public int ActiveMissions { get; set; }
+    [Parameter] public int OutdatedMetrics { get; set; }
+}
