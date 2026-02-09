@@ -259,3 +259,7 @@ dotnet_diagnostic.IDE0046.severity = suggestion
 
 # IDE0045: Convert to conditional expression
 dotnet_diagnostic.IDE0045.severity = suggestion
+
+# Controllers: actions seguem convenção REST, não precisam de sufixo Async
+[src/Bud.Server/Controllers/*.cs]
+dotnet_naming_rule.async_methods_should_end_with_async.severity = none
