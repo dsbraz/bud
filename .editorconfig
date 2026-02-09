@@ -261,5 +261,9 @@ dotnet_diagnostic.IDE0046.severity = suggestion
 dotnet_diagnostic.IDE0045.severity = suggestion
 
 # Controllers: actions seguem convenção REST, não precisam de sufixo Async
+# Controllers: uso de var é permitido para manter o código conciso
 [src/Bud.Server/Controllers/*.cs]
 dotnet_naming_rule.async_methods_should_end_with_async.severity = none
+csharp_style_var_for_built_in_types = true:silent
+csharp_style_var_when_type_is_apparent = true:silent
+csharp_style_var_elsewhere = true:silent
