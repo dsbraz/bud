@@ -1,6 +1,7 @@
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Text.Json.Serialization;
+using System.Globalization;
 using Bud.Mcp.Auth;
 using Bud.Mcp.Http;
 using Bud.Mcp.Tools.Generation;
@@ -85,6 +86,12 @@ public sealed class McpToolService(BudApiClient budApiClient, BudApiSession sess
             ["additionalProperties"] = false,
             ["properties"] = new JsonObject()
         }),
+        CreateTool("help_list_actions", "Lista ações MCP disponíveis com uma breve descrição.", new JsonObject
+        {
+            ["type"] = "object",
+            ["additionalProperties"] = false,
+            ["properties"] = new JsonObject()
+        }),
         CreateTool("help_action_schema", "Retorna schema, campos obrigatórios e exemplo de payload para uma ação MCP.", new JsonObject
         {
             ["type"] = "object",
@@ -145,6 +152,7 @@ public sealed class McpToolService(BudApiClient budApiClient, BudApiSession sess
             "tenant_list_available" => await TenantListAvailableAsync(cancellationToken),
             "tenant_set_current" => await TenantSetCurrentAsync(arguments, cancellationToken),
             "session_bootstrap" => await SessionBootstrapAsync(cancellationToken),
+            "help_list_actions" => HelpListActions(),
             "help_action_schema" => HelpActionSchema(arguments),
             "mission_create" => Serialize(await _budApiClient.CreateMissionAsync(Deserialize<CreateMissionRequest>(arguments), cancellationToken)),
             "mission_get" => Serialize(await _budApiClient.GetMissionAsync(ParseId(arguments), cancellationToken)),
@@ -197,7 +205,7 @@ public sealed class McpToolService(BudApiClient budApiClient, BudApiSession sess
         {
             ["whoami"] = WhoAmI(),
             ["requiresTenantForDomainTools"] = true,
-            ["nextSteps"] = new JsonArray("tenant_list_available", "tenant_set_current", "help_action_schema", "session_bootstrap"),
+            ["nextSteps"] = new JsonArray("tenant_list_available", "tenant_set_current", "help_list_actions", "help_action_schema", "session_bootstrap"),
             ["message"] = "Sessão autenticada. Selecione um tenant antes de executar ações de domínio."
         };
     }
@@ -233,7 +241,7 @@ public sealed class McpToolService(BudApiClient budApiClient, BudApiSession sess
             ["currentTenantId"] = _session.CurrentTenantId?.ToString(),
             ["availableTenants"] = Serialize(organizations),
             ["requiresTenantForDomainTools"] = true,
-            ["nextSteps"] = new JsonArray("tenant_set_current", "help_action_schema"),
+            ["nextSteps"] = new JsonArray("tenant_set_current", "help_list_actions", "help_action_schema"),
             ["starterSchemas"] = new JsonArray
             {
                 BuildActionHelp(ToolMap["mission_create"]),
@@ -263,6 +271,21 @@ public sealed class McpToolService(BudApiClient budApiClient, BudApiSession sess
         }
 
         return BuildActionHelp(toolDefinition);
+    }
+
+    private static JsonObject HelpListActions()
+    {
+        var actions = new JsonArray();
+        foreach (var tool in ToolDefinitions)
+        {
+            actions.Add(new JsonObject
+            {
+                ["name"] = tool.Name,
+                ["description"] = tool.Description
+            });
+        }
+
+        return new JsonObject { ["actions"] = actions };
     }
 
     private async Task<JsonNode> MissionListAsync(JsonElement arguments, CancellationToken cancellationToken)
@@ -397,8 +420,7 @@ public sealed class McpToolService(BudApiClient budApiClient, BudApiSession sess
                 continue;
             }
 
-            var propertyType = propertySchema["type"]?.GetValue<string>();
-            if (!string.Equals(propertyType, "object", StringComparison.Ordinal))
+            if (!SchemaTypeContains(propertySchema, "object"))
             {
                 continue;
             }
@@ -529,8 +551,9 @@ public sealed class McpToolService(BudApiClient budApiClient, BudApiSession sess
 
     private static JsonObject BuildActionHelp(McpToolDefinition tool)
     {
+        var schemaForHelp = EnrichSchemaForHelp(tool.Name, tool.InputSchema.DeepClone()!.AsObject());
         var required = new JsonArray();
-        if (tool.InputSchema["required"] is JsonArray requiredFromSchema)
+        if (schemaForHelp["required"] is JsonArray requiredFromSchema)
         {
             foreach (var item in requiredFromSchema)
             {
@@ -543,9 +566,167 @@ public sealed class McpToolService(BudApiClient budApiClient, BudApiSession sess
             ["name"] = tool.Name,
             ["description"] = tool.Description,
             ["required"] = required,
-            ["inputSchema"] = tool.InputSchema.DeepClone(),
-            ["example"] = BuildToolExample(tool.Name)
+            ["inputSchema"] = schemaForHelp,
+            ["example"] = BuildToolExample(tool.Name),
+            ["responseExample"] = BuildToolResponseExample(tool.Name)
         };
+    }
+
+    private static JsonObject EnrichSchemaForHelp(string toolName, JsonObject schema)
+    {
+        var clone = schema.DeepClone()!.AsObject();
+
+        switch (toolName)
+        {
+            case "mission_create":
+            case "mission_update":
+                ApplyEnumMetadata(clone, "status", typeof(MissionStatus));
+                ApplyEnumMetadata(clone, "scopeType", typeof(MissionScopeType));
+                ApplyNullableHint(clone, "description");
+                break;
+            case "mission_list":
+                ApplyEnumMetadata(clone, "scopeType", typeof(MissionScopeType));
+                break;
+            case "mission_metric_create":
+            case "mission_metric_update":
+                ApplyEnumMetadata(clone, "type", typeof(MetricType));
+                ApplyEnumMetadata(clone, "quantitativeType", typeof(QuantitativeMetricType));
+                ApplyEnumMetadata(clone, "unit", typeof(MetricUnit));
+                ApplyNullableHint(clone, "quantitativeType");
+                ApplyNullableHint(clone, "minValue");
+                ApplyNullableHint(clone, "maxValue");
+                ApplyNullableHint(clone, "unit");
+                ApplyNullableHint(clone, "targetText");
+                break;
+            case "metric_checkin_create":
+            case "metric_checkin_update":
+                ApplyConfidenceLevelMetadata(clone);
+                ApplyNullableHint(clone, "value");
+                ApplyNullableHint(clone, "text");
+                ApplyNullableHint(clone, "note");
+                break;
+        }
+
+        if (toolName == "mission_update" || toolName == "mission_metric_update" || toolName == "metric_checkin_update")
+        {
+            if (TryGetPropertySchema(clone, "payload", out var payloadSchema))
+            {
+                var enrichedPayload = EnrichSchemaForHelp(toolName.Replace("_update", "_create", StringComparison.Ordinal), payloadSchema);
+                var properties = clone["properties"]?.AsObject();
+                if (properties is not null)
+                {
+                    properties["payload"] = enrichedPayload;
+                }
+            }
+        }
+
+        return clone;
+    }
+
+    private static void ApplyConfidenceLevelMetadata(JsonObject schema)
+    {
+        if (!TryGetPropertySchema(schema, "confidenceLevel", out var confidenceSchema))
+        {
+            return;
+        }
+
+        confidenceSchema["minimum"] = 1;
+        confidenceSchema["maximum"] = 5;
+        confidenceSchema["x-value-meaning"] = new JsonObject
+        {
+            ["1"] = "Muito baixa",
+            ["2"] = "Baixa",
+            ["3"] = "Média",
+            ["4"] = "Alta",
+            ["5"] = "Muito alta"
+        };
+    }
+
+    private static void ApplyNullableHint(JsonObject schema, string propertyPath)
+    {
+        if (!TryGetPropertySchema(schema, propertyPath, out var propertySchema))
+        {
+            return;
+        }
+
+        if (SchemaTypeContains(propertySchema, "null"))
+        {
+            propertySchema["x-null-handling"] = "Aceita null ou omissão do campo.";
+        }
+    }
+
+    private static void ApplyEnumMetadata(JsonObject schema, string propertyPath, Type enumType)
+    {
+        if (!enumType.IsEnum || !TryGetPropertySchema(schema, propertyPath, out var propertySchema))
+        {
+            return;
+        }
+
+        var enumValues = new JsonArray();
+        var enumNames = new JsonArray();
+        var enumMap = new JsonObject();
+
+        foreach (var value in Enum.GetValues(enumType))
+        {
+            var intValue = Convert.ToInt32(value, CultureInfo.InvariantCulture);
+            var name = Enum.GetName(enumType, value) ?? intValue.ToString(CultureInfo.InvariantCulture);
+            enumValues.Add(intValue);
+            enumNames.Add(name);
+            enumMap[intValue.ToString(CultureInfo.InvariantCulture)] = name;
+        }
+
+        propertySchema["enum"] = enumValues;
+        propertySchema["x-enumNames"] = enumNames;
+        propertySchema["x-enumMap"] = enumMap;
+    }
+
+    private static bool TryGetPropertySchema(JsonObject schema, string propertyPath, out JsonObject propertySchema)
+    {
+        propertySchema = null!;
+
+        var segments = propertyPath.Split('.', StringSplitOptions.RemoveEmptyEntries);
+        JsonObject? currentSchema = schema;
+
+        for (var i = 0; i < segments.Length; i++)
+        {
+            if (currentSchema?["properties"] is not JsonObject properties ||
+                properties[segments[i]] is not JsonObject nextSchema)
+            {
+                return false;
+            }
+
+            if (i == segments.Length - 1)
+            {
+                propertySchema = nextSchema;
+                return true;
+            }
+
+            currentSchema = nextSchema;
+        }
+
+        return false;
+    }
+
+    private static bool SchemaTypeContains(JsonObject schema, string expectedType)
+    {
+        if (schema["type"] is JsonValue typeValue)
+        {
+            return string.Equals(typeValue.GetValue<string>(), expectedType, StringComparison.Ordinal);
+        }
+
+        if (schema["type"] is JsonArray typeArray)
+        {
+            foreach (var item in typeArray)
+            {
+                if (item is JsonValue itemValue &&
+                    string.Equals(itemValue.GetValue<string>(), expectedType, StringComparison.Ordinal))
+                {
+                    return true;
+                }
+            }
+        }
+
+        return false;
     }
 
     private static JsonObject BuildToolExample(string toolName)
@@ -557,6 +738,7 @@ public sealed class McpToolService(BudApiClient budApiClient, BudApiSession sess
             "tenant_list_available" => new JsonObject(),
             "tenant_set_current" => new JsonObject { ["tenantId"] = "00000000-0000-0000-0000-000000000001" },
             "session_bootstrap" => new JsonObject(),
+            "help_list_actions" => new JsonObject(),
             "help_action_schema" => new JsonObject { ["action"] = "mission_create" },
             "mission_create" => new JsonObject
             {
@@ -595,6 +777,140 @@ public sealed class McpToolService(BudApiClient budApiClient, BudApiSession sess
             "metric_checkin_list" => new JsonObject { ["missionMetricId"] = "00000000-0000-0000-0000-000000000003", ["missionId"] = "00000000-0000-0000-0000-000000000002", ["page"] = 1, ["pageSize"] = 10 },
             "metric_checkin_update" => new JsonObject { ["id"] = "00000000-0000-0000-0000-000000000004", ["payload"] = new JsonObject { ["value"] = 88.0, ["checkinDate"] = "2026-02-09T00:00:00Z", ["note"] = "Ajuste após revisão", ["confidenceLevel"] = 5 } },
             "metric_checkin_delete" => new JsonObject { ["id"] = "00000000-0000-0000-0000-000000000004" },
+            _ => new JsonObject()
+        };
+    }
+
+    private static JsonObject BuildToolResponseExample(string toolName)
+    {
+        return toolName switch
+        {
+            "auth_login" => new JsonObject
+            {
+                ["whoami"] = new JsonObject
+                {
+                    ["email"] = "admin@getbud.co",
+                    ["isGlobalAdmin"] = true,
+                    ["organizationId"] = null
+                },
+                ["requiresTenantForDomainTools"] = true,
+                ["nextSteps"] = new JsonArray("tenant_list_available", "tenant_set_current", "help_list_actions", "help_action_schema", "session_bootstrap")
+            },
+            "auth_whoami" => new JsonObject
+            {
+                ["email"] = "admin@getbud.co",
+                ["isGlobalAdmin"] = true
+            },
+            "tenant_list_available" => new JsonObject
+            {
+                ["items"] = new JsonArray
+                {
+                    new JsonObject
+                    {
+                        ["id"] = "00000000-0000-0000-0000-000000000001",
+                        ["name"] = "Acme"
+                    }
+                },
+                ["currentTenantId"] = "00000000-0000-0000-0000-000000000001"
+            },
+            "tenant_set_current" => new JsonObject
+            {
+                ["tenantId"] = "00000000-0000-0000-0000-000000000001",
+                ["message"] = "Tenant atualizado com sucesso."
+            },
+            "session_bootstrap" => new JsonObject
+            {
+                ["requiresTenantForDomainTools"] = true,
+                ["nextSteps"] = new JsonArray("tenant_set_current", "help_list_actions", "help_action_schema")
+            },
+            "help_list_actions" => new JsonObject
+            {
+                ["actions"] = new JsonArray
+                {
+                    new JsonObject
+                    {
+                        ["name"] = "mission_create",
+                        ["description"] = "Cria uma missão."
+                    }
+                }
+            },
+            "help_action_schema" => new JsonObject
+            {
+                ["name"] = "mission_create",
+                ["required"] = new JsonArray("name", "startDate", "endDate", "status", "scopeType", "scopeId")
+            },
+            "mission_create" => new JsonObject
+            {
+                ["id"] = "00000000-0000-0000-0000-000000000002",
+                ["name"] = "teste do claude",
+                ["status"] = "Planned"
+            },
+            "mission_get" => new JsonObject
+            {
+                ["id"] = "00000000-0000-0000-0000-000000000002",
+                ["name"] = "teste do claude",
+                ["status"] = "Planned"
+            },
+            "mission_list" => new JsonObject
+            {
+                ["items"] = new JsonArray(),
+                ["page"] = 1,
+                ["pageSize"] = 10
+            },
+            "mission_update" => new JsonObject
+            {
+                ["id"] = "00000000-0000-0000-0000-000000000002",
+                ["name"] = "Missão atualizada",
+                ["status"] = "Active"
+            },
+            "mission_delete" => new JsonObject { ["deleted"] = true },
+            "mission_metric_create" => new JsonObject
+            {
+                ["id"] = "00000000-0000-0000-0000-000000000003",
+                ["name"] = "NPS",
+                ["type"] = "Quantitative"
+            },
+            "mission_metric_get" => new JsonObject
+            {
+                ["id"] = "00000000-0000-0000-0000-000000000003",
+                ["name"] = "NPS",
+                ["type"] = "Quantitative"
+            },
+            "mission_metric_list" => new JsonObject
+            {
+                ["items"] = new JsonArray(),
+                ["page"] = 1,
+                ["pageSize"] = 10
+            },
+            "mission_metric_update" => new JsonObject
+            {
+                ["id"] = "00000000-0000-0000-0000-000000000003",
+                ["name"] = "NPS trimestral",
+                ["type"] = "Quantitative"
+            },
+            "mission_metric_delete" => new JsonObject { ["deleted"] = true },
+            "metric_checkin_create" => new JsonObject
+            {
+                ["id"] = "00000000-0000-0000-0000-000000000004",
+                ["confidenceLevel"] = 4
+            },
+            "metric_checkin_get" => new JsonObject
+            {
+                ["id"] = "00000000-0000-0000-0000-000000000004",
+                ["confidenceLevel"] = 4
+            },
+            "metric_checkin_list" => new JsonObject
+            {
+                ["items"] = new JsonArray(),
+                ["page"] = 1,
+                ["pageSize"] = 10
+            },
+            "metric_checkin_update" => new JsonObject
+            {
+                ["id"] = "00000000-0000-0000-0000-000000000004",
+                ["confidenceLevel"] = 5
+            },
+            "metric_checkin_delete" => new JsonObject { ["deleted"] = true },
             _ => new JsonObject()
         };
     }
