@@ -379,21 +379,14 @@ O serviço `mcp` é criado no compose com `stdin_open`/`tty`, usando:
 - `DOTNET_ENVIRONMENT=Development` (usa `src/Bud.Mcp/appsettings.Development.json`)
 - sem usuário fixo; a autenticação é feita pela ferramenta `auth_login`
 
-Compile o MCP no container:
+Uso em desenvolvimento (recomendado):
 
 ```bash
-docker exec -i bud-mcp dotnet build /src/src/Bud.Mcp/Bud.Mcp.csproj
+docker exec -i bud-mcp dotnet run --project /src/src/Bud.Mcp/Bud.Mcp.csproj
 ```
 
 Uso com Claude Desktop:
 - Se o Claude Desktop já estiver configurado para iniciar o `bud-mcp` via `docker exec`, não é necessário rodar comando manual após `docker compose up`.
-
-Uso manual (fallback/debug):
-- Para iniciar manualmente o servidor MCP no container:
-
-```bash
-docker exec -i bud-mcp dotnet /src/src/Bud.Mcp/bin/Debug/net10.0/Bud.Mcp.dll
-```
 
 Fluxo obrigatório para atualizar catálogo MCP:
 
