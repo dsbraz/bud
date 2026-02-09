@@ -1,10 +1,10 @@
+using System.Reflection;
 using Bud.Server.Controllers;
 using Bud.Server.Data;
 using Bud.Server.DependencyInjection;
 using FluentAssertions;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using System.Reflection;
 using Xunit;
 
 namespace Bud.Server.Tests.Architecture;

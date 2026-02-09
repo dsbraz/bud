@@ -4,11 +4,17 @@ using Microsoft.Extensions.Logging;
 
 namespace Bud.Server.Application.MissionMetrics.Events;
 
-public sealed class MissionMetricDeletedLogHandler(ILogger<MissionMetricDeletedLogHandler> logger) : IDomainEventSubscriber<MissionMetricDeletedDomainEvent>
+public sealed partial class MissionMetricDeletedLogHandler(ILogger<MissionMetricDeletedLogHandler> logger) : IDomainEventSubscriber<MissionMetricDeletedDomainEvent>
 {
     public Task HandleAsync(MissionMetricDeletedDomainEvent domainEvent, CancellationToken cancellationToken = default)
     {
-        logger.LogInformation("Evento MissionMetricDeleted processado. MissionMetricId={MissionMetricId} MissionId={MissionId} OrganizationId={OrganizationId}", domainEvent.MissionMetricId, domainEvent.MissionId, domainEvent.OrganizationId);
+        LogMissionMetricDeletedProcessed(logger, domainEvent.MissionMetricId, domainEvent.MissionId, domainEvent.OrganizationId);
         return Task.CompletedTask;
     }
+
+    [LoggerMessage(
+        EventId = 3452,
+        Level = LogLevel.Information,
+        Message = "Evento MissionMetricDeleted processado. MissionMetricId={MissionMetricId} MissionId={MissionId} OrganizationId={OrganizationId}")]
+    private static partial void LogMissionMetricDeletedProcessed(ILogger logger, Guid missionMetricId, Guid missionId, Guid organizationId);
 }

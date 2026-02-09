@@ -23,6 +23,8 @@ A ordem abaixo vai das decisões mais abrangentes para as mais específicas:
 8. `ADR-0008` - Outbox com retry/backoff/dead-letter
 9. `ADR-0009` - Estratégia de testes
 10. `ADR-0010` - Governança por testes de arquitetura
+11. `ADR-0011` - Servidor MCP sidecar para missões, métricas e check-ins
+12. `ADR-0012` - Estratégia de logging estruturado com LoggerMessage e observabilidade de Outbox
 
 ## Status possíveis
 

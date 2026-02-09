@@ -1,0 +1,20 @@
+<div class="teams-summary">
+    <div class="summary-card" style="align-items: center; text-align: center;">
+        <div class="summary-card-value">@TotalTeams</div>
+        <div class="summary-card-label">Total de equipes</div>
+    </div>
+    <div class="summary-card" style="align-items: center; text-align: center;">
+        <div class="summary-card-value">@RootTeams</div>
+        <div class="summary-card-label">Equipes raiz</div>
+    </div>
+    <div class="summary-card" style="align-items: center; text-align: center;">
+        <div class="summary-card-value">@SubTeams</div>
+        <div class="summary-card-label">Subequipes</div>
+    </div>
+</div>
+
+@code {
+    [Parameter] public int TotalTeams { get; set; }
+    [Parameter] public int RootTeams { get; set; }
+    [Parameter] public int SubTeams { get; set; }
+}

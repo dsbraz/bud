@@ -1,0 +1,12 @@
+<div class="missions-page-header">
+    <h1 class="missions-page-title">@Title</h1>
+    <button class="button primary" @onclick="OnCreate">
+        <span class="button-icon-text">+</span>
+        Criar missão
+    </button>
+</div>
+
+@code {
+    [Parameter] public string Title { get; set; } = "Missões";
+    [Parameter] public EventCallback OnCreate { get; set; }
+}

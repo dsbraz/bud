@@ -31,6 +31,10 @@ This file provides guidance to coding agents when working with code in this repo
 - Update tests together with production code changes.
 - Keep OpenAPI semantic documentation aligned with implementation.
 - Update or create ADR when architectural behavior changes.
+- For `Bud.Server` logging, use source-generated logging (`[LoggerMessage]`) local to each component (`partial` class); do not introduce centralized ad-hoc log catalogs.
+- For `Bud.Mcp`, keep tool schemas explicit (`required`, field types/formats/enums) and propagate API validation details (`errors` by field) in tool errors.
+- For `Bud.Mcp`, keep domain tools (`mission_*`, `mission_metric_*`, `metric_checkin_*`) sourced from `Tools/Generated/mcp-tool-catalog.json` (strict mode, no runtime fallback to ad-hoc schemas).
+- Keep the solution warning-free (`TreatWarningsAsErrors=true`): code changes MUST not introduce build/test warnings.
 
 ### SHOULD
 
@@ -115,9 +119,17 @@ Bud is an ASP.NET Core 10 application with a Blazor WebAssembly frontend, using 
   - `Models/`: Domain entities
   - `Contracts/`: Request/response DTOs
 
+- **Bud.Mcp** (`src/Bud.Mcp`): MCP server (`stdio`) para integração com agentes
+  - `Protocol/`: infraestrutura JSON-RPC/MCP over stdio
+  - `Tools/`: definição e execução de ferramentas MCP (incluindo `help_action_schema` e `session_bootstrap` para descoberta orientada)
+  - `Tools/Generation/`: geração do catálogo de schemas MCP a partir do OpenAPI (`generate-tool-catalog` / `check-tool-catalog`)
+  - `Auth/`: sessão/autenticação e contexto de tenant (com login dinâmico por tool `auth_login`; `BUD_USER_EMAIL` opcional)
+  - `Http/`: cliente para consumo dos endpoints do `Bud.Server`
+
 - **Tests**:
   - `tests/Bud.Server.Tests/`: Unit tests (xUnit, Moq, FluentAssertions)
   - `tests/Bud.Server.IntegrationTests/`: Integration tests with WebApplicationFactory
+  - `tests/Bud.Mcp.Tests/`: Unit tests do servidor MCP
 
 - **Root**: `docker-compose.yml`, `README.md`, `AGENTS.md`
 
@@ -144,12 +156,27 @@ The application runs at `http://localhost:8080` with Swagger available at `http:
 dotnet test
 
 # Run specific test project
+dotnet test tests/Bud.Mcp.Tests
 dotnet test tests/Bud.Server.Tests
 dotnet test tests/Bud.Server.IntegrationTests
 
 # Run tests with coverage
 dotnet test /p:CollectCoverage=true
 ```
+
+### MCP Tool Catalog Sync
+
+Quando houver mudança em contrato de endpoint usado por tools MCP (`/api/missions`, `/api/mission-metrics`, `/api/metric-checkins`), agentes MUST sincronizar o catálogo:
+
+```bash
+dotnet run --project src/Bud.Mcp/Bud.Mcp.csproj -- generate-tool-catalog
+dotnet run --project src/Bud.Mcp/Bud.Mcp.csproj -- check-tool-catalog --fail-on-diff
+```
+
+Notas de execução:
+- Se rodar no container `bud-mcp`, usar `docker exec` (a base padrão é `http://web:8080`).
+- Se rodar no host, definir `BUD_API_BASE_URL=http://localhost:8080` para evitar erro de conexão.
+- O `check-tool-catalog --fail-on-diff` também valida contrato mínimo de campos `required`; falha se o catálogo estiver sem os campos obrigatórios por tool.
 
 ### Migrations
 
@@ -294,6 +321,7 @@ This project intentionally uses the patterns below. New changes should follow th
 - **Outbox Pattern (reliable async processing):**
   - Domain events are serialized/persisted in `OutboxMessages`
   - Background processing with retry/backoff and dead-letter
+  - Logging for processing lifecycle should be structured and stable (`EventId`, `OutboxMessageId`, `EventType`, `RetryCount/Attempt`, `NextAttemptOnUtc`, `ElapsedMs`)
   - Reprocessing through admin endpoints/use cases
 - **Specification Pattern (query composition):**
   - Query specifications in `Domain/Common/Specifications`
@@ -549,3 +577,5 @@ The `docker-compose.yml` configures:
 - **Authentication:** [AuthService.cs](src/Bud.Server/Services/AuthService.cs)
 - **Multi-tenancy (frontend):** [OrganizationContext.cs](src/Bud.Client/Services/OrganizationContext.cs), [MainLayout.razor](src/Bud.Client/Layout/MainLayout.razor), [TenantDelegatingHandler.cs](src/Bud.Client/Services/TenantDelegatingHandler.cs)
 - **Tenant entity marker:** [ITenantEntity.cs](src/Bud.Shared/Models/ITenantEntity.cs)
+- **MCP entrypoint:** [Program.cs](src/Bud.Mcp/Program.cs)
+- **MCP tools:** [McpToolService.cs](src/Bud.Mcp/Tools/McpToolService.cs)

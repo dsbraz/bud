@@ -1,5 +1,5 @@
-using Bud.Server.Authorization;
 using Bud.Server.Application.Teams;
+using Bud.Server.Authorization;
 using Bud.Shared.Contracts;
 using Bud.Shared.Models;
 using FluentValidation;

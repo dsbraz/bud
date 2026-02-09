@@ -1,6 +1,6 @@
+using System.Text.Json;
 using Bud.Server.Application.Common.Events;
 using Bud.Server.Domain.Common.Events;
-using System.Text.Json;
 
 namespace Bud.Server.Infrastructure.Events;
 

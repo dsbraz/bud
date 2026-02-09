@@ -3,6 +3,7 @@
 @inject OrganizationContext OrgContext
 @inject ApiClient Api
 @inject NavigationManager Nav
+@inject ToastService ToastService
 <div class="app-shell">
     <aside class="app-sidebar">
         <div class="sidebar-header">
@@ -107,9 +108,10 @@
                 await OrgContext.InitializeAsync(organizations);
             }
         }
-        catch (Exception)
+        catch (Exception ex)
         {
-            // Silent fail - user might not have access to any organizations yet
+            Console.Error.WriteLine($"Erro ao carregar organizações do usuário: {ex.Message}");
+            ToastService.ShowWarning("Aviso", "Não foi possível carregar as organizações agora. Tente novamente em instantes.");
         }
     }
 

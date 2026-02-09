@@ -6,17 +6,12 @@
 
 <MissionsMenu />
 
-<div class="page-header">
-    <div>
-        <div class="page-kicker">Gestão</div>
-        <h1>Check-ins</h1>
-        <p class="page-subtitle">Registre o progresso das suas métricas.</p>
-    </div>
-    <button class="button primary" @onclick="OpenCreateModal">
-        <span class="button-icon-text">+</span>
-        Novo check-in
-    </button>
-</div>
+<ManagementPageHeader
+    Kicker="Gestão"
+    Title="Check-ins"
+    Subtitle="Registre o progresso das suas métricas."
+    PrimaryActionText="Novo check-in"
+    OnPrimaryAction="OpenCreateModal" />
 
 <div class="card">
     <div class="card-filters">
@@ -45,16 +40,11 @@
         </div>
     </div>
 
-    @if (checkins is null)
-    {
-        <p class="muted">Carregando...</p>
-    }
-    else if (checkins.Items.Count == 0)
-    {
-        <p class="muted">Nenhum check-in encontrado.</p>
-    }
-    else
-    {
+    <PagedTableSection
+        IsLoading="@(checkins is null)"
+        IsEmpty="@(checkins is not null && checkins.Items.Count == 0)"
+        Total="@(checkins?.Total ?? 0)"
+        EmptyText="Nenhum check-in encontrado.">
         <table class="table">
             <thead>
                 <tr>
@@ -67,7 +57,7 @@
                 </tr>
             </thead>
             <tbody>
-                @foreach (var checkin in checkins.Items)
+                @foreach (var checkin in checkins!.Items)
                 {
                     var isDeleting = deletingCheckinId == checkin.Id;
                     <tr>
@@ -79,36 +69,18 @@
                         </td>
                         <td class="note-cell">@(checkin.Note ?? "—")</td>
                         <td style="text-align: center;">
-                            <div class="table-actions">
-                                <button class="button-icon" @onclick="() => OpenEditModal(checkin)"
-                                        title="Editar check-in">
-                                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-                                        <path d="M11.334 2.00004C11.5091 1.82494 11.7169 1.68605 11.9457 1.59129C12.1745 1.49653 12.4197 1.44775 12.6673 1.44775C12.9149 1.44775 13.1601 1.49653 13.3889 1.59129C13.6177 1.68605 13.8256 1.82494 14.0007 2.00004C14.1758 2.17513 14.3147 2.383 14.4094 2.61178C14.5042 2.84055 14.553 3.08575 14.553 3.33337C14.553 3.58099 14.5042 3.82619 14.4094 4.05497C14.3147 4.28374 14.1758 4.49161 14.0007 4.66671L5.00065 13.6667L1.33398 14.6667L2.33398 11L11.334 2.00004Z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-                                    </svg>
-                                </button>
-                                <button class="button-icon @(isDeleting ? "danger" : "")"
-                                        @onclick="() => HandleDeleteClick(checkin.Id)"
-                                        title="@(isDeleting ? "Clique novamente para confirmar" : "Excluir check-in")">
-                                    @if (isDeleting)
-                                    {
-                                        <span style="font-size: 11px; white-space: nowrap;">Confirmar?</span>
-                                    }
-                                    else
-                                    {
-                                        <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-                                            <path d="M2 4H3.33333H14" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-                                            <path d="M5.33398 4.00004V2.66671C5.33398 2.31309 5.47446 1.97395 5.72451 1.7239C5.97456 1.47385 6.3137 1.33337 6.66732 1.33337H9.33398C9.6876 1.33337 10.0268 1.47385 10.2768 1.7239C10.5269 1.97395 10.6673 2.31309 10.6673 2.66671V4.00004M12.6673 4.00004V13.3334C12.6673 13.687 12.5269 14.0261 12.2768 14.2762C12.0268 14.5262 11.6876 14.6667 11.334 14.6667H4.66732C4.3137 14.6667 3.97456 14.5262 3.72451 14.2762C3.47446 14.0261 3.33398 13.687 3.33398 13.3334V4.00004H12.6673Z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-                                        </svg>
-                                    }
-                                </button>
-                            </div>
+                            <CrudRowActions
+                                EditTitle="Editar check-in"
+                                OnEdit="@(() => OpenEditModal(checkin))"
+                                IsDeleteConfirming="@isDeleting"
+                                DeleteTitle="Excluir check-in"
+                                OnDelete="@(() => HandleDeleteClick(checkin.Id))" />
                         </td>
                     </tr>
                 }
             </tbody>
         </table>
-        <p class="muted" style="margin-top: var(--spacing-4);">Total: @checkins.Total</p>
-    }
+    </PagedTableSection>
 </div>
 
 @if (isCreateModalOpen)
@@ -278,17 +250,30 @@
         OrgContext.OnOrganizationChanged += HandleOrganizationChanged;
     }
 
-    private async void HandleOrganizationChanged()
+    private void HandleOrganizationChanged()
     {
-        await InvokeAsync(async () =>
+        _ = HandleOrganizationChangedAsync();
+    }
+
+    private async Task HandleOrganizationChangedAsync()
+    {
+        try
         {
-            filterMissionId = null;
-            filterMetricId = null;
-            await LoadMissions();
-            await LoadAllMetrics();
-            await LoadCheckins();
-            StateHasChanged();
-        });
+            await InvokeAsync(async () =>
+            {
+                filterMissionId = null;
+                filterMetricId = null;
+                await LoadMissions();
+                await LoadAllMetrics();
+                await LoadCheckins();
+                StateHasChanged();
+            });
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"Erro ao atualizar check-ins por troca de organização: {ex.Message}");
+            ToastService.ShowError("Erro ao atualizar check-ins", "Não foi possível atualizar os dados da organização selecionada.");
+        }
     }
 
     public void Dispose()
@@ -304,9 +289,11 @@
             var result = await Api.GetMissionsAsync(null, null, null, 1, 100);
             missions = result?.Items.ToList() ?? new List<Mission>();
         }
-        catch (Exception)
+        catch (Exception ex)
         {
+            Console.Error.WriteLine($"Erro ao carregar missões para check-ins: {ex.Message}");
             missions = new List<Mission>();
+            ToastService.ShowError("Erro ao carregar missões", "Não foi possível carregar as missões.");
         }
     }
 
@@ -318,10 +305,12 @@
             allMetrics = result?.Items.ToList() ?? new List<MissionMetric>();
             UpdateFilterMetrics();
         }
-        catch (Exception)
+        catch (Exception ex)
         {
+            Console.Error.WriteLine($"Erro ao carregar métricas para check-ins: {ex.Message}");
             allMetrics = new List<MissionMetric>();
             filterMetrics = new List<MissionMetric>();
+            ToastService.ShowError("Erro ao carregar métricas", "Não foi possível carregar as métricas.");
         }
     }
 
@@ -351,9 +340,11 @@
             checkins = await Api.GetMetricCheckinsAsync(metricId, metricId.HasValue ? null : missionId, 1, 20)
                        ?? new PagedResult<MetricCheckin>();
         }
-        catch (Exception)
+        catch (Exception ex)
         {
+            Console.Error.WriteLine($"Erro ao carregar check-ins: {ex.Message}");
             checkins = new PagedResult<MetricCheckin>();
+            ToastService.ShowError("Erro ao carregar check-ins", "Não foi possível carregar os check-ins.");
         }
     }
 
@@ -391,8 +382,9 @@
                 var result = await Api.GetMissionMetricsByMissionIdAsync(missionId);
                 createMetrics = result?.Items.ToList() ?? new List<MissionMetric>();
             }
-            catch
+            catch (Exception ex)
             {
+                Console.Error.WriteLine($"Erro ao carregar métricas da missão selecionada: {ex.Message}");
                 createMetrics = new List<MissionMetric>();
             }
         }
@@ -431,17 +423,18 @@
             return;
         }
 
-        try
-        {
-            await Api.CreateMetricCheckinAsync(newCheckin);
-            ToastService.ShowSuccess("Check-in criado", "O check-in foi registrado com sucesso.");
-            CloseCreateModal();
-            await LoadCheckins();
-        }
-        catch (HttpRequestException ex)
-        {
-            ToastService.ShowError("Erro ao criar check-in", ex.Message);
-        }
+        await UiOperationRunner.RunAsync(
+            async () =>
+            {
+                await Api.CreateMetricCheckinAsync(newCheckin);
+                ToastService.ShowSuccess("Check-in criado", "O check-in foi registrado com sucesso.");
+                CloseCreateModal();
+                await LoadCheckins();
+            },
+            ToastService,
+            "Erro ao criar check-in",
+            "Não foi possível criar o check-in. Verifique os dados e tente novamente.",
+            "criação de check-in");
     }
 
     // ---- Edit ----
@@ -474,17 +467,18 @@
 
         editCheckin.CheckinDate = editCheckinDate.ToDateTime(TimeOnly.FromDateTime(DateTime.UtcNow), DateTimeKind.Utc);
 
-        try
-        {
-            await Api.UpdateMetricCheckinAsync(selectedCheckin.Id, editCheckin);
-            ToastService.ShowSuccess("Check-in atualizado", "As alterações foram salvas com sucesso.");
-            CloseEditModal();
-            await LoadCheckins();
-        }
-        catch (HttpRequestException ex)
-        {
-            ToastService.ShowError("Erro ao atualizar", ex.Message);
-        }
+        await UiOperationRunner.RunAsync(
+            async () =>
+            {
+                await Api.UpdateMetricCheckinAsync(selectedCheckin.Id, editCheckin);
+                ToastService.ShowSuccess("Check-in atualizado", "As alterações foram salvas com sucesso.");
+                CloseEditModal();
+                await LoadCheckins();
+            },
+            ToastService,
+            "Erro ao atualizar",
+            "Não foi possível atualizar o check-in. Verifique os dados e tente novamente.",
+            "atualização de check-in");
     }
 
     // ---- Delete ----
@@ -497,15 +491,7 @@
         }
         else
         {
-            deletingCheckinId = checkinId;
-            deleteConfirmTimer?.Dispose();
-            deleteConfirmTimer = new System.Threading.Timer(
-                _ => InvokeAsync(() =>
-                {
-                    deletingCheckinId = null;
-                    StateHasChanged();
-                }),
-                null, 3000, Timeout.Infinite);
+            ArmDeleteConfirmation(checkinId);
         }
     }
 
@@ -513,20 +499,44 @@
     {
         try
         {
-            await Api.DeleteMetricCheckinAsync(checkinId);
-            ToastService.ShowSuccess("Check-in excluído", "O check-in foi removido com sucesso.");
-            await LoadCheckins();
-        }
-        catch (HttpRequestException ex)
-        {
-            ToastService.ShowError("Erro ao excluir", ex.Message);
+            await UiOperationRunner.RunAsync(
+                async () =>
+                {
+                    await Api.DeleteMetricCheckinAsync(checkinId);
+                    ToastService.ShowSuccess("Check-in excluído", "O check-in foi removido com sucesso.");
+                    await LoadCheckins();
+                },
+                ToastService,
+                "Erro ao excluir",
+                "Não foi possível excluir o check-in. Tente novamente.",
+                "exclusão de check-in");
         }
         finally
         {
-            deletingCheckinId = null;
-            deleteConfirmTimer?.Dispose();
-            deleteConfirmTimer = null;
+            ClearDeleteConfirmation();
         }
+    }
+
+    private void ArmDeleteConfirmation(Guid checkinId)
+    {
+        deletingCheckinId = checkinId;
+        deleteConfirmTimer?.Dispose();
+        deleteConfirmTimer = new System.Threading.Timer(
+            _ => InvokeAsync(() =>
+            {
+                deletingCheckinId = null;
+                StateHasChanged();
+            }),
+            null,
+            3000,
+            Timeout.Infinite);
+    }
+
+    private void ClearDeleteConfirmation()
+    {
+        deletingCheckinId = null;
+        deleteConfirmTimer?.Dispose();
+        deleteConfirmTimer = null;
     }
 
     // ---- Helpers ----
@@ -550,37 +560,7 @@
         return new string('★', level) + new string('☆', 5 - level);
     }
 
-    private static string GetMetricTypeLabel(MetricType type) => type switch
-    {
-        MetricType.Qualitative => "Qualitativa",
-        MetricType.Quantitative => "Quantitativa",
-        _ => type.ToString()
-    };
+    private static string GetMetricTypeLabel(MetricType type) => MissionMetricDisplayHelper.GetMetricTypeLabel(type);
 
-    private static string GetTargetHint(MissionMetric metric)
-    {
-        if (metric.Type != MetricType.Quantitative || !metric.QuantitativeType.HasValue) return "";
-
-        var unit = metric.Unit.HasValue ? GetUnitLabel(metric.Unit.Value) : "";
-
-        return metric.QuantitativeType switch
-        {
-            QuantitativeMetricType.KeepAbove => $"(manter acima de {metric.MinValue} {unit})",
-            QuantitativeMetricType.KeepBelow => $"(manter abaixo de {metric.MaxValue} {unit})",
-            QuantitativeMetricType.KeepBetween => $"(manter entre {metric.MinValue} e {metric.MaxValue} {unit})",
-            QuantitativeMetricType.Achieve => $"(atingir {metric.MaxValue} {unit})",
-            QuantitativeMetricType.Reduce => $"(reduzir para {metric.MaxValue} {unit})",
-            _ => ""
-        };
-    }
-
-    private static string GetUnitLabel(MetricUnit unit) => unit switch
-    {
-        MetricUnit.Integer => "inteiro",
-        MetricUnit.Decimal => "decimal",
-        MetricUnit.Percentage => "%",
-        MetricUnit.Hours => "h",
-        MetricUnit.Points => "pts",
-        _ => unit.ToString()
-    };
+    private static string GetTargetHint(MissionMetric metric) => MissionMetricDisplayHelper.GetCheckinTargetHint(metric, useAbbreviatedUnit: true);
 }

@@ -27,7 +27,9 @@ public sealed class ApiClient
         var queryParams = new List<string>();
 
         if (!string.IsNullOrEmpty(search))
+        {
             queryParams.Add($"search={Uri.EscapeDataString(search)}");
+        }
 
         queryParams.Add($"page={page}");
         queryParams.Add($"pageSize={pageSize}");
@@ -90,9 +92,13 @@ public sealed class ApiClient
         var queryParams = new List<string>();
 
         if (organizationId.HasValue)
+        {
             queryParams.Add($"organizationId={organizationId.Value}");
+        }
         if (!string.IsNullOrEmpty(search))
+        {
             queryParams.Add($"search={Uri.EscapeDataString(search)}");
+        }
 
         queryParams.Add($"page={page}");
         queryParams.Add($"pageSize={pageSize}");
@@ -152,11 +158,17 @@ public sealed class ApiClient
         var queryParams = new List<string>();
 
         if (workspaceId.HasValue)
+        {
             queryParams.Add($"workspaceId={workspaceId.Value}");
+        }
         if (parentTeamId.HasValue)
+        {
             queryParams.Add($"parentTeamId={parentTeamId.Value}");
+        }
         if (!string.IsNullOrEmpty(search))
+        {
             queryParams.Add($"search={Uri.EscapeDataString(search)}");
+        }
 
         queryParams.Add($"page={page}");
         queryParams.Add($"pageSize={pageSize}");
@@ -209,9 +221,13 @@ public sealed class ApiClient
         var queryParams = new List<string>();
 
         if (teamId.HasValue)
+        {
             queryParams.Add($"teamId={teamId.Value}");
+        }
         if (!string.IsNullOrEmpty(search))
+        {
             queryParams.Add($"search={Uri.EscapeDataString(search)}");
+        }
 
         queryParams.Add($"page={page}");
         queryParams.Add($"pageSize={pageSize}");
@@ -269,11 +285,17 @@ public sealed class ApiClient
         var queryParams = new List<string>();
 
         if (scopeType.HasValue)
+        {
             queryParams.Add($"scopeType={scopeType.Value}");
+        }
         if (scopeId.HasValue)
+        {
             queryParams.Add($"scopeId={scopeId.Value}");
+        }
         if (!string.IsNullOrEmpty(search))
+        {
             queryParams.Add($"search={Uri.EscapeDataString(search)}");
+        }
 
         queryParams.Add($"page={page}");
         queryParams.Add($"pageSize={pageSize}");
@@ -285,7 +307,13 @@ public sealed class ApiClient
     public async Task<Mission?> CreateMissionAsync(CreateMissionRequest request)
     {
         var response = await _http.PostAsJsonAsync("api/missions", request);
-        response.EnsureSuccessStatusCode();
+
+        if (!response.IsSuccessStatusCode)
+        {
+            var errorMessage = await ExtractErrorMessageAsync(response);
+            throw new HttpRequestException(errorMessage);
+        }
+
         return await response.Content.ReadFromJsonAsync<Mission>();
     }
 
@@ -307,9 +335,13 @@ public sealed class ApiClient
         var queryParams = new List<string>();
 
         if (missionId.HasValue)
+        {
             queryParams.Add($"missionId={missionId.Value}");
+        }
         if (!string.IsNullOrEmpty(search))
+        {
             queryParams.Add($"search={Uri.EscapeDataString(search)}");
+        }
 
         queryParams.Add($"page={page}");
         queryParams.Add($"pageSize={pageSize}");
@@ -321,7 +353,13 @@ public sealed class ApiClient
     public async Task<MissionMetric?> CreateMissionMetricAsync(CreateMissionMetricRequest request)
     {
         var response = await _http.PostAsJsonAsync("api/mission-metrics", request);
-        response.EnsureSuccessStatusCode();
+
+        if (!response.IsSuccessStatusCode)
+        {
+            var errorMessage = await ExtractErrorMessageAsync(response);
+            throw new HttpRequestException(errorMessage);
+        }
+
         return await response.Content.ReadFromJsonAsync<MissionMetric>();
     }
 
@@ -412,9 +450,13 @@ public sealed class ApiClient
         var queryParams = new List<string>();
 
         if (missionMetricId.HasValue)
+        {
             queryParams.Add($"missionMetricId={missionMetricId.Value}");
+        }
         if (missionId.HasValue)
+        {
             queryParams.Add($"missionId={missionId.Value}");
+        }
 
         queryParams.Add($"page={page}");
         queryParams.Add($"pageSize={pageSize}");
@@ -518,14 +560,18 @@ public sealed class ApiClient
             return null;
         }
 
-        response.EnsureSuccessStatusCode();
-        return null;
+        var errorMessage = await ExtractErrorMessageAsync(response);
+        throw new HttpRequestException(errorMessage);
     }
 
     public async Task LogoutAsync()
     {
         var response = await _http.PostAsync("api/auth/logout", null);
-        response.EnsureSuccessStatusCode();
+        if (!response.IsSuccessStatusCode)
+        {
+            var errorMessage = await ExtractErrorMessageAsync(response);
+            throw new HttpRequestException(errorMessage);
+        }
     }
 
     // Collaborator Teams (Many-to-Many)

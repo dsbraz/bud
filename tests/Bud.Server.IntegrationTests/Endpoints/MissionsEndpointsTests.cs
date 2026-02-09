@@ -1,5 +1,7 @@
 using System.Net;
 using System.Net.Http.Json;
+using System.Text;
+using System.Text.Json;
 using Bud.Shared.Contracts;
 using Bud.Shared.Models;
 using FluentAssertions;
@@ -192,6 +194,66 @@ public class MissionsEndpointsTests : IClassFixture<CustomWebApplicationFactory>
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+    }
+
+    [Fact]
+    public async Task Create_WithStringEnums_ReturnsCreated()
+    {
+        var leaderId = await GetOrCreateAdminLeader();
+        var orgResponse = await _client.PostAsJsonAsync("/api/organizations",
+            new CreateOrganizationRequest
+            {
+                Name = "test-string-enum.com",
+                OwnerId = leaderId
+            });
+        var org = await orgResponse.Content.ReadFromJsonAsync<Organization>();
+
+        var payload = new
+        {
+            name = "Mission String Enum",
+            description = "String enum parsing",
+            startDate = DateTime.UtcNow,
+            endDate = DateTime.UtcNow.AddDays(5),
+            status = "Planned",
+            scopeType = "Organization",
+            scopeId = org!.Id
+        };
+
+        var content = new StringContent(JsonSerializer.Serialize(payload), Encoding.UTF8, "application/json");
+
+        var response = await _client.PostAsync("/api/missions", content);
+
+        response.StatusCode.Should().Be(HttpStatusCode.Created);
+    }
+
+    [Fact]
+    public async Task Create_WithNumericEnums_ReturnsCreated()
+    {
+        var leaderId = await GetOrCreateAdminLeader();
+        var orgResponse = await _client.PostAsJsonAsync("/api/organizations",
+            new CreateOrganizationRequest
+            {
+                Name = "test-numeric-enum.com",
+                OwnerId = leaderId
+            });
+        var org = await orgResponse.Content.ReadFromJsonAsync<Organization>();
+
+        var payload = new
+        {
+            name = "Mission Numeric Enum",
+            description = "Numeric enum parsing",
+            startDate = DateTime.UtcNow,
+            endDate = DateTime.UtcNow.AddDays(5),
+            status = 0,
+            scopeType = 0,
+            scopeId = org!.Id
+        };
+
+        var content = new StringContent(JsonSerializer.Serialize(payload), Encoding.UTF8, "application/json");
+
+        var response = await _client.PostAsync("/api/missions", content);
+
+        response.StatusCode.Should().Be(HttpStatusCode.Created);
     }
 
     #endregion

@@ -1,8 +1,9 @@
+using System.Reflection;
+using Bud.Server.Infrastructure.Serialization;
 using Bud.Server.Middleware;
 using Bud.Server.Settings;
 using Bud.Server.Validators;
 using FluentValidation;
-using System.Reflection;
 
 namespace Bud.Server.DependencyInjection;
 
@@ -14,6 +15,7 @@ public static class BudApiCompositionExtensions
             .AddJsonOptions(options =>
             {
                 options.JsonSerializerOptions.ReferenceHandler = System.Text.Json.Serialization.ReferenceHandler.IgnoreCycles;
+                options.JsonSerializerOptions.Converters.Add(new LenientEnumJsonConverterFactory());
             });
 
         services.AddEndpointsApiExplorer();

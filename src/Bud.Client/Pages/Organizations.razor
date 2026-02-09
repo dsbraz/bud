@@ -14,20 +14,13 @@
 }
 else
 {
-    <div class="page-header">
-    <div>
-        <div class="page-kicker">Gestão</div>
-        <h1>Organizações</h1>
-        <p class="page-subtitle">Crie e liste organizações cadastradas.</p>
-    </div>
-    @if (AuthState.Session?.IsGlobalAdmin == true)
-    {
-        <button class="button primary" @onclick="async () => await OpenCreateModal()">
-            <span class="button-icon-text">+</span>
-            Nova organização
-        </button>
-    }
-</div>
+    <ManagementPageHeader
+        Kicker="Gestão"
+        Title="Organizações"
+        Subtitle="Crie e liste organizações cadastradas."
+        PrimaryActionText="Nova organização"
+        ShowPrimaryAction="@(AuthState.Session?.IsGlobalAdmin == true)"
+        OnPrimaryAction="OpenCreateModal" />
 
 <div class="card">
     <div class="card-filters">
@@ -40,16 +33,11 @@ else
         </div>
     </div>
 
-    @if (organizations is null)
-    {
-        <p class="muted">Carregando...</p>
-    }
-    else if (organizations.Items.Count == 0)
-    {
-        <p class="muted">Nenhuma organização encontrada.</p>
-    }
-    else
-    {
+    <PagedTableSection
+        IsLoading="@(organizations is null)"
+        IsEmpty="@(organizations is not null && organizations.Items.Count == 0)"
+        Total="@(organizations?.Total ?? 0)"
+        EmptyText="Nenhuma organização encontrada.">
         <table class="table">
             <thead>
                 <tr>
@@ -60,7 +48,7 @@ else
                 </tr>
             </thead>
             <tbody>
-                @foreach (var org in organizations.Items)
+                @foreach (var org in organizations!.Items)
                 {
                     var isDeleting = deletingOrganizationId == org.Id;
                     var isProtected = !string.IsNullOrEmpty(org.Name) &&
@@ -76,38 +64,21 @@ else
                         <td>@(org.Owner?.FullName ?? "—")</td>
                         <td class="mono">@org.Id</td>
                         <td style="text-align: center;">
-                            <div class="table-actions">
-                                <button class="button-icon" @onclick="async () => await OpenEditModal(org)" @onclick:stopPropagation="true"
-                                        disabled="@isProtected"
-                                        title="@(isProtected ? "Esta organização está protegida" : "Editar organização")">
-                                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-                                        <path d="M11.334 2.00004C11.5091 1.82494 11.7169 1.68605 11.9457 1.59129C12.1745 1.49653 12.4197 1.44775 12.6673 1.44775C12.9149 1.44775 13.1601 1.49653 13.3889 1.59129C13.6177 1.68605 13.8256 1.82494 14.0007 2.00004C14.1758 2.17513 14.3147 2.383 14.4094 2.61178C14.5042 2.84055 14.553 3.08575 14.553 3.33337C14.553 3.58099 14.5042 3.82619 14.4094 4.05497C14.3147 4.28374 14.1758 4.49161 14.0007 4.66671L5.00065 13.6667L1.33398 14.6667L2.33398 11L11.334 2.00004Z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-                                    </svg>
-                                </button>
-                                <button class="button-icon @(isDeleting ? "danger" : "")"
-                                        @onclick="() => HandleDeleteClick(org.Id)" @onclick:stopPropagation="true"
-                                        disabled="@isProtected"
-                                        title="@(isProtected ? "Esta organização está protegida" : isDeleting ? "Clique novamente para confirmar" : "Excluir organização")">
-                                    @if (isDeleting)
-                                    {
-                                        <span style="font-size: 11px; white-space: nowrap;">Confirmar?</span>
-                                    }
-                                    else
-                                    {
-                                        <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-                                            <path d="M2 4H3.33333H14" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-                                            <path d="M5.33398 4.00004V2.66671C5.33398 2.31309 5.47446 1.97395 5.72451 1.7239C5.97456 1.47385 6.3137 1.33337 6.66732 1.33337H9.33398C9.6876 1.33337 10.0268 1.47385 10.2768 1.7239C10.5269 1.97395 10.6673 2.31309 10.6673 2.66671V4.00004M12.6673 4.00004V13.3334C12.6673 13.687 12.5269 14.0261 12.2768 14.2762C12.0268 14.5262 11.6876 14.6667 11.334 14.6667H4.66732C4.3137 14.6667 3.97456 14.5262 3.72451 14.2762C3.47446 14.0261 3.33398 13.687 3.33398 13.3334V4.00004H12.6673Z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-                                        </svg>
-                                    }
-                                </button>
-                            </div>
+                            <CrudRowActions
+                                StopPropagation="true"
+                                EditDisabled="@isProtected"
+                                EditTitle="@(isProtected ? "Esta organização está protegida" : "Editar organização")"
+                                OnEdit="@(async () => await OpenEditModal(org))"
+                                IsDeleteConfirming="@isDeleting"
+                                DeleteDisabled="@isProtected"
+                                DeleteTitle="@(isProtected ? "Esta organização está protegida" : "Excluir organização")"
+                                OnDelete="@(() => HandleDeleteClick(org.Id))" />
                         </td>
                     </tr>
                 }
             </tbody>
         </table>
-        <p class="muted" style="margin-top: var(--spacing-4);">Total: @organizations.Total</p>
-    }
+    </PagedTableSection>
 </div>
 
 @if (isModalOpen)
@@ -300,10 +271,23 @@ else
         OrgContext.OnOrganizationChanged += HandleOrganizationChanged;
     }
 
-    private async void HandleOrganizationChanged()
+    private void HandleOrganizationChanged()
     {
-        await LoadOrganizations();
-        StateHasChanged();
+        _ = HandleOrganizationChangedAsync();
+    }
+
+    private async Task HandleOrganizationChangedAsync()
+    {
+        try
+        {
+            await LoadOrganizations();
+            await InvokeAsync(StateHasChanged);
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"Erro ao atualizar organizações por troca de contexto: {ex.Message}");
+            ToastService.ShowError("Erro ao atualizar organizações", "Não foi possível atualizar a lista de organizações.");
+        }
     }
 
     private async Task LoadLeaders(Guid? organizationId = null)
@@ -314,7 +298,7 @@ else
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"Erro ao carregar líderes: {ex.Message}");
+            Console.Error.WriteLine($"Erro ao carregar líderes: {ex.Message}");
             leaders = new List<LeaderCollaboratorResponse>();
         }
     }
@@ -389,21 +373,22 @@ else
 
         try
         {
-            await Api.CreateOrganizationAsync(newOrganization);
-            newOrganization = new CreateOrganizationRequest();
-            await LoadOrganizations();
-            await RefreshAvailableOrganizations();
+            await UiOperationRunner.RunAsync(
+                async () =>
+                {
+                    await Api.CreateOrganizationAsync(newOrganization);
+                    newOrganization = new CreateOrganizationRequest();
+                    await LoadOrganizations();
+                    await RefreshAvailableOrganizations();
 
-            ToastService.ShowSuccess("Organização criada com sucesso!", "A organização foi criada e está disponível.");
-            CloseModal();
-        }
-        catch (HttpRequestException ex)
-        {
-            ToastService.ShowError("Erro ao criar organização", ex.Message);
-        }
-        catch (Exception ex)
-        {
-            ToastService.ShowError("Erro inesperado", ex.Message);
+                    ToastService.ShowSuccess("Organização criada com sucesso!", "A organização foi criada e está disponível.");
+                    CloseModal();
+                },
+                ToastService,
+                "Erro ao criar organização",
+                "Não foi possível criar a organização. Verifique os dados e tente novamente.",
+                operationContext: "criação de organização",
+                unexpectedErrorMessage: "Não foi possível criar a organização. Tente novamente.");
         }
         finally
         {
@@ -431,19 +416,20 @@ else
 
         try
         {
-            await Api.UpdateOrganizationAsync(editingOrganizationId.Value, editOrganization);
-            await LoadOrganizations();
-            await RefreshAvailableOrganizations();
-            ToastService.ShowSuccess("Organização atualizada com sucesso!", "As alterações foram salvas.");
-            CloseModal();
-        }
-        catch (HttpRequestException ex)
-        {
-            ToastService.ShowError("Erro ao atualizar organização", ex.Message);
-        }
-        catch (Exception ex)
-        {
-            ToastService.ShowError("Erro inesperado", ex.Message);
+            await UiOperationRunner.RunAsync(
+                async () =>
+                {
+                    await Api.UpdateOrganizationAsync(editingOrganizationId.Value, editOrganization);
+                    await LoadOrganizations();
+                    await RefreshAvailableOrganizations();
+                    ToastService.ShowSuccess("Organização atualizada com sucesso!", "As alterações foram salvas.");
+                    CloseModal();
+                },
+                ToastService,
+                "Erro ao atualizar organização",
+                "Não foi possível atualizar a organização. Verifique os dados e tente novamente.",
+                operationContext: "atualização de organização",
+                unexpectedErrorMessage: "Não foi possível atualizar a organização. Tente novamente.");
         }
         finally
         {
@@ -483,21 +469,19 @@ else
 
         var orgName = organizations?.Items.FirstOrDefault(o => o.Id == organizationId)?.Name ?? "organização";
 
-        try
-        {
-            await Api.DeleteOrganizationAsync(organizationId);
-            await LoadOrganizations();
-            await RefreshAvailableOrganizations();
-            ToastService.ShowSuccess("Organização excluída", $"A organização '{orgName}' foi removida com sucesso.");
-        }
-        catch (HttpRequestException ex)
-        {
-            ToastService.ShowError("Erro ao excluir organização", ex.Message);
-        }
-        catch (Exception ex)
-        {
-            ToastService.ShowError("Erro inesperado", ex.Message);
-        }
+        await UiOperationRunner.RunAsync(
+            async () =>
+            {
+                await Api.DeleteOrganizationAsync(organizationId);
+                await LoadOrganizations();
+                await RefreshAvailableOrganizations();
+                ToastService.ShowSuccess("Organização excluída", $"A organização '{orgName}' foi removida com sucesso.");
+            },
+            ToastService,
+            "Erro ao excluir organização",
+            "Não foi possível excluir a organização. Tente novamente.",
+            operationContext: "exclusão de organização",
+            unexpectedErrorMessage: "Não foi possível excluir a organização. Tente novamente.");
     }
 
     private async Task OpenDetailsModal(Organization org)
@@ -530,8 +514,12 @@ else
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"Erro ao carregar workspaces: {ex.Message}");
-            ToastService.ShowError("Erro", "Não foi possível carregar os workspaces.");
+            UiErrorHandler.HandleUnexpectedError(
+                ToastService,
+                "Erro",
+                "Não foi possível carregar os workspaces.",
+                ex,
+                "carregamento de workspaces da organização");
             orgWorkspaces = new PagedResult<Workspace> { Items = Array.Empty<Workspace>() };
         }
     }
@@ -544,8 +532,12 @@ else
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"Erro ao carregar colaboradores: {ex.Message}");
-            ToastService.ShowError("Erro", "Não foi possível carregar os colaboradores.");
+            UiErrorHandler.HandleUnexpectedError(
+                ToastService,
+                "Erro",
+                "Não foi possível carregar os colaboradores.",
+                ex,
+                "carregamento de colaboradores da organização");
             orgCollaborators = new PagedResult<Collaborator> { Items = Array.Empty<Collaborator>() };
         }
     }
@@ -562,7 +554,7 @@ else
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"Erro ao atualizar lista de organizações: {ex.Message}");
+            Console.Error.WriteLine($"Erro ao atualizar lista de organizações: {ex.Message}");
         }
     }
 

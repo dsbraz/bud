@@ -17,6 +17,7 @@ Este documento é voltado para devs que precisam:
 - [Como contribuir](#como-contribuir)
 - [Como rodar](#como-rodar-com-docker)
 - [Como rodar sem Docker](#como-rodar-sem-docker)
+- [Servidor MCP (Missões e Métricas)](#servidor-mcp-missões-e-métricas)
 - [Onboarding rápido (30 min)](#onboarding-rápido-30-min)
 - [Testes](#testes)
 - [Outbox (resiliência de eventos)](#outbox-resiliência-de-eventos)
@@ -63,6 +64,9 @@ O Bud segue uma arquitetura em camadas com separação explícita de responsabil
 - **UseCase Pipeline (cross-cutting concerns)**  
   Comportamentos transversais (ex.: logging) aplicados via pipeline, sem poluir cada caso de uso.
   Referências: `src/Bud.Server/Application/Common/Pipeline/`.
+- **Structured Logging (source-generated)**  
+  Logs com `[LoggerMessage]` definidos localmente por componente (`partial`), com `EventId` estável e sem catálogo central global.
+  Referências: `src/Bud.Server/Infrastructure/Events/OutboxEventProcessor.cs`, `src/Bud.Server/Infrastructure/Events/OutboxProcessorBackgroundService.cs`, `src/Bud.Server/Application/Common/Pipeline/LoggingUseCaseBehavior.cs`.
 - **Outbox Pattern (confiabilidade assíncrona)**  
   Garante processamento assíncrono durável com retry/backoff/dead-letter.
   Referências: `docs/adr/ADR-0008-outbox-retry-deadletter.md` e seção **Outbox (resiliência de eventos)** abaixo.
@@ -347,6 +351,85 @@ dotnet build
 dotnet run --project src/Bud.Server
 ```
 
+## Servidor MCP (Missões e Métricas)
+
+O repositório inclui um servidor MCP em `src/Bud.Mcp`, executado em `stdio`, pensado para rodar como sidecar Docker e consumir a API do `Bud.Server`.
+
+### Configuração (`appsettings` + override por ambiente)
+
+O `Bud.Mcp` lê configuração na seguinte ordem:
+1. `appsettings.json`
+2. `appsettings.{DOTNET_ENVIRONMENT}.json`
+3. variáveis de ambiente (override)
+
+Chaves suportadas:
+- `BudMcp:ApiBaseUrl` (ou `BUD_API_BASE_URL`)
+- `BudMcp:UserEmail` (ou `BUD_USER_EMAIL`) opcional, para login automático no boot
+- `BudMcp:DefaultTenantId` (ou `BUD_DEFAULT_TENANT_ID`)
+- `BudMcp:HttpTimeoutSeconds` (ou `BUD_HTTP_TIMEOUT_SECONDS`)
+
+### Subindo via Docker Compose
+
+```bash
+docker compose up --build
+```
+
+O serviço `mcp` é criado no compose com `stdin_open`/`tty`, usando:
+- `Dockerfile` (target `dev-mcp`; mantém container pronto para `docker exec`)
+- `DOTNET_ENVIRONMENT=Development` (usa `src/Bud.Mcp/appsettings.Development.json`)
+- sem usuário fixo; a autenticação é feita pela ferramenta `auth_login`
+
+Compile o MCP no container:
+
+```bash
+docker exec -i bud-mcp dotnet build /src/src/Bud.Mcp/Bud.Mcp.csproj
+```
+
+Uso com Claude Desktop:
+- Se o Claude Desktop já estiver configurado para iniciar o `bud-mcp` via `docker exec`, não é necessário rodar comando manual após `docker compose up`.
+
+Uso manual (fallback/debug):
+- Para iniciar manualmente o servidor MCP no container:
+
+```bash
+docker exec -i bud-mcp dotnet /src/src/Bud.Mcp/bin/Debug/net10.0/Bud.Mcp.dll
+```
+
+Fluxo obrigatório para atualizar catálogo MCP:
+
+```bash
+dotnet run --project src/Bud.Mcp/Bud.Mcp.csproj -- generate-tool-catalog
+dotnet run --project src/Bud.Mcp/Bud.Mcp.csproj -- check-tool-catalog --fail-on-diff
+docker compose restart mcp
+```
+
+Regras importantes do catálogo:
+- As ferramentas de domínio (`mission_*`, `mission_metric_*`, `metric_checkin_*`) são carregadas exclusivamente do arquivo `src/Bud.Mcp/Tools/Generated/mcp-tool-catalog.json`.
+- O `Bud.Mcp` falha na inicialização se o catálogo estiver ausente, inválido, vazio ou sem ferramentas de domínio obrigatórias.
+- O comando `check-tool-catalog --fail-on-diff` também valida o contrato mínimo de campos `required` por ferramenta e retorna erro quando houver quebra de contrato.
+
+Se estiver rodando local com `DOTNET_ENVIRONMENT=Development`, defina:
+`BUD_API_BASE_URL=http://localhost:8080`.
+
+### Ferramentas MCP disponíveis
+
+- `auth_login`
+- `auth_whoami`
+- `tenant_list_available`
+- `tenant_set_current`
+- `session_bootstrap`
+- `help_action_schema`
+- `mission_create`, `mission_get`, `mission_list`, `mission_update`, `mission_delete`
+- `mission_metric_create`, `mission_metric_get`, `mission_metric_list`, `mission_metric_update`, `mission_metric_delete`
+- `metric_checkin_create`, `metric_checkin_get`, `metric_checkin_list`, `metric_checkin_update`, `metric_checkin_delete`
+
+### Descoberta de parâmetros e bootstrap de sessão no MCP
+
+- `auth_login` retorna `whoami`, `requiresTenantForDomainTools` e `nextSteps` para orientar o agente nos próximos passos.
+- `session_bootstrap` retorna snapshot de sessão (`whoami`, `availableTenants`, tenant atual) e `starterSchemas` para fluxos de criação.
+- `help_action_schema` retorna `required`, `inputSchema` e `example` para uma ação específica (ou todas as ações, quando `action` não é informado).
+- Em erro de validação da API, o MCP retorna `statusCode`, `title`, `detail` e `errors` por campo quando disponível.
+
 ## Onboarding rápido (30 min)
 
 Objetivo: validar ponta a ponta (auth, tenant, CRUD básico e leitura) em ambiente local.
@@ -415,7 +498,8 @@ curl -s -X POST http://localhost:8080/api/missions \
     "startDate":"2026-01-01T00:00:00Z",
     "endDate":"2026-12-31T23:59:59Z",
     "status":"Planned",
-    "scopeType":"Organization"
+    "scopeType":"Organization",
+    "scopeId":"'"$BUD_ORG_ID"'"
   }'
 ```
 
@@ -449,6 +533,9 @@ curl -s -X POST http://localhost:8080/api/missions \
 # suíte completa
 dotnet test
 
+# testes MCP
+dotnet test tests/Bud.Mcp.Tests
+
 # apenas unitários
 dotnet test tests/Bud.Server.Tests
 
@@ -458,8 +545,10 @@ dotnet test tests/Bud.Server.IntegrationTests
 
 Observação:
 
+- `dotnet test` usa `Bud.slnx` e executa também `tests/Bud.Mcp.Tests`.
 - Testes de integração usam PostgreSQL via Testcontainers.
 - Use `dotnet test --nologo` para saída mais limpa no terminal.
+- A solução usa `TreatWarningsAsErrors=true`; avisos quebram build/test.
 
 ## Documentação da API (OpenAPI/Swagger)
 
@@ -469,6 +558,7 @@ Observação:
   - `ProducesResponseType` por endpoint
   - comentários XML (`summary`, `response`, `remarks`)
   - metadados de conteúdo (`Consumes`/`Produces`) quando aplicável
+- Para campos enum em payload JSON, a API aceita tanto `string` (case-insensitive) quanto `number` (compatibilidade retroativa).
 
 ## Sistema de Design e Tokens
 
@@ -529,11 +619,17 @@ O projeto usa Outbox para garantir processamento assíncrono confiável de event
 - Dead-letter após esgotar tentativas
 - Endpoints administrativos para consulta e reprocessamento
 
+### Observabilidade e logging do Outbox
+
+- Logging estruturado no ciclo completo: início, sucesso, retry e dead-letter.
+- `EventId` estável por tipo de evento de operação para facilitar monitoramento e alertas.
+- Campos-chave registrados: `OutboxMessageId`, `EventType`, `Attempt/RetryCount`, `NextAttemptOnUtc`, `ElapsedMs`, `Error`.
+
 ### Endpoints de Outbox (admin)
 
-- GET `/api/outbox/dead-letters?page=1&pageSize=10`
-- POST `/api/outbox/dead-letters/{id}/reprocess`
-- POST `/api/outbox/dead-letters/reprocess`
+- `GET /api/outbox/dead-letters?page=1&pageSize=10`
+- `POST /api/outbox/dead-letters/{id}/reprocess`
+- `POST /api/outbox/dead-letters/reprocess`
 
 ### Configuração (`appsettings`)
 
@@ -569,10 +665,10 @@ O endpoint `/health/ready` considera banco e saúde do Outbox.
 - `POST /api/auth/login`
 - `POST /api/auth/logout`
 - `GET /api/auth/my-organizations`
-- POST `/api/organizations`
-- POST `/api/workspaces`
-- POST `/api/teams`
-- POST `/api/collaborators`
+- `POST /api/organizations`
+- `POST /api/workspaces`
+- `POST /api/teams`
+- `POST /api/collaborators`
 - `POST /api/missions`
 - `GET /api/missions`
 - `GET /api/missions/progress`
@@ -581,14 +677,14 @@ O endpoint `/health/ready` considera banco e saúde do Outbox.
 - `GET /api/mission-metrics/progress`
 - `POST /api/metric-checkins`
 - `GET /api/metric-checkins`
-- GET `/api/organizations?search=&page=1&pageSize=10`
-- GET `/api/workspaces?organizationId=&search=&page=1&pageSize=10`
-- GET `/api/teams?workspaceId=&parentTeamId=&search=&page=1&pageSize=10`
-- GET `/api/collaborators?teamId=&search=&page=1&pageSize=10`
-- GET `/api/organizations/{id}/workspaces`
-- GET `/api/workspaces/{id}/teams`
-- GET `/api/teams/{id}/subteams`
-- GET `/api/teams/{id}/collaborators`
+- `GET /api/organizations?search=&page=1&pageSize=10`
+- `GET /api/workspaces?organizationId=&search=&page=1&pageSize=10`
+- `GET /api/teams?workspaceId=&parentTeamId=&search=&page=1&pageSize=10`
+- `GET /api/collaborators?teamId=&search=&page=1&pageSize=10`
+- `GET /api/organizations/{id}/workspaces`
+- `GET /api/workspaces/{id}/teams`
+- `GET /api/teams/{id}/subteams`
+- `GET /api/teams/{id}/collaborators`
 
 ### Administrativos
 
@@ -597,6 +693,14 @@ O endpoint `/health/ready` considera banco e saúde do Outbox.
 - POST `/api/outbox/dead-letters/reprocess`
 
 ### Exemplo de payloads
+
+Para criação de missão (`POST /api/missions`), os campos mínimos obrigatórios são:
+- `name`
+- `startDate`
+- `endDate`
+- `status`
+- `scopeType`
+- `scopeId`
 
 ```json
 {

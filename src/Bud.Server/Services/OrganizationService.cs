@@ -1,6 +1,6 @@
 using Bud.Server.Data;
-using Bud.Server.Settings;
 using Bud.Server.Domain.Common.Specifications;
+using Bud.Server.Settings;
 using Bud.Shared.Contracts;
 using Bud.Shared.Models;
 using Microsoft.EntityFrameworkCore;

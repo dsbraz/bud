@@ -1,6 +1,6 @@
+using System.Security.Claims;
 using Bud.Shared.Contracts;
 using Bud.Shared.Models;
-using System.Security.Claims;
 
 namespace Bud.Server.Application.Workspaces;
 

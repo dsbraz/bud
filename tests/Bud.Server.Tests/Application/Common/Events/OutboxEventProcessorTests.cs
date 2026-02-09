@@ -5,6 +5,7 @@ using Bud.Server.Tests.Helpers;
 using FluentAssertions;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Xunit;
 
@@ -31,6 +32,7 @@ public sealed class OutboxEventProcessorTests
 
         var serializer = new TestOutboxSerializer();
         var subscriber = new TestSubscriber();
+        var logger = new ListLogger<OutboxEventProcessor>();
 
         var services = new ServiceCollection();
         services.AddSingleton<IDomainEventSubscriber<TestDomainEvent>>(subscriber);
@@ -42,6 +44,7 @@ public sealed class OutboxEventProcessorTests
             provider,
             serializer,
             Options.Create(new OutboxProcessingOptions()),
+            logger,
             () => now);
 
         await processor.ProcessPendingAsync(50);
@@ -73,6 +76,7 @@ public sealed class OutboxEventProcessorTests
 
         var serializer = new TestOutboxSerializer();
         var subscriber = new ThrowingSubscriber();
+        var logger = new ListLogger<OutboxEventProcessor>();
 
         var services = new ServiceCollection();
         services.AddSingleton<IDomainEventSubscriber<TestDomainEvent>>(subscriber);
@@ -83,6 +87,7 @@ public sealed class OutboxEventProcessorTests
             provider,
             serializer,
             Options.Create(new OutboxProcessingOptions()),
+            logger,
             () => now);
         await processor.ProcessPendingAsync(50);
 
@@ -92,6 +97,7 @@ public sealed class OutboxEventProcessorTests
         message.RetryCount.Should().Be(1);
         message.NextAttemptOnUtc.Should().Be(now.AddSeconds(5));
         message.Error.Should().NotBeNullOrWhiteSpace();
+        logger.Entries.Should().ContainSingle(e => e.EventId == 3102 && e.Level == LogLevel.Warning);
     }
 
     [Fact]
@@ -115,6 +121,7 @@ public sealed class OutboxEventProcessorTests
 
         var serializer = new TestOutboxSerializer();
         var subscriber = new ThrowingSubscriber();
+        var logger = new ListLogger<OutboxEventProcessor>();
 
         var services = new ServiceCollection();
         services.AddSingleton<IDomainEventSubscriber<TestDomainEvent>>(subscriber);
@@ -125,6 +132,7 @@ public sealed class OutboxEventProcessorTests
             provider,
             serializer,
             Options.Create(new OutboxProcessingOptions()),
+            logger,
             () => now);
         await processor.ProcessPendingAsync(50);
 
@@ -133,6 +141,7 @@ public sealed class OutboxEventProcessorTests
         message.DeadLetteredOnUtc.Should().Be(now);
         message.NextAttemptOnUtc.Should().BeNull();
         message.ProcessedOnUtc.Should().BeNull();
+        logger.Entries.Should().ContainSingle(e => e.EventId == 3103 && e.Level == LogLevel.Error);
     }
 
     [Fact]
@@ -155,6 +164,7 @@ public sealed class OutboxEventProcessorTests
 
         var serializer = new TestOutboxSerializer();
         var subscriber = new TestSubscriber();
+        var logger = new ListLogger<OutboxEventProcessor>();
 
         var services = new ServiceCollection();
         services.AddSingleton<IDomainEventSubscriber<TestDomainEvent>>(subscriber);
@@ -165,12 +175,14 @@ public sealed class OutboxEventProcessorTests
             provider,
             serializer,
             Options.Create(new OutboxProcessingOptions()),
+            logger,
             () => now);
         var processedCount = await processor.ProcessPendingAsync(50);
 
         processedCount.Should().Be(0);
         subscriber.HandledCount.Should().Be(0);
         (await dbContext.OutboxMessages.SingleAsync()).ProcessedOnUtc.Should().BeNull();
+        logger.Entries.Should().BeEmpty();
     }
 
     private sealed record TestDomainEvent(Guid Id) : Bud.Server.Domain.Common.Events.IDomainEvent;
@@ -199,5 +211,35 @@ public sealed class OutboxEventProcessorTests
 
         public Bud.Server.Domain.Common.Events.IDomainEvent Deserialize(string eventType, string payload)
             => new TestDomainEvent(Guid.NewGuid());
+    }
+
+    private sealed class ListLogger<TCategoryName> : ILogger<TCategoryName>
+    {
+        public List<LogEntry> Entries { get; } = [];
+
+        public IDisposable BeginScope<TState>(TState state)
+            where TState : notnull => NullScope.Instance;
+
+        public bool IsEnabled(LogLevel logLevel) => true;
+
+        public void Log<TState>(
+            LogLevel logLevel,
+            EventId eventId,
+            TState state,
+            Exception? exception,
+            Func<TState, Exception?, string> formatter)
+        {
+            Entries.Add(new LogEntry(logLevel, eventId.Id, formatter(state, exception)));
+        }
+
+        public sealed record LogEntry(LogLevel Level, int EventId, string Message);
+
+        private sealed class NullScope : IDisposable
+        {
+            public static readonly NullScope Instance = new();
+            public void Dispose()
+            {
+            }
+        }
     }
 }

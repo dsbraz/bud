@@ -1,5 +1,5 @@
-using Microsoft.AspNetCore.Authorization;
 using FluentValidation.Results;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Bud.Server.Controllers;

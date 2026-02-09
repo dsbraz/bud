@@ -1,9 +1,10 @@
 using Bud.Server.Data;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 
 namespace Bud.Server.DependencyInjection;
 
-public static class WebApplicationExtensions
+public static partial class WebApplicationExtensions
 {
     public static async Task ApplyDevelopmentMigrationsAndSeedAsync(this WebApplication app)
     {
@@ -29,18 +30,36 @@ public static class WebApplicationExtensions
             }
             catch (Exception ex)
             {
-                logger.LogWarning(ex, "Migration attempt {Attempt} failed.", attempt);
+                LogMigrationAttemptFailed(logger, ex, attempt);
                 Thread.Sleep(TimeSpan.FromSeconds(3));
             }
         }
 
         if (!migrated)
         {
-            logger.LogError("Database migration failed after {Attempts} attempts.", maxAttempts);
+            LogMigrationFailedAfterAttempts(logger, maxAttempts);
             return;
         }
 
         await DbSeeder.SeedAsync(dbContext);
-        logger.LogInformation("Database seed completed.");
+        LogDatabaseSeedCompleted(logger);
     }
+
+    [LoggerMessage(
+        EventId = 3500,
+        Level = LogLevel.Warning,
+        Message = "Migration attempt {Attempt} failed.")]
+    private static partial void LogMigrationAttemptFailed(ILogger logger, Exception exception, int attempt);
+
+    [LoggerMessage(
+        EventId = 3501,
+        Level = LogLevel.Error,
+        Message = "Database migration failed after {Attempts} attempts.")]
+    private static partial void LogMigrationFailedAfterAttempts(ILogger logger, int attempts);
+
+    [LoggerMessage(
+        EventId = 3502,
+        Level = LogLevel.Information,
+        Message = "Database seed completed.")]
+    private static partial void LogDatabaseSeedCompleted(ILogger logger);
 }
