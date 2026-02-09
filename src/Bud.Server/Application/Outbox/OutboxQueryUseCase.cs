@@ -1,5 +1,4 @@
 using Bud.Shared.Contracts;
-using Bud.Shared.Models;
 
 namespace Bud.Server.Application.Outbox;
 

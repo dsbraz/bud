@@ -2,8 +2,6 @@ using System.Reflection;
 using Bud.Server.Application.Common.Events;
 using Bud.Server.Data;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
 namespace Bud.Server.Infrastructure.Events;

@@ -1,5 +1,4 @@
 using Bud.Server.Domain.Common.Events;
-using Microsoft.Extensions.DependencyInjection;
 
 namespace Bud.Server.Application.Common.Events;
 

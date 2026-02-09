@@ -1,4 +1,3 @@
-using Microsoft.Extensions.Logging;
 
 namespace Bud.Server.Application.Common.Pipeline;
 

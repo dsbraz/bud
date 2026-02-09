@@ -1,6 +1,5 @@
 using Bud.Server.Data;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Logging;
 
 namespace Bud.Server.DependencyInjection;
 

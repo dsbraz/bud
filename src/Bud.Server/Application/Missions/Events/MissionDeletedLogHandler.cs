@@ -1,6 +1,5 @@
 using Bud.Server.Application.Common.Events;
 using Bud.Server.Domain.Missions.Events;
-using Microsoft.Extensions.Logging;
 
 namespace Bud.Server.Application.Missions.Events;
 

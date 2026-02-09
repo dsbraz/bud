@@ -1,6 +1,5 @@
 using Bud.Server.Application.Common.Events;
 using Bud.Server.Domain.MetricCheckins.Events;
-using Microsoft.Extensions.Logging;
 
 namespace Bud.Server.Application.MetricCheckins.Events;
 

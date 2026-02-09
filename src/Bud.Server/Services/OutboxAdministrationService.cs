@@ -1,6 +1,5 @@
 using Bud.Server.Data;
 using Bud.Shared.Contracts;
-using Bud.Shared.Models;
 using Microsoft.EntityFrameworkCore;
 
 namespace Bud.Server.Services;
