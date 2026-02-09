@@ -1,15 +1,20 @@
 using Bud.Server.Application.Common.Events;
 using Bud.Server.Domain.Collaborators.Events;
 using Microsoft.Extensions.Logging;
-using Bud.Server.Logging;
 
 namespace Bud.Server.Application.Collaborators.Events;
 
-public sealed class CollaboratorUpdatedLogHandler(ILogger<CollaboratorUpdatedLogHandler> logger) : IDomainEventSubscriber<CollaboratorUpdatedDomainEvent>
+public sealed partial class CollaboratorUpdatedLogHandler(ILogger<CollaboratorUpdatedLogHandler> logger) : IDomainEventSubscriber<CollaboratorUpdatedDomainEvent>
 {
     public Task HandleAsync(CollaboratorUpdatedDomainEvent domainEvent, CancellationToken cancellationToken = default)
     {
-        logger.LogCollaboratorUpdatedProcessed(domainEvent.CollaboratorId, domainEvent.OrganizationId);
+        LogCollaboratorUpdatedProcessed(logger, domainEvent.CollaboratorId, domainEvent.OrganizationId);
         return Task.CompletedTask;
     }
+
+    [LoggerMessage(
+        EventId = 3441,
+        Level = LogLevel.Information,
+        Message = "Evento CollaboratorUpdated processado. CollaboratorId={CollaboratorId} OrganizationId={OrganizationId}")]
+    private static partial void LogCollaboratorUpdatedProcessed(ILogger logger, Guid collaboratorId, Guid organizationId);
 }

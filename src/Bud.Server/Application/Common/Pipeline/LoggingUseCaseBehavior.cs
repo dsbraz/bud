@@ -1,26 +1,43 @@
 using Microsoft.Extensions.Logging;
-using Bud.Server.Logging;
 
 namespace Bud.Server.Application.Common.Pipeline;
 
-public sealed class LoggingUseCaseBehavior(ILogger<LoggingUseCaseBehavior> logger) : IUseCaseBehavior
+public sealed partial class LoggingUseCaseBehavior(ILogger<LoggingUseCaseBehavior> logger) : IUseCaseBehavior
 {
     public async Task<TResponse> HandleAsync<TResponse>(
         UseCaseExecutionContext context,
         Func<CancellationToken, Task<TResponse>> next,
         CancellationToken cancellationToken = default)
     {
-        logger.LogUseCaseExecuting(context.UseCaseName, context.OperationName);
+        LogUseCaseExecuting(logger, context.UseCaseName, context.OperationName);
         try
         {
             var response = await next(cancellationToken);
-            logger.LogUseCaseCompleted(context.UseCaseName, context.OperationName);
+            LogUseCaseCompleted(logger, context.UseCaseName, context.OperationName);
             return response;
         }
         catch (Exception ex)
         {
-            logger.LogUseCaseFailed(ex, context.UseCaseName, context.OperationName);
+            LogUseCaseFailed(logger, ex, context.UseCaseName, context.OperationName);
             throw;
         }
     }
+
+    [LoggerMessage(
+        EventId = 3300,
+        Level = LogLevel.Information,
+        Message = "Executando use case {UseCaseName}.{OperationName}")]
+    private static partial void LogUseCaseExecuting(ILogger logger, string useCaseName, string operationName);
+
+    [LoggerMessage(
+        EventId = 3301,
+        Level = LogLevel.Information,
+        Message = "Use case {UseCaseName}.{OperationName} concluído")]
+    private static partial void LogUseCaseCompleted(ILogger logger, string useCaseName, string operationName);
+
+    [LoggerMessage(
+        EventId = 3302,
+        Level = LogLevel.Error,
+        Message = "Erro no use case {UseCaseName}.{OperationName}")]
+    private static partial void LogUseCaseFailed(ILogger logger, Exception exception, string useCaseName, string operationName);
 }

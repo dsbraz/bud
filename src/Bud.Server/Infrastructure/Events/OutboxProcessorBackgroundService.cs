@@ -1,12 +1,11 @@
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
-using Bud.Server.Logging;
 using Microsoft.Extensions.Options;
 
 namespace Bud.Server.Infrastructure.Events;
 
-public sealed class OutboxProcessorBackgroundService(
+public sealed partial class OutboxProcessorBackgroundService(
     IServiceScopeFactory scopeFactory,
     ILogger<OutboxProcessorBackgroundService> logger,
     IOptions<OutboxProcessingOptions> processingOptions) : BackgroundService
@@ -20,7 +19,8 @@ public sealed class OutboxProcessorBackgroundService(
                 using var scope = scopeFactory.CreateScope();
                 var processor = scope.ServiceProvider.GetRequiredService<OutboxEventProcessor>();
                 var batchSize = Math.Max(1, processingOptions.Value.BatchSize);
-                await processor.ProcessPendingAsync(batchSize, stoppingToken);
+                var processedCount = await processor.ProcessPendingAsync(batchSize, stoppingToken);
+                LogOutboxBatchProcessed(logger, processedCount, batchSize);
             }
             catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
             {
@@ -28,7 +28,7 @@ public sealed class OutboxProcessorBackgroundService(
             }
             catch (Exception ex)
             {
-                logger.LogOutboxProcessingFailed(ex);
+                LogOutboxProcessingLoopFailed(logger, ex);
             }
 
             var pollingInterval = processingOptions.Value.PollingInterval <= TimeSpan.Zero
@@ -37,4 +37,16 @@ public sealed class OutboxProcessorBackgroundService(
             await Task.Delay(pollingInterval, stoppingToken);
         }
     }
+
+    [LoggerMessage(
+        EventId = 3200,
+        Level = LogLevel.Debug,
+        Message = "Ciclo de processamento do outbox concluído. ProcessedCount={ProcessedCount} BatchSize={BatchSize}")]
+    private static partial void LogOutboxBatchProcessed(ILogger logger, int processedCount, int batchSize);
+
+    [LoggerMessage(
+        EventId = 3201,
+        Level = LogLevel.Error,
+        Message = "Falha no loop de processamento do outbox.")]
+    private static partial void LogOutboxProcessingLoopFailed(ILogger logger, Exception exception);
 }

@@ -31,6 +31,7 @@ This file provides guidance to coding agents when working with code in this repo
 - Update tests together with production code changes.
 - Keep OpenAPI semantic documentation aligned with implementation.
 - Update or create ADR when architectural behavior changes.
+- For `Bud.Server` logging, use source-generated logging (`[LoggerMessage]`) local to each component (`partial` class); do not introduce centralized ad-hoc log catalogs.
 - For `Bud.Mcp`, keep tool schemas explicit (`required`, field types/formats/enums) and propagate API validation details (`errors` by field) in tool errors.
 - For `Bud.Mcp`, keep domain tools (`mission_*`, `mission_metric_*`, `metric_checkin_*`) sourced from `Tools/Generated/mcp-tool-catalog.json` (strict mode, no runtime fallback to ad-hoc schemas).
 - Keep the solution warning-free (`TreatWarningsAsErrors=true`): code changes MUST not introduce build/test warnings.
@@ -320,6 +321,7 @@ This project intentionally uses the patterns below. New changes should follow th
 - **Outbox Pattern (reliable async processing):**
   - Domain events are serialized/persisted in `OutboxMessages`
   - Background processing with retry/backoff and dead-letter
+  - Logging for processing lifecycle should be structured and stable (`EventId`, `OutboxMessageId`, `EventType`, `RetryCount/Attempt`, `NextAttemptOnUtc`, `ElapsedMs`)
   - Reprocessing through admin endpoints/use cases
 - **Specification Pattern (query composition):**
   - Query specifications in `Domain/Common/Specifications`

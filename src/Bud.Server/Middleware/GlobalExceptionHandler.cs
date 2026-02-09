@@ -1,18 +1,18 @@
 using FluentValidation;
 using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.AspNetCore.Mvc;
-using Bud.Server.Logging;
+using Microsoft.Extensions.Logging;
 
 namespace Bud.Server.Middleware;
 
-public sealed class GlobalExceptionHandler(ILogger<GlobalExceptionHandler> logger) : IExceptionHandler
+public sealed partial class GlobalExceptionHandler(ILogger<GlobalExceptionHandler> logger) : IExceptionHandler
 {
     public async ValueTask<bool> TryHandleAsync(
         HttpContext httpContext,
         Exception exception,
         CancellationToken cancellationToken)
     {
-        logger.LogUnhandledException(exception);
+        LogUnhandledException(logger, exception, exception.Message);
 
         var problemDetails = exception switch
         {
@@ -56,4 +56,10 @@ public sealed class GlobalExceptionHandler(ILogger<GlobalExceptionHandler> logge
             Instance = httpContext.Request.Path
         };
     }
+
+    [LoggerMessage(
+        EventId = 3510,
+        Level = LogLevel.Error,
+        Message = "Ocorreu uma exceção não tratada: {Message}")]
+    private static partial void LogUnhandledException(ILogger logger, Exception exception, string message);
 }

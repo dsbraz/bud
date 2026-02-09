@@ -64,6 +64,9 @@ O Bud segue uma arquitetura em camadas com separação explícita de responsabil
 - **UseCase Pipeline (cross-cutting concerns)**  
   Comportamentos transversais (ex.: logging) aplicados via pipeline, sem poluir cada caso de uso.
   Referências: `src/Bud.Server/Application/Common/Pipeline/`.
+- **Structured Logging (source-generated)**  
+  Logs com `[LoggerMessage]` definidos localmente por componente (`partial`), com `EventId` estável e sem catálogo central global.
+  Referências: `src/Bud.Server/Infrastructure/Events/OutboxEventProcessor.cs`, `src/Bud.Server/Infrastructure/Events/OutboxProcessorBackgroundService.cs`, `src/Bud.Server/Application/Common/Pipeline/LoggingUseCaseBehavior.cs`.
 - **Outbox Pattern (confiabilidade assíncrona)**  
   Garante processamento assíncrono durável com retry/backoff/dead-letter.
   Referências: `docs/adr/ADR-0008-outbox-retry-deadletter.md` e seção **Outbox (resiliência de eventos)** abaixo.
@@ -615,6 +618,12 @@ O projeto usa Outbox para garantir processamento assíncrono confiável de event
 - Retry com backoff exponencial
 - Dead-letter após esgotar tentativas
 - Endpoints administrativos para consulta e reprocessamento
+
+### Observabilidade e logging do Outbox
+
+- Logging estruturado no ciclo completo: início, sucesso, retry e dead-letter.
+- `EventId` estável por tipo de evento de operação para facilitar monitoramento e alertas.
+- Campos-chave registrados: `OutboxMessageId`, `EventType`, `Attempt/RetryCount`, `NextAttemptOnUtc`, `ElapsedMs`, `Error`.
 
 ### Endpoints de Outbox (admin)
 
