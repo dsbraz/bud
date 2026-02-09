@@ -1,7 +1,6 @@
 using Bud.Server.Application.Outbox;
 using Bud.Server.Authorization;
 using Bud.Shared.Contracts;
-using Bud.Shared.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
