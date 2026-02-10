@@ -502,6 +502,67 @@ public sealed class ApiClient
         }
     }
 
+    // MissionTemplate methods
+    public async Task<PagedResult<MissionTemplate>?> GetMissionTemplatesAsync(string? search, int page = 1, int pageSize = 10)
+    {
+        (page, pageSize) = NormalizePagination(page, pageSize);
+
+        var queryParams = new List<string>();
+
+        if (!string.IsNullOrEmpty(search))
+        {
+            queryParams.Add($"search={Uri.EscapeDataString(search)}");
+        }
+
+        queryParams.Add($"page={page}");
+        queryParams.Add($"pageSize={pageSize}");
+
+        var url = $"api/mission-templates?{string.Join("&", queryParams)}";
+        return await _http.GetFromJsonAsync<PagedResult<MissionTemplate>>(url);
+    }
+
+    public async Task<MissionTemplate?> GetMissionTemplateByIdAsync(Guid id)
+    {
+        return await _http.GetFromJsonAsync<MissionTemplate>($"api/mission-templates/{id}");
+    }
+
+    public async Task<MissionTemplate?> CreateMissionTemplateAsync(CreateMissionTemplateRequest request)
+    {
+        var response = await _http.PostAsJsonAsync("api/mission-templates", request);
+
+        if (!response.IsSuccessStatusCode)
+        {
+            var errorMessage = await ExtractErrorMessageAsync(response);
+            throw new HttpRequestException(errorMessage);
+        }
+
+        return await response.Content.ReadFromJsonAsync<MissionTemplate>();
+    }
+
+    public async Task<MissionTemplate?> UpdateMissionTemplateAsync(Guid id, UpdateMissionTemplateRequest request)
+    {
+        var response = await _http.PutAsJsonAsync($"api/mission-templates/{id}", request);
+
+        if (!response.IsSuccessStatusCode)
+        {
+            var errorMessage = await ExtractErrorMessageAsync(response);
+            throw new HttpRequestException(errorMessage);
+        }
+
+        return await response.Content.ReadFromJsonAsync<MissionTemplate>();
+    }
+
+    public async Task DeleteMissionTemplateAsync(Guid id)
+    {
+        var response = await _http.DeleteAsync($"api/mission-templates/{id}");
+
+        if (!response.IsSuccessStatusCode)
+        {
+            var errorMessage = await ExtractErrorMessageAsync(response);
+            throw new HttpRequestException(errorMessage);
+        }
+    }
+
     private static async Task<string> ExtractErrorMessageAsync(HttpResponseMessage response)
     {
         try

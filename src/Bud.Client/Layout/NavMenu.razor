@@ -84,7 +84,7 @@
     private string GetConfigActiveClass()
     {
         var uri = Navigation.Uri;
-        var configRoutes = new[] { "/workspaces", "/teams" };
+        var configRoutes = new[] { "/workspaces", "/teams", "/mission-templates" };
         return configRoutes.Any(route => uri.Contains(route, StringComparison.OrdinalIgnoreCase))
             ? "active"
             : "";

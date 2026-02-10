@@ -280,6 +280,40 @@ else
     <p class="muted" style="margin-top: var(--spacing-4);">Total: @missions.Total</p>
 }
 
+@if (isTemplatePickerOpen)
+{
+    <Modal Title="Como deseja criar sua missão?" Size="lg" OnClose="() => isTemplatePickerOpen = false">
+        <ChildContent>
+            <div class="template-picker-grid">
+                <div class="template-picker-card" @onclick="OpenCreateModalFromScratch">
+                    <div class="template-picker-icon">
+                        <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
+                            <path d="M8 4H20L26 10V28H8V4Z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>
+                            <path d="M20 4V10H26" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>
+                        </svg>
+                    </div>
+                    <div class="template-picker-name">Começar do zero</div>
+                    <div class="template-picker-description">Crie uma missão em branco e configure tudo manualmente.</div>
+                </div>
+                @foreach (var template in availableTemplates)
+                {
+                    <div class="template-picker-card" @onclick="() => OpenCreateModalFromTemplate(template)">
+                        <div class="template-picker-icon">
+                            <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
+                                <path d="M6 6H26V26H6V6Z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>
+                                <path d="M11 12H21M11 16H21M11 20H17" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                            </svg>
+                        </div>
+                        <div class="template-picker-name">@template.Name</div>
+                        <div class="template-picker-description">@(template.Description ?? "Sem descrição")</div>
+                        <div class="template-picker-badge">@template.Metrics.Count métrica(s)</div>
+                    </div>
+                }
+            </div>
+        </ChildContent>
+    </Modal>
+}
+
 @if (isModalOpen)
 {
     <Modal Title="Criar missão" Breadcrumb="@GetSelectedOrganizationName()" Size="lg" OnClose="CloseModal">
@@ -345,23 +379,16 @@ else
 
                 @* Metrics Section *@
                 <div class="mission-metrics-section">
-                    <button type="button" class="metrics-add-button" @onclick="AddMetricOrOpenForm">
-                        <span>Adicionar item</span>
-                        @if (showMetricForm)
-                        {
-                            <svg class="metrics-add-icon" width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                <path d="M13.3333 4L6 11.3333L2.66667 8" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                            </svg>
-                        }
-                        else
-                        {
-                            <span class="metrics-add-icon">+</span>
-                        }
-                    </button>
-
-                    @if (showMetricForm)
+                    @if (!showMetricForm)
                     {
-                        <div class="metrics-form-container" style="margin-top: var(--spacing-4);">
+                        <button type="button" class="metrics-add-button" @onclick="() => showMetricForm = true">
+                            <span>Adicionar item</span>
+                            <span class="metrics-add-icon">+</span>
+                        </button>
+                    }
+                    else
+                    {
+                        <div class="metrics-form-container">
                             <div class="metrics-form-header">
                                 <div class="form-row">
                                     <label>Nome da métrica</label>
@@ -442,25 +469,128 @@ else
                                     }
                                 </div>
                             }
+
+                            <div class="form-actions" style="margin-top: var(--spacing-3);">
+                                <button type="button" class="button tertiary" @onclick="CancelAddMetricForm">Cancelar</button>
+                                <button type="button" class="button primary" @onclick="AddMetricFromForm">Salvar métrica</button>
+                            </div>
                         </div>
                     }
 
                     @if (tempMetrics.Any())
                     {
                         <div class="metrics-list">
-                            @foreach (var metric in tempMetrics)
+                            @for (var i = 0; i < tempMetrics.Count; i++)
                             {
-                                <div class="metric-item">
-                                    <div class="metric-info">
-                                        <div class="metric-name">@metric.Name</div>
-                                        <div class="metric-details">@metric.Details</div>
+                                var index = i;
+                                var metric = tempMetrics[index];
+
+                                @if (editingTempMetricIndex == index)
+                                {
+                                    @* Inline edit form *@
+                                    <div class="metric-item" style="flex-direction: column; align-items: stretch;">
+                                        <div class="metrics-form-container">
+                                            <div class="form-row">
+                                                <label>Nome da métrica</label>
+                                                <input type="text" class="input" @bind="editTempMetricName" placeholder="Nome da métrica" />
+                                            </div>
+
+                                            <div class="metrics-form-selectors">
+                                                <div class="metrics-selector-btn">
+                                                    <svg class="metrics-selector-icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2">
+                                                        <path d="M4 6h12M4 10h12M4 14h12" stroke-linecap="round"/>
+                                                    </svg>
+                                                    <select value="@editTempMetricType" @onchange="OnEditTempMetricTypeChanged">
+                                                        <option value="">Tipo de métrica</option>
+                                                        <option value="Quantitative">Quantitativa</option>
+                                                        <option value="Qualitative">Qualitativa</option>
+                                                    </select>
+                                                    <svg class="metrics-selector-icon" viewBox="0 0 20 20" fill="currentColor">
+                                                        <path d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"/>
+                                                    </svg>
+                                                </div>
+
+                                                @if (editTempMetricType == "Quantitative")
+                                                {
+                                                    <div class="metrics-selector-btn">
+                                                        <svg class="metrics-selector-icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2">
+                                                            <path d="M3 10h14M10 3v14" stroke-linecap="round"/>
+                                                        </svg>
+                                                        <select @bind="editTempMetricQuantitativeType">
+                                                            <option value="">Modo de mensuração</option>
+                                                            <option value="KeepAbove">↑ Manter acima</option>
+                                                            <option value="KeepBelow">↓ Manter abaixo</option>
+                                                            <option value="KeepBetween">↕ Manter entre</option>
+                                                            <option value="Achieve">→ Atingir</option>
+                                                            <option value="Reduce">↘ Reduzir</option>
+                                                        </select>
+                                                        <svg class="metrics-selector-icon" viewBox="0 0 20 20" fill="currentColor">
+                                                            <path d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"/>
+                                                        </svg>
+                                                    </div>
+                                                }
+                                            </div>
+
+                                            @if (editTempMetricType == "Qualitative")
+                                            {
+                                                <div class="form-row">
+                                                    <label>Descrição do objetivo</label>
+                                                    <input type="text" class="input" @bind="editTempMetricTargetText" placeholder="Descreva o objetivo qualitativo desta métrica" />
+                                                </div>
+                                            }
+
+                                            @if (editTempMetricType == "Quantitative" && !string.IsNullOrEmpty(editTempMetricQuantitativeType))
+                                            {
+                                                <div class="metrics-form-inputs">
+                                                    <div class="metrics-input-field">
+                                                        <select @bind="editTempMetricUnit">
+                                                            <option value="">Unidade de medida</option>
+                                                            <option value="Integer">Inteiro</option>
+                                                            <option value="Decimal">Decimal</option>
+                                                            <option value="Percentage">Percentual</option>
+                                                            <option value="Hours">Horas</option>
+                                                            <option value="Points">Pontos</option>
+                                                        </select>
+                                                    </div>
+
+                                                    @if (editTempMetricQuantitativeType == "KeepAbove" || editTempMetricQuantitativeType == "KeepBetween")
+                                                    {
+                                                        <div class="metrics-input-field">
+                                                            <input type="number" @bind="editTempMetricMinValue" placeholder="Valor mínimo" />
+                                                        </div>
+                                                    }
+
+                                                    @if (editTempMetricQuantitativeType == "KeepBelow" || editTempMetricQuantitativeType == "KeepBetween" || editTempMetricQuantitativeType == "Achieve" || editTempMetricQuantitativeType == "Reduce")
+                                                    {
+                                                        <div class="metrics-input-field">
+                                                            <input type="number" @bind="editTempMetricMaxValue" placeholder="@GetMaxValuePlaceholder(editTempMetricQuantitativeType)" />
+                                                        </div>
+                                                    }
+                                                </div>
+                                            }
+
+                                            <div class="form-actions" style="margin-top: var(--spacing-3);">
+                                                <button type="button" class="button tertiary" @onclick="CancelEditTempMetric">Cancelar</button>
+                                                <button type="button" class="button primary" @onclick="SaveEditTempMetric">Salvar métrica</button>
+                                            </div>
+                                        </div>
                                     </div>
-                                    <button type="button" class="metric-remove" @onclick="() => RemoveMetric(metric)">
-                                        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                            <path d="M12 4L4 12M4 4L12 12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-                                        </svg>
-                                    </button>
-                                </div>
+                                }
+                                else
+                                {
+                                    <div class="metric-item">
+                                        <div class="metric-info">
+                                            <div class="metric-name">@metric.Name</div>
+                                            <div class="metric-details">@metric.Details</div>
+                                        </div>
+                                        <CrudRowActions
+                                            EditTitle="Editar métrica"
+                                            OnEdit="@(() => StartEditTempMetric(index))"
+                                            IsDeleteConfirming="false"
+                                            DeleteTitle="Excluir métrica"
+                                            OnDelete="@(() => RemoveMetric(metric))" />
+                                    </div>
+                                }
                             }
                         </div>
                     }
@@ -874,6 +1004,16 @@ else
     private string? newMetricUnit;
     private List<TempMetric> tempMetrics = new();
 
+    // Temp metric edit state
+    private int? editingTempMetricIndex;
+    private string editTempMetricName = string.Empty;
+    private string? editTempMetricType;
+    private string? editTempMetricQuantitativeType;
+    private string? editTempMetricUnit;
+    private decimal? editTempMetricMinValue;
+    private decimal? editTempMetricMaxValue;
+    private string? editTempMetricTargetText;
+
     // Card expansion state
     private HashSet<Guid> expandedMissions = new();
     private Dictionary<Guid, List<MissionMetric>> missionMetricsCache = new();
@@ -913,6 +1053,10 @@ else
     private System.Threading.Timer? deleteConfirmTimer;
     private Guid? deletingMetricId = null;
     private System.Threading.Timer? deleteMetricConfirmTimer;
+
+    // Template picker state
+    private bool isTemplatePickerOpen = false;
+    private List<MissionTemplate> availableTemplates = new();
 
     // Filter panel state
     private bool showFilterPanel = false;
@@ -1186,8 +1330,27 @@ else
         }
     }
 
-    private void OpenCreateModal()
+    private async Task OpenCreateModal()
     {
+        // Load available templates and open the picker
+        try
+        {
+            var result = await Api.GetMissionTemplatesAsync(null, 1, 50);
+            availableTemplates = result?.Items
+                .Where(t => t.IsActive)
+                .ToList() ?? new();
+        }
+        catch
+        {
+            availableTemplates = new();
+        }
+
+        isTemplatePickerOpen = true;
+    }
+
+    private void OpenCreateModalFromScratch()
+    {
+        isTemplatePickerOpen = false;
         newMission = new CreateMissionRequest
         {
             StartDate = DateTime.Today,
@@ -1203,6 +1366,59 @@ else
         tempMetrics.Clear();
         ClearMetricForm();
         isModalOpen = true;
+    }
+
+    private void OpenCreateModalFromTemplate(MissionTemplate template)
+    {
+        isTemplatePickerOpen = false;
+        newMission = new CreateMissionRequest
+        {
+            Name = template.MissionNamePattern ?? string.Empty,
+            Description = template.MissionDescriptionPattern,
+            StartDate = DateTime.Today,
+            EndDate = DateTime.Today.AddDays(90),
+            Status = MissionStatus.Planned
+        };
+        createScopeTypeValue = null;
+        createScopeId = null;
+        missionDescription = template.MissionDescriptionPattern;
+        showResponsibleSelector = false;
+        showPeriodSelector = false;
+        showMetricForm = false;
+
+        // Pre-fill metrics from template
+        tempMetrics = template.Metrics
+            .OrderBy(m => m.OrderIndex)
+            .Select(m => new TempMetric(
+                m.Name,
+                m.Type.ToString(),
+                GetTemplateMetricDetails(m),
+                m.QuantitativeType?.ToString(),
+                m.MinValue,
+                m.MaxValue,
+                m.TargetText,
+                m.Unit?.ToString()))
+            .ToList();
+
+        ClearMetricForm();
+        isModalOpen = true;
+    }
+
+    private static string GetTemplateMetricDetails(MissionTemplateMetric metric)
+    {
+        if (metric.Type == MetricType.Qualitative)
+            return $"Qualitativa — {metric.TargetText}";
+
+        var parts = new List<string> { "Quantitativa" };
+        if (metric.QuantitativeType.HasValue)
+            parts.Add(metric.QuantitativeType.Value.ToString());
+        if (metric.Unit.HasValue)
+            parts.Add(metric.Unit.Value.ToString());
+        if (metric.MinValue.HasValue)
+            parts.Add($"Min: {metric.MinValue}");
+        if (metric.MaxValue.HasValue)
+            parts.Add($"Max: {metric.MaxValue}");
+        return string.Join(" — ", parts);
     }
 
     private void CloseModal()
@@ -1374,22 +1590,20 @@ else
         }
     }
 
-    private void AddMetricOrOpenForm()
+    private void CancelAddMetricForm()
     {
-        // Se o formulário não está aberto, apenas abre
-        if (!showMetricForm)
-        {
-            showMetricForm = true;
-            return;
-        }
+        showMetricForm = false;
+        ClearMetricForm();
+    }
 
-        // Se o formulário está aberto mas não preenchido, não faz nada
+    private void AddMetricFromForm()
+    {
         if (string.IsNullOrWhiteSpace(newMetricName) || string.IsNullOrWhiteSpace(newMetricType))
         {
+            ToastService.ShowError("Erro de validação", "Informe o nome e tipo da métrica.");
             return;
         }
 
-        // Se o formulário está aberto e preenchido, adiciona a métrica
         var details = newMetricType == "Quantitative"
             ? BuildQuantitativeDetails()
             : newMetricTargetText ?? "";
@@ -1405,13 +1619,90 @@ else
             newMetricUnit
         ));
 
-        // Limpa o formulário mas mantém aberto para adicionar mais métricas
+        showMetricForm = false;
         ClearMetricForm();
     }
 
     private void RemoveMetric(TempMetric metric)
     {
         tempMetrics.Remove(metric);
+    }
+
+    private void StartEditTempMetric(int index)
+    {
+        var metric = tempMetrics[index];
+        editingTempMetricIndex = index;
+        editTempMetricName = metric.Name;
+        editTempMetricType = metric.Type;
+        editTempMetricQuantitativeType = metric.QuantitativeType;
+        editTempMetricUnit = metric.Unit;
+        editTempMetricMinValue = metric.MinValue;
+        editTempMetricMaxValue = metric.MaxValue;
+        editTempMetricTargetText = metric.TargetText;
+    }
+
+    private void CancelEditTempMetric()
+    {
+        editingTempMetricIndex = null;
+        editTempMetricName = string.Empty;
+        editTempMetricType = null;
+        editTempMetricQuantitativeType = null;
+        editTempMetricUnit = null;
+        editTempMetricMinValue = null;
+        editTempMetricMaxValue = null;
+        editTempMetricTargetText = null;
+    }
+
+    private void SaveEditTempMetric()
+    {
+        if (editingTempMetricIndex is null) return;
+
+        if (string.IsNullOrWhiteSpace(editTempMetricName) || string.IsNullOrEmpty(editTempMetricType))
+        {
+            ToastService.ShowError("Erro de validação", "Informe o nome e tipo da métrica.");
+            return;
+        }
+
+        var details = editTempMetricType == "Quantitative"
+            ? BuildQuantitativeDetailsFrom(editTempMetricQuantitativeType, editTempMetricMinValue, editTempMetricMaxValue, editTempMetricUnit)
+            : editTempMetricTargetText ?? "";
+
+        tempMetrics[editingTempMetricIndex.Value] = new TempMetric(
+            editTempMetricName,
+            editTempMetricType,
+            details,
+            editTempMetricQuantitativeType,
+            editTempMetricMinValue,
+            editTempMetricMaxValue,
+            editTempMetricTargetText,
+            editTempMetricUnit
+        );
+
+        CancelEditTempMetric();
+    }
+
+    private void OnEditTempMetricTypeChanged(ChangeEventArgs e)
+    {
+        editTempMetricType = e.Value?.ToString();
+        editTempMetricTargetText = null;
+        editTempMetricMinValue = null;
+        editTempMetricMaxValue = null;
+        editTempMetricQuantitativeType = null;
+        editTempMetricUnit = null;
+    }
+
+    private string BuildQuantitativeDetailsFrom(string? quantitativeType, decimal? minValue, decimal? maxValue, string? unit)
+    {
+        var unitLabel = GetUnitLabelShort(unit);
+        return quantitativeType switch
+        {
+            "KeepAbove" => $"Acima de {minValue} {unitLabel}",
+            "KeepBelow" => $"Abaixo de {maxValue} {unitLabel}",
+            "KeepBetween" => $"Entre {minValue} e {maxValue} {unitLabel}",
+            "Achieve" => $"Atingir {maxValue} {unitLabel}",
+            "Reduce" => $"Reduzir para {maxValue} {unitLabel}",
+            _ => ""
+        };
     }
 
     private void ClearMetricForm()

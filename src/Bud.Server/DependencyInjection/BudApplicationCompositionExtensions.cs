@@ -11,6 +11,8 @@ using Bud.Server.Application.MissionMetrics;
 using Bud.Server.Application.MissionMetrics.Events;
 using Bud.Server.Application.Missions;
 using Bud.Server.Application.Missions.Events;
+using Bud.Server.Application.MissionTemplates;
+using Bud.Server.Application.MissionTemplates.Events;
 using Bud.Server.Application.Organizations;
 using Bud.Server.Application.Organizations.Events;
 using Bud.Server.Application.Outbox;
@@ -24,6 +26,7 @@ using Bud.Server.Domain.Collaborators.Events;
 using Bud.Server.Domain.MetricCheckins.Events;
 using Bud.Server.Domain.MissionMetrics.Events;
 using Bud.Server.Domain.Missions.Events;
+using Bud.Server.Domain.MissionTemplates.Events;
 using Bud.Server.Domain.Organizations.Events;
 using Bud.Server.Domain.Teams.Events;
 using Bud.Server.Domain.Workspaces.Events;
@@ -66,6 +69,9 @@ public static class BudApplicationCompositionExtensions
         services.AddScoped<IDomainEventSubscriber<MetricCheckinCreatedDomainEvent>, MetricCheckinCreatedLogHandler>();
         services.AddScoped<IDomainEventSubscriber<MetricCheckinUpdatedDomainEvent>, MetricCheckinUpdatedLogHandler>();
         services.AddScoped<IDomainEventSubscriber<MetricCheckinDeletedDomainEvent>, MetricCheckinDeletedLogHandler>();
+        services.AddScoped<IDomainEventSubscriber<MissionTemplateCreatedDomainEvent>, MissionTemplateCreatedLogHandler>();
+        services.AddScoped<IDomainEventSubscriber<MissionTemplateUpdatedDomainEvent>, MissionTemplateUpdatedLogHandler>();
+        services.AddScoped<IDomainEventSubscriber<MissionTemplateDeletedDomainEvent>, MissionTemplateDeletedLogHandler>();
 
         services.AddScoped<IOrganizationService, OrganizationService>();
         services.AddScoped<IOrganizationCommandUseCase, OrganizationCommandUseCase>();
@@ -102,6 +108,10 @@ public static class BudApplicationCompositionExtensions
         services.AddScoped<IOutboxAdministrationService, OutboxAdministrationService>();
         services.AddScoped<IOutboxCommandUseCase, OutboxCommandUseCase>();
         services.AddScoped<IOutboxQueryUseCase, OutboxQueryUseCase>();
+
+        services.AddScoped<IMissionTemplateService, MissionTemplateService>();
+        services.AddScoped<IMissionTemplateCommandUseCase, MissionTemplateCommandUseCase>();
+        services.AddScoped<IMissionTemplateQueryUseCase, MissionTemplateQueryUseCase>();
 
         services.AddScoped<ITenantAuthorizationService, TenantAuthorizationService>();
         services.AddScoped<IOrganizationAuthorizationService, OrganizationAuthorizationService>();

@@ -45,6 +45,22 @@ public sealed class UpdateMissionRequest
     public Guid ScopeId { get; set; }
 }
 
+public sealed class UpdateMissionTemplateRequest
+{
+    /// <summary>Nome do template de missão.</summary>
+    public string Name { get; set; } = string.Empty;
+    /// <summary>Descrição opcional do template.</summary>
+    public string? Description { get; set; }
+    /// <summary>Padrão de nome para missões criadas a partir deste template.</summary>
+    public string? MissionNamePattern { get; set; }
+    /// <summary>Padrão de descrição para missões criadas a partir deste template.</summary>
+    public string? MissionDescriptionPattern { get; set; }
+    /// <summary>Indica se o template está ativo.</summary>
+    public bool IsActive { get; set; } = true;
+    /// <summary>Métricas do template.</summary>
+    public List<MissionTemplateMetricDto> Metrics { get; set; } = [];
+}
+
 public sealed class UpdateMissionMetricRequest
 {
     /// <summary>Nome da métrica.</summary>
