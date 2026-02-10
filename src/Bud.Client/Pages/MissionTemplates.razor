@@ -94,42 +94,13 @@
 {
     <Modal Title="@(isEditing ? "Editar template" : "Criar template")" Size="lg" OnClose="CloseModal">
         <ChildContent>
-            @* Header Section - Template Name & Description *@
+            @* Template Info *@
             <div class="mission-header">
                 <input type="text" class="mission-title-input" @bind="formName" placeholder="Nome do template" />
                 <input type="text" class="mission-subtitle-input" @bind="formDescription" placeholder="Adicionar breve descrição" />
             </div>
 
-            @* Metadata Chips *@
-            <div class="chips-container">
-                <div class="chip" @onclick="() => showPatternFields = !showPatternFields">
-                    <span class="chip-icon">📝</span>
-                    <span>Padrões</span>
-                </div>
-                @if (isEditing)
-                {
-                    <div class="chip" @onclick="() => showStatusSelector = !showStatusSelector">
-                        <span class="chip-icon">📊</span>
-                        <span>@(formIsActive == "true" ? "Ativo" : "Inativo")</span>
-                    </div>
-                }
-            </div>
-
-            @* Pattern Fields (hidden by default) *@
-            @if (showPatternFields)
-            {
-                <div class="form-row">
-                    <label>Padrão de nome da missão</label>
-                    <input type="text" class="input" @bind="formMissionNamePattern" placeholder="Ex: OKR — " />
-                </div>
-                <div class="form-row">
-                    <label>Padrão de descrição da missão</label>
-                    <input type="text" class="input" @bind="formMissionDescriptionPattern" placeholder="Ex: Missão seguindo framework OKR" />
-                </div>
-            }
-
-            @* Status Selector (hidden by default) *@
-            @if (isEditing && showStatusSelector)
+            @if (isEditing)
             {
                 <div class="form-row">
                     <label>Status</label>
@@ -140,8 +111,38 @@
                 </div>
             }
 
+            @* Mission Patterns Section *@
+            <div class="mission-metrics-section">
+                <div class="mission-metrics-section-header">
+                    <svg class="mission-metrics-section-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" stroke-linecap="round" stroke-linejoin="round"/>
+                        <polyline points="14 2 14 8 20 8" stroke-linecap="round" stroke-linejoin="round"/>
+                        <line x1="16" y1="13" x2="8" y2="13" stroke-linecap="round"/>
+                        <line x1="16" y1="17" x2="8" y2="17" stroke-linecap="round"/>
+                    </svg>
+                    <h3>Padrões da missão</h3>
+                </div>
+
+                <div class="form-row">
+                    <label>Padrão de nome da missão</label>
+                    <input type="text" class="input" @bind="formMissionNamePattern" placeholder="Ex: OKR — " />
+                </div>
+                <div class="form-row">
+                    <label>Padrão de descrição da missão</label>
+                    <input type="text" class="input" @bind="formMissionDescriptionPattern" placeholder="Ex: Missão seguindo framework OKR" />
+                </div>
+            </div>
+
             @* Metrics Section *@
             <div class="mission-metrics-section">
+                <div class="mission-metrics-section-header">
+                    <svg class="mission-metrics-section-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M3 3v18h18" stroke-linecap="round" stroke-linejoin="round"/>
+                        <path d="M18 9l-5 5-4-4-3 3" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                    <h3>Métricas da missão</h3>
+                </div>
+
                 @if (!showMetricForm)
                 {
                     <button type="button" class="metrics-add-button" @onclick="() => showMetricForm = true">
@@ -388,10 +389,6 @@
     private string formIsActive = "true";
     private List<MissionTemplateMetricDto> formMetrics = new();
 
-    // Chip toggle states
-    private bool showPatternFields;
-    private bool showStatusSelector;
-
     // Metric form fields (add new)
     private bool showMetricForm;
     private string newMetricName = string.Empty;
@@ -480,8 +477,6 @@
         formIsActive = "true";
         formMetrics = new();
         showMetricForm = false;
-        showPatternFields = false;
-        showStatusSelector = false;
         ClearMetricForm();
         isModalOpen = true;
     }
@@ -507,8 +502,6 @@
             TargetText = m.TargetText
         }).ToList();
         showMetricForm = false;
-        showPatternFields = false;
-        showStatusSelector = false;
         ClearMetricForm();
         isModalOpen = true;
     }
