@@ -1207,6 +1207,29 @@ else
         }
     }
 
+    private async Task LoadMetricProgress(Guid missionId)
+    {
+        if (!missionMetricsCache.TryGetValue(missionId, out var metrics) || metrics.Count == 0)
+            return;
+
+        try
+        {
+            var metricIds = metrics.Select(m => m.Id).ToList();
+            var progressList = await Api.GetMetricProgressAsync(metricIds);
+            if (progressList != null)
+            {
+                foreach (var progress in progressList)
+                {
+                    metricProgressCache[progress.MetricId] = progress;
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"Erro ao carregar progresso das métricas: {ex.Message}");
+        }
+    }
+
     private async Task OnCreateScopeTypeChanged(ChangeEventArgs e)
     {
         createScopeTypeValue = e.Value?.ToString();
@@ -2171,8 +2194,13 @@ else
             {
                 await Api.CreateMetricCheckinAsync(newCheckin);
                 ToastService.ShowSuccess("Check-in criado", "O check-in foi registrado com sucesso.");
+                var missionId = checkinMission?.Id;
                 CloseCheckinModal();
                 await LoadProgress();
+                if (missionId.HasValue)
+                {
+                    await LoadMetricProgress(missionId.Value);
+                }
             },
             ToastService,
             "Erro ao criar check-in",
