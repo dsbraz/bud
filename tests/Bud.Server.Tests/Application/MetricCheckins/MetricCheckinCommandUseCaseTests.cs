@@ -225,6 +225,9 @@ public sealed class MetricCheckinCommandUseCaseTests
         entityLookup
             .Setup(l => l.GetMissionMetricAsync(metric.Id, false, true, It.IsAny<CancellationToken>()))
             .ReturnsAsync(metric);
+        entityLookup
+            .Setup(l => l.GetCollaboratorAsync(collaboratorId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new Collaborator { Id = collaboratorId, OrganizationId = orgId, FullName = "Test", Email = "test@test.com" });
 
         var dispatcher = new Mock<Bud.Server.Application.Common.Events.IDomainEventDispatcher>();
         dispatcher
