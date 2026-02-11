@@ -1,0 +1,167 @@
+@if (ShowAddButton && !isFormVisible)
+{
+    <button type="button" class="metrics-add-button" @onclick="() => isFormVisible = true">
+        <span>@AddButtonLabel</span>
+        <span class="metrics-add-icon">+</span>
+    </button>
+}
+else
+{
+    <div class="metrics-form-container">
+        <div class="metrics-form-header">
+            <div class="form-row">
+                <label>Nome da métrica</label>
+                <input type="text" class="input" @bind="Model.Name" placeholder="Ex: Taxa de conversão, NPS, etc." />
+            </div>
+        </div>
+
+        <div class="metrics-form-selectors">
+            <div class="metrics-selector-btn">
+                <svg class="metrics-selector-icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M4 6h12M4 10h12M4 14h12" stroke-linecap="round"/>
+                </svg>
+                <select value="@Model.TypeValue" @onchange="OnTypeChanged">
+                    <option value="">Tipo de métrica</option>
+                    <option value="Quantitative">Quantitativa</option>
+                    <option value="Qualitative">Qualitativa</option>
+                </select>
+                <svg class="metrics-selector-icon" viewBox="0 0 20 20" fill="currentColor">
+                    <path d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"/>
+                </svg>
+            </div>
+
+            @if (Model.TypeValue == "Quantitative")
+            {
+                <div class="metrics-selector-btn">
+                    <svg class="metrics-selector-icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M3 10h14M10 3v14" stroke-linecap="round"/>
+                    </svg>
+                    <select @bind="Model.QuantitativeTypeValue">
+                        <option value="">Modo de mensuração</option>
+                        <option value="KeepAbove">↑ Manter acima</option>
+                        <option value="KeepBelow">↓ Manter abaixo</option>
+                        <option value="KeepBetween">↕ Manter entre</option>
+                        <option value="Achieve">→ Atingir</option>
+                        <option value="Reduce">↘ Reduzir</option>
+                    </select>
+                    <svg class="metrics-selector-icon" viewBox="0 0 20 20" fill="currentColor">
+                        <path d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"/>
+                    </svg>
+                </div>
+            }
+        </div>
+
+        @if (Model.TypeValue == "Qualitative")
+        {
+            <div class="form-row">
+                <label>Descrição do objetivo</label>
+                <input type="text" class="input" @bind="Model.TargetText" placeholder="Descreva o objetivo qualitativo desta métrica" />
+            </div>
+        }
+
+        @if (Model.TypeValue == "Quantitative" && !string.IsNullOrEmpty(Model.QuantitativeTypeValue))
+        {
+            <div class="metrics-form-inputs">
+                <div class="metrics-input-field">
+                    <select @bind="Model.UnitValue">
+                        <option value="">Unidade de medida</option>
+                        <option value="Integer">Inteiro</option>
+                        <option value="Decimal">Decimal</option>
+                        <option value="Percentage">Percentual</option>
+                        <option value="Hours">Horas</option>
+                        <option value="Points">Pontos</option>
+                    </select>
+                </div>
+
+                @if (Model.QuantitativeTypeValue == "KeepAbove" || Model.QuantitativeTypeValue == "KeepBetween")
+                {
+                    <div class="metrics-input-field">
+                        <input type="number" @bind="Model.MinValue" placeholder="Valor mínimo" />
+                    </div>
+                }
+
+                @if (Model.QuantitativeTypeValue == "KeepBelow" || Model.QuantitativeTypeValue == "KeepBetween" || Model.QuantitativeTypeValue == "Achieve" || Model.QuantitativeTypeValue == "Reduce")
+                {
+                    <div class="metrics-input-field">
+                        <input type="number" @bind="Model.MaxValue" placeholder="@GetMaxValuePlaceholder(Model.QuantitativeTypeValue)" />
+                    </div>
+                }
+            </div>
+        }
+
+        <div class="form-actions" style="margin-top: var(--spacing-3);">
+            <button type="button" class="button tertiary" @onclick="HandleCancel">@CancelLabel</button>
+            <button type="button" class="button primary" @onclick="HandleSave">@SaveLabel</button>
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter, EditorRequired] public MetricFormModel Model { get; set; } = default!;
+    [Parameter, EditorRequired] public EventCallback OnSave { get; set; }
+    [Parameter, EditorRequired] public EventCallback OnCancel { get; set; }
+    [Parameter] public string SaveLabel { get; set; } = "Salvar métrica";
+    [Parameter] public string CancelLabel { get; set; } = "Cancelar";
+    [Parameter] public bool ShowAddButton { get; set; }
+    [Parameter] public string AddButtonLabel { get; set; } = "Adicionar item";
+
+    private bool isFormVisible;
+
+    private async Task HandleSave()
+    {
+        await OnSave.InvokeAsync();
+        // If the parent cleared the model after a successful save, collapse to button
+        if (ShowAddButton && string.IsNullOrWhiteSpace(Model.Name) && string.IsNullOrWhiteSpace(Model.TypeValue))
+        {
+            isFormVisible = false;
+        }
+    }
+
+    private async Task HandleCancel()
+    {
+        await OnCancel.InvokeAsync();
+        if (ShowAddButton)
+        {
+            isFormVisible = false;
+        }
+    }
+
+    private void OnTypeChanged(ChangeEventArgs e)
+    {
+        Model.TypeValue = e.Value?.ToString();
+        Model.QuantitativeTypeValue = null;
+        Model.UnitValue = null;
+        Model.MinValue = null;
+        Model.MaxValue = null;
+        Model.TargetText = null;
+    }
+
+    internal static string GetMaxValuePlaceholder(string? quantitativeType) => quantitativeType switch
+    {
+        "KeepBelow" or "KeepBetween" => "Valor máximo",
+        "Achieve" or "Reduce" => "Valor alvo",
+        _ => "Valor máximo"
+    };
+
+    public class MetricFormModel
+    {
+        public string Name { get; set; } = string.Empty;
+        public string? TypeValue { get; set; }
+        public string? QuantitativeTypeValue { get; set; }
+        public string? UnitValue { get; set; }
+        public decimal? MinValue { get; set; }
+        public decimal? MaxValue { get; set; }
+        public string? TargetText { get; set; }
+
+        public void Clear()
+        {
+            Name = string.Empty;
+            TypeValue = null;
+            QuantitativeTypeValue = null;
+            UnitValue = null;
+            MinValue = null;
+            MaxValue = null;
+            TargetText = null;
+        }
+    }
+}

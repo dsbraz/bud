@@ -143,103 +143,7 @@
                     <h3>Métricas da missão</h3>
                 </div>
 
-                @if (!showMetricForm)
-                {
-                    <button type="button" class="metrics-add-button" @onclick="() => showMetricForm = true">
-                        <span>Adicionar item</span>
-                        <span class="metrics-add-icon">+</span>
-                    </button>
-                }
-                else
-                {
-                    <div class="metrics-form-container">
-                        <div class="metrics-form-header">
-                            <div class="form-row">
-                                <label>Nome da métrica</label>
-                                <input type="text" class="input" @bind="newMetricName" placeholder="Ex: Taxa de conversão, NPS, etc." />
-                            </div>
-                        </div>
-
-                        <div class="metrics-form-selectors">
-                            <div class="metrics-selector-btn">
-                                <svg class="metrics-selector-icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2">
-                                    <path d="M4 6h12M4 10h12M4 14h12" stroke-linecap="round"/>
-                                </svg>
-                                <select @bind="newMetricType">
-                                    <option value="">Tipo de métrica</option>
-                                    <option value="Quantitative">Quantitativa</option>
-                                    <option value="Qualitative">Qualitativa</option>
-                                </select>
-                                <svg class="metrics-selector-icon" viewBox="0 0 20 20" fill="currentColor">
-                                    <path d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"/>
-                                </svg>
-                            </div>
-
-                            @if (newMetricType == "Quantitative")
-                            {
-                                <div class="metrics-selector-btn">
-                                    <svg class="metrics-selector-icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2">
-                                        <path d="M3 10h14M10 3v14" stroke-linecap="round"/>
-                                    </svg>
-                                    <select @bind="newMetricQuantitativeType">
-                                        <option value="">Modo de mensuração</option>
-                                        <option value="KeepAbove">↑ Manter acima</option>
-                                        <option value="KeepBelow">↓ Manter abaixo</option>
-                                        <option value="KeepBetween">↕ Manter entre</option>
-                                        <option value="Achieve">→ Atingir</option>
-                                        <option value="Reduce">↘ Reduzir</option>
-                                    </select>
-                                    <svg class="metrics-selector-icon" viewBox="0 0 20 20" fill="currentColor">
-                                        <path d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"/>
-                                    </svg>
-                                </div>
-                            }
-                        </div>
-
-                        @if (newMetricType == "Qualitative")
-                        {
-                            <div class="form-row">
-                                <label>Descrição do objetivo</label>
-                                <input type="text" class="input" @bind="newMetricTargetText" placeholder="Descreva o objetivo qualitativo desta métrica" />
-                            </div>
-                        }
-
-                        @if (newMetricType == "Quantitative" && !string.IsNullOrEmpty(newMetricQuantitativeType))
-                        {
-                            <div class="metrics-form-inputs">
-                                <div class="metrics-input-field">
-                                    <select @bind="newMetricUnit">
-                                        <option value="">Unidade de medida</option>
-                                        <option value="Integer">Inteiro</option>
-                                        <option value="Decimal">Decimal</option>
-                                        <option value="Percentage">Percentual</option>
-                                        <option value="Hours">Horas</option>
-                                        <option value="Points">Pontos</option>
-                                    </select>
-                                </div>
-
-                                @if (newMetricQuantitativeType == "KeepAbove" || newMetricQuantitativeType == "KeepBetween")
-                                {
-                                    <div class="metrics-input-field">
-                                        <input type="number" @bind="newMetricMinValue" placeholder="Valor mínimo" />
-                                    </div>
-                                }
-
-                                @if (newMetricQuantitativeType == "KeepBelow" || newMetricQuantitativeType == "KeepBetween" || newMetricQuantitativeType == "Achieve" || newMetricQuantitativeType == "Reduce")
-                                {
-                                    <div class="metrics-input-field">
-                                        <input type="number" @bind="newMetricMaxValue" placeholder="@GetMaxValuePlaceholder(newMetricQuantitativeType)" />
-                                    </div>
-                                }
-                            </div>
-                        }
-
-                        <div class="form-actions" style="margin-top: var(--spacing-3);">
-                            <button type="button" class="button tertiary" @onclick="CancelAddMetric">Cancelar</button>
-                            <button type="button" class="button primary" @onclick="AddMetric">Salvar métrica</button>
-                        </div>
-                    </div>
-                }
+                <MetricFormFields Model="newMetricModel" OnSave="AddMetric" OnCancel="CancelAddMetric" ShowAddButton="true" />
 
                 @if (formMetrics.Any())
                 {
@@ -253,91 +157,7 @@
                             {
                                 @* Inline edit form — same visual as Missions edit modal *@
                                 <div class="metric-item" style="flex-direction: column; align-items: stretch;">
-                                    <div class="metrics-form-container">
-                                        <div class="form-row">
-                                            <label>Nome da métrica</label>
-                                            <input type="text" class="input" @bind="editMetricName" placeholder="Nome da métrica" />
-                                        </div>
-
-                                        <div class="metrics-form-selectors">
-                                            <div class="metrics-selector-btn">
-                                                <svg class="metrics-selector-icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2">
-                                                    <path d="M4 6h12M4 10h12M4 14h12" stroke-linecap="round"/>
-                                                </svg>
-                                                <select value="@editMetricType" @onchange="OnEditMetricTypeChanged">
-                                                    <option value="">Tipo de métrica</option>
-                                                    <option value="Quantitative">Quantitativa</option>
-                                                    <option value="Qualitative">Qualitativa</option>
-                                                </select>
-                                                <svg class="metrics-selector-icon" viewBox="0 0 20 20" fill="currentColor">
-                                                    <path d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"/>
-                                                </svg>
-                                            </div>
-
-                                            @if (editMetricType == "Quantitative")
-                                            {
-                                                <div class="metrics-selector-btn">
-                                                    <svg class="metrics-selector-icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2">
-                                                        <path d="M3 10h14M10 3v14" stroke-linecap="round"/>
-                                                    </svg>
-                                                    <select @bind="editMetricQuantitativeType">
-                                                        <option value="">Modo de mensuração</option>
-                                                        <option value="KeepAbove">↑ Manter acima</option>
-                                                        <option value="KeepBelow">↓ Manter abaixo</option>
-                                                        <option value="KeepBetween">↕ Manter entre</option>
-                                                        <option value="Achieve">→ Atingir</option>
-                                                        <option value="Reduce">↘ Reduzir</option>
-                                                    </select>
-                                                    <svg class="metrics-selector-icon" viewBox="0 0 20 20" fill="currentColor">
-                                                        <path d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"/>
-                                                    </svg>
-                                                </div>
-                                            }
-                                        </div>
-
-                                        @if (editMetricType == "Qualitative")
-                                        {
-                                            <div class="form-row">
-                                                <label>Descrição do objetivo</label>
-                                                <input type="text" class="input" @bind="editMetricTargetText" placeholder="Descreva o objetivo qualitativo desta métrica" />
-                                            </div>
-                                        }
-
-                                        @if (editMetricType == "Quantitative" && !string.IsNullOrEmpty(editMetricQuantitativeType))
-                                        {
-                                            <div class="metrics-form-inputs">
-                                                <div class="metrics-input-field">
-                                                    <select @bind="editMetricUnit">
-                                                        <option value="">Unidade de medida</option>
-                                                        <option value="Integer">Inteiro</option>
-                                                        <option value="Decimal">Decimal</option>
-                                                        <option value="Percentage">Percentual</option>
-                                                        <option value="Hours">Horas</option>
-                                                        <option value="Points">Pontos</option>
-                                                    </select>
-                                                </div>
-
-                                                @if (editMetricQuantitativeType == "KeepAbove" || editMetricQuantitativeType == "KeepBetween")
-                                                {
-                                                    <div class="metrics-input-field">
-                                                        <input type="number" @bind="editMetricMinValue" placeholder="Valor mínimo" />
-                                                    </div>
-                                                }
-
-                                                @if (editMetricQuantitativeType == "KeepBelow" || editMetricQuantitativeType == "KeepBetween" || editMetricQuantitativeType == "Achieve" || editMetricQuantitativeType == "Reduce")
-                                                {
-                                                    <div class="metrics-input-field">
-                                                        <input type="number" @bind="editMetricMaxValue" placeholder="@GetMaxValuePlaceholder(editMetricQuantitativeType)" />
-                                                    </div>
-                                                }
-                                            </div>
-                                        }
-
-                                        <div class="form-actions" style="margin-top: var(--spacing-3);">
-                                            <button type="button" class="button tertiary" @onclick="CancelEditMetric">Cancelar</button>
-                                            <button type="button" class="button primary" @onclick="SaveEditMetric">Salvar métrica</button>
-                                        </div>
-                                    </div>
+                                    <MetricFormFields Model="editMetricModel" OnSave="SaveEditMetric" OnCancel="CancelEditMetric" />
                                 </div>
                             }
                             else
@@ -390,24 +210,11 @@
     private List<MissionTemplateMetricDto> formMetrics = new();
 
     // Metric form fields (add new)
-    private bool showMetricForm;
-    private string newMetricName = string.Empty;
-    private string? newMetricType;
-    private string? newMetricQuantitativeType;
-    private string? newMetricUnit;
-    private decimal? newMetricMinValue;
-    private decimal? newMetricMaxValue;
-    private string? newMetricTargetText;
+    private MetricFormFields.MetricFormModel newMetricModel = new();
 
     // Metric edit fields
     private int? editingMetricIndex;
-    private string editMetricName = string.Empty;
-    private string? editMetricType;
-    private string? editMetricQuantitativeType;
-    private string? editMetricUnit;
-    private decimal? editMetricMinValue;
-    private decimal? editMetricMaxValue;
-    private string? editMetricTargetText;
+    private MetricFormFields.MetricFormModel editMetricModel = new();
 
     // Delete state
     private Guid? deletingTemplateId;
@@ -476,8 +283,7 @@
         formMissionDescriptionPattern = null;
         formIsActive = "true";
         formMetrics = new();
-        showMetricForm = false;
-        ClearMetricForm();
+        newMetricModel.Clear();
         isModalOpen = true;
     }
 
@@ -501,8 +307,7 @@
             Unit = m.Unit,
             TargetText = m.TargetText
         }).ToList();
-        showMetricForm = false;
-        ClearMetricForm();
+        newMetricModel.Clear();
         isModalOpen = true;
     }
 
@@ -589,13 +394,12 @@
     // Metric form methods
     private void CancelAddMetric()
     {
-        showMetricForm = false;
-        ClearMetricForm();
+        newMetricModel.Clear();
     }
 
     private void AddMetric()
     {
-        if (string.IsNullOrWhiteSpace(newMetricName) || string.IsNullOrEmpty(newMetricType))
+        if (string.IsNullOrWhiteSpace(newMetricModel.Name) || string.IsNullOrEmpty(newMetricModel.TypeValue))
         {
             ToastService.ShowError("Erro de validação", "Informe o nome e tipo da métrica.");
             return;
@@ -603,25 +407,24 @@
 
         var metric = new MissionTemplateMetricDto
         {
-            Name = newMetricName,
-            Type = Enum.Parse<MetricType>(newMetricType),
+            Name = newMetricModel.Name,
+            Type = Enum.Parse<MetricType>(newMetricModel.TypeValue),
             OrderIndex = formMetrics.Count,
-            TargetText = newMetricTargetText
+            TargetText = newMetricModel.TargetText
         };
 
-        if (newMetricType == "Quantitative")
+        if (newMetricModel.TypeValue == "Quantitative")
         {
-            if (!string.IsNullOrEmpty(newMetricQuantitativeType))
-                metric.QuantitativeType = Enum.Parse<QuantitativeMetricType>(newMetricQuantitativeType);
-            if (!string.IsNullOrEmpty(newMetricUnit))
-                metric.Unit = Enum.Parse<MetricUnit>(newMetricUnit);
-            metric.MinValue = newMetricMinValue;
-            metric.MaxValue = newMetricMaxValue;
+            if (!string.IsNullOrEmpty(newMetricModel.QuantitativeTypeValue))
+                metric.QuantitativeType = Enum.Parse<QuantitativeMetricType>(newMetricModel.QuantitativeTypeValue);
+            if (!string.IsNullOrEmpty(newMetricModel.UnitValue))
+                metric.Unit = Enum.Parse<MetricUnit>(newMetricModel.UnitValue);
+            metric.MinValue = newMetricModel.MinValue;
+            metric.MaxValue = newMetricModel.MaxValue;
         }
 
         formMetrics.Add(metric);
-        showMetricForm = false;
-        ClearMetricForm();
+        newMetricModel.Clear();
     }
 
     private void RemoveMetric(MissionTemplateMetricDto metric)
@@ -630,17 +433,6 @@
         // Reindex
         for (int i = 0; i < formMetrics.Count; i++)
             formMetrics[i].OrderIndex = i;
-    }
-
-    private void ClearMetricForm()
-    {
-        newMetricName = string.Empty;
-        newMetricType = null;
-        newMetricQuantitativeType = null;
-        newMetricUnit = null;
-        newMetricMinValue = null;
-        newMetricMaxValue = null;
-        newMetricTargetText = null;
     }
 
     private static string GetMetricDescription(MissionTemplateMetricDto metric)
@@ -660,63 +452,52 @@
         return string.Join(" — ", parts);
     }
 
-    private static string GetMaxValuePlaceholder(string? quantitativeType) => quantitativeType switch
-    {
-        "KeepBelow" or "KeepBetween" => "Valor máximo",
-        "Achieve" => "Valor alvo",
-        "Reduce" => "Valor alvo",
-        _ => "Valor máximo"
-    };
-
     // Metric edit methods
     private void StartEditMetric(int index)
     {
         var metric = formMetrics[index];
         editingMetricIndex = index;
-        editMetricName = metric.Name;
-        editMetricType = metric.Type.ToString();
-        editMetricQuantitativeType = metric.QuantitativeType?.ToString();
-        editMetricUnit = metric.Unit?.ToString();
-        editMetricMinValue = metric.MinValue;
-        editMetricMaxValue = metric.MaxValue;
-        editMetricTargetText = metric.TargetText;
+        editMetricModel = new MetricFormFields.MetricFormModel
+        {
+            Name = metric.Name,
+            TypeValue = metric.Type.ToString(),
+            QuantitativeTypeValue = metric.QuantitativeType?.ToString(),
+            UnitValue = metric.Unit?.ToString(),
+            MinValue = metric.MinValue,
+            MaxValue = metric.MaxValue,
+            TargetText = metric.TargetText
+        };
     }
 
     private void CancelEditMetric()
     {
         editingMetricIndex = null;
-        editMetricName = string.Empty;
-        editMetricType = null;
-        editMetricQuantitativeType = null;
-        editMetricUnit = null;
-        editMetricMinValue = null;
-        editMetricMaxValue = null;
-        editMetricTargetText = null;
+        editMetricModel.Clear();
     }
 
     private void SaveEditMetric()
     {
         if (editingMetricIndex is null) return;
 
-        if (string.IsNullOrWhiteSpace(editMetricName) || string.IsNullOrEmpty(editMetricType))
+        if (string.IsNullOrWhiteSpace(editMetricModel.Name) || string.IsNullOrEmpty(editMetricModel.TypeValue))
         {
             ToastService.ShowError("Erro de validação", "Informe o nome e tipo da métrica.");
             return;
         }
 
         var metric = formMetrics[editingMetricIndex.Value];
-        metric.Name = editMetricName;
-        metric.Type = Enum.Parse<MetricType>(editMetricType);
-        metric.TargetText = editMetricTargetText;
+        metric.Name = editMetricModel.Name;
+        metric.Type = Enum.Parse<MetricType>(editMetricModel.TypeValue);
+        metric.TargetText = editMetricModel.TargetText;
 
-        if (editMetricType == "Quantitative")
+        if (editMetricModel.TypeValue == "Quantitative")
         {
-            metric.QuantitativeType = !string.IsNullOrEmpty(editMetricQuantitativeType)
-                ? Enum.Parse<QuantitativeMetricType>(editMetricQuantitativeType) : null;
-            metric.Unit = !string.IsNullOrEmpty(editMetricUnit)
-                ? Enum.Parse<MetricUnit>(editMetricUnit) : null;
-            metric.MinValue = editMetricMinValue;
-            metric.MaxValue = editMetricMaxValue;
+            metric.QuantitativeType = !string.IsNullOrEmpty(editMetricModel.QuantitativeTypeValue)
+                ? Enum.Parse<QuantitativeMetricType>(editMetricModel.QuantitativeTypeValue) : null;
+            metric.Unit = !string.IsNullOrEmpty(editMetricModel.UnitValue)
+                ? Enum.Parse<MetricUnit>(editMetricModel.UnitValue) : null;
+            metric.MinValue = editMetricModel.MinValue;
+            metric.MaxValue = editMetricModel.MaxValue;
         }
         else
         {
@@ -727,16 +508,6 @@
         }
 
         CancelEditMetric();
-    }
-
-    private void OnEditMetricTypeChanged(ChangeEventArgs e)
-    {
-        editMetricType = e.Value?.ToString();
-        editMetricTargetText = null;
-        editMetricMinValue = null;
-        editMetricMaxValue = null;
-        editMetricQuantitativeType = null;
-        editMetricUnit = null;
     }
 
     // Delete methods
