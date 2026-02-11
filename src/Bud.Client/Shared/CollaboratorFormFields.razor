@@ -1,0 +1,96 @@
+<div class="form-row">
+    <label>Nome completo</label>
+    <InputText class="input" @bind-Value="FullName" placeholder="Nome do colaborador" />
+    <ValidationMessage For="() => FullName" />
+</div>
+<div class="form-row">
+    <label>E-mail</label>
+    <InputText class="input" @bind-Value="Email" type="email" placeholder="email@exemplo.com" />
+    <ValidationMessage For="() => Email" />
+</div>
+<div class="form-row">
+    <label>Perfil</label>
+    <InputSelect class="input" @bind-Value="Role">
+        <option value="@CollaboratorRole.IndividualContributor">Contribuidor individual</option>
+        <option value="@CollaboratorRole.Leader">Líder</option>
+    </InputSelect>
+    <ValidationMessage For="() => Role" />
+</div>
+<div class="form-row">
+    <label>Líder (opcional)</label>
+    <select class="input" value="@LeaderId" @onchange="OnLeaderChanged">
+        <option value="">Nenhum</option>
+        @foreach (var leader in Leaders)
+        {
+            @if (leader.Id != ExcludeLeaderId)
+            {
+                <option value="@leader.Id">@leader.FullName - @leader.TeamName</option>
+            }
+        }
+    </select>
+    <small class="form-hint">
+        O líder pode ser alterado para qualquer colaborador com função de Líder.
+    </small>
+</div>
+
+@if (ShowTeams)
+{
+    <div class="form-row" style="margin-top: var(--spacing-4);">
+        <label>Equipes</label>
+        <TransferList TItem="TeamSummaryDto"
+            AvailableItems="@AvailableTeams"
+            AssignedItems="@AssignedTeams"
+            AssignedItemsChanged="OnAssignedTeamsChangedAsync"
+            OnAvailableSearch="OnAvailableTeamsSearchAsync"
+            GetKey="@(t => t.Id)"
+            GetDisplayText="@(t => t.Name)"
+            GetSecondaryText="@(t => t.WorkspaceName)"
+            AvailableTitle="Equipes disponíveis"
+            AssignedTitle="Equipes atribuídas"
+            SearchPlaceholder="Buscar equipe..."
+            EmptyAvailableMessage="Nenhuma equipe disponível."
+            EmptyAssignedMessage="Nenhuma equipe atribuída." />
+    </div>
+}
+
+@code {
+    [Parameter] public string FullName { get; set; } = string.Empty;
+    [Parameter] public EventCallback<string> FullNameChanged { get; set; }
+
+    [Parameter] public string Email { get; set; } = string.Empty;
+    [Parameter] public EventCallback<string> EmailChanged { get; set; }
+
+    [Parameter] public CollaboratorRole Role { get; set; }
+    [Parameter] public EventCallback<CollaboratorRole> RoleChanged { get; set; }
+
+    [Parameter] public string? LeaderId { get; set; }
+    [Parameter] public EventCallback<string?> LeaderIdChanged { get; set; }
+
+    [Parameter] public List<LeaderCollaboratorResponse> Leaders { get; set; } = new();
+    [Parameter] public Guid? ExcludeLeaderId { get; set; }
+
+    [Parameter] public List<TeamSummaryDto> AvailableTeams { get; set; } = new();
+    [Parameter] public List<TeamSummaryDto> AssignedTeams { get; set; } = new();
+    [Parameter] public EventCallback<List<TeamSummaryDto>> AssignedTeamsChanged { get; set; }
+    [Parameter] public EventCallback<string> OnAvailableTeamsSearch { get; set; }
+
+    [Parameter] public bool ShowTeams { get; set; } = true;
+
+    private async Task OnLeaderChanged(ChangeEventArgs e)
+    {
+        var value = e.Value?.ToString();
+        LeaderId = string.IsNullOrEmpty(value) ? null : value;
+        await LeaderIdChanged.InvokeAsync(LeaderId);
+    }
+
+    private async Task OnAssignedTeamsChangedAsync(List<TeamSummaryDto> teams)
+    {
+        AssignedTeams = teams;
+        await AssignedTeamsChanged.InvokeAsync(teams);
+    }
+
+    private async Task OnAvailableTeamsSearchAsync(string search)
+    {
+        await OnAvailableTeamsSearch.InvokeAsync(search);
+    }
+}

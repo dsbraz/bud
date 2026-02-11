@@ -132,34 +132,20 @@
 
 @if (isModalOpen)
 {
-    <Modal Title="Criar colaborador" OnClose="CloseModal">
+    <Modal Title="Criar colaborador" Size="lg" OnClose="CloseModal">
         <EditForm Model="@newCollaborator" OnValidSubmit="CreateCollaborator">
             <DataAnnotationsValidator />
-            <div class="form-row">
-                <label>Nome completo</label>
-                <InputText class="input" @bind-Value="newCollaborator.FullName" />
-            </div>
-            <div class="form-row">
-                <label>E-mail</label>
-                <InputText class="input" @bind-Value="newCollaborator.Email" />
-            </div>
-            <div class="form-row">
-                <label>Perfil</label>
-                <InputSelect class="input" @bind-Value="newCollaborator.Role">
-                    <option value="@CollaboratorRole.IndividualContributor">Contribuidor individual</option>
-                    <option value="@CollaboratorRole.Leader">Lider</option>
-                </InputSelect>
-            </div>
-            <div class="form-row">
-                <label>Líder (opcional)</label>
-                <select class="input" @bind="createLeaderId">
-                    <option value="">Nenhum</option>
-                    @foreach (var leader in leaders)
-                    {
-                        <option value="@leader.Id">@leader.FullName - @leader.TeamName</option>
-                    }
-                </select>
-            </div>
+            <CollaboratorFormFields
+                @bind-FullName="newCollaborator.FullName"
+                @bind-Email="newCollaborator.Email"
+                @bind-Role="newCollaborator.Role"
+                @bind-LeaderId="createLeaderId"
+                Leaders="leaders"
+                ShowTeams="true"
+                AvailableTeams="availableTeamsForCreate"
+                AssignedTeams="assignedTeamsForCreate"
+                AssignedTeamsChanged="OnCreateTeamsChanged"
+                OnAvailableTeamsSearch="SearchAvailableTeamsForCreateAsync" />
             <div class="form-actions">
                 <button class="button tertiary" type="button" @onclick="CloseModal">Cancelar</button>
                 <button class="button primary" type="submit">Salvar</button>
@@ -173,56 +159,18 @@
     <Modal Title="Editar colaborador" Size="lg" OnClose="CloseEditModal">
         <EditForm Model="@editCollaborator" OnValidSubmit="UpdateCollaborator">
             <DataAnnotationsValidator />
-            <div class="form-row">
-                <label>Nome completo</label>
-                <InputText class="input" @bind-Value="editCollaborator.FullName" placeholder="Nome do colaborador" />
-                <ValidationMessage For="() => editCollaborator.FullName" />
-            </div>
-            <div class="form-row">
-                <label>E-mail</label>
-                <InputText class="input" @bind-Value="editCollaborator.Email" type="email" placeholder="email@exemplo.com" />
-                <ValidationMessage For="() => editCollaborator.Email" />
-            </div>
-            <div class="form-row">
-                <label>Perfil</label>
-                <InputSelect class="input" @bind-Value="editCollaborator.Role">
-                    <option value="@CollaboratorRole.IndividualContributor">Contribuidor individual</option>
-                    <option value="@CollaboratorRole.Leader">Líder</option>
-                </InputSelect>
-                <ValidationMessage For="() => editCollaborator.Role" />
-            </div>
-            <div class="form-row">
-                <label>Líder (opcional)</label>
-                <select class="input" @bind="editLeaderId">
-                    <option value="">Nenhum</option>
-                    @foreach (var leader in leaders)
-                    {
-                        @if (leader.Id != selectedCollaborator?.Id)
-                        {
-                            <option value="@leader.Id">@leader.FullName - @leader.TeamName</option>
-                        }
-                    }
-                </select>
-                <small class="form-hint">
-                    O líder pode ser alterado para qualquer colaborador com função de Líder.
-                </small>
-            </div>
-            <div class="form-row" style="margin-top: var(--spacing-4);">
-                <label>Equipes</label>
-                <TransferList TItem="TeamSummaryDto"
-                    AvailableItems="@availableTeamsForEdit"
-                    AssignedItems="@assignedTeamsForEdit"
-                    AssignedItemsChanged="OnTeamsChanged"
-                    OnAvailableSearch="SearchAvailableTeamsAsync"
-                    GetKey="@(t => t.Id)"
-                    GetDisplayText="@(t => t.Name)"
-                    GetSecondaryText="@(t => t.WorkspaceName)"
-                    AvailableTitle="Equipes disponíveis"
-                    AssignedTitle="Equipes atribuídas"
-                    SearchPlaceholder="Buscar equipe..."
-                    EmptyAvailableMessage="Nenhuma equipe disponível."
-                    EmptyAssignedMessage="Nenhuma equipe atribuída." />
-            </div>
+            <CollaboratorFormFields
+                @bind-FullName="editCollaborator.FullName"
+                @bind-Email="editCollaborator.Email"
+                @bind-Role="editCollaborator.Role"
+                @bind-LeaderId="editLeaderId"
+                Leaders="leaders"
+                ExcludeLeaderId="selectedCollaborator?.Id"
+                ShowTeams="true"
+                AvailableTeams="availableTeamsForEdit"
+                AssignedTeams="assignedTeamsForEdit"
+                AssignedTeamsChanged="OnTeamsChanged"
+                OnAvailableTeamsSearch="SearchAvailableTeamsAsync" />
             <div class="form-actions">
                 <button class="button tertiary" type="button" @onclick="CloseEditModal">Cancelar</button>
                 <button class="button primary" type="submit">Salvar alterações</button>
@@ -334,6 +282,11 @@
     // Filter panel state
     private bool showFilterPanel = false;
     private bool showTeamDropdown = false;
+
+    // Estado de equipes no modal de criação
+    private List<TeamSummaryDto> availableTeamsForCreate = new();
+    private List<TeamSummaryDto> assignedTeamsForCreate = new();
+    private bool createTeamsModified = false;
 
     // Estado do modal de edição
     private bool isEditModalOpen = false;
@@ -494,12 +447,23 @@
     {
         newCollaborator = new CreateCollaboratorRequest();
         createLeaderId = null;
+        assignedTeamsForCreate = new();
+        createTeamsModified = false;
+        availableTeamsForCreate = teams.Select(t => new TeamSummaryDto
+        {
+            Id = t.Id,
+            Name = t.Name,
+            WorkspaceName = workspaces.FirstOrDefault(w => w.Id == t.WorkspaceId)?.Name ?? ""
+        }).ToList();
         isModalOpen = true;
     }
 
     private void CloseModal()
     {
         isModalOpen = false;
+        availableTeamsForCreate = new();
+        assignedTeamsForCreate = new();
+        createTeamsModified = false;
     }
 
     private async Task CreateCollaborator()
@@ -523,8 +487,18 @@
         await UiOperationRunner.RunAsync(
             async () =>
             {
-                await Api.CreateCollaboratorAsync(newCollaborator);
+                var created = await Api.CreateCollaboratorAsync(newCollaborator);
                 var createdCollaboratorName = newCollaborator.FullName;
+
+                // Assign teams if any were selected
+                if (created != null && createTeamsModified && assignedTeamsForCreate.Count > 0)
+                {
+                    await Api.UpdateCollaboratorTeamsAsync(created.Id, new UpdateCollaboratorTeamsRequest
+                    {
+                        TeamIds = assignedTeamsForCreate.Select(t => t.Id).ToList()
+                    });
+                }
+
                 newCollaborator = new CreateCollaboratorRequest();
                 createLeaderId = null;
                 await LoadCollaborators();
@@ -697,6 +671,28 @@
     {
         if (selectedCollaborator == null) return;
         availableTeamsForEdit = await Api.GetAvailableTeamsForCollaboratorAsync(selectedCollaborator.Id, search) ?? new();
+    }
+
+    private void OnCreateTeamsChanged(List<TeamSummaryDto> updatedTeams)
+    {
+        assignedTeamsForCreate = updatedTeams;
+        createTeamsModified = true;
+    }
+
+    private Task SearchAvailableTeamsForCreateAsync(string search)
+    {
+        var assignedIds = assignedTeamsForCreate.Select(t => t.Id).ToHashSet();
+        availableTeamsForCreate = teams
+            .Where(t => !assignedIds.Contains(t.Id))
+            .Where(t => string.IsNullOrWhiteSpace(search) ||
+                t.Name.Contains(search, StringComparison.OrdinalIgnoreCase))
+            .Select(t => new TeamSummaryDto
+            {
+                Id = t.Id,
+                Name = t.Name,
+                WorkspaceName = workspaces.FirstOrDefault(w => w.Id == t.WorkspaceId)?.Name ?? ""
+            }).ToList();
+        return Task.CompletedTask;
     }
 
     private RenderFragment RenderOrgChartNode(CollaboratorHierarchyNodeDto node) => __builder =>
