@@ -164,18 +164,41 @@ public sealed class MissionService(
             return ServiceResult<PagedResult<Mission>>.NotFound("Colaborador não encontrado.");
         }
 
-        var teamId = collaborator.TeamId;
-        var workspaceId = collaborator.Team?.WorkspaceId;
         var organizationId = collaborator.OrganizationId;
 
-        // Buscar missões do colaborador, team, workspace ou organization
+        // Collect ALL team IDs (primary + many-to-many via CollaboratorTeams)
+        var additionalTeamIds = await dbContext.CollaboratorTeams
+            .AsNoTracking()
+            .Where(ct => ct.CollaboratorId == collaboratorId)
+            .Select(ct => ct.TeamId)
+            .ToListAsync(cancellationToken);
+
+        var allTeamIds = new HashSet<Guid>(additionalTeamIds);
+        if (collaborator.TeamId.HasValue)
+        {
+            allTeamIds.Add(collaborator.TeamId.Value);
+        }
+
+        // Resolve workspace IDs for all teams
+        var allWorkspaceIds = await dbContext.Teams
+            .AsNoTracking()
+            .IgnoreQueryFilters()
+            .Where(t => allTeamIds.Contains(t.Id))
+            .Select(t => t.WorkspaceId)
+            .Distinct()
+            .ToListAsync(cancellationToken);
+
+        var teamIdList = allTeamIds.ToList();
+        var workspaceIdList = allWorkspaceIds;
+
+        // Buscar missões do colaborador, seus times, workspaces ou organização
         // Org-scoped missions: OrganizationId matches AND no other scope FK is set
         var query = dbContext.Missions
             .AsNoTracking()
             .Where(m =>
                 m.CollaboratorId == collaboratorId ||
-                (teamId.HasValue && m.TeamId == teamId) ||
-                (workspaceId.HasValue && m.WorkspaceId == workspaceId) ||
+                (m.TeamId.HasValue && teamIdList.Contains(m.TeamId.Value)) ||
+                (m.WorkspaceId.HasValue && workspaceIdList.Contains(m.WorkspaceId.Value)) ||
                 (m.OrganizationId == organizationId && m.WorkspaceId == null && m.TeamId == null && m.CollaboratorId == null));
 
         // Aplicar filtro de busca por nome

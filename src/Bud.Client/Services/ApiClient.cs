@@ -304,6 +304,25 @@ public sealed class ApiClient
         return await _http.GetFromJsonAsync<PagedResult<Mission>>(url);
     }
 
+    public async Task<PagedResult<Mission>?> GetMyMissionsAsync(
+        Guid collaboratorId, string? search, int page = 1, int pageSize = 10)
+    {
+        (page, pageSize) = NormalizePagination(page, pageSize);
+
+        var queryParams = new List<string>();
+
+        if (!string.IsNullOrEmpty(search))
+        {
+            queryParams.Add($"search={Uri.EscapeDataString(search)}");
+        }
+
+        queryParams.Add($"page={page}");
+        queryParams.Add($"pageSize={pageSize}");
+
+        var url = $"api/missions/my-missions/{collaboratorId}?{string.Join("&", queryParams)}";
+        return await _http.GetFromJsonAsync<PagedResult<Mission>>(url);
+    }
+
     public async Task<Mission?> CreateMissionAsync(CreateMissionRequest request)
     {
         var response = await _http.PostAsJsonAsync("api/missions", request);

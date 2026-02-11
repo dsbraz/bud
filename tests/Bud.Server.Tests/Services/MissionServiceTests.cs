@@ -899,6 +899,116 @@ public class MissionServiceTests
     }
 
     [Fact]
+    public async Task GetMyMissions_WithCollaboratorTeams_IncludesMissionsFromAdditionalTeams()
+    {
+        // Arrange
+        using var context = CreateInMemoryContext();
+        var service = new MissionService(context);
+
+        var org = new Organization { Id = Guid.NewGuid(), Name = "Test Org" };
+        var workspace1 = new Workspace { Id = Guid.NewGuid(), Name = "Workspace 1", OrganizationId = org.Id };
+        var workspace2 = new Workspace { Id = Guid.NewGuid(), Name = "Workspace 2", OrganizationId = org.Id };
+
+        var teamA = new Team { Id = Guid.NewGuid(), Name = "Team A", WorkspaceId = workspace1.Id, OrganizationId = org.Id };
+        var teamB = new Team { Id = Guid.NewGuid(), Name = "Team B", WorkspaceId = workspace2.Id, OrganizationId = org.Id };
+        var teamC = new Team { Id = Guid.NewGuid(), Name = "Team C", WorkspaceId = workspace2.Id, OrganizationId = org.Id };
+        var teamD = new Team { Id = Guid.NewGuid(), Name = "Team D", WorkspaceId = workspace1.Id, OrganizationId = org.Id };
+
+        var collaborator = new Collaborator
+        {
+            Id = Guid.NewGuid(),
+            FullName = "Test User",
+            Email = "test@example.com",
+            TeamId = teamA.Id,
+            OrganizationId = org.Id
+        };
+
+        context.Organizations.Add(org);
+        context.Workspaces.AddRange(workspace1, workspace2);
+        context.Teams.AddRange(teamA, teamB, teamC, teamD);
+        context.Collaborators.Add(collaborator);
+
+        // Many-to-many: collaborator also belongs to Team B and Team C
+        context.CollaboratorTeams.AddRange(
+            new CollaboratorTeam { CollaboratorId = collaborator.Id, TeamId = teamB.Id },
+            new CollaboratorTeam { CollaboratorId = collaborator.Id, TeamId = teamC.Id }
+        );
+
+        // Missions at various scopes
+        context.Missions.AddRange(
+            new Mission { Id = Guid.NewGuid(), Name = "Team A Mission", StartDate = DateTime.UtcNow, EndDate = DateTime.UtcNow.AddDays(7), Status = MissionStatus.Active, OrganizationId = org.Id, TeamId = teamA.Id },
+            new Mission { Id = Guid.NewGuid(), Name = "Team B Mission", StartDate = DateTime.UtcNow, EndDate = DateTime.UtcNow.AddDays(7), Status = MissionStatus.Active, OrganizationId = org.Id, TeamId = teamB.Id },
+            new Mission { Id = Guid.NewGuid(), Name = "Team C Mission", StartDate = DateTime.UtcNow, EndDate = DateTime.UtcNow.AddDays(7), Status = MissionStatus.Active, OrganizationId = org.Id, TeamId = teamC.Id },
+            new Mission { Id = Guid.NewGuid(), Name = "Workspace 2 Mission", StartDate = DateTime.UtcNow, EndDate = DateTime.UtcNow.AddDays(7), Status = MissionStatus.Active, OrganizationId = org.Id, WorkspaceId = workspace2.Id },
+            new Mission { Id = Guid.NewGuid(), Name = "Org Mission", StartDate = DateTime.UtcNow, EndDate = DateTime.UtcNow.AddDays(7), Status = MissionStatus.Active, OrganizationId = org.Id },
+            new Mission { Id = Guid.NewGuid(), Name = "Team D Mission", StartDate = DateTime.UtcNow, EndDate = DateTime.UtcNow.AddDays(7), Status = MissionStatus.Active, OrganizationId = org.Id, TeamId = teamD.Id }
+        );
+
+        await context.SaveChangesAsync();
+
+        // Act
+        var result = await service.GetMyMissionsAsync(collaborator.Id, null, 1, 100);
+
+        // Assert — should include Team A, B, C missions + Workspace 1 & 2 missions + Org mission (5 total, excludes Team D)
+        result.IsSuccess.Should().BeTrue();
+        result.Value!.Items.Should().HaveCount(5);
+        result.Value!.Items.Select(m => m.Name).Should().NotContain("Team D Mission");
+    }
+
+    [Fact]
+    public async Task GetMyMissions_WithCollaboratorTeams_IncludesWorkspaceMissionsFromAdditionalTeams()
+    {
+        // Arrange
+        using var context = CreateInMemoryContext();
+        var service = new MissionService(context);
+
+        var org = new Organization { Id = Guid.NewGuid(), Name = "Test Org" };
+        var workspaceA = new Workspace { Id = Guid.NewGuid(), Name = "Workspace A", OrganizationId = org.Id };
+        var workspaceB = new Workspace { Id = Guid.NewGuid(), Name = "Workspace B", OrganizationId = org.Id };
+
+        var primaryTeam = new Team { Id = Guid.NewGuid(), Name = "Primary Team", WorkspaceId = workspaceA.Id, OrganizationId = org.Id };
+        var additionalTeam = new Team { Id = Guid.NewGuid(), Name = "Additional Team", WorkspaceId = workspaceB.Id, OrganizationId = org.Id };
+
+        var collaborator = new Collaborator
+        {
+            Id = Guid.NewGuid(),
+            FullName = "Test User",
+            Email = "test@example.com",
+            TeamId = primaryTeam.Id,
+            OrganizationId = org.Id
+        };
+
+        context.Organizations.Add(org);
+        context.Workspaces.AddRange(workspaceA, workspaceB);
+        context.Teams.AddRange(primaryTeam, additionalTeam);
+        context.Collaborators.Add(collaborator);
+
+        // Many-to-many: collaborator also belongs to Additional Team (in Workspace B)
+        context.CollaboratorTeams.Add(new CollaboratorTeam { CollaboratorId = collaborator.Id, TeamId = additionalTeam.Id });
+
+        // Workspace B-scoped mission
+        context.Missions.Add(new Mission
+        {
+            Id = Guid.NewGuid(),
+            Name = "Workspace B Mission",
+            StartDate = DateTime.UtcNow,
+            EndDate = DateTime.UtcNow.AddDays(7),
+            Status = MissionStatus.Active,
+            OrganizationId = org.Id,
+            WorkspaceId = workspaceB.Id
+        });
+
+        await context.SaveChangesAsync();
+
+        // Act
+        var result = await service.GetMyMissionsAsync(collaborator.Id, null, 1, 100);
+
+        // Assert — should include the Workspace B mission because collaborator has a team there
+        result.IsSuccess.Should().BeTrue();
+        result.Value!.Items.Should().ContainSingle(m => m.Name == "Workspace B Mission");
+    }
+
+    [Fact]
     public async Task GetMyMissions_WithPagination_ReturnsPaginatedResults()
     {
         // Arrange

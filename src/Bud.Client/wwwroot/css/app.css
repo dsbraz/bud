@@ -2256,6 +2256,25 @@ a {
     position: relative;
 }
 
+/* Filter Chip Group (segmented toggle) */
+.filter-chip-group {
+    display: flex;
+    align-items: center;
+}
+
+.filter-chip-group .filter-chip {
+    border-radius: 0;
+}
+
+.filter-chip-group .filter-chip:first-child {
+    border-radius: var(--radius-sm) 0 0 var(--radius-sm);
+    border-right: none;
+}
+
+.filter-chip-group .filter-chip:last-child {
+    border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+}
+
 .filter-dropdown {
     position: absolute;
     top: calc(100% + 4px);
