@@ -276,10 +276,22 @@ else
                                             <span class="metric-progress-value">@(metricProgress)%</span>
                                         </div>
                                     </div>
-                                    <div class="metric-row-avatar" title="Último check-in">
-                                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
-                                            <path d="M12 12C14.21 12 16 10.21 16 8C16 5.79 14.21 4 12 4C9.79 4 8 5.79 8 8C8 10.21 9.79 12 12 12ZM12 14C9.33 14 4 15.34 4 18V20H20V18C20 15.34 14.67 14 12 14Z" fill="currentColor"/>
-                                        </svg>
+                                    @{
+                                        var hasLastCheckinAuthor = metricProgressCache.TryGetValue(metric.Id, out var mp)
+                                            && mp.LastCheckinCollaboratorName is not null;
+                                        var lastCheckinAuthorName = hasLastCheckinAuthor ? mp!.LastCheckinCollaboratorName! : "Último check-in";
+                                    }
+                                    <div class="metric-row-avatar" title="@lastCheckinAuthorName">
+                                        @if (hasLastCheckinAuthor)
+                                        {
+                                            <span class="metric-row-avatar-initials">@GetInitials(lastCheckinAuthorName)</span>
+                                        }
+                                        else
+                                        {
+                                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+                                                <path d="M12 12C14.21 12 16 10.21 16 8C16 5.79 14.21 4 12 4C9.79 4 8 5.79 8 8C8 10.21 9.79 12 12 12ZM12 14C9.33 14 4 15.34 4 18V20H20V18C20 15.34 14.67 14 12 14Z" fill="currentColor"/>
+                                            </svg>
+                                        }
                                     </div>
                                 </div>
                             }
@@ -1793,6 +1805,14 @@ else
     }
 
     // ---- Metric Display Methods ----
+
+    private static string GetInitials(string fullName)
+    {
+        var parts = fullName.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+        if (parts.Length == 0) return "?";
+        if (parts.Length == 1) return parts[0][..1].ToUpperInvariant();
+        return $"{parts[0][..1]}{parts[^1][..1]}".ToUpperInvariant();
+    }
 
     private int GetMetricProgress(MissionMetric metric)
     {

@@ -142,6 +142,17 @@ public sealed class MissionProgressService(ApplicationDbContext dbContext) : IMi
             .GroupBy(c => c.MissionMetricId)
             .ToDictionary(g => g.Key, g => g.OrderBy(c => c.CheckinDate).First());
 
+        var collaboratorIds = latestCheckinByMetric.Values
+            .Select(c => c.CollaboratorId)
+            .Distinct()
+            .ToList();
+
+        var collaboratorNames = await dbContext.Collaborators
+            .AsNoTracking()
+            .IgnoreQueryFilters()
+            .Where(c => collaboratorIds.Contains(c.Id))
+            .ToDictionaryAsync(c => c.Id, c => c.FullName, cancellationToken);
+
         var now = DateTime.UtcNow;
         var oneWeekAgo = now.AddDays(-7);
         var results = new List<MetricProgressDto>();
@@ -170,7 +181,8 @@ public sealed class MissionProgressService(ApplicationDbContext dbContext) : IMi
                 Progress = Math.Round(progress, 1),
                 Confidence = latestCheckin.ConfidenceLevel,
                 HasCheckins = true,
-                IsOutdated = isOutdated
+                IsOutdated = isOutdated,
+                LastCheckinCollaboratorName = collaboratorNames.GetValueOrDefault(latestCheckin.CollaboratorId)
             });
         }
 

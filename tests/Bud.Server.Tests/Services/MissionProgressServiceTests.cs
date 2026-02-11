@@ -81,12 +81,14 @@ public class MissionProgressServiceTests
         decimal? value = null,
         string? text = null,
         int confidenceLevel = 3,
-        DateTime? checkinDate = null)
+        DateTime? checkinDate = null,
+        string? collaboratorName = null,
+        Guid? collaboratorId = null)
     {
         var collaborator = new Collaborator
         {
-            Id = Guid.NewGuid(),
-            FullName = "Test User",
+            Id = collaboratorId ?? Guid.NewGuid(),
+            FullName = collaboratorName ?? "Test User",
             Email = $"test-{Guid.NewGuid():N}@example.com",
             OrganizationId = organizationId
         };
@@ -936,5 +938,56 @@ public class MissionProgressServiceTests
         // baseline=50, current=30, target=10 → (50-30)/(50-10) = 20/40 = 50%
         result.Value![0].Progress.Should().Be(50m);
         result.Value[0].Confidence.Should().Be(3);
+    }
+
+    [Fact]
+    public async Task GetMetricProgress_WithCheckin_ReturnsCollaboratorName()
+    {
+        await using var context = CreateInMemoryContext();
+        var (org, mission) = await CreateTestMission(context);
+        var metric = await CreateTestMetric(context, mission.Id, org.Id,
+            quantitativeType: QuantitativeMetricType.Achieve, maxValue: 100m);
+        await CreateTestCheckin(context, metric.Id, org.Id, value: 50m,
+            collaboratorName: "João Silva");
+
+        var service = new MissionProgressService(context);
+        var result = await service.GetMetricProgressAsync([metric.Id]);
+
+        result.IsSuccess.Should().BeTrue();
+        result.Value![0].LastCheckinCollaboratorName.Should().Be("João Silva");
+    }
+
+    [Fact]
+    public async Task GetMetricProgress_NoCheckins_ReturnsNullCollaboratorName()
+    {
+        await using var context = CreateInMemoryContext();
+        var (org, mission) = await CreateTestMission(context);
+        var metric = await CreateTestMetric(context, mission.Id, org.Id, maxValue: 100m);
+
+        var service = new MissionProgressService(context);
+        var result = await service.GetMetricProgressAsync([metric.Id]);
+
+        result.IsSuccess.Should().BeTrue();
+        result.Value![0].LastCheckinCollaboratorName.Should().BeNull();
+    }
+
+    [Fact]
+    public async Task GetMetricProgress_MultipleCheckins_ReturnsLatestCollaboratorName()
+    {
+        await using var context = CreateInMemoryContext();
+        var (org, mission) = await CreateTestMission(context);
+        var metric = await CreateTestMetric(context, mission.Id, org.Id,
+            quantitativeType: QuantitativeMetricType.Achieve, maxValue: 100m);
+
+        await CreateTestCheckin(context, metric.Id, org.Id, value: 20m,
+            checkinDate: DateTime.UtcNow.AddDays(-5), collaboratorName: "Maria Santos");
+        await CreateTestCheckin(context, metric.Id, org.Id, value: 70m,
+            checkinDate: DateTime.UtcNow, collaboratorName: "Pedro Oliveira");
+
+        var service = new MissionProgressService(context);
+        var result = await service.GetMetricProgressAsync([metric.Id]);
+
+        result.IsSuccess.Should().BeTrue();
+        result.Value![0].LastCheckinCollaboratorName.Should().Be("Pedro Oliveira");
     }
 }

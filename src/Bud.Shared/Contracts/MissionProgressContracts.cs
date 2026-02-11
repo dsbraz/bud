@@ -24,4 +24,8 @@ public sealed class MetricProgressDto
     /// True if no check-ins or last check-in is older than 7 days.
     /// </summary>
     public bool IsOutdated { get; set; }
+    /// <summary>
+    /// Full name of the collaborator who made the latest check-in, or null if no check-ins exist.
+    /// </summary>
+    public string? LastCheckinCollaboratorName { get; set; }
 }
