@@ -533,34 +533,36 @@ else
                         <h3>Métricas da missão</h3>
                     </div>
 
-                    <MetricFormFields Model="newEditMetricModel" OnSave="SaveNewEditMetric" OnCancel="CancelEditAddMetric" SaveLabel="Criar métrica" ShowAddButton="true" />
+                    <MetricFormFields Model="newEditMetricModel" OnSave="AddEditMetricFromForm" OnCancel="CancelEditAddMetric" SaveLabel="Criar métrica" ShowAddButton="true" />
 
-                    @if (editMissionMetrics.Any())
+                    @if (editTempMetrics.Any())
                     {
                         <div class="metrics-list">
-                            @foreach (var metric in editMissionMetrics)
+                            @for (var i = 0; i < editTempMetrics.Count; i++)
                             {
-                                @if (editingMetricId == metric.Id)
+                                var index = i;
+                                var metric = editTempMetrics[index];
+
+                                @if (editingEditTempMetricIndex == index)
                                 {
                                     @* Formulário inline para edição da métrica *@
                                     <div class="metric-item" style="flex-direction: column; align-items: stretch;">
-                                        <MetricFormFields Model="editMetricModel" OnSave="SaveEditingMetric" OnCancel="CancelEditingMetric" />
+                                        <MetricFormFields Model="editEditTempMetricModel" OnSave="SaveEditingEditTempMetric" OnCancel="CancelEditingEditTempMetric" />
                                     </div>
                                 }
                                 else
                                 {
-                                    var isDeletingMetric = deletingMetricId == metric.Id;
                                     <div class="metric-item">
                                         <div class="metric-info">
                                             <div class="metric-name">@metric.Name</div>
-                                            <div class="metric-details">@GetTargetLabel(metric)</div>
+                                            <div class="metric-details">@metric.Details</div>
                                         </div>
                                         <CrudRowActions
                                             EditTitle="Editar métrica"
-                                            OnEdit="@(() => StartEditingMetric(metric))"
-                                            IsDeleteConfirming="@isDeletingMetric"
+                                            OnEdit="@(() => StartEditingEditTempMetric(index))"
+                                            IsDeleteConfirming="false"
                                             DeleteTitle="Excluir métrica"
-                                            OnDelete="@(() => HandleDeleteMetricClick(metric.Id))" />
+                                            OnDelete="@(() => RemoveEditTempMetric(index))" />
                                     </div>
                                 }
                             }
@@ -714,6 +716,7 @@ else
 @code {
     private sealed record ScopeOption(string Id, string Name);
     private sealed record TempMetric(string Name, string Type, string Details, string? QuantitativeType = null, decimal? MinValue = null, decimal? MaxValue = null, string? TargetText = null, string? Unit = null);
+    private sealed record EditTempMetric(Guid? OriginalId, string Name, string Type, string Details, string? QuantitativeType = null, decimal? MinValue = null, decimal? MaxValue = null, string? TargetText = null, string? Unit = null);
 
     private CreateMissionRequest newMission = new();
     private PagedResult<Mission>? missions;
@@ -765,10 +768,12 @@ else
     private bool showEditPeriodSelector = false;
     private bool showEditStatusSelector = false;
 
-    // Metrics within edit modal
-    private List<MissionMetric> editMissionMetrics = new();
-    private Guid? editingMetricId = null;
-    private MetricFormFields.MetricFormModel editMetricModel = new();
+    // Metrics within edit modal (local state — persisted only on Save)
+    private List<EditTempMetric> editTempMetrics = new();
+    private List<EditTempMetric> originalEditTempMetrics = new();
+    private HashSet<Guid> deletedMetricIds = new();
+    private int? editingEditTempMetricIndex;
+    private MetricFormFields.MetricFormModel editEditTempMetricModel = new();
 
     // Add metric within edit modal
     private MetricFormFields.MetricFormModel newEditMetricModel = new();
@@ -776,8 +781,6 @@ else
     // Delete confirmation state
     private Guid? deletingMissionId = null;
     private System.Threading.Timer? deleteConfirmTimer;
-    private Guid? deletingMetricId = null;
-    private System.Threading.Timer? deleteMetricConfirmTimer;
 
     // Template picker state
     private bool isTemplatePickerOpen = false;
@@ -850,7 +853,6 @@ else
     {
         OrgContext.OnOrganizationChanged -= HandleOrganizationChanged;
         deleteConfirmTimer?.Dispose();
-        deleteMetricConfirmTimer?.Dispose();
     }
 
     private async Task LoadReferenceData()
@@ -1916,11 +1918,22 @@ else
         editStatusValue = mission.Status.ToString();
 
         var metricsResult = await Api.GetMissionMetricsByMissionIdAsync(mission.Id);
-        editMissionMetrics = metricsResult?.Items.ToList() ?? new List<MissionMetric>();
-
-        editingMetricId = null;
-        editMetricModel.Clear();
-        deletingMetricId = null;
+        var apiMetrics = metricsResult?.Items.ToList() ?? new List<MissionMetric>();
+        editTempMetrics = apiMetrics.Select(m => new EditTempMetric(
+            OriginalId: m.Id,
+            Name: m.Name,
+            Type: m.Type.ToString(),
+            Details: GetMetricDetailsFromModel(m),
+            QuantitativeType: m.QuantitativeType?.ToString(),
+            MinValue: m.MinValue,
+            MaxValue: m.MaxValue,
+            TargetText: m.TargetText,
+            Unit: m.Unit?.ToString()
+        )).ToList();
+        originalEditTempMetrics = editTempMetrics.ToList();
+        deletedMetricIds = new();
+        editingEditTempMetricIndex = null;
+        editEditTempMetricModel.Clear();
         newEditMetricModel.Clear();
 
         isEditModalOpen = true;
@@ -1942,10 +1955,11 @@ else
         isEditModalOpen = false;
         selectedMission = null;
         editMission = new();
-        editMissionMetrics = new();
-        editingMetricId = null;
-        editMetricModel.Clear();
-        deletingMetricId = null;
+        editTempMetrics = new();
+        originalEditTempMetrics = new();
+        deletedMetricIds = new();
+        editingEditTempMetricIndex = null;
+        editEditTempMetricModel.Clear();
         editScopeTypeValue = null;
         editScopeId = null;
         editMissionDescription = null;
@@ -1973,13 +1987,94 @@ else
 
         editMission.Description = editMissionDescription;
 
+        var missionId = selectedMission.Id;
+
         await UiOperationRunner.RunAsync(
             async () =>
             {
-                await Api.UpdateMissionAsync(selectedMission.Id, editMission);
+                await Api.UpdateMissionAsync(missionId, editMission);
+
+                var failedCount = 0;
+
+                // Delete removed metrics
+                foreach (var id in deletedMetricIds)
+                {
+                    try
+                    {
+                        await Api.DeleteMissionMetricAsync(id);
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.Error.WriteLine($"Erro ao excluir métrica {id}: {ex.Message}");
+                        failedCount++;
+                    }
+                }
+
+                // Update changed existing metrics
+                foreach (var metric in editTempMetrics.Where(m => m.OriginalId.HasValue))
+                {
+                    var original = originalEditTempMetrics.FirstOrDefault(o => o.OriginalId == metric.OriginalId);
+                    if (original != null && metric == original) continue;
+
+                    try
+                    {
+                        var request = BuildUpdateMetricRequest(metric);
+                        if (request != null)
+                        {
+                            await Api.UpdateMissionMetricAsync(metric.OriginalId!.Value, request);
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.Error.WriteLine($"Erro ao atualizar métrica {metric.OriginalId}: {ex.Message}");
+                        failedCount++;
+                    }
+                }
+
+                // Create new metrics
+                foreach (var metric in editTempMetrics.Where(m => !m.OriginalId.HasValue))
+                {
+                    try
+                    {
+                        var request = BuildCreateMetricRequest(missionId, metric);
+                        if (request != null)
+                        {
+                            await Api.CreateMissionMetricAsync(request);
+                        }
+                        else
+                        {
+                            failedCount++;
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.Error.WriteLine($"Erro ao criar métrica para missão {missionId}: {ex.Message}");
+                        failedCount++;
+                    }
+                }
+
+                if (failedCount > 0)
+                {
+                    ToastService.ShowError("Erro ao salvar métricas", $"{failedCount} métrica(s) não puderam ser salvas.");
+                }
+
+                missionMetricsCache.Remove(missionId);
+                await LoadMissions();
+
+                // Reload metrics for expanded card so it doesn't stay on "Carregando métricas..."
+                if (expandedMissions.Contains(missionId))
+                {
+                    var reloadedMetrics = await Api.GetMissionMetricsByMissionIdAsync(missionId);
+                    var metricsList = reloadedMetrics?.Items.ToList() ?? new List<MissionMetric>();
+                    missionMetricsCache[missionId] = metricsList;
+                    if (metricsList.Count > 0)
+                    {
+                        await LoadMetricProgress(missionId);
+                    }
+                }
+
                 ToastService.ShowSuccess("Missão atualizada", "As alterações foram salvas com sucesso.");
                 CloseEditModal();
-                await LoadMissions();
             },
             ToastService,
             "Erro ao atualizar",
@@ -2021,71 +2116,108 @@ else
         }
     }
 
-    // ---- Inline Metric Edit/Delete Methods ----
+    // ---- Edit Modal Metric Methods (local state, persisted on Save) ----
 
-    private void StartEditingMetric(MissionMetric metric)
+    private void AddEditMetricFromForm()
     {
-        editingMetricId = metric.Id;
-        editMetricModel = new MetricFormFields.MetricFormModel
+        if (string.IsNullOrWhiteSpace(newEditMetricModel.Name) || string.IsNullOrWhiteSpace(newEditMetricModel.TypeValue))
+        {
+            ToastService.ShowError("Erro de validação", "Informe o nome e tipo da métrica.");
+            return;
+        }
+
+        var details = newEditMetricModel.TypeValue == "Quantitative"
+            ? BuildQuantitativeDetailsFrom(newEditMetricModel.QuantitativeTypeValue, newEditMetricModel.MinValue, newEditMetricModel.MaxValue, newEditMetricModel.UnitValue)
+            : newEditMetricModel.TargetText ?? "";
+
+        editTempMetrics.Add(new EditTempMetric(
+            OriginalId: null,
+            newEditMetricModel.Name,
+            newEditMetricModel.TypeValue,
+            details,
+            newEditMetricModel.QuantitativeTypeValue,
+            newEditMetricModel.MinValue,
+            newEditMetricModel.MaxValue,
+            newEditMetricModel.TargetText,
+            newEditMetricModel.UnitValue
+        ));
+
+        newEditMetricModel.Clear();
+    }
+
+    private void StartEditingEditTempMetric(int index)
+    {
+        var metric = editTempMetrics[index];
+        editingEditTempMetricIndex = index;
+        editEditTempMetricModel = new MetricFormFields.MetricFormModel
         {
             Name = metric.Name,
-            TypeValue = metric.Type.ToString(),
-            QuantitativeTypeValue = metric.QuantitativeType?.ToString(),
-            UnitValue = metric.Unit?.ToString(),
+            TypeValue = metric.Type,
+            QuantitativeTypeValue = metric.QuantitativeType,
+            UnitValue = metric.Unit,
             MinValue = metric.MinValue,
             MaxValue = metric.MaxValue,
             TargetText = metric.TargetText
         };
     }
 
-    private void CancelEditingMetric()
+    private void CancelEditingEditTempMetric()
     {
-        editingMetricId = null;
-        editMetricModel.Clear();
+        editingEditTempMetricIndex = null;
+        editEditTempMetricModel.Clear();
     }
 
-    private async Task SaveEditingMetric()
+    private void SaveEditingEditTempMetric()
     {
-        if (editingMetricId is null || selectedMission is null) return;
+        if (editingEditTempMetricIndex is null) return;
 
-        if (!Enum.TryParse<MetricType>(editMetricModel.TypeValue, out var metricType))
+        if (string.IsNullOrWhiteSpace(editEditTempMetricModel.Name) || string.IsNullOrEmpty(editEditTempMetricModel.TypeValue))
         {
-            ToastService.ShowError("Erro ao atualizar métrica", "Selecione o tipo da métrica.");
+            ToastService.ShowError("Erro de validação", "Informe o nome e tipo da métrica.");
             return;
         }
 
-        var request = new UpdateMissionMetricRequest
-        {
-            Name = editMetricModel.Name,
-            Type = metricType,
-            MinValue = editMetricModel.MinValue,
-            MaxValue = editMetricModel.MaxValue,
-            TargetText = editMetricModel.TargetText
-        };
+        var details = editEditTempMetricModel.TypeValue == "Quantitative"
+            ? BuildQuantitativeDetailsFrom(editEditTempMetricModel.QuantitativeTypeValue, editEditTempMetricModel.MinValue, editEditTempMetricModel.MaxValue, editEditTempMetricModel.UnitValue)
+            : editEditTempMetricModel.TargetText ?? "";
 
-        if (metricType == MetricType.Quantitative)
+        var existing = editTempMetrics[editingEditTempMetricIndex.Value];
+        editTempMetrics[editingEditTempMetricIndex.Value] = new EditTempMetric(
+            OriginalId: existing.OriginalId,
+            editEditTempMetricModel.Name,
+            editEditTempMetricModel.TypeValue,
+            details,
+            editEditTempMetricModel.QuantitativeTypeValue,
+            editEditTempMetricModel.MinValue,
+            editEditTempMetricModel.MaxValue,
+            editEditTempMetricModel.TargetText,
+            editEditTempMetricModel.UnitValue
+        );
+
+        CancelEditingEditTempMetric();
+    }
+
+    private void RemoveEditTempMetric(int index)
+    {
+        var metric = editTempMetrics[index];
+        editTempMetrics.RemoveAt(index);
+        if (metric.OriginalId.HasValue)
         {
-            if (Enum.TryParse<QuantitativeMetricType>(editMetricModel.QuantitativeTypeValue, out var qType))
-                request.QuantitativeType = qType;
-            if (Enum.TryParse<MetricUnit>(editMetricModel.UnitValue, out var unit))
-                request.Unit = unit;
+            deletedMetricIds.Add(metric.OriginalId.Value);
         }
 
-        await UiOperationRunner.RunAsync(
-            async () =>
+        // Adjust editing index if needed
+        if (editingEditTempMetricIndex.HasValue)
+        {
+            if (editingEditTempMetricIndex.Value == index)
             {
-                await Api.UpdateMissionMetricAsync(editingMetricId.Value, request);
-                ToastService.ShowSuccess("Métrica atualizada", "A métrica foi salva com sucesso.");
-
-                var metricsResult = await Api.GetMissionMetricsByMissionIdAsync(selectedMission.Id);
-                editMissionMetrics = metricsResult?.Items.ToList() ?? new();
-
-                CancelEditingMetric();
-            },
-            ToastService,
-            "Erro ao atualizar métrica",
-            "Não foi possível atualizar a métrica. Verifique os dados e tente novamente.",
-            "atualização de métrica da missão");
+                CancelEditingEditTempMetric();
+            }
+            else if (editingEditTempMetricIndex.Value > index)
+            {
+                editingEditTempMetricIndex--;
+            }
+        }
     }
 
     private void CancelEditAddMetric()
@@ -2093,94 +2225,64 @@ else
         newEditMetricModel.Clear();
     }
 
-    private async Task SaveNewEditMetric()
+    private string GetMetricDetailsFromModel(MissionMetric m)
+        => m.Type == MetricType.Qualitative
+            ? m.TargetText ?? ""
+            : BuildQuantitativeDetailsFrom(m.QuantitativeType?.ToString(), m.MinValue, m.MaxValue, m.Unit?.ToString());
+
+    private CreateMissionMetricRequest? BuildCreateMetricRequest(Guid missionId, EditTempMetric metric)
     {
-        if (selectedMission is null) return;
-
-        if (string.IsNullOrWhiteSpace(newEditMetricModel.Name))
-        {
-            ToastService.ShowError("Erro ao criar métrica", "Informe o nome da métrica.");
-            return;
-        }
-
-        if (!Enum.TryParse<MetricType>(newEditMetricModel.TypeValue, out var metricType))
-        {
-            ToastService.ShowError("Erro ao criar métrica", "Selecione o tipo da métrica.");
-            return;
-        }
+        if (!EnumParsingHelper.TryParseEnum<MetricType>(metric.Type, out var metricType))
+            return null;
 
         var request = new CreateMissionMetricRequest
         {
-            MissionId = selectedMission.Id,
-            Name = newEditMetricModel.Name,
+            MissionId = missionId,
+            Name = metric.Name,
             Type = metricType,
-            MinValue = newEditMetricModel.MinValue,
-            MaxValue = newEditMetricModel.MaxValue,
-            TargetText = newEditMetricModel.TargetText
+            MinValue = metric.MinValue,
+            MaxValue = metric.MaxValue,
+            TargetText = metric.TargetText
         };
 
         if (metricType == MetricType.Quantitative)
         {
-            if (Enum.TryParse<QuantitativeMetricType>(newEditMetricModel.QuantitativeTypeValue, out var qType))
+            if (!string.IsNullOrEmpty(metric.QuantitativeType) &&
+                EnumParsingHelper.TryParseEnum<QuantitativeMetricType>(metric.QuantitativeType, out var qType))
                 request.QuantitativeType = qType;
-            if (Enum.TryParse<MetricUnit>(newEditMetricModel.UnitValue, out var unit))
+            if (!string.IsNullOrEmpty(metric.Unit) &&
+                EnumParsingHelper.TryParseEnum<MetricUnit>(metric.Unit, out var unit))
                 request.Unit = unit;
         }
 
-        await UiOperationRunner.RunAsync(
-            async () =>
-            {
-                await Api.CreateMissionMetricAsync(request);
-                ToastService.ShowSuccess("Métrica criada", "A métrica foi adicionada com sucesso.");
-
-                var metricsResult = await Api.GetMissionMetricsByMissionIdAsync(selectedMission.Id);
-                editMissionMetrics = metricsResult?.Items.ToList() ?? new();
-
-                CancelEditAddMetric();
-            },
-            ToastService,
-            "Erro ao criar métrica",
-            "Não foi possível criar a métrica. Verifique os dados e tente novamente.",
-            "criação de métrica da missão");
+        return request;
     }
 
-    private async Task HandleDeleteMetricClick(Guid metricId)
+    private UpdateMissionMetricRequest? BuildUpdateMetricRequest(EditTempMetric metric)
     {
-        if (deletingMetricId == metricId)
-        {
-            await DeleteMetric(metricId);
-        }
-        else
-        {
-            ArmMetricDeleteConfirmation(metricId);
-        }
-    }
+        if (!EnumParsingHelper.TryParseEnum<MetricType>(metric.Type, out var metricType))
+            return null;
 
-    private async Task DeleteMetric(Guid metricId)
-    {
-        try
+        var request = new UpdateMissionMetricRequest
         {
-            await UiOperationRunner.RunAsync(
-                async () =>
-                {
-                    await Api.DeleteMissionMetricAsync(metricId);
-                    ToastService.ShowSuccess("Métrica excluída", "A métrica foi removida com sucesso.");
+            Name = metric.Name,
+            Type = metricType,
+            MinValue = metric.MinValue,
+            MaxValue = metric.MaxValue,
+            TargetText = metric.TargetText
+        };
 
-                    if (selectedMission != null)
-                    {
-                        var metricsResult = await Api.GetMissionMetricsByMissionIdAsync(selectedMission.Id);
-                        editMissionMetrics = metricsResult?.Items.ToList() ?? new();
-                    }
-                },
-                ToastService,
-                "Erro ao excluir métrica",
-                "Não foi possível excluir a métrica. Tente novamente.",
-                "exclusão de métrica da missão");
-        }
-        finally
+        if (metricType == MetricType.Quantitative)
         {
-            ClearMetricDeleteConfirmation();
+            if (!string.IsNullOrEmpty(metric.QuantitativeType) &&
+                EnumParsingHelper.TryParseEnum<QuantitativeMetricType>(metric.QuantitativeType, out var qType))
+                request.QuantitativeType = qType;
+            if (!string.IsNullOrEmpty(metric.Unit) &&
+                EnumParsingHelper.TryParseEnum<MetricUnit>(metric.Unit, out var unit))
+                request.Unit = unit;
         }
+
+        return request;
     }
 
     private void ArmMissionDeleteConfirmation(Guid missionId)
@@ -2203,28 +2305,6 @@ else
         deletingMissionId = null;
         deleteConfirmTimer?.Dispose();
         deleteConfirmTimer = null;
-    }
-
-    private void ArmMetricDeleteConfirmation(Guid metricId)
-    {
-        deletingMetricId = metricId;
-        deleteMetricConfirmTimer?.Dispose();
-        deleteMetricConfirmTimer = new System.Threading.Timer(
-            _ => InvokeAsync(() =>
-            {
-                deletingMetricId = null;
-                StateHasChanged();
-            }),
-            null,
-            3000,
-            Timeout.Infinite);
-    }
-
-    private void ClearMetricDeleteConfirmation()
-    {
-        deletingMetricId = null;
-        deleteMetricConfirmTimer?.Dispose();
-        deleteMetricConfirmTimer = null;
     }
 
     // ---- Progress & Confidence Helpers ----
