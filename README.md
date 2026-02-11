@@ -191,6 +191,9 @@ flowchart TD
 
     M --> MM
     MM --> MC
+
+    O --> N[Notification]
+    C --> N
 ```
 
 #### Fluxo de autenticação, tenant e autorização
@@ -674,6 +677,10 @@ O endpoint `/health/ready` considera banco e saúde do Outbox.
 - `GET /api/workspaces?organizationId=&search=&page=1&pageSize=10`
 - `GET /api/teams?workspaceId=&parentTeamId=&search=&page=1&pageSize=10`
 - `GET /api/collaborators?teamId=&search=&page=1&pageSize=10`
+- `GET /api/notifications?page=1&pageSize=20`
+- `GET /api/notifications/unread-count`
+- `PUT /api/notifications/{id}/read`
+- `PUT /api/notifications/read-all`
 - `GET /api/organizations/{id}/workspaces`
 - `GET /api/workspaces/{id}/teams`
 - `GET /api/teams/{id}/subteams`

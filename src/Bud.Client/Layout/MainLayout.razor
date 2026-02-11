@@ -67,11 +67,7 @@
                         <path d="M229.66,218.34l-50.07-50.06a88.11,88.11,0,1,0-11.31,11.31l50.06,50.07a8,8,0,0,0,11.32-11.32ZM40,112a72,72,0,1,1,72,72A72.08,72.08,0,0,1,40,112Z"/>
                     </svg>
                 </button>
-                <button class="topbar-icon-btn" title="Notificações">
-                    <svg width="20" height="20" fill="currentColor" viewBox="0 0 256 256">
-                        <path d="M221.8,175.94C216.25,166.38,208,139.33,208,104a80,80,0,1,0-160,0c0,35.34-8.26,62.38-13.81,71.94A16,16,0,0,0,48,200H88.81a40,40,0,0,0,78.38,0H208a16,16,0,0,0,13.8-24.06ZM128,216a24,24,0,0,1-22.62-16h45.24A24,24,0,0,1,128,216ZM48,184c7.7-13.24,16-43.92,16-80a64,64,0,1,1,128,0c0,36.05,8.28,66.73,16,80Z"/>
-                    </svg>
-                </button>
+                <NotificationDropdown UnreadCount="@unreadNotificationCount" OnCountChanged="OnUnreadCountChanged" />
                 <button class="button ghost button-sm">
                     <svg width="16" height="16" fill="currentColor" viewBox="0 0 256 256">
                         <path d="M176,232a8,8,0,0,1-8,8H88a8,8,0,0,1,0-16h80A8,8,0,0,1,176,232Zm40-128a87.55,87.55,0,0,1-33.64,69.21A16.24,16.24,0,0,0,176,186v6a16,16,0,0,1-16,16H96a16,16,0,0,1-16-16v-6a16,16,0,0,0-6.23-12.66A87.59,87.59,0,0,1,40,104.49C39.74,56.83,78.26,17.14,125.88,16A88,88,0,0,1,216,104Zm-16,0a72,72,0,0,0-73.74-72c-39,.92-70.47,33.39-70.26,72.39a71.65,71.65,0,0,0,27.64,56.3h0A32,32,0,0,1,96,186v6h64v-6a32.15,32.15,0,0,1,12.47-25.35A71.65,71.65,0,0,0,200,104Z"/>
@@ -90,6 +86,7 @@
 
 @code {
     private bool isDropdownOpen = false;
+    private int unreadNotificationCount;
     private bool CanShowAllOrganizations => AuthState.Session?.IsGlobalAdmin == true;
 
     private string UserLabel => AuthState.Session is null
@@ -113,6 +110,25 @@
             Console.Error.WriteLine($"Erro ao carregar organizações do usuário: {ex.Message}");
             ToastService.ShowWarning("Aviso", "Não foi possível carregar as organizações agora. Tente novamente em instantes.");
         }
+
+        try
+        {
+            var unreadResult = await Api.GetNotificationUnreadCountAsync();
+            if (unreadResult != null)
+            {
+                unreadNotificationCount = unreadResult.Count;
+            }
+        }
+        catch
+        {
+            // Silently handle — notification count is non-critical
+        }
+    }
+
+    private void OnUnreadCountChanged(int newCount)
+    {
+        unreadNotificationCount = newCount;
+        StateHasChanged();
     }
 
     private void ToggleDropdown()

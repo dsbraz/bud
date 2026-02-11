@@ -371,6 +371,56 @@ namespace Bud.Server.Migrations
                     b.ToTable("MissionTemplateMetrics");
                 });
 
+            modelBuilder.Entity("Bud.Shared.Models.Notification", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreatedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<bool>("IsRead")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("Message")
+                        .IsRequired()
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)");
+
+                    b.Property<Guid>("OrganizationId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime?>("ReadAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("RecipientCollaboratorId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid?>("RelatedEntityId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("RelatedEntityType")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<int>("Type")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("OrganizationId");
+
+                    b.HasIndex("RecipientCollaboratorId", "IsRead", "CreatedAtUtc");
+
+                    b.ToTable("Notifications");
+                });
+
             modelBuilder.Entity("Bud.Shared.Models.Organization", b =>
                 {
                     b.Property<Guid>("Id")
@@ -613,6 +663,25 @@ namespace Bud.Server.Migrations
                     b.Navigation("MissionTemplate");
 
                     b.Navigation("Organization");
+                });
+
+            modelBuilder.Entity("Bud.Shared.Models.Notification", b =>
+                {
+                    b.HasOne("Bud.Shared.Models.Organization", "Organization")
+                        .WithMany()
+                        .HasForeignKey("OrganizationId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Bud.Shared.Models.Collaborator", "RecipientCollaborator")
+                        .WithMany()
+                        .HasForeignKey("RecipientCollaboratorId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Organization");
+
+                    b.Navigation("RecipientCollaborator");
                 });
 
             modelBuilder.Entity("Bud.Shared.Models.Organization", b =>
