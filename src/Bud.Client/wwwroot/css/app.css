@@ -3226,9 +3226,22 @@ a {
 /* Leader & Team */
 .dashboard-leader-row {
     display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: var(--spacing-4);
+    align-items: flex-start;
+    justify-content: flex-start;
+    gap: var(--spacing-12);
+}
+
+.dashboard-leader-col,
+.dashboard-team-col {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-3);
+}
+
+.dashboard-section-label {
+    font-size: var(--font-size-base);
+    font-weight: var(--font-weight-semibold);
+    color: var(--neutral-950);
 }
 
 .dashboard-leader-info {
@@ -3238,6 +3251,20 @@ a {
 }
 
 .dashboard-avatar {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    background: var(--caramel-200);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: var(--font-size-base);
+    font-weight: var(--font-weight-semibold);
+    color: var(--neutral-700);
+    flex-shrink: 0;
+}
+
+.dashboard-avatar-sm {
     width: 40px;
     height: 40px;
     border-radius: 50%;
@@ -3246,20 +3273,6 @@ a {
     align-items: center;
     justify-content: center;
     font-size: var(--font-size-sm);
-    font-weight: var(--font-weight-semibold);
-    color: var(--neutral-700);
-    flex-shrink: 0;
-}
-
-.dashboard-avatar-sm {
-    width: 32px;
-    height: 32px;
-    border-radius: 50%;
-    background: var(--caramel-200);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: var(--font-size-xs);
     font-weight: var(--font-weight-semibold);
     color: var(--neutral-700);
     flex-shrink: 0;
@@ -3282,7 +3295,7 @@ a {
 }
 
 .avatar-stack .dashboard-avatar-sm {
-    margin-left: -8px;
+    margin-left: -12px;
     border: 2px solid var(--color-surface);
 }
 
@@ -3291,15 +3304,15 @@ a {
 }
 
 .avatar-stack-more {
-    margin-left: -8px;
-    width: 32px;
-    height: 32px;
+    margin-left: -12px;
+    width: 40px;
+    height: 40px;
     border-radius: 50%;
     background: var(--neutral-200);
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 10px;
+    font-size: var(--font-size-xs);
     font-weight: var(--font-weight-semibold);
     color: var(--neutral-600);
     border: 2px solid var(--color-surface);
@@ -3512,5 +3525,10 @@ a {
     .dashboard-leader-row {
         flex-direction: column;
         align-items: flex-start;
+    }
+
+    .dashboard-leader-col,
+    .dashboard-team-col {
+        width: 100%;
     }
 }

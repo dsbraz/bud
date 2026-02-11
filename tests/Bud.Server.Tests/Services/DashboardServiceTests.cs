@@ -42,13 +42,16 @@ public class DashboardServiceTests
         // Arrange
         using var context = CreateInMemoryContext();
         var org = new Organization { Id = Guid.NewGuid(), Name = "Org" };
+        var workspace = new Workspace { Id = Guid.NewGuid(), Name = "WS", OrganizationId = org.Id };
+        var team = new Team { Id = Guid.NewGuid(), Name = "Diretoria de RH", OrganizationId = org.Id, WorkspaceId = workspace.Id };
         var leader = new Collaborator
         {
             Id = Guid.NewGuid(),
             FullName = "Maria Silva",
             Email = "maria@test.com",
             Role = CollaboratorRole.Leader,
-            OrganizationId = org.Id
+            OrganizationId = org.Id,
+            TeamId = team.Id
         };
         var collaborator = new Collaborator
         {
@@ -61,6 +64,8 @@ public class DashboardServiceTests
         };
 
         context.Organizations.Add(org);
+        context.Workspaces.Add(workspace);
+        context.Teams.Add(team);
         context.Collaborators.AddRange(leader, collaborator);
         await context.SaveChangesAsync();
 
@@ -74,6 +79,7 @@ public class DashboardServiceTests
         result.Value!.TeamHealth.Leader.Should().NotBeNull();
         result.Value.TeamHealth.Leader!.FullName.Should().Be("Maria Silva");
         result.Value.TeamHealth.Leader.Initials.Should().Be("MS");
+        result.Value.TeamHealth.Leader.TeamName.Should().Be("Diretoria de RH");
     }
 
     [Fact]
@@ -82,11 +88,47 @@ public class DashboardServiceTests
         // Arrange
         using var context = CreateInMemoryContext();
         var org = new Organization { Id = Guid.NewGuid(), Name = "Org" };
+        var workspace = new Workspace { Id = Guid.NewGuid(), Name = "WS", OrganizationId = org.Id };
+        var team = new Team { Id = Guid.NewGuid(), Name = "Engenharia", OrganizationId = org.Id, WorkspaceId = workspace.Id };
         var leader = new Collaborator
         {
             Id = Guid.NewGuid(),
             FullName = "Maria Silva",
             Email = "maria@test.com",
+            Role = CollaboratorRole.Leader,
+            OrganizationId = org.Id,
+            TeamId = team.Id
+        };
+
+        context.Organizations.Add(org);
+        context.Workspaces.Add(workspace);
+        context.Teams.Add(team);
+        context.Collaborators.Add(leader);
+        await context.SaveChangesAsync();
+
+        var service = new DashboardService(context);
+
+        // Act
+        var result = await service.GetMyDashboardAsync(leader.Id);
+
+        // Assert
+        result.IsSuccess.Should().BeTrue();
+        result.Value!.TeamHealth.Leader.Should().NotBeNull();
+        result.Value.TeamHealth.Leader!.Id.Should().Be(leader.Id);
+        result.Value.TeamHealth.Leader.TeamName.Should().Be("Engenharia");
+    }
+
+    [Fact]
+    public async Task GetMyDashboardAsync_LeaderWithoutTeam_ReturnsEmptyTeamName()
+    {
+        // Arrange
+        using var context = CreateInMemoryContext();
+        var org = new Organization { Id = Guid.NewGuid(), Name = "Org" };
+        var leader = new Collaborator
+        {
+            Id = Guid.NewGuid(),
+            FullName = "Carlos Souza",
+            Email = "carlos@test.com",
             Role = CollaboratorRole.Leader,
             OrganizationId = org.Id
         };
@@ -103,7 +145,7 @@ public class DashboardServiceTests
         // Assert
         result.IsSuccess.Should().BeTrue();
         result.Value!.TeamHealth.Leader.Should().NotBeNull();
-        result.Value.TeamHealth.Leader!.Id.Should().Be(leader.Id);
+        result.Value.TeamHealth.Leader!.TeamName.Should().BeEmpty();
     }
 
     [Fact]
@@ -136,20 +178,26 @@ public class DashboardServiceTests
     }
 
     [Fact]
-    public async Task GetMyDashboardAsync_CollaboratorWithTeam_ReturnsTeamMembers()
+    public async Task GetMyDashboardAsync_LeaderWithDirectReports_ReturnsDirectReportsAsTeamMembers()
     {
         // Arrange
         using var context = CreateInMemoryContext();
         var org = new Organization { Id = Guid.NewGuid(), Name = "Org" };
-        var workspace = new Workspace { Id = Guid.NewGuid(), Name = "WS", OrganizationId = org.Id };
-        var team = new Team { Id = Guid.NewGuid(), Name = "Team A", OrganizationId = org.Id, WorkspaceId = workspace.Id };
+        var leader = new Collaborator
+        {
+            Id = Guid.NewGuid(),
+            FullName = "Maria Silva",
+            Email = "maria@test.com",
+            Role = CollaboratorRole.Leader,
+            OrganizationId = org.Id
+        };
         var member1 = new Collaborator
         {
             Id = Guid.NewGuid(),
             FullName = "Ana Lima",
             Email = "ana@test.com",
             OrganizationId = org.Id,
-            TeamId = team.Id
+            LeaderId = leader.Id
         };
         var member2 = new Collaborator
         {
@@ -157,18 +205,64 @@ public class DashboardServiceTests
             FullName = "Carlos Souza",
             Email = "carlos@test.com",
             OrganizationId = org.Id,
-            TeamId = team.Id
+            LeaderId = leader.Id
         };
 
         context.Organizations.Add(org);
-        context.Workspaces.Add(workspace);
-        context.Teams.Add(team);
-        context.Collaborators.AddRange(member1, member2);
+        context.Collaborators.AddRange(leader, member1, member2);
         await context.SaveChangesAsync();
 
         var service = new DashboardService(context);
 
-        // Act
+        // Act — leader views own dashboard, sees direct reports
+        var result = await service.GetMyDashboardAsync(leader.Id);
+
+        // Assert
+        result.IsSuccess.Should().BeTrue();
+        result.Value!.TeamHealth.TeamMembers.Should().HaveCount(2);
+        var memberNames = result.Value.TeamHealth.TeamMembers.Select(m => m.FullName).ToList();
+        memberNames.Should().Contain("Ana Lima");
+        memberNames.Should().Contain("Carlos Souza");
+    }
+
+    [Fact]
+    public async Task GetMyDashboardAsync_CollaboratorWithLeader_ReturnsLeaderDirectReportsAsTeamMembers()
+    {
+        // Arrange
+        using var context = CreateInMemoryContext();
+        var org = new Organization { Id = Guid.NewGuid(), Name = "Org" };
+        var leader = new Collaborator
+        {
+            Id = Guid.NewGuid(),
+            FullName = "Maria Silva",
+            Email = "maria@test.com",
+            Role = CollaboratorRole.Leader,
+            OrganizationId = org.Id
+        };
+        var member1 = new Collaborator
+        {
+            Id = Guid.NewGuid(),
+            FullName = "Ana Lima",
+            Email = "ana@test.com",
+            OrganizationId = org.Id,
+            LeaderId = leader.Id
+        };
+        var member2 = new Collaborator
+        {
+            Id = Guid.NewGuid(),
+            FullName = "Carlos Souza",
+            Email = "carlos@test.com",
+            OrganizationId = org.Id,
+            LeaderId = leader.Id
+        };
+
+        context.Organizations.Add(org);
+        context.Collaborators.AddRange(leader, member1, member2);
+        await context.SaveChangesAsync();
+
+        var service = new DashboardService(context);
+
+        // Act — collaborator views dashboard, sees same leader's direct reports
         var result = await service.GetMyDashboardAsync(member1.Id);
 
         // Assert
@@ -185,15 +279,21 @@ public class DashboardServiceTests
         // Arrange
         using var context = CreateInMemoryContext();
         var org = new Organization { Id = Guid.NewGuid(), Name = "Org" };
-        var workspace = new Workspace { Id = Guid.NewGuid(), Name = "WS", OrganizationId = org.Id };
-        var team = new Team { Id = Guid.NewGuid(), Name = "Team", OrganizationId = org.Id, WorkspaceId = workspace.Id };
+        var leader = new Collaborator
+        {
+            Id = Guid.NewGuid(),
+            FullName = "Leader Test",
+            Email = "leader@test.com",
+            Role = CollaboratorRole.Leader,
+            OrganizationId = org.Id
+        };
         var member1 = new Collaborator
         {
             Id = Guid.NewGuid(),
             FullName = "M1 Test",
             Email = "m1@test.com",
             OrganizationId = org.Id,
-            TeamId = team.Id
+            LeaderId = leader.Id
         };
         var member2 = new Collaborator
         {
@@ -201,13 +301,11 @@ public class DashboardServiceTests
             FullName = "M2 Test",
             Email = "m2@test.com",
             OrganizationId = org.Id,
-            TeamId = team.Id
+            LeaderId = leader.Id
         };
 
         context.Organizations.Add(org);
-        context.Workspaces.Add(workspace);
-        context.Teams.Add(team);
-        context.Collaborators.AddRange(member1, member2);
+        context.Collaborators.AddRange(leader, member1, member2);
 
         // Member 1 accessed this week
         context.CollaboratorAccessLogs.Add(new CollaboratorAccessLog
@@ -223,11 +321,11 @@ public class DashboardServiceTests
         var service = new DashboardService(context);
 
         // Act
-        var result = await service.GetMyDashboardAsync(member1.Id);
+        var result = await service.GetMyDashboardAsync(leader.Id);
 
         // Assert
         result.IsSuccess.Should().BeTrue();
-        // 1 out of 2 members accessed = 50%
+        // 1 out of 2 direct reports accessed = 50%
         result.Value!.TeamHealth.Indicators.WeeklyAccess.Percentage.Should().Be(50);
     }
 
@@ -237,21 +335,25 @@ public class DashboardServiceTests
         // Arrange
         using var context = CreateInMemoryContext();
         var org = new Organization { Id = Guid.NewGuid(), Name = "Org" };
-        var workspace = new Workspace { Id = Guid.NewGuid(), Name = "WS", OrganizationId = org.Id };
-        var team = new Team { Id = Guid.NewGuid(), Name = "Team", OrganizationId = org.Id, WorkspaceId = workspace.Id };
+        var leader = new Collaborator
+        {
+            Id = Guid.NewGuid(),
+            FullName = "Leader Test",
+            Email = "leader@test.com",
+            Role = CollaboratorRole.Leader,
+            OrganizationId = org.Id
+        };
         var member = new Collaborator
         {
             Id = Guid.NewGuid(),
             FullName = "Member One",
             Email = "member1@test.com",
             OrganizationId = org.Id,
-            TeamId = team.Id
+            LeaderId = leader.Id
         };
 
         context.Organizations.Add(org);
-        context.Workspaces.Add(workspace);
-        context.Teams.Add(team);
-        context.Collaborators.Add(member);
+        context.Collaborators.AddRange(leader, member);
 
         // Access log (100% access)
         context.CollaboratorAccessLogs.Add(new CollaboratorAccessLog
@@ -302,7 +404,7 @@ public class DashboardServiceTests
         var service = new DashboardService(context);
 
         // Act
-        var result = await service.GetMyDashboardAsync(member.Id);
+        var result = await service.GetMyDashboardAsync(leader.Id);
 
         // Assert
         result.IsSuccess.Should().BeTrue();

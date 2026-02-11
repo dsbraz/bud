@@ -13,7 +13,9 @@ public sealed class DashboardService(ApplicationDbContext dbContext) : IDashboar
     {
         var collaborator = await dbContext.Collaborators
             .AsNoTracking()
+            .Include(c => c.Team)
             .Include(c => c.Leader)
+                .ThenInclude(l => l!.Team)
             .FirstOrDefaultAsync(c => c.Id == collaboratorId, cancellationToken);
 
         if (collaborator is null)
@@ -21,14 +23,19 @@ public sealed class DashboardService(ApplicationDbContext dbContext) : IDashboar
             return ServiceResult<MyDashboardResponse>.NotFound("Colaborador não encontrado.");
         }
 
-        var teamMembers = collaborator.TeamId.HasValue
+        // Determine the leader: explicit leader or self if role is Leader
+        var leaderSource = collaborator.Leader
+            ?? (collaborator.Role == CollaboratorRole.Leader ? collaborator : null);
+
+        // Fetch direct reports of the leader (collaborators whose LeaderId points to the leader)
+        var directReports = leaderSource is not null
             ? await dbContext.Collaborators
                 .AsNoTracking()
-                .Where(c => c.TeamId == collaborator.TeamId)
+                .Where(c => c.LeaderId == leaderSource.Id)
                 .ToListAsync(cancellationToken)
             : [];
 
-        var teamHealth = await BuildTeamHealthAsync(collaborator, teamMembers, cancellationToken);
+        var teamHealth = await BuildTeamHealthAsync(leaderSource, directReports, collaborator.OrganizationId, cancellationToken);
         var pendingTasks = await BuildPendingTasksAsync(collaborator, cancellationToken);
 
         return ServiceResult<MyDashboardResponse>.Success(new MyDashboardResponse
@@ -39,15 +46,16 @@ public sealed class DashboardService(ApplicationDbContext dbContext) : IDashboar
     }
 
     private async Task<TeamHealthDto> BuildTeamHealthAsync(
-        Collaborator collaborator,
-        List<Collaborator> teamCollaborators,
+        Collaborator? leaderSource,
+        List<Collaborator> directReports,
+        Guid organizationId,
         CancellationToken cancellationToken)
     {
-        var leader = BuildLeaderDto(collaborator);
-        var teamMembers = BuildTeamMembers(teamCollaborators);
-        var teamMemberIds = teamCollaborators.Select(m => m.Id).ToList();
+        var leader = BuildLeaderDto(leaderSource);
+        var teamMembers = BuildTeamMembers(directReports);
+        var teamMemberIds = directReports.Select(m => m.Id).ToList();
 
-        var weeklyAccess = await CalculateWeeklyAccessAsync(teamMemberIds, collaborator.OrganizationId, cancellationToken);
+        var weeklyAccess = await CalculateWeeklyAccessAsync(teamMemberIds, organizationId, cancellationToken);
         var missionsUpdated = await CalculateMissionsUpdatedAsync(teamMemberIds, cancellationToken);
         var formsResponded = new IndicatorDto { Percentage = 0, DeltaPercentage = 0, IsPlaceholder = true };
 
@@ -68,9 +76,8 @@ public sealed class DashboardService(ApplicationDbContext dbContext) : IDashboar
         };
     }
 
-    private static DashboardLeaderDto? BuildLeaderDto(Collaborator collaborator)
+    private static DashboardLeaderDto? BuildLeaderDto(Collaborator? leaderSource)
     {
-        var leaderSource = collaborator.Leader ?? (collaborator.Role == CollaboratorRole.Leader ? collaborator : null);
         if (leaderSource is null)
         {
             return null;
@@ -81,7 +88,8 @@ public sealed class DashboardService(ApplicationDbContext dbContext) : IDashboar
             Id = leaderSource.Id,
             FullName = leaderSource.FullName,
             Initials = GetInitials(leaderSource.FullName),
-            Role = leaderSource.Role == CollaboratorRole.Leader ? "Líder" : "Colaborador"
+            Role = leaderSource.Role == CollaboratorRole.Leader ? "Líder" : "Colaborador",
+            TeamName = leaderSource.Team?.Name ?? string.Empty
         };
     }
 

@@ -23,36 +23,42 @@ else
 
             @* Leader + Team Members *@
             <div class="dashboard-leader-row">
-                <div class="dashboard-leader-info">
-                    @if (dashboard.TeamHealth.Leader is not null)
-                    {
-                        <div class="dashboard-avatar">@dashboard.TeamHealth.Leader.Initials</div>
-                        <div>
-                            <div class="dashboard-leader-name">@dashboard.TeamHealth.Leader.FullName</div>
-                            <div class="dashboard-leader-role">@dashboard.TeamHealth.Leader.Role</div>
-                        </div>
-                    }
-                    else
-                    {
-                        <div class="dashboard-avatar">?</div>
-                        <div>
-                            <div class="dashboard-leader-name">Sem gestor definido</div>
-                            <div class="dashboard-leader-role">-</div>
-                        </div>
-                    }
+                <div class="dashboard-leader-col">
+                    <div class="dashboard-section-label">Gestor(a)</div>
+                    <div class="dashboard-leader-info">
+                        @if (dashboard.TeamHealth.Leader is not null)
+                        {
+                            <div class="dashboard-avatar">@dashboard.TeamHealth.Leader.Initials</div>
+                            <div>
+                                <div class="dashboard-leader-name">@dashboard.TeamHealth.Leader.FullName</div>
+                                <div class="dashboard-leader-role">@dashboard.TeamHealth.Leader.TeamName</div>
+                            </div>
+                        }
+                        else
+                        {
+                            <div class="dashboard-avatar">?</div>
+                            <div>
+                                <div class="dashboard-leader-name">Sem gestor definido</div>
+                                <div class="dashboard-leader-role">-</div>
+                            </div>
+                        }
+                    </div>
                 </div>
 
                 @if (dashboard.TeamHealth.TeamMembers.Count > 0)
                 {
-                    <div class="avatar-stack">
-                        @foreach (var member in dashboard.TeamHealth.TeamMembers.Take(5))
-                        {
-                            <div class="dashboard-avatar-sm" title="@member.FullName">@member.Initials</div>
-                        }
-                        @if (dashboard.TeamHealth.TeamMembers.Count > 5)
-                        {
-                            <div class="avatar-stack-more">+@(dashboard.TeamHealth.TeamMembers.Count - 5)</div>
-                        }
+                    <div class="dashboard-team-col">
+                        <div class="dashboard-section-label">Time</div>
+                        <div class="avatar-stack">
+                            @foreach (var member in dashboard.TeamHealth.TeamMembers.Take(5))
+                            {
+                                <div class="dashboard-avatar-sm" title="@member.FullName">@member.Initials</div>
+                            }
+                            @if (dashboard.TeamHealth.TeamMembers.Count > 5)
+                            {
+                                <div class="avatar-stack-more">+@(dashboard.TeamHealth.TeamMembers.Count - 5)</div>
+                            }
+                        </div>
                     </div>
                 }
             </div>
