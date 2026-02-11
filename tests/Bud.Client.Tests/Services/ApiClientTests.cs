@@ -83,16 +83,15 @@ public sealed class ApiClientTests
     }
 
     [Fact]
-    public async Task GetMyThingsAsync_WhenPageAndPageSizeAreInvalid_NormalizesBoth()
+    public async Task GetMyDashboardAsync_CallsCorrectEndpoint()
     {
-        var collaboratorId = Guid.NewGuid();
         var handler = CreateSuccessHandler();
         var client = CreateClient(handler);
 
-        _ = await client.GetMyThingsAsync(collaboratorId, null, 0, 200);
+        _ = await client.GetMyDashboardAsync();
 
         handler.LastRequest.Should().NotBeNull();
-        handler.LastRequest!.RequestUri!.PathAndQuery.Should().Be($"/api/missions/my-missions/{collaboratorId}?search=&page=1&pageSize=100");
+        handler.LastRequest!.RequestUri!.PathAndQuery.Should().Be("/api/dashboard/my-dashboard");
     }
 
     [Fact]

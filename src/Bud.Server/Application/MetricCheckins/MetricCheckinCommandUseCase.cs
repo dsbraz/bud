@@ -64,6 +64,12 @@ public sealed class MetricCheckinCommandUseCase(
                     return ServiceResult<MetricCheckin>.Forbidden("Colaborador não identificado.");
                 }
 
+                var collaborator = await entityLookup.GetCollaboratorAsync(collaboratorId.Value, ct);
+                if (collaborator is null)
+                {
+                    return ServiceResult<MetricCheckin>.Forbidden("Colaborador não encontrado.");
+                }
+
                 var createResult = await checkinService.CreateAsync(request, collaboratorId.Value, ct);
                 if (createResult.IsSuccess)
                 {

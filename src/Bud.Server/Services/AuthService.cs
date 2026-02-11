@@ -4,6 +4,7 @@ using System.Text;
 using Bud.Server.Data;
 using Bud.Server.Settings;
 using Bud.Shared.Contracts;
+using Bud.Shared.Models;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
@@ -55,6 +56,11 @@ public sealed class AuthService(
                 displayName = adminCollaborator.FullName;
             }
 
+            if (adminCollaborator is not null)
+            {
+                await RegisterAccessLogAsync(adminCollaborator.Id, adminCollaborator.OrganizationId, cancellationToken);
+            }
+
             var adminToken = GenerateJwtToken(adminClaims);
 
             return ServiceResult<AuthLoginResponse>.Success(new AuthLoginResponse
@@ -77,6 +83,8 @@ public sealed class AuthService(
         {
             return ServiceResult<AuthLoginResponse>.NotFound("Usuário não encontrado.");
         }
+
+        await RegisterAccessLogAsync(collaborator.Id, collaborator.OrganizationId, cancellationToken);
 
         var claims = new List<Claim>
         {
@@ -167,6 +175,18 @@ public sealed class AuthService(
     private bool IsGlobalAdminLogin(string normalizedEmail)
     {
         return string.Equals(normalizedEmail, _globalAdminEmail, StringComparison.OrdinalIgnoreCase);
+    }
+
+    private async Task RegisterAccessLogAsync(Guid collaboratorId, Guid organizationId, CancellationToken cancellationToken)
+    {
+        dbContext.CollaboratorAccessLogs.Add(new CollaboratorAccessLog
+        {
+            Id = Guid.NewGuid(),
+            CollaboratorId = collaboratorId,
+            OrganizationId = organizationId,
+            AccessedAt = DateTime.UtcNow
+        });
+        await dbContext.SaveChangesAsync(cancellationToken);
     }
 
     private string GenerateJwtToken(List<Claim> claims)

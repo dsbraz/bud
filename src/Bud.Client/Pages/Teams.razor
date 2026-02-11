@@ -38,9 +38,9 @@
             {
                 <div class="filter-dropdown">
                     <div class="filter-dropdown-row">
-                        <label>Workspace</label>
+                        <label>Espaço de trabalho</label>
                         <select class="input" @bind="selectedWorkspaceId">
-                            <option value="">Todos os workspaces</option>
+                            <option value="">Todos os espaços de trabalho</option>
                             @foreach (var workspace in workspaces)
                             {
                                 <option value="@workspace.Id">@workspace.Name</option>
@@ -89,7 +89,7 @@
             <thead>
                 <tr>
                     <th>Nome</th>
-                    <th>Workspace</th>
+                    <th>Espaço de trabalho</th>
                     <th>Equipe pai</th>
                     <th style="width: 120px; text-align: center;">Ações</th>
                 </tr>
@@ -126,7 +126,7 @@
         <EditForm Model="@newTeam" OnValidSubmit="CreateTeam">
             <DataAnnotationsValidator />
             <div class="form-row">
-                <label>Workspace</label>
+                <label>Espaço de trabalho</label>
                 <select class="input" value="@createWorkspaceId" @onchange="OnCreateWorkspaceChanged">
                     <option value="">Selecione</option>
                     @foreach (var workspace in workspaces)
@@ -356,10 +356,10 @@
     private string GetWorkspaceFilterLabel()
     {
         if (string.IsNullOrEmpty(selectedWorkspaceId))
-            return "Todos os workspaces";
+            return "Todos os espaços de trabalho";
 
         var workspace = workspaces.FirstOrDefault(w => w.Id.ToString() == selectedWorkspaceId);
-        return workspace?.Name ?? "Todos os workspaces";
+        return workspace?.Name ?? "Todos os espaços de trabalho";
     }
 
     // Summary methods
@@ -416,7 +416,7 @@
     {
         if (!Guid.TryParse(createWorkspaceId, out var workspaceId))
         {
-            ToastService.ShowError("Erro ao criar equipe", "Selecione um workspace.");
+            ToastService.ShowError("Erro ao criar equipe", "Selecione um espaço de trabalho.");
             return;
         }
 

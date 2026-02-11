@@ -30,6 +30,9 @@ public sealed class ApplicationDbContext : DbContext
     public DbSet<MissionMetric> MissionMetrics => Set<MissionMetric>();
     public DbSet<CollaboratorTeam> CollaboratorTeams => Set<CollaboratorTeam>();
     public DbSet<MetricCheckin> MetricCheckins => Set<MetricCheckin>();
+    public DbSet<MissionTemplate> MissionTemplates => Set<MissionTemplate>();
+    public DbSet<MissionTemplateMetric> MissionTemplateMetrics => Set<MissionTemplateMetric>();
+    public DbSet<CollaboratorAccessLog> CollaboratorAccessLogs => Set<CollaboratorAccessLog>();
     public DbSet<OutboxMessage> OutboxMessages => Set<OutboxMessage>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -279,6 +282,94 @@ public sealed class ApplicationDbContext : DbContext
                 !_applyTenantFilter ||
                 (_isGlobalAdmin && _tenantId == null) ||
                 (_tenantId != null && mc.OrganizationId == _tenantId)
+            );
+
+        // MissionTemplate
+        modelBuilder.Entity<MissionTemplate>()
+            .Property(mt => mt.Name)
+            .HasMaxLength(200);
+
+        modelBuilder.Entity<MissionTemplate>()
+            .Property(mt => mt.Description)
+            .HasMaxLength(1000);
+
+        modelBuilder.Entity<MissionTemplate>()
+            .Property(mt => mt.MissionNamePattern)
+            .HasMaxLength(200);
+
+        modelBuilder.Entity<MissionTemplate>()
+            .Property(mt => mt.MissionDescriptionPattern)
+            .HasMaxLength(1000);
+
+        modelBuilder.Entity<MissionTemplate>()
+            .HasOne(mt => mt.Organization)
+            .WithMany()
+            .HasForeignKey(mt => mt.OrganizationId)
+            .OnDelete(DeleteBehavior.Cascade)
+            .IsRequired();
+
+        modelBuilder.Entity<MissionTemplate>()
+            .HasIndex(mt => mt.OrganizationId);
+
+        // MissionTemplateMetric
+        modelBuilder.Entity<MissionTemplateMetric>()
+            .Property(mtm => mtm.Name)
+            .HasMaxLength(200);
+
+        modelBuilder.Entity<MissionTemplateMetric>()
+            .Property(mtm => mtm.TargetText)
+            .HasMaxLength(1000);
+
+        modelBuilder.Entity<MissionTemplateMetric>()
+            .HasOne(mtm => mtm.Organization)
+            .WithMany()
+            .HasForeignKey(mtm => mtm.OrganizationId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        modelBuilder.Entity<MissionTemplateMetric>()
+            .HasIndex(mtm => mtm.OrganizationId);
+
+        modelBuilder.Entity<MissionTemplate>()
+            .HasMany(mt => mt.Metrics)
+            .WithOne(mtm => mtm.MissionTemplate)
+            .HasForeignKey(mtm => mtm.MissionTemplateId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        modelBuilder.Entity<MissionTemplate>()
+            .HasQueryFilter(mt =>
+                !_applyTenantFilter ||
+                (_isGlobalAdmin && _tenantId == null) ||
+                (_tenantId != null && mt.OrganizationId == _tenantId)
+            );
+
+        modelBuilder.Entity<MissionTemplateMetric>()
+            .HasQueryFilter(mtm =>
+                !_applyTenantFilter ||
+                (_isGlobalAdmin && _tenantId == null) ||
+                (_tenantId != null && mtm.OrganizationId == _tenantId)
+            );
+
+        // CollaboratorAccessLog
+        modelBuilder.Entity<CollaboratorAccessLog>()
+            .HasOne(cal => cal.Organization)
+            .WithMany()
+            .HasForeignKey(cal => cal.OrganizationId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        modelBuilder.Entity<CollaboratorAccessLog>()
+            .HasOne(cal => cal.Collaborator)
+            .WithMany()
+            .HasForeignKey(cal => cal.CollaboratorId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        modelBuilder.Entity<CollaboratorAccessLog>()
+            .HasIndex(cal => new { cal.OrganizationId, cal.AccessedAt });
+
+        modelBuilder.Entity<CollaboratorAccessLog>()
+            .HasQueryFilter(cal =>
+                !_applyTenantFilter ||
+                (_isGlobalAdmin && _tenantId == null) ||
+                (_tenantId != null && cal.OrganizationId == _tenantId)
             );
 
         // Outbox

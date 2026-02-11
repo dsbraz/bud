@@ -41,12 +41,13 @@ public sealed partial class OutboxEventProcessor(
                 message.ProcessedOnUtc = nowProvider();
                 message.Error = null;
                 message.NextAttemptOnUtc = null;
+                var elapsedMs = (nowProvider() - startedAt).TotalMilliseconds;
                 LogOutboxMessageProcessed(
                     logger,
                     message.Id,
                     message.EventType,
                     message.RetryCount + 1,
-                    (nowProvider() - startedAt).TotalMilliseconds);
+                    elapsedMs);
             }
             catch (Exception ex)
             {

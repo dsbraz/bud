@@ -8,9 +8,9 @@
 
 <ManagementPageHeader
     Kicker="Gestão"
-    Title="Workspaces"
-    Subtitle="Gerencie workspaces por organização."
-    PrimaryActionText="Novo workspace"
+    Title="Espaços de trabalho"
+    Subtitle="Gerencie espaços de trabalho por organização."
+    PrimaryActionText="Novo espaço de trabalho"
     OnPrimaryAction="OpenCreateModal" />
 
 @* Barra de Filtros *@
@@ -38,7 +38,7 @@
         <div class="filter-panel-row">
             <div class="filter-panel-field">
                 <label>Busca</label>
-                <InputText class="input" @bind-Value="search" @onkeyup="OnSearchKeyUp" placeholder="Buscar workspaces..." />
+                <InputText class="input" @bind-Value="search" @onkeyup="OnSearchKeyUp" placeholder="Buscar espaços de trabalho..." />
             </div>
         </div>
     </div>
@@ -54,7 +54,7 @@
         IsLoading="@(workspaces is null)"
         IsEmpty="@(workspaces is not null && workspaces.Items.Count == 0)"
         Total="@(workspaces?.Total ?? 0)"
-        EmptyText="Nenhum workspace encontrado.">
+        EmptyText="Nenhum espaço de trabalho encontrado.">
         <table class="table">
             <thead>
                 <tr>
@@ -76,10 +76,10 @@
                         <td style="text-align: center;">
                             <CrudRowActions
                                 StopPropagation="true"
-                                EditTitle="Editar workspace"
+                                EditTitle="Editar espaço de trabalho"
                                 OnEdit="@(() => OpenEditModal(workspace))"
                                 IsDeleteConfirming="@isDeleting"
-                                DeleteTitle="Excluir workspace"
+                                DeleteTitle="Excluir espaço de trabalho"
                                 OnDelete="@(() => HandleDeleteClick(workspace.Id))" />
                         </td>
                     </tr>
@@ -91,7 +91,7 @@
 
 @if (isModalOpen)
 {
-    <Modal Title="Criar workspace" OnClose="CloseModal">
+    <Modal Title="Criar espaço de trabalho" OnClose="CloseModal">
         <EditForm Model="@newWorkspace" OnValidSubmit="CreateWorkspace">
             <DataAnnotationsValidator />
             <div class="form-row">
@@ -108,7 +108,7 @@
 
 @if (isEditModalOpen)
 {
-    <Modal Title="Editar workspace" OnClose="CloseEditModal">
+    <Modal Title="Editar espaço de trabalho" OnClose="CloseEditModal">
         <EditForm Model="@editWorkspace" OnValidSubmit="UpdateWorkspace">
             <DataAnnotationsValidator />
             <div class="form-row">
@@ -196,8 +196,8 @@
         }
         catch (Exception ex)
         {
-            Console.Error.WriteLine($"Erro ao atualizar workspaces por troca de organização: {ex.Message}");
-            ToastService.ShowError("Erro ao atualizar workspaces", "Não foi possível atualizar os dados da organização selecionada.");
+            Console.Error.WriteLine($"Erro ao atualizar espaços de trabalho por troca de organização: {ex.Message}");
+            ToastService.ShowError("Erro ao atualizar espaços de trabalho", "Não foi possível atualizar os dados da organização selecionada.");
         }
     }
 
@@ -272,13 +272,13 @@
     {
         if (!OrgContext.SelectedOrganizationId.HasValue)
         {
-            ToastService.ShowError("Erro ao criar workspace", "Selecione uma organização específica no menu lateral. Não é possível criar workspaces com 'TODOS' selecionado.");
+            ToastService.ShowError("Erro ao criar espaço de trabalho", "Selecione uma organização específica no menu lateral. Não é possível criar espaços de trabalho com 'TODOS' selecionado.");
             return;
         }
 
         if (string.IsNullOrWhiteSpace(newWorkspace.Name))
         {
-            ToastService.ShowError("Erro ao criar workspace", "Informe o nome do workspace.");
+            ToastService.ShowError("Erro ao criar espaço de trabalho", "Informe o nome do espaço de trabalho.");
             return;
         }
 
@@ -292,14 +292,14 @@
                 newWorkspace = new CreateWorkspaceRequest();
                 await LoadWorkspaces();
 
-                ToastService.ShowSuccess("Workspace criado com sucesso!", $"O workspace '{workspaceName}' foi criado.");
+                ToastService.ShowSuccess("Espaço de trabalho criado com sucesso!", $"O espaço de trabalho '{workspaceName}' foi criado.");
                 CloseModal();
             },
             ToastService,
-            "Erro ao criar workspace",
-            "Não foi possível criar o workspace. Verifique os dados e tente novamente.",
-            operationContext: "criação de workspace",
-            unexpectedErrorMessage: "Não foi possível criar o workspace. Tente novamente.");
+            "Erro ao criar espaço de trabalho",
+            "Não foi possível criar o espaço de trabalho. Verifique os dados e tente novamente.",
+            operationContext: "criação de espaço de trabalho",
+            unexpectedErrorMessage: "Não foi possível criar o espaço de trabalho. Tente novamente.");
     }
 
     private void OpenEditModal(Workspace workspace)
@@ -329,16 +329,16 @@
                 var result = await Api.UpdateWorkspaceAsync(selectedWorkspace.Id, editWorkspace);
                 if (result != null)
                 {
-                    ToastService.ShowSuccess("Workspace atualizado", "As alterações foram salvas com sucesso.");
+                    ToastService.ShowSuccess("Espaço de trabalho atualizado", "As alterações foram salvas com sucesso.");
                     CloseEditModal();
                     await LoadWorkspaces();
                 }
             },
             ToastService,
             "Erro ao atualizar",
-            "Não foi possível atualizar o workspace. Verifique os dados e tente novamente.",
-            operationContext: "atualização de workspace",
-            unexpectedErrorMessage: "Não foi possível atualizar o workspace. Tente novamente.");
+            "Não foi possível atualizar o espaço de trabalho. Verifique os dados e tente novamente.",
+            operationContext: "atualização de espaço de trabalho",
+            unexpectedErrorMessage: "Não foi possível atualizar o espaço de trabalho. Tente novamente.");
     }
 
     private void HandleDeleteClick(Guid workspaceId)
@@ -376,14 +376,14 @@
                 async () =>
                 {
                     await Api.DeleteWorkspaceAsync(workspaceId);
-                    ToastService.ShowSuccess("Workspace excluído", "O workspace foi removido com sucesso.");
+                    ToastService.ShowSuccess("Espaço de trabalho excluído", "O espaço de trabalho foi removido com sucesso.");
                     await LoadWorkspaces();
                 },
                 ToastService,
                 "Erro ao excluir",
-                "Não foi possível excluir o workspace. Tente novamente.",
-                operationContext: "exclusão de workspace",
-                unexpectedErrorMessage: "Não foi possível excluir o workspace. Tente novamente.");
+                "Não foi possível excluir o espaço de trabalho. Tente novamente.",
+                operationContext: "exclusão de espaço de trabalho",
+                unexpectedErrorMessage: "Não foi possível excluir o espaço de trabalho. Tente novamente.");
         }
         finally
         {
