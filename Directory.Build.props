@@ -21,6 +21,12 @@
     <DefaultItemExcludes>$(DefaultItemExcludes);bin/**;obj/**</DefaultItemExcludes>
   </PropertyGroup>
 
+  <PropertyGroup Condition="'$(DOTNET_RUNNING_IN_CONTAINER)' == 'true'">
+    <!-- Keep intermediate/output files outside bind-mounted source to avoid host/container NuGet path conflicts -->
+    <BaseIntermediateOutputPath>/tmp/obj/$(MSBuildProjectName)/</BaseIntermediateOutputPath>
+    <BaseOutputPath>/tmp/bin/$(MSBuildProjectName)/</BaseOutputPath>
+  </PropertyGroup>
+
   <ItemGroup>
     <!-- Code analyzers for all projects -->
     <PackageReference Include="Microsoft.CodeAnalysis.NetAnalyzers" Version="10.0.100">
