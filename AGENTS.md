@@ -97,7 +97,7 @@ Bud is an ASP.NET Core 10 application with a Blazor WebAssembly frontend, using 
 ## Project Structure
 
 - **Bud.Server** (`src/Bud.Server`): ASP.NET Core API hosting both the API endpoints and the Blazor WebAssembly app
-  - `Controllers/`: REST endpoints for organizations, workspaces, teams, collaborators, missions, notifications, outbox
+  - `Controllers/`: REST endpoints for auth, organizations, workspaces, teams, collaborators, missions, mission-metrics, metric-checkins, mission-templates, dashboard, notifications, outbox
   - `Application/`: use cases (`Command/Query`), abstractions (ports), pipeline behaviors, events
   - `Domain/`: domain events and domain-specific contracts
   - `Infrastructure/`: outbox processing, serialization, and background workers
@@ -108,6 +108,7 @@ Bud is an ASP.NET Core 10 application with a Blazor WebAssembly frontend, using 
   - `Validators/`: FluentValidation validators
   - `Middleware/`: global exception handling and other middleware
   - `MultiTenancy/`: tenant isolation infrastructure (`ITenantProvider`, `JwtTenantProvider`, `TenantSaveChangesInterceptor`, `TenantRequiredMiddleware`)
+  - `Authorization/`: policy-based authorization (requirements, handlers, resource scopes)
   - `Settings/`: configuration POCOs (`GlobalAdminSettings`)
 
 - **Bud.Client** (`src/Bud.Client`): Blazor WebAssembly SPA (compiled to static files served by Bud.Server)
@@ -226,10 +227,14 @@ Organization
 
 Mission (can be scoped to Organization, Workspace, Team, or Collaborator)
   └── MissionMetric(s)
+      └── MetricCheckin(s)
+
+MissionTemplate
+  └── MissionTemplateMetric(s)
 ```
 
 **Critical cascade behaviors:**
-- Organization deletion cascades to Workspaces, Teams, and Collaborators
+- Organization → Workspace = `Cascade`; Organization → Team and Organization → Collaborator = `Restrict` (Teams are reached indirectly via Workspace → Team = `Cascade`; Collaborators get `TeamId = null` via `SetNull`)
 - SubTeams have `DeleteBehavior.Restrict` on ParentTeam to prevent orphaned hierarchies
 - All Mission relationships cascade delete
 
@@ -241,7 +246,7 @@ The application uses **row-level tenant isolation** based on `OrganizationId`. E
 
 **How it works:**
 
-1. **`ITenantEntity`** — marker interface implemented by all tenant-scoped entities (`Workspace`, `Team`, `Collaborator`, `Mission`, `MissionMetric`, `Notification`). Requires a `Guid OrganizationId` property.
+1. **`ITenantEntity`** — marker interface implemented by all tenant-scoped entities (`Workspace`, `Team`, `Collaborator`, `Mission`, `MissionMetric`, `MetricCheckin`, `MissionTemplate`, `MissionTemplateMetric`, `Notification`, `CollaboratorAccessLog`). Requires a `Guid OrganizationId` property.
 
 2. **`ITenantProvider` / `JwtTenantProvider`** — scoped service that reads user information from validated JWT claims. Determines `TenantId` (from `X-Tenant-Id` header or `organization_id` claim), `CollaboratorId`, and `IsGlobalAdmin` (from `GlobalAdmin` role claim). Optionally accepts `X-Tenant-Id` header for multi-organization users.
 
@@ -265,7 +270,7 @@ The application uses **row-level tenant isolation** based on `OrganizationId`. E
 
 **Key design decisions:**
 
-- `OrganizationId` is **denormalized** into `Team`, `Collaborator`, `Mission`, `MissionMetric`, and `Notification` for efficient query filtering without joins
+- `OrganizationId` is **denormalized** into `Team`, `Collaborator`, `Mission`, `MissionMetric`, `MetricCheckin`, `MissionTemplate`, `MissionTemplateMetric`, `Notification`, and `CollaboratorAccessLog` for efficient query filtering without joins
 - `Mission.OrganizationId` is **non-nullable** (always set as tenant discriminator). Mission scope level is determined by which of `WorkspaceId`/`TeamId`/`CollaboratorId` is set; if none are set, the mission is org-scoped
 - Services must populate `OrganizationId` when creating entities (resolved from the parent entity in the hierarchy)
 
@@ -289,7 +294,7 @@ public sealed class ServiceResult<T>
     public bool IsSuccess { get; }
     public T? Value { get; }
     public string? Error { get; }
-    public ServiceErrorType ErrorType { get; } // None, Validation, NotFound, Conflict
+    public ServiceErrorType ErrorType { get; } // None, Validation, NotFound, Conflict, Forbidden
 }
 ```
 
@@ -300,6 +305,7 @@ public sealed class ServiceResult<T>
   - `NotFound` → 404
   - `Validation` → 400
   - `Conflict` → 409
+  - `Forbidden` → 403
 - MUST keep all `ServiceResult.Error` messages in `pt-BR`.
 
 ### Architectural & Design Patterns in Use
@@ -357,6 +363,8 @@ See [OrganizationsController.cs](src/Bud.Server/Controllers/OrganizationsControl
 - `GlobalAdmin` — requires a global admin user
 - `OrganizationOwner` — requires the collaborator to be organization owner
 - `OrganizationWrite` — requires organization write permission
+- `TenantOrganizationMatch` — validates that the target organization matches the current tenant context
+- `MissionScopeAccess` — validates that the user has access to the mission's scope (workspace/team/collaborator)
 
 **Rules for agents:**
 - MUST apply `[Authorize(Policy = ...)]` in controllers instead of ad-hoc logic.
@@ -370,7 +378,7 @@ See [OrganizationsController.cs](src/Bud.Server/Controllers/OrganizationsControl
 
 - MUST use **FluentValidation** for request validation.
 - MUST place validators in `src/Bud.Server/Validators/`.
-- MUST register validators in DI (see [BudApplicationCompositionExtensions.cs](src/Bud.Server/DependencyInjection/BudApplicationCompositionExtensions.cs)).
+- MUST register validators in DI (see [BudApiCompositionExtensions.cs](src/Bud.Server/DependencyInjection/BudApiCompositionExtensions.cs)).
 - MUST validate requests in controllers before calling use cases.
 - MUST keep all validation messages in `pt-BR`.
 
@@ -563,7 +571,7 @@ The `docker-compose.yml` configures:
 - **Application ports:** [IOrganizationService.cs](src/Bud.Server/Application/Abstractions/IOrganizationService.cs)
 - **Use case pipeline:** [IUseCasePipeline.cs](src/Bud.Server/Application/Common/Pipeline/IUseCasePipeline.cs), [UseCasePipeline.cs](src/Bud.Server/Application/Common/Pipeline/UseCasePipeline.cs), [LoggingUseCaseBehavior.cs](src/Bud.Server/Application/Common/Pipeline/LoggingUseCaseBehavior.cs)
 - **Specification pattern:** [IQuerySpecification.cs](src/Bud.Server/Domain/Common/Specifications/IQuerySpecification.cs), [MissionSearchSpecification.cs](src/Bud.Server/Domain/Common/Specifications/MissionSearchSpecification.cs), [MissionScopeSpecification.cs](src/Bud.Server/Domain/Common/Specifications/MissionScopeSpecification.cs)
-- **Domain events and subscribers:** [IDomainEvent.cs](src/Bud.Server/Domain/Common/Events/IDomainEvent.cs), [IDomainEventSubscriber.cs](src/Bud.Server/Application/Common/Events/IDomainEventSubscriber.cs), [DomainEventDispatcher.cs](src/Bud.Server/Application/Common/Events/DomainEventDispatcher.cs)
+- **Domain events and subscribers:** [IDomainEvent.cs](src/Bud.Server/Domain/Common/Events/IDomainEvent.cs), [IDomainEventSubscriber.cs](src/Bud.Server/Application/Common/Events/IDomainEventSubscriber.cs), [DomainEventDispatcher.cs](src/Bud.Server/Application/Common/Events/DomainEventDispatcher.cs) (in-memory), [OutboxDomainEventDispatcher.cs](src/Bud.Server/Infrastructure/Events/OutboxDomainEventDispatcher.cs) (production — persists to outbox)
 - **Controller pattern:** [OrganizationsController.cs](src/Bud.Server/Controllers/OrganizationsController.cs)
 - **Base controller helpers:** [ApiControllerBase.cs](src/Bud.Server/Controllers/ApiControllerBase.cs)
 - **Validation pattern:** [OrganizationValidators.cs](src/Bud.Server/Validators/OrganizationValidators.cs)
