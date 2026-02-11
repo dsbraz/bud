@@ -629,6 +629,12 @@ public sealed class ApiClient
         }
     }
 
+    // Collaborator Subordinates (Hierarchy)
+    public async Task<List<CollaboratorHierarchyNodeDto>?> GetCollaboratorSubordinatesAsync(Guid collaboratorId)
+    {
+        return await _http.GetFromJsonAsync<List<CollaboratorHierarchyNodeDto>>($"api/collaborators/{collaboratorId}/subordinates");
+    }
+
     // Collaborator Teams (Many-to-Many)
     public async Task<List<TeamSummaryDto>?> GetCollaboratorTeamsAsync(Guid collaboratorId)
     {

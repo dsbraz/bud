@@ -233,7 +233,7 @@
 
 @if (isDetailsModalOpen && detailsCollaborator != null)
 {
-    <Modal Title="@($"Detalhes: {detailsCollaborator.FullName}")" OnClose="CloseDetailsModal">
+    <Modal Title="@($"Detalhes: {detailsCollaborator.FullName}")" Size="lg" OnClose="CloseDetailsModal">
         <ChildContent>
             <div class="detail-section">
                 <h3 class="detail-section-title">Espaços de trabalho</h3>
@@ -292,6 +292,29 @@
                     </ul>
                 }
             </div>
+
+            <div class="detail-section">
+                <h3 class="detail-section-title">Liderados</h3>
+                @if (detailsSubordinates == null)
+                {
+                    <p class="muted">Carregando...</p>
+                }
+                else if (detailsSubordinates.Count == 0)
+                {
+                    <p class="muted">Nenhum liderado encontrado.</p>
+                }
+                else
+                {
+                    <div class="org-chart">
+                        <ul class="org-chart-list">
+                            @foreach (var node in detailsSubordinates)
+                            {
+                                @RenderOrgChartNode(node)
+                            }
+                        </ul>
+                    </div>
+                }
+            </div>
         </ChildContent>
     </Modal>
 }
@@ -325,6 +348,7 @@
     private bool isDetailsModalOpen = false;
     private Collaborator? detailsCollaborator = null;
     private List<TeamSummaryDto>? detailsCollaboratorTeams = null;
+    private List<CollaboratorHierarchyNodeDto>? detailsSubordinates = null;
 
     // Estado de confirmação de exclusão
     private Guid? deletingCollaboratorId = null;
@@ -551,10 +575,14 @@
     {
         detailsCollaborator = collaborator;
         detailsCollaboratorTeams = null;
+        detailsSubordinates = null;
         isDetailsModalOpen = true;
 
-        // Carregar equipes do colaborador via API
-        detailsCollaboratorTeams = await Api.GetCollaboratorTeamsAsync(collaborator.Id) ?? new();
+        // Carregar equipes e liderados em paralelo
+        var teamsTask = Api.GetCollaboratorTeamsAsync(collaborator.Id);
+        var subordinatesTask = Api.GetCollaboratorSubordinatesAsync(collaborator.Id);
+        detailsCollaboratorTeams = await teamsTask ?? new();
+        detailsSubordinates = await subordinatesTask ?? new();
         StateHasChanged();
     }
 
@@ -563,6 +591,7 @@
         isDetailsModalOpen = false;
         detailsCollaborator = null;
         detailsCollaboratorTeams = null;
+        detailsSubordinates = null;
     }
 
     private async Task UpdateCollaborator()
@@ -669,4 +698,26 @@
         if (selectedCollaborator == null) return;
         availableTeamsForEdit = await Api.GetAvailableTeamsForCollaboratorAsync(selectedCollaborator.Id, search) ?? new();
     }
+
+    private RenderFragment RenderOrgChartNode(CollaboratorHierarchyNodeDto node) => __builder =>
+    {
+        <li class="org-chart-node">
+            <div class="org-chart-card">
+                <div class="org-chart-avatar">@node.Initials</div>
+                <div class="org-chart-info">
+                    <span class="org-chart-name">@node.FullName</span>
+                    <span class="org-chart-role">@node.Role</span>
+                </div>
+            </div>
+            @if (node.Children.Count > 0)
+            {
+                <ul class="org-chart-list">
+                    @foreach (var child in node.Children)
+                    {
+                        @RenderOrgChartNode(child)
+                    }
+                </ul>
+            }
+        </li>
+    };
 }

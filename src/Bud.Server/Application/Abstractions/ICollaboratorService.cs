@@ -12,6 +12,9 @@ public interface ICollaboratorService
     Task<ServiceResult<PagedResult<Collaborator>>> GetAllAsync(Guid? teamId, string? search, int page, int pageSize, CancellationToken cancellationToken = default);
     Task<ServiceResult<List<LeaderCollaboratorResponse>>> GetLeadersAsync(Guid? organizationId = null, CancellationToken cancellationToken = default);
 
+    // Hierarchy
+    Task<ServiceResult<List<CollaboratorHierarchyNodeDto>>> GetSubordinatesAsync(Guid collaboratorId, int maxDepth = 5, CancellationToken cancellationToken = default);
+
     // Many-to-many: Collaborator <> Team
     Task<ServiceResult<List<TeamSummaryDto>>> GetTeamsAsync(Guid collaboratorId, CancellationToken cancellationToken = default);
     Task<ServiceResult> UpdateTeamsAsync(Guid collaboratorId, UpdateCollaboratorTeamsRequest request, CancellationToken cancellationToken = default);

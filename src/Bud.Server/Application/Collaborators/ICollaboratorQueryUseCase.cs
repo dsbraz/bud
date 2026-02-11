@@ -18,6 +18,10 @@ public interface ICollaboratorQueryUseCase
         int pageSize,
         CancellationToken cancellationToken = default);
 
+    Task<ServiceResult<List<CollaboratorHierarchyNodeDto>>> GetSubordinatesAsync(
+        Guid collaboratorId,
+        CancellationToken cancellationToken = default);
+
     Task<ServiceResult<List<TeamSummaryDto>>> GetTeamsAsync(
         Guid collaboratorId,
         CancellationToken cancellationToken = default);

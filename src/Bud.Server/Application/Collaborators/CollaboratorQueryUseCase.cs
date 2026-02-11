@@ -21,6 +21,11 @@ public sealed class CollaboratorQueryUseCase(ICollaboratorService collaboratorSe
         CancellationToken cancellationToken = default)
         => collaboratorService.GetAllAsync(teamId, search, page, pageSize, cancellationToken);
 
+    public Task<ServiceResult<List<CollaboratorHierarchyNodeDto>>> GetSubordinatesAsync(
+        Guid collaboratorId,
+        CancellationToken cancellationToken = default)
+        => collaboratorService.GetSubordinatesAsync(collaboratorId, cancellationToken: cancellationToken);
+
     public Task<ServiceResult<List<TeamSummaryDto>>> GetTeamsAsync(
         Guid collaboratorId,
         CancellationToken cancellationToken = default)

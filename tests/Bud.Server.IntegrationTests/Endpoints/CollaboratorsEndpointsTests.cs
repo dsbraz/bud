@@ -118,6 +118,126 @@ public class CollaboratorsEndpointsTests : IClassFixture<CustomWebApplicationFac
         response.StatusCode.Should().Be(HttpStatusCode.Forbidden);
     }
 
+    [Fact]
+    public async Task GetSubordinates_ValidLeader_ReturnsOk()
+    {
+        var leaderId = await GetOrCreateAdminLeader();
+        var orgResponse = await _adminClient.PostAsJsonAsync("/api/organizations",
+            new CreateOrganizationRequest
+            {
+                Name = $"test-{Guid.NewGuid():N}.com",
+                OwnerId = leaderId
+            });
+        var org = (await orgResponse.Content.ReadFromJsonAsync<Organization>())!;
+
+        var leader = await CreateLeaderCollaborator(org.Id);
+        var sub = await CreateSubordinate(org.Id, leader.Id);
+
+        var response = await _adminClient.GetAsync($"/api/collaborators/{leader.Id}/subordinates");
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        var nodes = await response.Content.ReadFromJsonAsync<List<CollaboratorHierarchyNodeDto>>();
+        nodes.Should().NotBeNull();
+        nodes.Should().HaveCount(1);
+        nodes![0].FullName.Should().Be(sub.FullName);
+    }
+
+    [Fact]
+    public async Task GetSubordinates_NonExistent_ReturnsNotFound()
+    {
+        var response = await _adminClient.GetAsync($"/api/collaborators/{Guid.NewGuid()}/subordinates");
+
+        response.StatusCode.Should().Be(HttpStatusCode.NotFound);
+    }
+
+    [Fact]
+    public async Task GetSubordinates_Recursive_ReturnsNestedTree()
+    {
+        var leaderId = await GetOrCreateAdminLeader();
+        var orgResponse = await _adminClient.PostAsJsonAsync("/api/organizations",
+            new CreateOrganizationRequest
+            {
+                Name = $"test-{Guid.NewGuid():N}.com",
+                OwnerId = leaderId
+            });
+        var org = (await orgResponse.Content.ReadFromJsonAsync<Organization>())!;
+
+        var topLeader = await CreateLeaderCollaborator(org.Id);
+        var midLeader = await CreateLeaderSubordinate(org.Id, topLeader.Id);
+        var contributor = await CreateSubordinate(org.Id, midLeader.Id);
+
+        var response = await _adminClient.GetAsync($"/api/collaborators/{topLeader.Id}/subordinates");
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        var nodes = await response.Content.ReadFromJsonAsync<List<CollaboratorHierarchyNodeDto>>();
+        nodes.Should().HaveCount(1);
+        nodes![0].FullName.Should().Be(midLeader.FullName);
+        nodes[0].Children.Should().HaveCount(1);
+        nodes[0].Children[0].FullName.Should().Be(contributor.FullName);
+    }
+
+    private async Task<Collaborator> CreateLeaderCollaborator(Guid organizationId)
+    {
+        using var scope = _factory.Services.CreateScope();
+        var dbContext = scope.ServiceProvider.GetRequiredService<Bud.Server.Data.ApplicationDbContext>();
+
+        var collaborator = new Collaborator
+        {
+            Id = Guid.NewGuid(),
+            FullName = $"Líder {Guid.NewGuid():N}",
+            Email = $"leader-{Guid.NewGuid():N}@test.com",
+            Role = CollaboratorRole.Leader,
+            OrganizationId = organizationId
+        };
+
+        dbContext.Collaborators.Add(collaborator);
+        await dbContext.SaveChangesAsync();
+
+        return collaborator;
+    }
+
+    private async Task<Collaborator> CreateLeaderSubordinate(Guid organizationId, Guid leaderId)
+    {
+        using var scope = _factory.Services.CreateScope();
+        var dbContext = scope.ServiceProvider.GetRequiredService<Bud.Server.Data.ApplicationDbContext>();
+
+        var collaborator = new Collaborator
+        {
+            Id = Guid.NewGuid(),
+            FullName = $"Sub-líder {Guid.NewGuid():N}",
+            Email = $"subleader-{Guid.NewGuid():N}@test.com",
+            Role = CollaboratorRole.Leader,
+            OrganizationId = organizationId,
+            LeaderId = leaderId
+        };
+
+        dbContext.Collaborators.Add(collaborator);
+        await dbContext.SaveChangesAsync();
+
+        return collaborator;
+    }
+
+    private async Task<Collaborator> CreateSubordinate(Guid organizationId, Guid leaderId)
+    {
+        using var scope = _factory.Services.CreateScope();
+        var dbContext = scope.ServiceProvider.GetRequiredService<Bud.Server.Data.ApplicationDbContext>();
+
+        var collaborator = new Collaborator
+        {
+            Id = Guid.NewGuid(),
+            FullName = $"Liderado {Guid.NewGuid():N}",
+            Email = $"sub-{Guid.NewGuid():N}@test.com",
+            Role = CollaboratorRole.IndividualContributor,
+            OrganizationId = organizationId,
+            LeaderId = leaderId
+        };
+
+        dbContext.Collaborators.Add(collaborator);
+        await dbContext.SaveChangesAsync();
+
+        return collaborator;
+    }
+
     private async Task<Guid> GetOrCreateAdminLeader()
     {
         using var scope = _factory.Services.CreateScope();

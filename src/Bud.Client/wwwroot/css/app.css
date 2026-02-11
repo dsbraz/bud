@@ -3532,3 +3532,103 @@ a {
         width: 100%;
     }
 }
+
+/* ========================================
+   ORG CHART - Subordinate Hierarchy Tree
+   ======================================== */
+
+.org-chart {
+    overflow-x: auto;
+    padding: var(--spacing-2) 0;
+}
+
+.org-chart-list {
+    list-style: none;
+    margin: 0;
+    padding: 0 0 0 var(--spacing-5);
+}
+
+.org-chart > .org-chart-list {
+    padding-left: 0;
+}
+
+.org-chart-node {
+    position: relative;
+    padding: var(--spacing-1) 0;
+}
+
+.org-chart-node::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: calc(-1 * var(--spacing-3));
+    width: 2px;
+    height: 100%;
+    background: var(--caramel-200);
+}
+
+.org-chart > .org-chart-list > .org-chart-node::before {
+    display: none;
+}
+
+.org-chart-node::after {
+    content: '';
+    position: absolute;
+    top: calc(var(--spacing-1) + 18px);
+    left: calc(-1 * var(--spacing-3));
+    width: var(--spacing-3);
+    height: 2px;
+    background: var(--caramel-200);
+}
+
+.org-chart > .org-chart-list > .org-chart-node::after {
+    display: none;
+}
+
+.org-chart-node:last-child::before {
+    height: calc(var(--spacing-1) + 18px);
+}
+
+.org-chart-card {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-3);
+    padding: var(--spacing-2) var(--spacing-3);
+    border-radius: var(--radius-sm);
+    transition: background var(--transition-fast);
+}
+
+.org-chart-card:hover {
+    background: var(--caramel-50);
+}
+
+.org-chart-avatar {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: var(--caramel-200);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: var(--font-size-xs);
+    font-weight: var(--font-weight-semibold);
+    color: var(--neutral-700);
+    flex-shrink: 0;
+}
+
+.org-chart-info {
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+}
+
+.org-chart-name {
+    font-size: var(--font-size-sm);
+    font-weight: var(--font-weight-semibold);
+    color: var(--neutral-950);
+}
+
+.org-chart-role {
+    font-size: var(--font-size-xs);
+    color: var(--neutral-500);
+}

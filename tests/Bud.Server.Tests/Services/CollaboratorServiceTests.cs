@@ -452,6 +452,275 @@ public class CollaboratorServiceTests
 
     #endregion
 
+    #region GetSubordinatesAsync Tests
+
+    [Fact]
+    public async Task GetSubordinatesAsync_WithNonExistentCollaborator_ReturnsNotFound()
+    {
+        // Arrange
+        using var context = CreateInMemoryContext();
+        var service = new CollaboratorService(context, _tenantProvider);
+
+        // Act
+        var result = await service.GetSubordinatesAsync(Guid.NewGuid());
+
+        // Assert
+        result.IsSuccess.Should().BeFalse();
+        result.ErrorType.Should().Be(ServiceErrorType.NotFound);
+        result.Error.Should().Be("Colaborador não encontrado.");
+    }
+
+    [Fact]
+    public async Task GetSubordinatesAsync_WithNoSubordinates_ReturnsEmptyList()
+    {
+        // Arrange
+        using var context = CreateInMemoryContext();
+        var (org, _, _) = await CreateTestHierarchy(context);
+
+        var leader = new Collaborator
+        {
+            Id = Guid.NewGuid(),
+            FullName = "Leader One",
+            Email = "leader@example.com",
+            Role = CollaboratorRole.Leader,
+            OrganizationId = org.Id
+        };
+        context.Collaborators.Add(leader);
+        await context.SaveChangesAsync();
+
+        var service = new CollaboratorService(context, _tenantProvider);
+
+        // Act
+        var result = await service.GetSubordinatesAsync(leader.Id);
+
+        // Assert
+        result.IsSuccess.Should().BeTrue();
+        result.Value.Should().BeEmpty();
+    }
+
+    [Fact]
+    public async Task GetSubordinatesAsync_WithDirectSubordinates_ReturnsOneLevel()
+    {
+        // Arrange
+        using var context = CreateInMemoryContext();
+        var (org, _, _) = await CreateTestHierarchy(context);
+
+        var leader = new Collaborator
+        {
+            Id = Guid.NewGuid(),
+            FullName = "Leader One",
+            Email = "leader@example.com",
+            Role = CollaboratorRole.Leader,
+            OrganizationId = org.Id
+        };
+
+        var sub1 = new Collaborator
+        {
+            Id = Guid.NewGuid(),
+            FullName = "Alice Sub",
+            Email = "alice@example.com",
+            Role = CollaboratorRole.IndividualContributor,
+            OrganizationId = org.Id,
+            LeaderId = leader.Id
+        };
+
+        var sub2 = new Collaborator
+        {
+            Id = Guid.NewGuid(),
+            FullName = "Bob Sub",
+            Email = "bob@example.com",
+            Role = CollaboratorRole.IndividualContributor,
+            OrganizationId = org.Id,
+            LeaderId = leader.Id
+        };
+
+        context.Collaborators.AddRange(leader, sub1, sub2);
+        await context.SaveChangesAsync();
+
+        var service = new CollaboratorService(context, _tenantProvider);
+
+        // Act
+        var result = await service.GetSubordinatesAsync(leader.Id);
+
+        // Assert
+        result.IsSuccess.Should().BeTrue();
+        result.Value.Should().HaveCount(2);
+        result.Value![0].FullName.Should().Be("Alice Sub");
+        result.Value![1].FullName.Should().Be("Bob Sub");
+        result.Value![0].Children.Should().BeEmpty();
+        result.Value![1].Children.Should().BeEmpty();
+    }
+
+    [Fact]
+    public async Task GetSubordinatesAsync_WithRecursiveSubordinates_ReturnsMultipleLevels()
+    {
+        // Arrange
+        using var context = CreateInMemoryContext();
+        var (org, _, _) = await CreateTestHierarchy(context);
+
+        var leader = new Collaborator
+        {
+            Id = Guid.NewGuid(),
+            FullName = "Top Leader",
+            Email = "top@example.com",
+            Role = CollaboratorRole.Leader,
+            OrganizationId = org.Id
+        };
+
+        var midLeader = new Collaborator
+        {
+            Id = Guid.NewGuid(),
+            FullName = "Mid Leader",
+            Email = "mid@example.com",
+            Role = CollaboratorRole.Leader,
+            OrganizationId = org.Id,
+            LeaderId = leader.Id
+        };
+
+        var contributor = new Collaborator
+        {
+            Id = Guid.NewGuid(),
+            FullName = "Contributor",
+            Email = "contrib@example.com",
+            Role = CollaboratorRole.IndividualContributor,
+            OrganizationId = org.Id,
+            LeaderId = midLeader.Id
+        };
+
+        context.Collaborators.AddRange(leader, midLeader, contributor);
+        await context.SaveChangesAsync();
+
+        var service = new CollaboratorService(context, _tenantProvider);
+
+        // Act
+        var result = await service.GetSubordinatesAsync(leader.Id);
+
+        // Assert
+        result.IsSuccess.Should().BeTrue();
+        result.Value.Should().HaveCount(1);
+        result.Value![0].FullName.Should().Be("Mid Leader");
+        result.Value![0].Children.Should().HaveCount(1);
+        result.Value![0].Children[0].FullName.Should().Be("Contributor");
+        result.Value![0].Children[0].Children.Should().BeEmpty();
+    }
+
+    [Fact]
+    public async Task GetSubordinatesAsync_WithMaxDepthReached_StopsRecursion()
+    {
+        // Arrange
+        using var context = CreateInMemoryContext();
+        var (org, _, _) = await CreateTestHierarchy(context);
+
+        // Create a chain of 4 levels: L1 -> L2 -> L3 -> L4
+        var l1 = new Collaborator
+        {
+            Id = Guid.NewGuid(),
+            FullName = "Level 1",
+            Email = "l1@example.com",
+            Role = CollaboratorRole.Leader,
+            OrganizationId = org.Id
+        };
+
+        var l2 = new Collaborator
+        {
+            Id = Guid.NewGuid(),
+            FullName = "Level 2",
+            Email = "l2@example.com",
+            Role = CollaboratorRole.Leader,
+            OrganizationId = org.Id,
+            LeaderId = l1.Id
+        };
+
+        var l3 = new Collaborator
+        {
+            Id = Guid.NewGuid(),
+            FullName = "Level 3",
+            Email = "l3@example.com",
+            Role = CollaboratorRole.Leader,
+            OrganizationId = org.Id,
+            LeaderId = l2.Id
+        };
+
+        var l4 = new Collaborator
+        {
+            Id = Guid.NewGuid(),
+            FullName = "Level 4",
+            Email = "l4@example.com",
+            Role = CollaboratorRole.IndividualContributor,
+            OrganizationId = org.Id,
+            LeaderId = l3.Id
+        };
+
+        context.Collaborators.AddRange(l1, l2, l3, l4);
+        await context.SaveChangesAsync();
+
+        var service = new CollaboratorService(context, _tenantProvider);
+
+        // Act - maxDepth 2 means only 2 levels of children
+        var result = await service.GetSubordinatesAsync(l1.Id, maxDepth: 2);
+
+        // Assert
+        result.IsSuccess.Should().BeTrue();
+        result.Value.Should().HaveCount(1); // L2
+        result.Value![0].FullName.Should().Be("Level 2");
+        result.Value![0].Children.Should().HaveCount(1); // L3
+        result.Value![0].Children[0].FullName.Should().Be("Level 3");
+        result.Value![0].Children[0].Children.Should().BeEmpty(); // L4 is cut off at maxDepth
+    }
+
+    [Fact]
+    public async Task GetSubordinatesAsync_ReturnsChildrenOrderedByName()
+    {
+        // Arrange
+        using var context = CreateInMemoryContext();
+        var (org, _, _) = await CreateTestHierarchy(context);
+
+        var leader = new Collaborator
+        {
+            Id = Guid.NewGuid(),
+            FullName = "Leader",
+            Email = "leader@example.com",
+            Role = CollaboratorRole.Leader,
+            OrganizationId = org.Id
+        };
+
+        var zara = new Collaborator
+        {
+            Id = Guid.NewGuid(),
+            FullName = "Zara Last",
+            Email = "zara@example.com",
+            Role = CollaboratorRole.IndividualContributor,
+            OrganizationId = org.Id,
+            LeaderId = leader.Id
+        };
+
+        var alice = new Collaborator
+        {
+            Id = Guid.NewGuid(),
+            FullName = "Alice First",
+            Email = "alice@example.com",
+            Role = CollaboratorRole.IndividualContributor,
+            OrganizationId = org.Id,
+            LeaderId = leader.Id
+        };
+
+        context.Collaborators.AddRange(leader, zara, alice);
+        await context.SaveChangesAsync();
+
+        var service = new CollaboratorService(context, _tenantProvider);
+
+        // Act
+        var result = await service.GetSubordinatesAsync(leader.Id);
+
+        // Assert
+        result.IsSuccess.Should().BeTrue();
+        result.Value.Should().HaveCount(2);
+        result.Value![0].FullName.Should().Be("Alice First");
+        result.Value![1].FullName.Should().Be("Zara Last");
+    }
+
+    #endregion
+
     #region GetAvailableTeamsAsync Tests
 
     [Fact]

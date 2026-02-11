@@ -146,6 +146,20 @@ public sealed class CollaboratorsController(
     }
 
     /// <summary>
+    /// Lista subordinados (liderados) em hierarquia recursiva.
+    /// </summary>
+    /// <response code="200">Hierarquia retornada com sucesso.</response>
+    /// <response code="404">Colaborador não encontrado.</response>
+    [HttpGet("{id:guid}/subordinates")]
+    [ProducesResponseType(typeof(List<CollaboratorHierarchyNodeDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<List<CollaboratorHierarchyNodeDto>>> GetSubordinates(Guid id, CancellationToken cancellationToken)
+    {
+        var result = await collaboratorQueryUseCase.GetSubordinatesAsync(id, cancellationToken);
+        return FromResultOk(result);
+    }
+
+    /// <summary>
     /// Lista times associados ao colaborador.
     /// </summary>
     /// <response code="200">Lista retornada com sucesso.</response>

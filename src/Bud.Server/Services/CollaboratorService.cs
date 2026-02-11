@@ -235,6 +235,68 @@ public sealed class CollaboratorService(
         return ServiceResult<List<LeaderCollaboratorResponse>>.Success(leaders);
     }
 
+    public async Task<ServiceResult<List<CollaboratorHierarchyNodeDto>>> GetSubordinatesAsync(Guid collaboratorId, int maxDepth = 5, CancellationToken cancellationToken = default)
+    {
+        var collaborator = await dbContext.Collaborators
+            .AsNoTracking()
+            .FirstOrDefaultAsync(c => c.Id == collaboratorId, cancellationToken);
+
+        if (collaborator is null)
+        {
+            return ServiceResult<List<CollaboratorHierarchyNodeDto>>.NotFound("Colaborador não encontrado.");
+        }
+
+        var allSubordinates = await dbContext.Collaborators
+            .AsNoTracking()
+            .Where(c => c.LeaderId != null)
+            .ToListAsync(cancellationToken);
+
+        var childrenByLeader = allSubordinates
+            .GroupBy(c => c.LeaderId!.Value)
+            .ToDictionary(g => g.Key, g => g.OrderBy(c => c.FullName).ToList());
+
+        var tree = BuildSubordinateTree(childrenByLeader, collaboratorId, currentDepth: 0, maxDepth);
+
+        return ServiceResult<List<CollaboratorHierarchyNodeDto>>.Success(tree);
+    }
+
+    private static List<CollaboratorHierarchyNodeDto> BuildSubordinateTree(
+        Dictionary<Guid, List<Collaborator>> childrenByLeader,
+        Guid parentId,
+        int currentDepth,
+        int maxDepth)
+    {
+        if (currentDepth >= maxDepth || !childrenByLeader.TryGetValue(parentId, out var children))
+        {
+            return [];
+        }
+
+        return children.Select(c => new CollaboratorHierarchyNodeDto
+        {
+            Id = c.Id,
+            FullName = c.FullName,
+            Initials = GetInitials(c.FullName),
+            Role = c.Role == CollaboratorRole.Leader ? "Líder" : "Contribuidor individual",
+            Children = BuildSubordinateTree(childrenByLeader, c.Id, currentDepth + 1, maxDepth)
+        }).ToList();
+    }
+
+    private static string GetInitials(string fullName)
+    {
+        var parts = fullName.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+        if (parts.Length == 0)
+        {
+            return "?";
+        }
+
+        if (parts.Length == 1)
+        {
+            return parts[0][..1].ToUpperInvariant();
+        }
+
+        return $"{parts[0][..1]}{parts[^1][..1]}".ToUpperInvariant();
+    }
+
     public async Task<ServiceResult<List<TeamSummaryDto>>> GetTeamsAsync(Guid collaboratorId, CancellationToken cancellationToken = default)
     {
         var collaborator = await dbContext.Collaborators
