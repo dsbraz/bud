@@ -1,16 +1,16 @@
 <div class="form-row">
     <label>Nome completo</label>
-    <InputText class="input" @bind-Value="FullName" placeholder="Nome do colaborador" />
+    <InputText class="input" Value="@FullName" ValueChanged="OnFullNameChanged" ValueExpression="@(() => FullName)" placeholder="Nome do colaborador" />
     <ValidationMessage For="() => FullName" />
 </div>
 <div class="form-row">
     <label>E-mail</label>
-    <InputText class="input" @bind-Value="Email" type="email" placeholder="email@exemplo.com" />
+    <InputText class="input" Value="@Email" ValueChanged="OnEmailChanged" ValueExpression="@(() => Email)" type="email" placeholder="email@exemplo.com" />
     <ValidationMessage For="() => Email" />
 </div>
 <div class="form-row">
     <label>Perfil</label>
-    <InputSelect class="input" @bind-Value="Role">
+    <InputSelect class="input" TValue="CollaboratorRole" Value="@Role" ValueChanged="OnRoleChanged" ValueExpression="@(() => Role)">
         <option value="@CollaboratorRole.IndividualContributor">Contribuidor individual</option>
         <option value="@CollaboratorRole.Leader">Líder</option>
     </InputSelect>
@@ -75,6 +75,24 @@
     [Parameter] public EventCallback<string> OnAvailableTeamsSearch { get; set; }
 
     [Parameter] public bool ShowTeams { get; set; } = true;
+
+    private async Task OnFullNameChanged(string value)
+    {
+        FullName = value;
+        await FullNameChanged.InvokeAsync(value);
+    }
+
+    private async Task OnEmailChanged(string value)
+    {
+        Email = value;
+        await EmailChanged.InvokeAsync(value);
+    }
+
+    private async Task OnRoleChanged(CollaboratorRole value)
+    {
+        Role = value;
+        await RoleChanged.InvokeAsync(value);
+    }
 
     private async Task OnLeaderChanged(ChangeEventArgs e)
     {

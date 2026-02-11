@@ -11,7 +11,11 @@ public static class UiErrorHandler
     {
         var context = string.IsNullOrWhiteSpace(operationContext) ? toastTitle : operationContext;
         Console.Error.WriteLine($"Erro HTTP ({context}): {exception.Message}");
-        toastService.ShowError(toastTitle, userMessage);
+
+        var displayMessage = !string.IsNullOrWhiteSpace(exception.Message)
+            ? exception.Message
+            : userMessage;
+        toastService.ShowError(toastTitle, displayMessage);
     }
 
     public static void HandleUnexpectedError(

@@ -7,7 +7,7 @@ namespace Bud.Client.Tests.Services;
 public sealed class UiErrorHandlerTests
 {
     [Fact]
-    public void HandleHttpError_ShouldPublishFallbackMessage()
+    public void HandleHttpError_ShouldPublishApiErrorMessage()
     {
         var toastService = new ToastService();
         ToastMessage? capturedToast = null;
@@ -17,7 +17,26 @@ public sealed class UiErrorHandlerTests
             toastService,
             "Erro ao criar equipe",
             "Não foi possível criar a equipe. Verifique os dados e tente novamente.",
-            new HttpRequestException("Detalhe técnico"));
+            new HttpRequestException("Apenas o proprietário da organização pode criar equipes."));
+
+        capturedToast.Should().NotBeNull();
+        capturedToast!.Title.Should().Be("Erro ao criar equipe");
+        capturedToast.Message.Should().Be("Apenas o proprietário da organização pode criar equipes.");
+        capturedToast.Type.Should().Be(ToastType.Error);
+    }
+
+    [Fact]
+    public void HandleHttpError_WhenExceptionMessageIsEmpty_ShouldPublishFallbackMessage()
+    {
+        var toastService = new ToastService();
+        ToastMessage? capturedToast = null;
+        toastService.OnToastAdded += toast => capturedToast = toast;
+
+        UiErrorHandler.HandleHttpError(
+            toastService,
+            "Erro ao criar equipe",
+            "Não foi possível criar a equipe. Verifique os dados e tente novamente.",
+            new HttpRequestException(""));
 
         capturedToast.Should().NotBeNull();
         capturedToast!.Title.Should().Be("Erro ao criar equipe");

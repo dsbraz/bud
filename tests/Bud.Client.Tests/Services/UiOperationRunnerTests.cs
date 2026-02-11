@@ -23,21 +23,21 @@ public sealed class UiOperationRunnerTests
     }
 
     [Fact]
-    public async Task RunAsync_WhenOperationThrowsHttpRequestException_ShouldShowConfiguredHttpErrorToast()
+    public async Task RunAsync_WhenOperationThrowsHttpRequestException_ShouldShowApiErrorMessage()
     {
         var toastService = new ToastService();
         ToastMessage? capturedToast = null;
         toastService.OnToastAdded += toast => capturedToast = toast;
 
         await UiOperationRunner.RunAsync(
-            operation: () => throw new HttpRequestException("falha técnica"),
+            operation: () => throw new HttpRequestException("Apenas o proprietário pode excluir o item."),
             toastService: toastService,
             httpErrorTitle: "Erro ao excluir",
             httpErrorMessage: "Não foi possível excluir o item.");
 
         capturedToast.Should().NotBeNull();
         capturedToast!.Title.Should().Be("Erro ao excluir");
-        capturedToast.Message.Should().Be("Não foi possível excluir o item.");
+        capturedToast.Message.Should().Be("Apenas o proprietário pode excluir o item.");
     }
 
     [Fact]
