@@ -1,4 +1,5 @@
 using Bud.Server.Application.Auth;
+using Bud.Server.Application.Dashboard;
 using Bud.Server.Application.Collaborators;
 using Bud.Server.Application.Collaborators.Events;
 using Bud.Server.Application.Common.Authorization;
@@ -112,6 +113,9 @@ public static class BudApplicationCompositionExtensions
         services.AddScoped<IMissionTemplateService, MissionTemplateService>();
         services.AddScoped<IMissionTemplateCommandUseCase, MissionTemplateCommandUseCase>();
         services.AddScoped<IMissionTemplateQueryUseCase, MissionTemplateQueryUseCase>();
+
+        services.AddScoped<IDashboardService, DashboardService>();
+        services.AddScoped<IDashboardQueryUseCase, DashboardQueryUseCase>();
 
         services.AddScoped<ITenantAuthorizationService, TenantAuthorizationService>();
         services.AddScoped<IOrganizationAuthorizationService, OrganizationAuthorizationService>();

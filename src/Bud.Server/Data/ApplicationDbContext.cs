@@ -32,6 +32,7 @@ public sealed class ApplicationDbContext : DbContext
     public DbSet<MetricCheckin> MetricCheckins => Set<MetricCheckin>();
     public DbSet<MissionTemplate> MissionTemplates => Set<MissionTemplate>();
     public DbSet<MissionTemplateMetric> MissionTemplateMetrics => Set<MissionTemplateMetric>();
+    public DbSet<CollaboratorAccessLog> CollaboratorAccessLogs => Set<CollaboratorAccessLog>();
     public DbSet<OutboxMessage> OutboxMessages => Set<OutboxMessage>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -346,6 +347,29 @@ public sealed class ApplicationDbContext : DbContext
                 !_applyTenantFilter ||
                 (_isGlobalAdmin && _tenantId == null) ||
                 (_tenantId != null && mtm.OrganizationId == _tenantId)
+            );
+
+        // CollaboratorAccessLog
+        modelBuilder.Entity<CollaboratorAccessLog>()
+            .HasOne(cal => cal.Organization)
+            .WithMany()
+            .HasForeignKey(cal => cal.OrganizationId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        modelBuilder.Entity<CollaboratorAccessLog>()
+            .HasOne(cal => cal.Collaborator)
+            .WithMany()
+            .HasForeignKey(cal => cal.CollaboratorId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        modelBuilder.Entity<CollaboratorAccessLog>()
+            .HasIndex(cal => new { cal.OrganizationId, cal.AccessedAt });
+
+        modelBuilder.Entity<CollaboratorAccessLog>()
+            .HasQueryFilter(cal =>
+                !_applyTenantFilter ||
+                (_isGlobalAdmin && _tenantId == null) ||
+                (_tenantId != null && cal.OrganizationId == _tenantId)
             );
 
         // Outbox

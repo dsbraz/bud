@@ -39,6 +39,20 @@ public static class JwtTestHelper
         return GenerateToken(claims);
     }
 
+    public static string GenerateTenantUserTokenWithoutCollaborator(
+        string email,
+        Guid organizationId)
+    {
+        var claims = new List<Claim>
+        {
+            new(ClaimTypes.Email, email),
+            new("email", email),
+            new("organization_id", organizationId.ToString())
+        };
+
+        return GenerateToken(claims);
+    }
+
     public static string GenerateUserTokenWithoutTenant(string email)
     {
         var claims = new List<Claim>

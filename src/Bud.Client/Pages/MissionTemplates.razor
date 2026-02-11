@@ -8,9 +8,9 @@
 
 <ManagementPageHeader
     Kicker="Configurações"
-    Title="Templates de Missão"
-    Subtitle="Gerencie templates de missão da organização."
-    PrimaryActionText="Novo template"
+    Title="Modelos de Missão"
+    Subtitle="Gerencie modelos de missão da organização."
+    PrimaryActionText="Novo modelo"
     OnPrimaryAction="OpenCreateModal" />
 
 @* Barra de Filtros *@
@@ -38,7 +38,7 @@
         <div class="filter-panel-row">
             <div class="filter-panel-field">
                 <label>Busca</label>
-                <InputText class="input" @bind-Value="search" @onkeyup="OnSearchKeyUp" placeholder="Buscar templates..." />
+                <InputText class="input" @bind-Value="search" @onkeyup="OnSearchKeyUp" placeholder="Buscar modelos..." />
             </div>
         </div>
     </div>
@@ -50,7 +50,7 @@
         IsLoading="@(templates is null)"
         IsEmpty="@(templates is not null && templates.Items.Count == 0)"
         Total="@(templates?.Total ?? 0)"
-        EmptyText="Nenhum template encontrado.">
+        EmptyText="Nenhum modelo encontrado.">
         <table class="table">
             <thead>
                 <tr>
@@ -77,10 +77,10 @@
                         <td style="text-align: center;">
                             <CrudRowActions
                                 StopPropagation="true"
-                                EditTitle="Editar template"
+                                EditTitle="Editar modelo"
                                 OnEdit="@(() => OpenEditModal(template))"
                                 IsDeleteConfirming="@isDeleting"
-                                DeleteTitle="Excluir template"
+                                DeleteTitle="Excluir modelo"
                                 OnDelete="@(() => HandleDeleteClick(template.Id))" />
                         </td>
                     </tr>
@@ -92,11 +92,11 @@
 
 @if (isModalOpen)
 {
-    <Modal Title="@(isEditing ? "Editar template" : "Criar template")" Size="lg" OnClose="CloseModal">
+    <Modal Title="@(isEditing ? "Editar modelo" : "Criar modelo")" Size="lg" OnClose="CloseModal">
         <ChildContent>
             @* Template Info *@
             <div class="mission-header">
-                <input type="text" class="mission-title-input" @bind="formName" placeholder="Nome do template" />
+                <input type="text" class="mission-title-input" @bind="formName" placeholder="Nome do modelo" />
                 <input type="text" class="mission-subtitle-input" @bind="formDescription" placeholder="Adicionar breve descrição" />
             </div>
 
@@ -240,8 +240,8 @@
         }
         catch (Exception ex)
         {
-            Console.Error.WriteLine($"Erro ao atualizar templates por troca de organização: {ex.Message}");
-            ToastService.ShowError("Erro ao atualizar templates", "Não foi possível atualizar os dados da organização selecionada.");
+            Console.Error.WriteLine($"Erro ao atualizar modelos por troca de organização: {ex.Message}");
+            ToastService.ShowError("Erro ao atualizar modelos", "Não foi possível atualizar os dados da organização selecionada.");
         }
     }
 
@@ -322,7 +322,7 @@
     {
         if (string.IsNullOrWhiteSpace(formName))
         {
-            ToastService.ShowError("Erro de validação", "Informe o nome do template.");
+            ToastService.ShowError("Erro de validação", "Informe o nome do modelo.");
             return;
         }
 
@@ -352,14 +352,14 @@
             {
                 await Api.CreateMissionTemplateAsync(request);
                 await LoadTemplates();
-                ToastService.ShowSuccess("Template criado com sucesso!", $"O template '{formName}' foi criado.");
+                ToastService.ShowSuccess("Modelo criado com sucesso!", $"O modelo '{formName}' foi criado.");
                 CloseModal();
             },
             ToastService,
-            "Erro ao criar template",
-            "Não foi possível criar o template. Verifique os dados e tente novamente.",
-            operationContext: "criação de template",
-            unexpectedErrorMessage: "Não foi possível criar o template. Tente novamente.");
+            "Erro ao criar modelo",
+            "Não foi possível criar o modelo. Verifique os dados e tente novamente.",
+            operationContext: "criação de modelo",
+            unexpectedErrorMessage: "Não foi possível criar o modelo. Tente novamente.");
     }
 
     private async Task UpdateTemplate()
@@ -381,14 +381,14 @@
             {
                 await Api.UpdateMissionTemplateAsync(editingTemplateId.Value, request);
                 await LoadTemplates();
-                ToastService.ShowSuccess("Template atualizado", "As alterações foram salvas com sucesso.");
+                ToastService.ShowSuccess("Modelo atualizado", "As alterações foram salvas com sucesso.");
                 CloseModal();
             },
             ToastService,
-            "Erro ao atualizar template",
-            "Não foi possível atualizar o template. Verifique os dados e tente novamente.",
-            operationContext: "atualização de template",
-            unexpectedErrorMessage: "Não foi possível atualizar o template. Tente novamente.");
+            "Erro ao atualizar modelo",
+            "Não foi possível atualizar o modelo. Verifique os dados e tente novamente.",
+            operationContext: "atualização de modelo",
+            unexpectedErrorMessage: "Não foi possível atualizar o modelo. Tente novamente.");
     }
 
     // Metric form methods
@@ -542,14 +542,14 @@
                 async () =>
                 {
                     await Api.DeleteMissionTemplateAsync(templateId);
-                    ToastService.ShowSuccess("Template excluído", "O template foi removido com sucesso.");
+                    ToastService.ShowSuccess("Modelo excluído", "O modelo foi removido com sucesso.");
                     await LoadTemplates();
                 },
                 ToastService,
                 "Erro ao excluir",
-                "Não foi possível excluir o template. Tente novamente.",
-                operationContext: "exclusão de template",
-                unexpectedErrorMessage: "Não foi possível excluir o template. Tente novamente.");
+                "Não foi possível excluir o modelo. Tente novamente.",
+                operationContext: "exclusão de modelo",
+                unexpectedErrorMessage: "Não foi possível excluir o modelo. Tente novamente.");
         }
         finally
         {

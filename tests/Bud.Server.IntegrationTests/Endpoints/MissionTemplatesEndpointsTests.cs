@@ -1,8 +1,11 @@
 using System.Net;
 using System.Net.Http.Json;
+using Bud.Server.Data;
 using Bud.Shared.Contracts;
 using Bud.Shared.Models;
 using FluentAssertions;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
 using Xunit;
 
 namespace Bud.Server.IntegrationTests.Endpoints;
@@ -16,6 +19,15 @@ public class MissionTemplatesEndpointsTests : IClassFixture<CustomWebApplication
     {
         _factory = factory;
         _client = factory.CreateGlobalAdminClient();
+
+        // Global admin needs X-Tenant-Id to allow the interceptor to set OrganizationId on new entities
+        using var scope = factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+        var orgId = db.Organizations.IgnoreQueryFilters()
+            .Where(o => o.Name == "getbud.co")
+            .Select(o => o.Id)
+            .First();
+        _client.DefaultRequestHeaders.Add("X-Tenant-Id", orgId.ToString());
     }
 
     private async Task<MissionTemplate> CreateTestTemplate()

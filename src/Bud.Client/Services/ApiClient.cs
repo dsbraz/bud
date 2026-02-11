@@ -317,15 +317,9 @@ public sealed class ApiClient
         return await response.Content.ReadFromJsonAsync<Mission>();
     }
 
-    public async Task<PagedResult<Mission>?> GetMyThingsAsync(
-        Guid collaboratorId,
-        string? search,
-        int page = 1,
-        int pageSize = 10)
+    public async Task<MyDashboardResponse?> GetMyDashboardAsync()
     {
-        (page, pageSize) = NormalizePagination(page, pageSize);
-        var url = $"api/missions/my-missions/{collaboratorId}?search={Uri.EscapeDataString(search ?? string.Empty)}&page={page}&pageSize={pageSize}";
-        return await _http.GetFromJsonAsync<PagedResult<Mission>>(url);
+        return await _http.GetFromJsonAsync<MyDashboardResponse>("api/dashboard/my-dashboard");
     }
 
     public async Task<PagedResult<MissionMetric>?> GetMissionMetricsAsync(Guid? missionId, string? search, int page = 1, int pageSize = 10)
