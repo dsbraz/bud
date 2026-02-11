@@ -97,7 +97,7 @@ Bud is an ASP.NET Core 10 application with a Blazor WebAssembly frontend, using 
 ## Project Structure
 
 - **Bud.Server** (`src/Bud.Server`): ASP.NET Core API hosting both the API endpoints and the Blazor WebAssembly app
-  - `Controllers/`: REST endpoints for organizations, workspaces, teams, collaborators, missions, outbox
+  - `Controllers/`: REST endpoints for organizations, workspaces, teams, collaborators, missions, notifications, outbox
   - `Application/`: use cases (`Command/Query`), abstractions (ports), pipeline behaviors, events
   - `Domain/`: domain events and domain-specific contracts
   - `Infrastructure/`: outbox processing, serialization, and background workers
@@ -241,7 +241,7 @@ The application uses **row-level tenant isolation** based on `OrganizationId`. E
 
 **How it works:**
 
-1. **`ITenantEntity`** — marker interface implemented by all tenant-scoped entities (`Workspace`, `Team`, `Collaborator`, `Mission`, `MissionMetric`). Requires a `Guid OrganizationId` property.
+1. **`ITenantEntity`** — marker interface implemented by all tenant-scoped entities (`Workspace`, `Team`, `Collaborator`, `Mission`, `MissionMetric`, `Notification`). Requires a `Guid OrganizationId` property.
 
 2. **`ITenantProvider` / `JwtTenantProvider`** — scoped service that reads user information from validated JWT claims. Determines `TenantId` (from `X-Tenant-Id` header or `organization_id` claim), `CollaboratorId`, and `IsGlobalAdmin` (from `GlobalAdmin` role claim). Optionally accepts `X-Tenant-Id` header for multi-organization users.
 
@@ -265,7 +265,7 @@ The application uses **row-level tenant isolation** based on `OrganizationId`. E
 
 **Key design decisions:**
 
-- `OrganizationId` is **denormalized** into `Team`, `Collaborator`, `Mission`, and `MissionMetric` for efficient query filtering without joins
+- `OrganizationId` is **denormalized** into `Team`, `Collaborator`, `Mission`, `MissionMetric`, and `Notification` for efficient query filtering without joins
 - `Mission.OrganizationId` is **non-nullable** (always set as tenant discriminator). Mission scope level is determined by which of `WorkspaceId`/`TeamId`/`CollaboratorId` is set; if none are set, the mission is org-scoped
 - Services must populate `OrganizationId` when creating entities (resolved from the parent entity in the hierarchy)
 
@@ -577,5 +577,7 @@ The `docker-compose.yml` configures:
 - **Authentication:** [AuthService.cs](src/Bud.Server/Services/AuthService.cs)
 - **Multi-tenancy (frontend):** [OrganizationContext.cs](src/Bud.Client/Services/OrganizationContext.cs), [MainLayout.razor](src/Bud.Client/Layout/MainLayout.razor), [TenantDelegatingHandler.cs](src/Bud.Client/Services/TenantDelegatingHandler.cs)
 - **Tenant entity marker:** [ITenantEntity.cs](src/Bud.Shared/Models/ITenantEntity.cs)
+- **Notification controller:** [NotificationsController.cs](src/Bud.Server/Controllers/NotificationsController.cs)
+- **Notification service port:** [INotificationService.cs](src/Bud.Server/Application/Abstractions/INotificationService.cs)
 - **MCP entrypoint:** [Program.cs](src/Bud.Mcp/Program.cs)
 - **MCP tools:** [McpToolService.cs](src/Bud.Mcp/Tools/McpToolService.cs)

@@ -25,6 +25,7 @@ A ordem abaixo vai das decisões mais abrangentes para as mais específicas:
 10. `ADR-0010` - Governança por testes de arquitetura
 11. `ADR-0011` - Servidor MCP sidecar para missões, métricas e check-ins
 12. `ADR-0012` - Estratégia de logging estruturado com LoggerMessage e observabilidade de Outbox
+13. `ADR-0013` - Sistema de notificações via domain events
 
 ## Status possíveis
 

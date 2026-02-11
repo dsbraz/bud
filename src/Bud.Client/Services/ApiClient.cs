@@ -689,6 +689,41 @@ public sealed class ApiClient
         return await _http.GetFromJsonAsync<List<CollaboratorSummaryDto>>(url);
     }
 
+    // Notification methods
+    public async Task<PagedResult<NotificationDto>?> GetNotificationsAsync(int page = 1, int pageSize = 20)
+    {
+        (page, pageSize) = NormalizePagination(page, pageSize);
+        var url = $"api/notifications?page={page}&pageSize={pageSize}";
+        return await _http.GetFromJsonAsync<PagedResult<NotificationDto>>(url);
+    }
+
+    public async Task<UnreadCountResponse?> GetNotificationUnreadCountAsync()
+    {
+        return await _http.GetFromJsonAsync<UnreadCountResponse>("api/notifications/unread-count");
+    }
+
+    public async Task MarkNotificationAsReadAsync(Guid id)
+    {
+        var response = await _http.PutAsync($"api/notifications/{id}/read", null);
+
+        if (!response.IsSuccessStatusCode)
+        {
+            var errorMessage = await ExtractErrorMessageAsync(response);
+            throw new HttpRequestException(errorMessage);
+        }
+    }
+
+    public async Task MarkAllNotificationsAsReadAsync()
+    {
+        var response = await _http.PutAsync("api/notifications/read-all", null);
+
+        if (!response.IsSuccessStatusCode)
+        {
+            var errorMessage = await ExtractErrorMessageAsync(response);
+            throw new HttpRequestException(errorMessage);
+        }
+    }
+
     private static (int Page, int PageSize) NormalizePagination(int page, int pageSize)
     {
         var normalizedPage = Math.Max(1, page);

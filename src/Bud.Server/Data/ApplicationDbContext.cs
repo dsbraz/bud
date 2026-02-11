@@ -33,6 +33,7 @@ public sealed class ApplicationDbContext : DbContext
     public DbSet<MissionTemplate> MissionTemplates => Set<MissionTemplate>();
     public DbSet<MissionTemplateMetric> MissionTemplateMetrics => Set<MissionTemplateMetric>();
     public DbSet<CollaboratorAccessLog> CollaboratorAccessLogs => Set<CollaboratorAccessLog>();
+    public DbSet<Notification> Notifications => Set<Notification>();
     public DbSet<OutboxMessage> OutboxMessages => Set<OutboxMessage>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -370,6 +371,44 @@ public sealed class ApplicationDbContext : DbContext
                 !_applyTenantFilter ||
                 (_isGlobalAdmin && _tenantId == null) ||
                 (_tenantId != null && cal.OrganizationId == _tenantId)
+            );
+
+        // Notification
+        modelBuilder.Entity<Notification>()
+            .Property(n => n.Title)
+            .HasMaxLength(200);
+
+        modelBuilder.Entity<Notification>()
+            .Property(n => n.Message)
+            .HasMaxLength(1000);
+
+        modelBuilder.Entity<Notification>()
+            .Property(n => n.RelatedEntityType)
+            .HasMaxLength(100);
+
+        modelBuilder.Entity<Notification>()
+            .HasOne(n => n.Organization)
+            .WithMany()
+            .HasForeignKey(n => n.OrganizationId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        modelBuilder.Entity<Notification>()
+            .HasOne(n => n.RecipientCollaborator)
+            .WithMany()
+            .HasForeignKey(n => n.RecipientCollaboratorId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        modelBuilder.Entity<Notification>()
+            .HasIndex(n => n.OrganizationId);
+
+        modelBuilder.Entity<Notification>()
+            .HasIndex(n => new { n.RecipientCollaboratorId, n.IsRead, n.CreatedAtUtc });
+
+        modelBuilder.Entity<Notification>()
+            .HasQueryFilter(n =>
+                !_applyTenantFilter ||
+                (_isGlobalAdmin && _tenantId == null) ||
+                (_tenantId != null && n.OrganizationId == _tenantId)
             );
 
         // Outbox

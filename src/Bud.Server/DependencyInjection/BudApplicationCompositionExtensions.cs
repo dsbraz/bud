@@ -14,6 +14,8 @@ using Bud.Server.Application.Missions;
 using Bud.Server.Application.Missions.Events;
 using Bud.Server.Application.MissionTemplates;
 using Bud.Server.Application.MissionTemplates.Events;
+using Bud.Server.Application.Notifications;
+using Bud.Server.Application.Notifications.Events;
 using Bud.Server.Application.Organizations;
 using Bud.Server.Application.Organizations.Events;
 using Bud.Server.Application.Outbox;
@@ -23,6 +25,7 @@ using Bud.Server.Application.Workspaces;
 using Bud.Server.Application.Workspaces.Events;
 using Bud.Server.Authorization;
 using Bud.Server.Data;
+using Bud.Server.Application.Abstractions;
 using Bud.Server.Domain.Collaborators.Events;
 using Bud.Server.Domain.MetricCheckins.Events;
 using Bud.Server.Domain.MissionMetrics.Events;
@@ -121,6 +124,16 @@ public static class BudApplicationCompositionExtensions
         services.AddScoped<IOrganizationAuthorizationService, OrganizationAuthorizationService>();
         services.AddScoped<IMissionProgressService, MissionProgressService>();
         services.AddScoped<IMissionScopeResolver, MissionScopeResolver>();
+
+        services.AddScoped<INotificationService, NotificationService>();
+        services.AddScoped<INotificationRecipientResolver, NotificationRecipientResolver>();
+        services.AddScoped<INotificationQueryUseCase, NotificationQueryUseCase>();
+        services.AddScoped<INotificationCommandUseCase, NotificationCommandUseCase>();
+
+        services.AddScoped<IDomainEventSubscriber<MissionCreatedDomainEvent>, MissionCreatedNotificationHandler>();
+        services.AddScoped<IDomainEventSubscriber<MissionUpdatedDomainEvent>, MissionUpdatedNotificationHandler>();
+        services.AddScoped<IDomainEventSubscriber<MissionDeletedDomainEvent>, MissionDeletedNotificationHandler>();
+        services.AddScoped<IDomainEventSubscriber<MetricCheckinCreatedDomainEvent>, MetricCheckinCreatedNotificationHandler>();
 
         return services;
     }
