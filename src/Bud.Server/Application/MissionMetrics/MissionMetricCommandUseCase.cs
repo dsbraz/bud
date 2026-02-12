@@ -1,4 +1,5 @@
 using System.Security.Claims;
+using Bud.Server.Application.Abstractions;
 using Bud.Server.Application.Common.Authorization;
 using Bud.Server.Application.Common.Events;
 using Bud.Server.Application.Common.Pipeline;
@@ -10,7 +11,7 @@ using Bud.Shared.Models;
 namespace Bud.Server.Application.MissionMetrics;
 
 public sealed class MissionMetricCommandUseCase(
-    IMissionMetricService metricService,
+    IMissionMetricCommandService metricService,
     IApplicationAuthorizationGateway authorizationGateway,
     IApplicationEntityLookup entityLookup,
     IUseCasePipeline? useCasePipeline = null,

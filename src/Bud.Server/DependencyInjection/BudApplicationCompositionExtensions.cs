@@ -82,26 +82,39 @@ public static class BudApplicationCompositionExtensions
         services.AddScoped<IOrganizationQueryUseCase, OrganizationQueryUseCase>();
 
         services.AddScoped<IWorkspaceService, WorkspaceService>();
+        services.AddScoped<IWorkspaceCommandService>(sp => sp.GetRequiredService<IWorkspaceService>());
+        services.AddScoped<IWorkspaceQueryService>(sp => sp.GetRequiredService<IWorkspaceService>());
         services.AddScoped<IWorkspaceCommandUseCase, WorkspaceCommandUseCase>();
         services.AddScoped<IWorkspaceQueryUseCase, WorkspaceQueryUseCase>();
 
         services.AddScoped<ITeamService, TeamService>();
+        services.AddScoped<ITeamCommandService>(sp => sp.GetRequiredService<ITeamService>());
+        services.AddScoped<ITeamQueryService>(sp => sp.GetRequiredService<ITeamService>());
         services.AddScoped<ITeamCommandUseCase, TeamCommandUseCase>();
         services.AddScoped<ITeamQueryUseCase, TeamQueryUseCase>();
 
         services.AddScoped<ICollaboratorService, CollaboratorService>();
+        services.AddScoped<ICollaboratorCommandService>(sp => sp.GetRequiredService<ICollaboratorService>());
+        services.AddScoped<ICollaboratorQueryService>(sp => sp.GetRequiredService<ICollaboratorService>());
+        services.AddScoped<ICollaboratorValidationService, CollaboratorValidationService>();
         services.AddScoped<ICollaboratorCommandUseCase, CollaboratorCommandUseCase>();
         services.AddScoped<ICollaboratorQueryUseCase, CollaboratorQueryUseCase>();
 
         services.AddScoped<IMissionService, MissionService>();
+        services.AddScoped<IMissionCommandService>(sp => sp.GetRequiredService<IMissionService>());
+        services.AddScoped<IMissionQueryService>(sp => sp.GetRequiredService<IMissionService>());
         services.AddScoped<IMissionCommandUseCase, MissionCommandUseCase>();
         services.AddScoped<IMissionQueryUseCase, MissionQueryUseCase>();
 
         services.AddScoped<IMissionMetricService, MissionMetricService>();
+        services.AddScoped<IMissionMetricCommandService>(sp => sp.GetRequiredService<IMissionMetricService>());
+        services.AddScoped<IMissionMetricQueryService>(sp => sp.GetRequiredService<IMissionMetricService>());
         services.AddScoped<IMissionMetricCommandUseCase, MissionMetricCommandUseCase>();
         services.AddScoped<IMissionMetricQueryUseCase, MissionMetricQueryUseCase>();
 
         services.AddScoped<IMetricCheckinService, MetricCheckinService>();
+        services.AddScoped<IMetricCheckinCommandService>(sp => sp.GetRequiredService<IMetricCheckinService>());
+        services.AddScoped<IMetricCheckinQueryService>(sp => sp.GetRequiredService<IMetricCheckinService>());
         services.AddScoped<IMetricCheckinCommandUseCase, MetricCheckinCommandUseCase>();
         services.AddScoped<IMetricCheckinQueryUseCase, MetricCheckinQueryUseCase>();
 

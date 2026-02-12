@@ -129,6 +129,44 @@ public class AuthServiceTests
     }
 
     [Fact]
+    public async Task Login_WithExistingCollaborator_RegistersAccessLog()
+    {
+        // Arrange
+        using var context = CreateInMemoryContext();
+        var service = new AuthService(context, Options.Create(new GlobalAdminSettings { Email = "admin@getbud.co" }), _configuration);
+
+        var org = new Organization { Id = Guid.NewGuid(), Name = "Test Org" };
+        var workspace = new Workspace { Id = Guid.NewGuid(), Name = "Test Workspace", OrganizationId = org.Id };
+        var team = new Team { Id = Guid.NewGuid(), Name = "Test Team", OrganizationId = org.Id, WorkspaceId = workspace.Id };
+        var collaborator = new Collaborator
+        {
+            Id = Guid.NewGuid(),
+            FullName = "Jane Doe",
+            Email = "jane.doe@example.com",
+            Role = CollaboratorRole.IndividualContributor,
+            OrganizationId = org.Id,
+            TeamId = team.Id
+        };
+
+        context.Organizations.Add(org);
+        context.Workspaces.Add(workspace);
+        context.Teams.Add(team);
+        context.Collaborators.Add(collaborator);
+        await context.SaveChangesAsync();
+
+        // Act
+        var result = await service.LoginAsync(new AuthLoginRequest { Email = collaborator.Email });
+
+        // Assert
+        result.IsSuccess.Should().BeTrue();
+        var accessLogs = await context.CollaboratorAccessLogs.ToListAsync();
+        accessLogs.Should().ContainSingle();
+        accessLogs[0].CollaboratorId.Should().Be(collaborator.Id);
+        accessLogs[0].OrganizationId.Should().Be(org.Id);
+        accessLogs[0].AccessedAt.Should().BeCloseTo(DateTime.UtcNow, TimeSpan.FromSeconds(10));
+    }
+
+    [Fact]
     public async Task Login_WithNonExistentEmail_ReturnsNotFound()
     {
         // Arrange

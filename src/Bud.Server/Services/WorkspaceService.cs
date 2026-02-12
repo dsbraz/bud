@@ -1,4 +1,5 @@
 using Bud.Server.Data;
+using Bud.Server.Domain.Common.Specifications;
 using Bud.Shared.Contracts;
 using Bud.Shared.Models;
 using Microsoft.EntityFrameworkCore;
@@ -10,33 +11,36 @@ public sealed class WorkspaceService(
 {
     public async Task<ServiceResult<Workspace>> CreateAsync(CreateWorkspaceRequest request, CancellationToken cancellationToken = default)
     {
-        var organizationExists = await dbContext.Organizations
-            .AnyAsync(o => o.Id == request.OrganizationId, cancellationToken);
-
-        if (!organizationExists)
+        try
         {
-            return ServiceResult<Workspace>.NotFound("Organização não encontrada.");
+            var organizationExists = await dbContext.Organizations
+                .AnyAsync(o => o.Id == request.OrganizationId, cancellationToken);
+
+            if (!organizationExists)
+            {
+                return ServiceResult<Workspace>.NotFound("Organização não encontrada.");
+            }
+
+            var normalizedName = request.Name.Trim();
+            var nameExists = await dbContext.Workspaces
+                .AnyAsync(w => w.OrganizationId == request.OrganizationId && w.Name == normalizedName, cancellationToken);
+
+            if (nameExists)
+            {
+                return ServiceResult<Workspace>.Failure("Já existe um workspace com este nome nesta organização.", ServiceErrorType.Conflict);
+            }
+
+            var workspace = Workspace.Create(Guid.NewGuid(), request.OrganizationId, request.Name);
+
+            dbContext.Workspaces.Add(workspace);
+            await dbContext.SaveChangesAsync(cancellationToken);
+
+            return ServiceResult<Workspace>.Success(workspace);
         }
-
-        var nameExists = await dbContext.Workspaces
-            .AnyAsync(w => w.OrganizationId == request.OrganizationId && w.Name == request.Name.Trim(), cancellationToken);
-
-        if (nameExists)
+        catch (DomainInvariantException ex)
         {
-            return ServiceResult<Workspace>.Failure("Já existe um workspace com este nome nesta organização.", ServiceErrorType.Conflict);
+            return ServiceResult<Workspace>.Failure(ex.Message, ServiceErrorType.Validation);
         }
-
-        var workspace = new Workspace
-        {
-            Id = Guid.NewGuid(),
-            Name = request.Name.Trim(),
-            OrganizationId = request.OrganizationId,
-        };
-
-        dbContext.Workspaces.Add(workspace);
-        await dbContext.SaveChangesAsync(cancellationToken);
-
-        return ServiceResult<Workspace>.Success(workspace);
     }
 
     public async Task<ServiceResult<Workspace>> UpdateAsync(Guid id, UpdateWorkspaceRequest request, CancellationToken cancellationToken = default)
@@ -48,18 +52,26 @@ public sealed class WorkspaceService(
             return ServiceResult<Workspace>.NotFound("Workspace não encontrado.");
         }
 
-        var nameExists = await dbContext.Workspaces
-            .AnyAsync(w => w.OrganizationId == workspace.OrganizationId && w.Name == request.Name.Trim() && w.Id != id, cancellationToken);
-
-        if (nameExists)
+        try
         {
-            return ServiceResult<Workspace>.Failure("Já existe um workspace com este nome nesta organização.", ServiceErrorType.Conflict);
+            var normalizedName = request.Name.Trim();
+            var nameExists = await dbContext.Workspaces
+                .AnyAsync(w => w.OrganizationId == workspace.OrganizationId && w.Name == normalizedName && w.Id != id, cancellationToken);
+
+            if (nameExists)
+            {
+                return ServiceResult<Workspace>.Failure("Já existe um workspace com este nome nesta organização.", ServiceErrorType.Conflict);
+            }
+
+            workspace.Rename(request.Name);
+            await dbContext.SaveChangesAsync(cancellationToken);
+
+            return ServiceResult<Workspace>.Success(workspace);
         }
-
-        workspace.Name = request.Name.Trim();
-        await dbContext.SaveChangesAsync(cancellationToken);
-
-        return ServiceResult<Workspace>.Success(workspace);
+        catch (DomainInvariantException ex)
+        {
+            return ServiceResult<Workspace>.Failure(ex.Message, ServiceErrorType.Validation);
+        }
     }
 
     public async Task<ServiceResult> DeleteAsync(Guid id, CancellationToken cancellationToken = default)
@@ -102,7 +114,7 @@ public sealed class WorkspaceService(
             query = query.Where(w => w.OrganizationId == organizationId.Value);
         }
 
-        query = ApplyWorkspaceNameSearch(query, search);
+        query = new WorkspaceSearchSpecification(search, dbContext.Database.IsNpgsql()).Apply(query);
 
         var total = await query.CountAsync(cancellationToken);
         var items = await query
@@ -157,13 +169,4 @@ public sealed class WorkspaceService(
         return ServiceResult<PagedResult<Team>>.Success(result);
     }
 
-    private IQueryable<Workspace> ApplyWorkspaceNameSearch(IQueryable<Workspace> query, string? search)
-    {
-        return SearchQueryHelper.ApplyCaseInsensitiveSearch(
-            query,
-            search,
-            dbContext.Database.IsNpgsql(),
-            (q, pattern) => q.Where(w => EF.Functions.ILike(w.Name, pattern)),
-            (q, term) => q.Where(w => w.Name.Contains(term, StringComparison.OrdinalIgnoreCase)));
-    }
 }

@@ -1,9 +1,10 @@
+using Bud.Server.Application.Abstractions;
 using Bud.Shared.Contracts;
 using Bud.Shared.Models;
 
 namespace Bud.Server.Application.Collaborators;
 
-public sealed class CollaboratorQueryUseCase(ICollaboratorService collaboratorService) : ICollaboratorQueryUseCase
+public sealed class CollaboratorQueryUseCase(ICollaboratorQueryService collaboratorService) : ICollaboratorQueryUseCase
 {
     public Task<ServiceResult<Collaborator>> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
         => collaboratorService.GetByIdAsync(id, cancellationToken);

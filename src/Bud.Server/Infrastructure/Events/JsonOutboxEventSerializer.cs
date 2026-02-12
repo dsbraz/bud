@@ -10,8 +10,10 @@ public sealed class JsonOutboxEventSerializer : IOutboxEventSerializer
 
     public (string EventType, string Payload) Serialize(IDomainEvent domainEvent)
     {
-        var eventType = domainEvent.GetType().AssemblyQualifiedName
+        var eventTypeName = domainEvent.GetType().AssemblyQualifiedName
             ?? throw new InvalidOperationException("Tipo do evento de domínio inválido para serialização.");
+        var version = DomainEventVersionResolver.Resolve(domainEvent);
+        var eventType = DomainEventVersionResolver.AppendVersion(eventTypeName, version);
 
         var payload = JsonSerializer.Serialize(domainEvent, domainEvent.GetType(), SerializerOptions);
         return (eventType, payload);
@@ -19,7 +21,8 @@ public sealed class JsonOutboxEventSerializer : IOutboxEventSerializer
 
     public IDomainEvent Deserialize(string eventType, string payload)
     {
-        var type = Type.GetType(eventType, throwOnError: false)
+        var (eventTypeName, _) = DomainEventVersionResolver.Parse(eventType);
+        var type = Type.GetType(eventTypeName, throwOnError: false)
             ?? throw new InvalidOperationException($"Tipo de evento '{eventType}' não pôde ser resolvido.");
 
         if (!typeof(IDomainEvent).IsAssignableFrom(type))

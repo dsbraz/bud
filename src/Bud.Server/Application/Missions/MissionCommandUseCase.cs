@@ -1,4 +1,5 @@
 using System.Security.Claims;
+using Bud.Server.Application.Abstractions;
 using Bud.Server.Application.Common.Authorization;
 using Bud.Server.Application.Common.Events;
 using Bud.Server.Application.Common.Pipeline;
@@ -10,7 +11,7 @@ using Bud.Shared.Models;
 namespace Bud.Server.Application.Missions;
 
 public sealed class MissionCommandUseCase(
-    IMissionService missionService,
+    IMissionCommandService missionService,
     IMissionScopeResolver missionScopeResolver,
     IApplicationAuthorizationGateway authorizationGateway,
     IApplicationEntityLookup entityLookup,

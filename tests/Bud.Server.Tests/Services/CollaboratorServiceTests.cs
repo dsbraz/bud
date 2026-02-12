@@ -204,6 +204,33 @@ public class CollaboratorServiceTests
         result.Value!.FullName.Should().Be("New Collaborator");
     }
 
+    [Fact]
+    public async Task CreateCollaborator_WithInvalidPersonName_ReturnsValidationError()
+    {
+        // Arrange
+        _tenantProvider.IsGlobalAdmin = true;
+        using var context = CreateInMemoryContext();
+        var (org, _, team) = await CreateTestHierarchy(context);
+        _tenantProvider.TenantId = org.Id;
+
+        var service = new CollaboratorService(context, _tenantProvider);
+        var request = new CreateCollaboratorRequest
+        {
+            FullName = "A",
+            Email = "valid@test.com",
+            Role = CollaboratorRole.IndividualContributor,
+            TeamId = team.Id
+        };
+
+        // Act
+        var result = await service.CreateAsync(request);
+
+        // Assert
+        result.IsSuccess.Should().BeFalse();
+        result.ErrorType.Should().Be(ServiceErrorType.Validation);
+        result.Error.Should().Be("O nome do colaborador é obrigatório.");
+    }
+
     #endregion
 
     #region GetTeamsAsync Tests

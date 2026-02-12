@@ -1,8 +1,8 @@
 using System.Security.Claims;
 using Bud.Server.Application.Common.Authorization;
 using Bud.Server.Application.Common.ReadModel;
+using Bud.Server.Application.Abstractions;
 using Bud.Server.Application.Missions;
-using Bud.Server.Services;
 using Bud.Shared.Contracts;
 using Bud.Shared.Models;
 using FluentAssertions;
@@ -18,7 +18,7 @@ public sealed class MissionCommandUseCaseTests
     [Fact]
     public async Task CreateAsync_WhenScopeResolutionFails_ReturnsNotFound()
     {
-        var missionService = new Mock<IMissionService>(MockBehavior.Strict);
+        var missionService = new Mock<IMissionCommandService>(MockBehavior.Strict);
         var scopeResolver = new Mock<IMissionScopeResolver>();
         scopeResolver.Setup(s => s.ResolveScopeOrganizationIdAsync(
                 MissionScopeType.Organization,
@@ -58,7 +58,7 @@ public sealed class MissionCommandUseCaseTests
     public async Task CreateAsync_WhenUnauthorized_ReturnsForbidden()
     {
         var orgId = Guid.NewGuid();
-        var missionService = new Mock<IMissionService>(MockBehavior.Strict);
+        var missionService = new Mock<IMissionCommandService>(MockBehavior.Strict);
         var scopeResolver = new Mock<IMissionScopeResolver>();
         scopeResolver.Setup(s => s.ResolveScopeOrganizationIdAsync(
                 MissionScopeType.Organization,
@@ -99,7 +99,7 @@ public sealed class MissionCommandUseCaseTests
     [Fact]
     public async Task UpdateAsync_WhenMissionNotFound_ReturnsNotFound()
     {
-        var missionService = new Mock<IMissionService>(MockBehavior.Strict);
+        var missionService = new Mock<IMissionCommandService>(MockBehavior.Strict);
         var scopeResolver = new Mock<IMissionScopeResolver>(MockBehavior.Strict);
         var authorizationGateway = new Mock<IApplicationAuthorizationGateway>(MockBehavior.Strict);
         var entityLookup = new Mock<IApplicationEntityLookup>();
@@ -142,7 +142,7 @@ public sealed class MissionCommandUseCaseTests
             OrganizationId = Guid.NewGuid()
         };
 
-        var missionService = new Mock<IMissionService>(MockBehavior.Strict);
+        var missionService = new Mock<IMissionCommandService>(MockBehavior.Strict);
         var scopeResolver = new Mock<IMissionScopeResolver>(MockBehavior.Strict);
         var authorizationGateway = new Mock<IApplicationAuthorizationGateway>();
         authorizationGateway
@@ -182,7 +182,7 @@ public sealed class MissionCommandUseCaseTests
             Status = MissionStatus.Planned
         };
 
-        var missionService = new Mock<IMissionService>();
+        var missionService = new Mock<IMissionCommandService>();
         missionService
             .Setup(s => s.CreateAsync(It.IsAny<CreateMissionRequest>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(ServiceResult<Mission>.Success(createdMission));
@@ -253,7 +253,7 @@ public sealed class MissionCommandUseCaseTests
             Status = MissionStatus.Active
         };
 
-        var missionService = new Mock<IMissionService>();
+        var missionService = new Mock<IMissionCommandService>();
         missionService
             .Setup(s => s.UpdateAsync(mission.Id, request, It.IsAny<CancellationToken>()))
             .ReturnsAsync(ServiceResult<Mission>.Success(new Mission
@@ -308,7 +308,7 @@ public sealed class MissionCommandUseCaseTests
             Status = MissionStatus.Active
         };
 
-        var missionService = new Mock<IMissionService>();
+        var missionService = new Mock<IMissionCommandService>();
         missionService
             .Setup(s => s.DeleteAsync(mission.Id, It.IsAny<CancellationToken>()))
             .ReturnsAsync(ServiceResult.Success());

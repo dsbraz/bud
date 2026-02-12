@@ -40,4 +40,21 @@ public sealed class InMemoryMcpSessionStoreTests
 
         existing.Should().BeNull();
     }
+
+    [Fact]
+    public async Task GetOrCreateAsync_WithSameSessionIdInParallel_ReusesSameContext()
+    {
+        var options = new BudMcpOptions("http://bud.test", null, null, 30, 30);
+        using var store = new InMemoryMcpSessionStore(options);
+        var created = await store.GetOrCreateAsync(null);
+
+        var tasks = Enumerable.Range(0, 10)
+            .Select(_ => store.GetOrCreateAsync(created.Context.SessionId))
+            .ToArray();
+
+        var results = await Task.WhenAll(tasks);
+
+        results.Should().OnlyContain(r => !r.Created);
+        results.Select(r => r.Context).Should().OnlyContain(context => ReferenceEquals(context, created.Context));
+    }
 }

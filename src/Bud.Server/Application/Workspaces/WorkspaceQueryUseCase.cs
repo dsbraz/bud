@@ -1,9 +1,10 @@
+using Bud.Server.Application.Abstractions;
 using Bud.Shared.Contracts;
 using Bud.Shared.Models;
 
 namespace Bud.Server.Application.Workspaces;
 
-public sealed class WorkspaceQueryUseCase(IWorkspaceService workspaceService) : IWorkspaceQueryUseCase
+public sealed class WorkspaceQueryUseCase(IWorkspaceQueryService workspaceService) : IWorkspaceQueryUseCase
 {
     public Task<ServiceResult<Workspace>> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
         => workspaceService.GetByIdAsync(id, cancellationToken);

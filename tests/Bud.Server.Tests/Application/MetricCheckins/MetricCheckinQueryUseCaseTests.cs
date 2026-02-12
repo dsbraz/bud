@@ -1,5 +1,5 @@
+using Bud.Server.Application.Abstractions;
 using Bud.Server.Application.MetricCheckins;
-using Bud.Server.Services;
 using Bud.Shared.Contracts;
 using Bud.Shared.Models;
 using FluentAssertions;
@@ -15,7 +15,7 @@ public sealed class MetricCheckinQueryUseCaseTests
     {
         // Arrange
         var checkinId = Guid.NewGuid();
-        var checkinService = new Mock<IMetricCheckinService>();
+        var checkinService = new Mock<IMetricCheckinQueryService>();
         checkinService
             .Setup(s => s.GetByIdAsync(checkinId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(ServiceResult<MetricCheckin>.Success(new MetricCheckin
@@ -42,7 +42,7 @@ public sealed class MetricCheckinQueryUseCaseTests
     public async Task GetAllAsync_DelegatesToService()
     {
         // Arrange
-        var checkinService = new Mock<IMetricCheckinService>();
+        var checkinService = new Mock<IMetricCheckinQueryService>();
         checkinService
             .Setup(s => s.GetAllAsync(
                 It.IsAny<Guid?>(),

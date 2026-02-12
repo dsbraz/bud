@@ -1,21 +1,16 @@
-using Bud.Server.Data;
-using Bud.Server.MultiTenancy;
+using Bud.Server.Application.Abstractions;
 using Bud.Shared.Contracts;
-using Bud.Shared.Models;
 using FluentValidation;
-using Microsoft.EntityFrameworkCore;
 
 namespace Bud.Server.Validators;
 
 public sealed class CreateCollaboratorValidator : AbstractValidator<CreateCollaboratorRequest>
 {
-    private readonly ApplicationDbContext _context;
-    private readonly ITenantProvider _tenantProvider;
+    private readonly ICollaboratorValidationService _validationService;
 
-    public CreateCollaboratorValidator(ApplicationDbContext context, ITenantProvider tenantProvider)
+    public CreateCollaboratorValidator(ICollaboratorValidationService validationService)
     {
-        _context = context;
-        _tenantProvider = tenantProvider;
+        _validationService = validationService;
 
         RuleFor(x => x.FullName)
             .NotEmpty().WithMessage("Nome completo é obrigatório.")
@@ -37,58 +32,27 @@ public sealed class CreateCollaboratorValidator : AbstractValidator<CreateCollab
 
     private async Task<bool> BeUniqueEmail(string email, CancellationToken cancellationToken)
     {
-        if (string.IsNullOrWhiteSpace(email))
-        {
-            return true;
-        }
-
-#pragma warning disable CA1304, CA1311
-        var normalizedEmail = email.ToLower();
-#pragma warning restore CA1304, CA1311
-#pragma warning disable CA1304, CA1311, CA1862
-        var exists = await _context.Collaborators
-            .IgnoreQueryFilters()
-            .AnyAsync(c => c.Email.ToLower() == normalizedEmail, cancellationToken);
-#pragma warning restore CA1304, CA1311, CA1862
-        return !exists;
+        return await _validationService.IsEmailUniqueAsync(email, cancellationToken);
     }
 
-    private async Task<bool> BeValidLeader(CreateCollaboratorRequest request, Guid? leaderId, CancellationToken cancellationToken)
+    private async Task<bool> BeValidLeader(CreateCollaboratorRequest _, Guid? leaderId, CancellationToken cancellationToken)
     {
         if (!leaderId.HasValue)
         {
             return true;
         }
 
-        // Obter OrganizationId do TenantProvider
-        var currentOrgId = _tenantProvider.TenantId;
-        if (!currentOrgId.HasValue)
-        {
-            return false;
-        }
-
-        var leader = await _context.Collaborators
-            .AsNoTracking()
-            .IgnoreQueryFilters()
-            .FirstOrDefaultAsync(c => c.Id == leaderId.Value, cancellationToken);
-
-        if (leader == null)
-        {
-            return false;
-        }
-
-        // Validar que o líder pertence à mesma organização e tem role Leader
-        return leader.OrganizationId == currentOrgId.Value && leader.Role == CollaboratorRole.Leader;
+        return await _validationService.IsValidLeaderForCreateAsync(leaderId.Value, cancellationToken);
     }
 }
 
 public sealed class UpdateCollaboratorValidator : AbstractValidator<UpdateCollaboratorRequest>
 {
-    private readonly ApplicationDbContext _context;
+    private readonly ICollaboratorValidationService _validationService;
 
-    public UpdateCollaboratorValidator(ApplicationDbContext context)
+    public UpdateCollaboratorValidator(ICollaboratorValidationService validationService)
     {
-        _context = context;
+        _validationService = validationService;
 
         RuleFor(x => x.FullName)
             .NotEmpty().WithMessage("Nome completo é obrigatório.")
@@ -114,16 +78,6 @@ public sealed class UpdateCollaboratorValidator : AbstractValidator<UpdateCollab
             return true;
         }
 
-        var leader = await _context.Collaborators
-            .AsNoTracking()
-            .IgnoreQueryFilters()
-            .FirstOrDefaultAsync(c => c.Id == leaderId.Value, cancellationToken);
-
-        if (leader == null)
-        {
-            return false;
-        }
-
-        return leader.Role == CollaboratorRole.Leader;
+        return await _validationService.IsValidLeaderForUpdateAsync(leaderId.Value, cancellationToken);
     }
 }

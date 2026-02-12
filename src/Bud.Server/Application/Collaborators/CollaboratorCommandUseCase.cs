@@ -1,4 +1,5 @@
 using System.Security.Claims;
+using Bud.Server.Application.Abstractions;
 using Bud.Server.Application.Common.Authorization;
 using Bud.Server.Application.Common.Events;
 using Bud.Server.Application.Common.Pipeline;
@@ -11,7 +12,7 @@ using Bud.Shared.Models;
 namespace Bud.Server.Application.Collaborators;
 
 public sealed class CollaboratorCommandUseCase(
-    ICollaboratorService collaboratorService,
+    ICollaboratorCommandService collaboratorService,
     IApplicationAuthorizationGateway authorizationGateway,
     ITenantProvider tenantProvider,
     IApplicationEntityLookup entityLookup,

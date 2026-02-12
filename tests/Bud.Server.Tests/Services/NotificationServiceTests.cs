@@ -111,6 +111,55 @@ public class NotificationServiceTests
         count.Should().Be(0);
     }
 
+    [Fact]
+    public async Task CreateForMultipleRecipients_WithEmptyTitle_ReturnsValidationFailure()
+    {
+        // Arrange
+        using var context = CreateInMemoryContext();
+        var service = new NotificationService(context);
+        var (org, collaborator) = await CreateTestHierarchy(context);
+
+        // Act
+        var result = await service.CreateForMultipleRecipientsAsync(
+            [collaborator.Id],
+            org.Id,
+            " ",
+            "Mensagem",
+            NotificationType.MissionCreated,
+            null,
+            null);
+
+        // Assert
+        result.IsSuccess.Should().BeFalse();
+        result.ErrorType.Should().Be(ServiceErrorType.Validation);
+        result.Error.Should().Be("O título da notificação é obrigatório e deve ter até 200 caracteres.");
+    }
+
+    [Fact]
+    public async Task CreateForMultipleRecipients_WithMessageLongerThan1000_ReturnsValidationFailure()
+    {
+        // Arrange
+        using var context = CreateInMemoryContext();
+        var service = new NotificationService(context);
+        var (org, collaborator) = await CreateTestHierarchy(context);
+        var longMessage = new string('M', 1001);
+
+        // Act
+        var result = await service.CreateForMultipleRecipientsAsync(
+            [collaborator.Id],
+            org.Id,
+            "Titulo",
+            longMessage,
+            NotificationType.MissionCreated,
+            null,
+            null);
+
+        // Assert
+        result.IsSuccess.Should().BeFalse();
+        result.ErrorType.Should().Be(ServiceErrorType.Validation);
+        result.Error.Should().Be("A mensagem da notificação é obrigatória e deve ter até 1000 caracteres.");
+    }
+
     #endregion
 
     #region GetByRecipientAsync Tests

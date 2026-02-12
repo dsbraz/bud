@@ -1,9 +1,9 @@
 using System.Security.Claims;
+using Bud.Server.Application.Abstractions;
 using Bud.Server.Application.Collaborators;
 using Bud.Server.Application.Common.Authorization;
 using Bud.Server.Application.Common.ReadModel;
 using Bud.Server.MultiTenancy;
-using Bud.Server.Services;
 using Bud.Shared.Contracts;
 using Bud.Shared.Models;
 using FluentAssertions;
@@ -19,7 +19,7 @@ public sealed class CollaboratorCommandUseCaseTests
     [Fact]
     public async Task CreateAsync_WhenTenantSelectedAndUnauthorized_ReturnsForbidden()
     {
-        var collaboratorService = new Mock<ICollaboratorService>(MockBehavior.Strict);
+        var collaboratorService = new Mock<ICollaboratorCommandService>(MockBehavior.Strict);
         var authorizationGateway = new Mock<IApplicationAuthorizationGateway>();
         var tenantId = Guid.NewGuid();
         authorizationGateway
@@ -54,7 +54,7 @@ public sealed class CollaboratorCommandUseCaseTests
     [Fact]
     public async Task UpdateAsync_WhenCollaboratorNotFound_ReturnsNotFound()
     {
-        var collaboratorService = new Mock<ICollaboratorService>(MockBehavior.Strict);
+        var collaboratorService = new Mock<ICollaboratorCommandService>(MockBehavior.Strict);
         var authorizationGateway = new Mock<IApplicationAuthorizationGateway>(MockBehavior.Strict);
         var tenantProvider = new Mock<ITenantProvider>(MockBehavior.Strict);
         var entityLookup = new Mock<IApplicationEntityLookup>();
@@ -96,7 +96,7 @@ public sealed class CollaboratorCommandUseCaseTests
         };
 
         var request = new UpdateCollaboratorTeamsRequest { TeamIds = [] };
-        var collaboratorService = new Mock<ICollaboratorService>();
+        var collaboratorService = new Mock<ICollaboratorCommandService>();
         collaboratorService
             .Setup(s => s.UpdateTeamsAsync(collaborator.Id, request, It.IsAny<CancellationToken>()))
             .ReturnsAsync(ServiceResult.Success());
@@ -143,7 +143,7 @@ public sealed class CollaboratorCommandUseCaseTests
             Role = CollaboratorRole.IndividualContributor
         };
 
-        var collaboratorService = new Mock<ICollaboratorService>();
+        var collaboratorService = new Mock<ICollaboratorCommandService>();
         collaboratorService
             .Setup(s => s.CreateAsync(request, It.IsAny<CancellationToken>()))
             .ReturnsAsync(ServiceResult<Collaborator>.Success(createdCollaborator));
@@ -195,7 +195,7 @@ public sealed class CollaboratorCommandUseCaseTests
             Role = CollaboratorRole.Leader
         };
 
-        var collaboratorService = new Mock<ICollaboratorService>();
+        var collaboratorService = new Mock<ICollaboratorCommandService>();
         collaboratorService
             .Setup(s => s.UpdateAsync(collaborator.Id, request, It.IsAny<CancellationToken>()))
             .ReturnsAsync(ServiceResult<Collaborator>.Success(new Collaborator
@@ -247,7 +247,7 @@ public sealed class CollaboratorCommandUseCaseTests
             OrganizationId = Guid.NewGuid()
         };
 
-        var collaboratorService = new Mock<ICollaboratorService>();
+        var collaboratorService = new Mock<ICollaboratorCommandService>();
         collaboratorService
             .Setup(s => s.DeleteAsync(collaborator.Id, It.IsAny<CancellationToken>()))
             .ReturnsAsync(ServiceResult.Success());

@@ -1,6 +1,6 @@
 namespace Bud.Shared.Models;
 
-public sealed class Mission : ITenantEntity
+public sealed class Mission : ITenantEntity, IAggregateRoot
 {
     public Guid Id { get; set; }
     public string Name { get; set; } = string.Empty;
@@ -22,4 +22,81 @@ public sealed class Mission : ITenantEntity
     public Collaborator? Collaborator { get; set; }
 
     public ICollection<MissionMetric> Metrics { get; set; } = new List<MissionMetric>();
+
+    public static Mission Create(
+        Guid id,
+        Guid organizationId,
+        string name,
+        string? description,
+        DateTime startDate,
+        DateTime endDate,
+        MissionStatus status)
+    {
+        if (organizationId == Guid.Empty)
+        {
+            throw new DomainInvariantException("Missão deve pertencer a uma organização válida.");
+        }
+
+        var mission = new Mission
+        {
+            Id = id,
+            OrganizationId = organizationId
+        };
+
+        mission.UpdateDetails(name, description, startDate, endDate, status);
+        return mission;
+    }
+
+    public void UpdateDetails(
+        string name,
+        string? description,
+        DateTime startDate,
+        DateTime endDate,
+        MissionStatus status)
+    {
+        if (!EntityName.TryCreate(name, out var entityName))
+        {
+            throw new DomainInvariantException("O nome da missão é obrigatório e deve ter até 200 caracteres.");
+        }
+
+        if (endDate < startDate)
+        {
+            throw new DomainInvariantException("Data de término deve ser igual ou posterior à data de início.");
+        }
+
+        Name = entityName.Value;
+        Description = string.IsNullOrWhiteSpace(description) ? null : description.Trim();
+        StartDate = startDate;
+        EndDate = endDate;
+        Status = status;
+    }
+
+    public void SetScope(MissionScopeType scopeType, Guid scopeId)
+    {
+        SetScope(MissionScope.Create(scopeType, scopeId));
+    }
+
+    public void SetScope(MissionScope scope)
+    {
+        WorkspaceId = null;
+        TeamId = null;
+        CollaboratorId = null;
+
+        switch (scope.ScopeType)
+        {
+            case MissionScopeType.Organization:
+                return;
+            case MissionScopeType.Workspace:
+                WorkspaceId = scope.ScopeId;
+                return;
+            case MissionScopeType.Team:
+                TeamId = scope.ScopeId;
+                return;
+            case MissionScopeType.Collaborator:
+                CollaboratorId = scope.ScopeId;
+                return;
+            default:
+                throw new DomainInvariantException("Escopo da missão inválido.");
+        }
+    }
 }

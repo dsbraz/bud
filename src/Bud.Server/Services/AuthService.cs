@@ -179,13 +179,8 @@ public sealed class AuthService(
 
     private async Task RegisterAccessLogAsync(Guid collaboratorId, Guid organizationId, CancellationToken cancellationToken)
     {
-        dbContext.CollaboratorAccessLogs.Add(new CollaboratorAccessLog
-        {
-            Id = Guid.NewGuid(),
-            CollaboratorId = collaboratorId,
-            OrganizationId = organizationId,
-            AccessedAt = DateTime.UtcNow
-        });
+        dbContext.CollaboratorAccessLogs.Add(
+            CollaboratorAccessLog.Create(Guid.NewGuid(), collaboratorId, organizationId, DateTime.UtcNow));
         await dbContext.SaveChangesAsync(cancellationToken);
     }
 

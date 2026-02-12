@@ -1,8 +1,8 @@
 using System.Security.Claims;
+using Bud.Server.Application.Abstractions;
 using Bud.Server.Application.Common.Authorization;
 using Bud.Server.Application.Common.ReadModel;
 using Bud.Server.Application.Teams;
-using Bud.Server.Services;
 using Bud.Shared.Contracts;
 using Bud.Shared.Models;
 using FluentAssertions;
@@ -18,7 +18,7 @@ public sealed class TeamCommandUseCaseTests
     [Fact]
     public async Task CreateAsync_WhenWorkspaceNotFound_ReturnsNotFound()
     {
-        var teamService = new Mock<ITeamService>(MockBehavior.Strict);
+        var teamService = new Mock<ITeamCommandService>(MockBehavior.Strict);
         var authorizationGateway = new Mock<IApplicationAuthorizationGateway>(MockBehavior.Strict);
         var entityLookup = new Mock<IApplicationEntityLookup>();
         entityLookup
@@ -48,7 +48,7 @@ public sealed class TeamCommandUseCaseTests
             WorkspaceId = Guid.NewGuid()
         };
 
-        var teamService = new Mock<ITeamService>(MockBehavior.Strict);
+        var teamService = new Mock<ITeamCommandService>(MockBehavior.Strict);
         var authorizationGateway = new Mock<IApplicationAuthorizationGateway>();
         authorizationGateway
             .Setup(g => g.CanWriteOrganizationAsync(User, team.OrganizationId, It.IsAny<CancellationToken>()))
@@ -82,7 +82,7 @@ public sealed class TeamCommandUseCaseTests
         };
 
         var request = new UpdateTeamCollaboratorsRequest { CollaboratorIds = [] };
-        var teamService = new Mock<ITeamService>();
+        var teamService = new Mock<ITeamCommandService>();
         teamService
             .Setup(s => s.UpdateCollaboratorsAsync(team.Id, request, It.IsAny<CancellationToken>()))
             .ReturnsAsync(ServiceResult.Success());
@@ -123,7 +123,7 @@ public sealed class TeamCommandUseCaseTests
             OrganizationId = workspace.OrganizationId
         };
 
-        var teamService = new Mock<ITeamService>();
+        var teamService = new Mock<ITeamCommandService>();
         teamService
             .Setup(s => s.CreateAsync(It.IsAny<CreateTeamRequest>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(ServiceResult<Team>.Success(createdTeam));
@@ -172,7 +172,7 @@ public sealed class TeamCommandUseCaseTests
         };
         var request = new UpdateTeamRequest { Name = "Team 2" };
 
-        var teamService = new Mock<ITeamService>();
+        var teamService = new Mock<ITeamCommandService>();
         teamService
             .Setup(s => s.UpdateAsync(team.Id, request, It.IsAny<CancellationToken>()))
             .ReturnsAsync(ServiceResult<Team>.Success(new Team
@@ -216,7 +216,7 @@ public sealed class TeamCommandUseCaseTests
             OrganizationId = Guid.NewGuid()
         };
 
-        var teamService = new Mock<ITeamService>();
+        var teamService = new Mock<ITeamCommandService>();
         teamService
             .Setup(s => s.DeleteAsync(team.Id, It.IsAny<CancellationToken>()))
             .ReturnsAsync(ServiceResult.Success());

@@ -18,30 +18,34 @@ public sealed class NotificationService(ApplicationDbContext dbContext) : INotif
         string? relatedEntityType,
         CancellationToken cancellationToken = default)
     {
-        var now = DateTime.UtcNow;
-        var notifications = recipientIds.Select(recipientId => new Notification
+        try
         {
-            Id = Guid.NewGuid(),
-            RecipientCollaboratorId = recipientId,
-            OrganizationId = organizationId,
-            Title = title.Trim(),
-            Message = message.Trim(),
-            Type = type,
-            IsRead = false,
-            CreatedAtUtc = now,
-            RelatedEntityId = relatedEntityId,
-            RelatedEntityType = relatedEntityType?.Trim()
-        }).ToList();
+            var now = DateTime.UtcNow;
+            var notifications = recipientIds.Select(recipientId => Notification.Create(
+                Guid.NewGuid(),
+                recipientId,
+                organizationId,
+                title,
+                message,
+                type,
+                now,
+                relatedEntityId,
+                relatedEntityType)).ToList();
 
-        if (notifications.Count == 0)
-        {
+            if (notifications.Count == 0)
+            {
+                return ServiceResult.Success();
+            }
+
+            dbContext.Notifications.AddRange(notifications);
+            await dbContext.SaveChangesAsync(cancellationToken);
+
             return ServiceResult.Success();
         }
-
-        dbContext.Notifications.AddRange(notifications);
-        await dbContext.SaveChangesAsync(cancellationToken);
-
-        return ServiceResult.Success();
+        catch (DomainInvariantException ex)
+        {
+            return ServiceResult.Failure(ex.Message, ServiceErrorType.Validation);
+        }
     }
 
     public async Task<ServiceResult<PagedResult<NotificationDto>>> GetByRecipientAsync(
@@ -118,8 +122,7 @@ public sealed class NotificationService(ApplicationDbContext dbContext) : INotif
             return ServiceResult.Success();
         }
 
-        notification.IsRead = true;
-        notification.ReadAtUtc = DateTime.UtcNow;
+        notification.MarkAsRead(DateTime.UtcNow);
         await dbContext.SaveChangesAsync(cancellationToken);
 
         return ServiceResult.Success();

@@ -26,6 +26,9 @@ A ordem abaixo vai das decisões mais abrangentes para as mais específicas:
 11. `ADR-0011` - Servidor MCP HTTP remoto para missões, métricas e check-ins
 12. `ADR-0012` - Estratégia de logging estruturado com LoggerMessage e observabilidade de Outbox
 13. `ADR-0013` - Sistema de notificações via domain events
+14. `ADR-0014` - MCP request processor e validação de colaborador por abstração
+15. `ADR-0015` - Maturidade de CQRS, value objects, aggregates e event versioning
+16. `ADR-0016` - CQRS por portas formais e aggregate roots explícitas
 
 ## Status possíveis
 

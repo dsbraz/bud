@@ -1,5 +1,5 @@
+using Bud.Server.Application.Abstractions;
 using Bud.Server.Application.Collaborators;
-using Bud.Server.Services;
 using Bud.Shared.Contracts;
 using Bud.Shared.Models;
 using FluentAssertions;
@@ -15,7 +15,7 @@ public sealed class CollaboratorQueryUseCaseTests
     {
         // Arrange
         var collaboratorId = Guid.NewGuid();
-        var collaboratorService = new Mock<ICollaboratorService>();
+        var collaboratorService = new Mock<ICollaboratorQueryService>();
         collaboratorService
             .Setup(s => s.GetByIdAsync(collaboratorId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(ServiceResult<Collaborator>.Success(new Collaborator { Id = collaboratorId, FullName = "Ana", Email = "ana@getbud.co", OrganizationId = Guid.NewGuid() }));
@@ -35,7 +35,7 @@ public sealed class CollaboratorQueryUseCaseTests
     {
         // Arrange
         var organizationId = Guid.NewGuid();
-        var collaboratorService = new Mock<ICollaboratorService>();
+        var collaboratorService = new Mock<ICollaboratorQueryService>();
         collaboratorService
             .Setup(s => s.GetLeadersAsync(organizationId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(ServiceResult<List<LeaderCollaboratorResponse>>.Success([]));
@@ -55,7 +55,7 @@ public sealed class CollaboratorQueryUseCaseTests
     {
         // Arrange
         var collaboratorId = Guid.NewGuid();
-        var collaboratorService = new Mock<ICollaboratorService>();
+        var collaboratorService = new Mock<ICollaboratorQueryService>();
         collaboratorService
             .Setup(s => s.GetAvailableTeamsAsync(collaboratorId, "produto", It.IsAny<CancellationToken>()))
             .ReturnsAsync(ServiceResult<List<TeamSummaryDto>>.Success([]));

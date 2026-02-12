@@ -1,8 +1,8 @@
 using System.Security.Claims;
+using Bud.Server.Application.Abstractions;
 using Bud.Server.Application.Common.Authorization;
 using Bud.Server.Application.Common.ReadModel;
 using Bud.Server.Application.Workspaces;
-using Bud.Server.Services;
 using Bud.Shared.Contracts;
 using Bud.Shared.Models;
 using FluentAssertions;
@@ -18,7 +18,7 @@ public sealed class WorkspaceCommandUseCaseTests
     [Fact]
     public async Task CreateAsync_WhenUnauthorized_ReturnsForbidden()
     {
-        var workspaceService = new Mock<IWorkspaceService>(MockBehavior.Strict);
+        var workspaceService = new Mock<IWorkspaceCommandService>(MockBehavior.Strict);
         var authorizationGateway = new Mock<IApplicationAuthorizationGateway>();
         authorizationGateway
             .Setup(g => g.IsOrganizationOwnerAsync(User, Guid.Parse("11111111-1111-1111-1111-111111111111"), It.IsAny<CancellationToken>()))
@@ -43,7 +43,7 @@ public sealed class WorkspaceCommandUseCaseTests
     [Fact]
     public async Task UpdateAsync_WhenWorkspaceNotFound_ReturnsNotFound()
     {
-        var workspaceService = new Mock<IWorkspaceService>(MockBehavior.Strict);
+        var workspaceService = new Mock<IWorkspaceCommandService>(MockBehavior.Strict);
         var authorizationGateway = new Mock<IApplicationAuthorizationGateway>(MockBehavior.Strict);
         var entityLookup = new Mock<IApplicationEntityLookup>();
         entityLookup
@@ -72,7 +72,7 @@ public sealed class WorkspaceCommandUseCaseTests
             OrganizationId = Guid.NewGuid()
         };
 
-        var workspaceService = new Mock<IWorkspaceService>();
+        var workspaceService = new Mock<IWorkspaceCommandService>();
         workspaceService
             .Setup(s => s.DeleteAsync(workspace.Id, It.IsAny<CancellationToken>()))
             .ReturnsAsync(ServiceResult.Success());
@@ -106,7 +106,7 @@ public sealed class WorkspaceCommandUseCaseTests
             OrganizationId = organizationId
         };
 
-        var workspaceService = new Mock<IWorkspaceService>();
+        var workspaceService = new Mock<IWorkspaceCommandService>();
         workspaceService
             .Setup(s => s.CreateAsync(It.IsAny<CreateWorkspaceRequest>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(ServiceResult<Workspace>.Success(createdWorkspace));
@@ -149,7 +149,7 @@ public sealed class WorkspaceCommandUseCaseTests
         var workspace = new Workspace { Id = Guid.NewGuid(), Name = "W", OrganizationId = Guid.NewGuid() };
         var request = new UpdateWorkspaceRequest { Name = "W2" };
 
-        var workspaceService = new Mock<IWorkspaceService>();
+        var workspaceService = new Mock<IWorkspaceCommandService>();
         workspaceService
             .Setup(s => s.UpdateAsync(workspace.Id, request, It.IsAny<CancellationToken>()))
             .ReturnsAsync(ServiceResult<Workspace>.Success(new Workspace
@@ -186,7 +186,7 @@ public sealed class WorkspaceCommandUseCaseTests
     {
         var workspace = new Workspace { Id = Guid.NewGuid(), Name = "W", OrganizationId = Guid.NewGuid() };
 
-        var workspaceService = new Mock<IWorkspaceService>();
+        var workspaceService = new Mock<IWorkspaceCommandService>();
         workspaceService
             .Setup(s => s.DeleteAsync(workspace.Id, It.IsAny<CancellationToken>()))
             .ReturnsAsync(ServiceResult.Success());

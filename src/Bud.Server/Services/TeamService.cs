@@ -1,4 +1,5 @@
 using Bud.Server.Data;
+using Bud.Server.Domain.Common.Specifications;
 using Bud.Shared.Contracts;
 using Bud.Shared.Models;
 using Microsoft.EntityFrameworkCore;
@@ -9,45 +10,50 @@ public sealed class TeamService(ApplicationDbContext dbContext) : ITeamService
 {
     public async Task<ServiceResult<Team>> CreateAsync(CreateTeamRequest request, CancellationToken cancellationToken = default)
     {
-        var workspace = await dbContext.Workspaces
-            .AsNoTracking()
-            .FirstOrDefaultAsync(w => w.Id == request.WorkspaceId, cancellationToken);
-
-        if (workspace is null)
+        try
         {
-            return ServiceResult<Team>.NotFound("Workspace não encontrado.");
-        }
-
-        if (request.ParentTeamId.HasValue)
-        {
-            var parentTeam = await dbContext.Teams
+            var workspace = await dbContext.Workspaces
                 .AsNoTracking()
-                .FirstOrDefaultAsync(t => t.Id == request.ParentTeamId.Value, cancellationToken);
+                .FirstOrDefaultAsync(w => w.Id == request.WorkspaceId, cancellationToken);
 
-            if (parentTeam is null)
+            if (workspace is null)
             {
-                return ServiceResult<Team>.NotFound("Time pai não encontrado.");
+                return ServiceResult<Team>.NotFound("Workspace não encontrado.");
             }
 
-            if (parentTeam.WorkspaceId != request.WorkspaceId)
+            if (request.ParentTeamId.HasValue)
             {
-                return ServiceResult<Team>.Failure("O time pai deve pertencer ao mesmo workspace.");
+                var parentTeam = await dbContext.Teams
+                    .AsNoTracking()
+                    .FirstOrDefaultAsync(t => t.Id == request.ParentTeamId.Value, cancellationToken);
+
+                if (parentTeam is null)
+                {
+                    return ServiceResult<Team>.NotFound("Time pai não encontrado.");
+                }
+
+                if (parentTeam.WorkspaceId != request.WorkspaceId)
+                {
+                    return ServiceResult<Team>.Failure("O time pai deve pertencer ao mesmo workspace.");
+                }
             }
+
+            var team = Team.Create(
+                Guid.NewGuid(),
+                workspace.OrganizationId,
+                request.WorkspaceId,
+                request.Name,
+                request.ParentTeamId);
+
+            dbContext.Teams.Add(team);
+            await dbContext.SaveChangesAsync(cancellationToken);
+
+            return ServiceResult<Team>.Success(team);
         }
-
-        var team = new Team
+        catch (DomainInvariantException ex)
         {
-            Id = Guid.NewGuid(),
-            Name = request.Name.Trim(),
-            OrganizationId = workspace.OrganizationId,
-            WorkspaceId = request.WorkspaceId,
-            ParentTeamId = request.ParentTeamId,
-        };
-
-        dbContext.Teams.Add(team);
-        await dbContext.SaveChangesAsync(cancellationToken);
-
-        return ServiceResult<Team>.Success(team);
+            return ServiceResult<Team>.Failure(ex.Message, ServiceErrorType.Validation);
+        }
     }
 
     public async Task<ServiceResult<Team>> UpdateAsync(Guid id, UpdateTeamRequest request, CancellationToken cancellationToken = default)
@@ -81,11 +87,18 @@ public sealed class TeamService(ApplicationDbContext dbContext) : ITeamService
             }
         }
 
-        team.Name = request.Name.Trim();
-        team.ParentTeamId = request.ParentTeamId;
-        await dbContext.SaveChangesAsync(cancellationToken);
+        try
+        {
+            team.Rename(request.Name);
+            team.Reparent(request.ParentTeamId, team.Id);
+            await dbContext.SaveChangesAsync(cancellationToken);
 
-        return ServiceResult<Team>.Success(team);
+            return ServiceResult<Team>.Success(team);
+        }
+        catch (DomainInvariantException ex)
+        {
+            return ServiceResult<Team>.Failure(ex.Message, ServiceErrorType.Validation);
+        }
     }
 
     public async Task<ServiceResult> DeleteAsync(Guid id, CancellationToken cancellationToken = default)
@@ -136,7 +149,7 @@ public sealed class TeamService(ApplicationDbContext dbContext) : ITeamService
             query = query.Where(t => t.ParentTeamId == parentTeamId.Value);
         }
 
-        query = ApplyTeamNameSearch(query, search);
+        query = new TeamSearchSpecification(search, dbContext.Database.IsNpgsql()).Apply(query);
 
         var total = await query.CountAsync(cancellationToken);
         var items = await query
@@ -314,7 +327,7 @@ public sealed class TeamService(ApplicationDbContext dbContext) : ITeamService
 
         if (!string.IsNullOrWhiteSpace(search))
         {
-            query = ApplyCollaboratorSearch(query, search);
+            query = new CollaboratorSearchSpecification(search, dbContext.Database.IsNpgsql()).Apply(query);
         }
 
         var collaborators = await query
@@ -332,27 +345,4 @@ public sealed class TeamService(ApplicationDbContext dbContext) : ITeamService
         return ServiceResult<List<CollaboratorSummaryDto>>.Success(collaborators);
     }
 
-    private IQueryable<Team> ApplyTeamNameSearch(IQueryable<Team> query, string? search)
-    {
-        return SearchQueryHelper.ApplyCaseInsensitiveSearch(
-            query,
-            search,
-            dbContext.Database.IsNpgsql(),
-            (q, pattern) => q.Where(t => EF.Functions.ILike(t.Name, pattern)),
-            (q, term) => q.Where(t => t.Name.Contains(term, StringComparison.OrdinalIgnoreCase)));
-    }
-
-    private IQueryable<Collaborator> ApplyCollaboratorSearch(IQueryable<Collaborator> query, string? search)
-    {
-        return SearchQueryHelper.ApplyCaseInsensitiveSearch(
-            query,
-            search,
-            dbContext.Database.IsNpgsql(),
-            (q, pattern) => q.Where(c =>
-                EF.Functions.ILike(c.FullName, pattern) ||
-                EF.Functions.ILike(c.Email, pattern)),
-            (q, term) => q.Where(c =>
-                c.FullName.Contains(term, StringComparison.OrdinalIgnoreCase) ||
-                c.Email.Contains(term, StringComparison.OrdinalIgnoreCase)));
-    }
 }

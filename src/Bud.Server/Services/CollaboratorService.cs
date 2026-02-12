@@ -1,4 +1,6 @@
 using Bud.Server.Data;
+using Bud.Server.Domain.Common.Specifications;
+using Bud.Server.Domain.Common.ValueObjects;
 using Bud.Server.MultiTenancy;
 using Bud.Shared.Contracts;
 using Bud.Shared.Models;
@@ -22,22 +24,36 @@ public sealed class CollaboratorService(
                 ServiceErrorType.Validation);
         }
 
-        // Criar colaborador SEM team
-        var collaborator = new Collaborator
+        if (!EmailAddress.TryCreate(request.Email, out var emailAddress))
         {
-            Id = Guid.NewGuid(),
-            FullName = request.FullName.Trim(),
-            Email = request.Email.Trim().ToLowerInvariant(),
-            Role = request.Role,
-            OrganizationId = organizationId.Value,
-            TeamId = null, // Sempre null para novos colaboradores
-            LeaderId = request.LeaderId,
-        };
+            return ServiceResult<Collaborator>.Failure("E-mail inválido.", ServiceErrorType.Validation);
+        }
 
-        dbContext.Collaborators.Add(collaborator);
-        await dbContext.SaveChangesAsync(cancellationToken);
+        if (!PersonName.TryCreate(request.FullName, out var personName))
+        {
+            return ServiceResult<Collaborator>.Failure("O nome do colaborador é obrigatório.", ServiceErrorType.Validation);
+        }
 
-        return ServiceResult<Collaborator>.Success(collaborator);
+        try
+        {
+            // Criar colaborador SEM team
+            var collaborator = Collaborator.Create(
+                Guid.NewGuid(),
+                organizationId.Value,
+                personName.Value,
+                emailAddress.Value,
+                request.Role,
+                request.LeaderId);
+
+            dbContext.Collaborators.Add(collaborator);
+            await dbContext.SaveChangesAsync(cancellationToken);
+
+            return ServiceResult<Collaborator>.Success(collaborator);
+        }
+        catch (DomainInvariantException ex)
+        {
+            return ServiceResult<Collaborator>.Failure(ex.Message, ServiceErrorType.Validation);
+        }
     }
 
     public async Task<ServiceResult<Collaborator>> UpdateAsync(Guid id, UpdateCollaboratorRequest request, CancellationToken cancellationToken = default)
@@ -49,11 +65,20 @@ public sealed class CollaboratorService(
             return ServiceResult<Collaborator>.NotFound("Colaborador não encontrado.");
         }
 
-        var normalizedEmail = request.Email.Trim().ToLowerInvariant();
-        if (collaborator.Email != normalizedEmail)
+        if (!EmailAddress.TryCreate(request.Email, out var emailAddress))
+        {
+            return ServiceResult<Collaborator>.Failure("E-mail inválido.", ServiceErrorType.Validation);
+        }
+
+        if (!PersonName.TryCreate(request.FullName, out var personName))
+        {
+            return ServiceResult<Collaborator>.Failure("O nome do colaborador é obrigatório.", ServiceErrorType.Validation);
+        }
+
+        if (collaborator.Email != emailAddress.Value)
         {
             var emailExists = await dbContext.Collaborators
-                .AnyAsync(c => c.Email == normalizedEmail && c.Id != id, cancellationToken);
+                .AnyAsync(c => c.Email == emailAddress.Value && c.Id != id, cancellationToken);
 
             if (emailExists)
             {
@@ -112,13 +137,22 @@ public sealed class CollaboratorService(
             }
         }
 
-        collaborator.FullName = request.FullName.Trim();
-        collaborator.Email = normalizedEmail;
-        collaborator.Role = request.Role;
-        collaborator.LeaderId = request.LeaderId;
-        await dbContext.SaveChangesAsync(cancellationToken);
+        try
+        {
+            collaborator.UpdateProfile(
+                personName.Value,
+                emailAddress.Value,
+                request.Role,
+                request.LeaderId,
+                collaborator.Id);
+            await dbContext.SaveChangesAsync(cancellationToken);
 
-        return ServiceResult<Collaborator>.Success(collaborator);
+            return ServiceResult<Collaborator>.Success(collaborator);
+        }
+        catch (DomainInvariantException ex)
+        {
+            return ServiceResult<Collaborator>.Failure(ex.Message, ServiceErrorType.Validation);
+        }
     }
 
     public async Task<ServiceResult> DeleteAsync(Guid id, CancellationToken cancellationToken = default)
@@ -185,7 +219,7 @@ public sealed class CollaboratorService(
             query = query.Where(c => teamCollaboratorIds.Contains(c.Id));
         }
 
-        query = ApplyCollaboratorSearch(query, search);
+        query = new CollaboratorSearchSpecification(search, dbContext.Database.IsNpgsql()).Apply(query);
 
         var total = await query.CountAsync(cancellationToken);
         var items = await query
@@ -237,27 +271,34 @@ public sealed class CollaboratorService(
 
     public async Task<ServiceResult<List<CollaboratorHierarchyNodeDto>>> GetSubordinatesAsync(Guid collaboratorId, int maxDepth = 5, CancellationToken cancellationToken = default)
     {
-        var collaborator = await dbContext.Collaborators
-            .AsNoTracking()
-            .FirstOrDefaultAsync(c => c.Id == collaboratorId, cancellationToken);
-
-        if (collaborator is null)
+        if (!await CollaboratorExistsAsync(collaboratorId, cancellationToken))
         {
             return ServiceResult<List<CollaboratorHierarchyNodeDto>>.NotFound("Colaborador não encontrado.");
         }
 
+        var childrenByLeader = await LoadChildrenByLeaderAsync(cancellationToken);
+        var tree = BuildSubordinateTree(childrenByLeader, collaboratorId, currentDepth: 0, maxDepth);
+
+        return ServiceResult<List<CollaboratorHierarchyNodeDto>>.Success(tree);
+    }
+
+    private async Task<bool> CollaboratorExistsAsync(Guid collaboratorId, CancellationToken cancellationToken)
+    {
+        return await dbContext.Collaborators
+            .AsNoTracking()
+            .AnyAsync(c => c.Id == collaboratorId, cancellationToken);
+    }
+
+    private async Task<Dictionary<Guid, List<Collaborator>>> LoadChildrenByLeaderAsync(CancellationToken cancellationToken)
+    {
         var allSubordinates = await dbContext.Collaborators
             .AsNoTracking()
             .Where(c => c.LeaderId != null)
             .ToListAsync(cancellationToken);
 
-        var childrenByLeader = allSubordinates
+        return allSubordinates
             .GroupBy(c => c.LeaderId!.Value)
             .ToDictionary(g => g.Key, g => g.OrderBy(c => c.FullName).ToList());
-
-        var tree = BuildSubordinateTree(childrenByLeader, collaboratorId, currentDepth: 0, maxDepth);
-
-        return ServiceResult<List<CollaboratorHierarchyNodeDto>>.Success(tree);
     }
 
     private static List<CollaboratorHierarchyNodeDto> BuildSubordinateTree(
@@ -392,7 +433,7 @@ public sealed class CollaboratorService(
 
         if (!string.IsNullOrWhiteSpace(search))
         {
-            query = ApplyTeamSearch(query, search);
+            query = new TeamSearchSpecification(search, dbContext.Database.IsNpgsql(), includeWorkspaceName: true).Apply(query);
         }
 
         var teams = await query
@@ -409,31 +450,4 @@ public sealed class CollaboratorService(
         return ServiceResult<List<TeamSummaryDto>>.Success(teams);
     }
 
-    private IQueryable<Collaborator> ApplyCollaboratorSearch(IQueryable<Collaborator> query, string? search)
-    {
-        return SearchQueryHelper.ApplyCaseInsensitiveSearch(
-            query,
-            search,
-            dbContext.Database.IsNpgsql(),
-            (q, pattern) => q.Where(c =>
-                EF.Functions.ILike(c.FullName, pattern) ||
-                EF.Functions.ILike(c.Email, pattern)),
-            (q, term) => q.Where(c =>
-                c.FullName.Contains(term, StringComparison.OrdinalIgnoreCase) ||
-                c.Email.Contains(term, StringComparison.OrdinalIgnoreCase)));
-    }
-
-    private IQueryable<Team> ApplyTeamSearch(IQueryable<Team> query, string? search)
-    {
-        return SearchQueryHelper.ApplyCaseInsensitiveSearch(
-            query,
-            search,
-            dbContext.Database.IsNpgsql(),
-            (q, pattern) => q.Where(t =>
-                EF.Functions.ILike(t.Name, pattern) ||
-                EF.Functions.ILike(t.Workspace.Name, pattern)),
-            (q, term) => q.Where(t =>
-                t.Name.Contains(term, StringComparison.OrdinalIgnoreCase) ||
-                t.Workspace.Name.Contains(term, StringComparison.OrdinalIgnoreCase)));
-    }
 }

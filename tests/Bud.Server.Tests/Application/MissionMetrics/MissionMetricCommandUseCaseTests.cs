@@ -1,8 +1,8 @@
 using System.Security.Claims;
 using Bud.Server.Application.Common.Authorization;
 using Bud.Server.Application.Common.ReadModel;
+using Bud.Server.Application.Abstractions;
 using Bud.Server.Application.MissionMetrics;
-using Bud.Server.Services;
 using Bud.Shared.Contracts;
 using Bud.Shared.Models;
 using FluentAssertions;
@@ -18,7 +18,7 @@ public sealed class MissionMetricCommandUseCaseTests
     [Fact]
     public async Task CreateAsync_WhenMissionNotFound_ReturnsNotFound()
     {
-        var metricService = new Mock<IMissionMetricService>(MockBehavior.Strict);
+        var metricService = new Mock<IMissionMetricCommandService>(MockBehavior.Strict);
         var authorizationGateway = new Mock<IApplicationAuthorizationGateway>(MockBehavior.Strict);
         var entityLookup = new Mock<IApplicationEntityLookup>();
         entityLookup
@@ -57,7 +57,7 @@ public sealed class MissionMetricCommandUseCaseTests
             OrganizationId = orgId
         };
 
-        var metricService = new Mock<IMissionMetricService>(MockBehavior.Strict);
+        var metricService = new Mock<IMissionMetricCommandService>(MockBehavior.Strict);
         var authorizationGateway = new Mock<IApplicationAuthorizationGateway>();
         authorizationGateway
             .Setup(g => g.CanAccessTenantOrganizationAsync(User, orgId, It.IsAny<CancellationToken>()))
@@ -96,7 +96,7 @@ public sealed class MissionMetricCommandUseCaseTests
             OrganizationId = Guid.NewGuid()
         };
 
-        var metricService = new Mock<IMissionMetricService>();
+        var metricService = new Mock<IMissionMetricCommandService>();
         metricService.Setup(s => s.DeleteAsync(metric.Id, It.IsAny<CancellationToken>()))
             .ReturnsAsync(ServiceResult.Success());
 
@@ -142,7 +142,7 @@ public sealed class MissionMetricCommandUseCaseTests
             Type = MetricType.Qualitative
         };
 
-        var metricService = new Mock<IMissionMetricService>();
+        var metricService = new Mock<IMissionMetricCommandService>();
         metricService
             .Setup(s => s.CreateAsync(It.IsAny<CreateMissionMetricRequest>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(ServiceResult<MissionMetric>.Success(createdMetric));
@@ -203,7 +203,7 @@ public sealed class MissionMetricCommandUseCaseTests
             TargetText = "Novo alvo"
         };
 
-        var metricService = new Mock<IMissionMetricService>();
+        var metricService = new Mock<IMissionMetricCommandService>();
         metricService
             .Setup(s => s.UpdateAsync(metric.Id, request, It.IsAny<CancellationToken>()))
             .ReturnsAsync(ServiceResult<MissionMetric>.Success(new MissionMetric
@@ -258,7 +258,7 @@ public sealed class MissionMetricCommandUseCaseTests
             OrganizationId = Guid.NewGuid()
         };
 
-        var metricService = new Mock<IMissionMetricService>();
+        var metricService = new Mock<IMissionMetricCommandService>();
         metricService.Setup(s => s.DeleteAsync(metric.Id, It.IsAny<CancellationToken>()))
             .ReturnsAsync(ServiceResult.Success());
 

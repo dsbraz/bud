@@ -1,10 +1,11 @@
+using Bud.Server.Application.Abstractions;
 using Bud.Shared.Contracts;
 using Bud.Shared.Models;
 
 namespace Bud.Server.Application.MetricCheckins;
 
 public sealed class MetricCheckinQueryUseCase(
-    IMetricCheckinService checkinService) : IMetricCheckinQueryUseCase
+    IMetricCheckinQueryService checkinService) : IMetricCheckinQueryUseCase
 {
     public Task<ServiceResult<MetricCheckin>> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
         => checkinService.GetByIdAsync(id, cancellationToken);

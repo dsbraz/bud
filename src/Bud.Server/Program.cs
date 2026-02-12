@@ -23,6 +23,7 @@ app.UseExceptionHandler();
 app.UseHttpsRedirection();
 app.UseBlazorFrameworkFiles();
 app.UseStaticFiles();
+app.UseMiddleware<Bud.Server.Middleware.RequestTelemetryMiddleware>();
 
 app.UseAuthentication();
 app.UseAuthorization();

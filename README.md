@@ -43,6 +43,7 @@ O Bud segue uma arquitetura em camadas com separação explícita de responsabil
 ### Organização do backend (Bud.Server)
 
 - **Controllers** recebem requests, validam payloads (FluentValidation) e delegam para UseCases.
+  Validações dependentes de dados devem passar por abstrações/serviços de aplicação, não por acesso direto de validator ao `DbContext`.
 - **UseCases** centralizam o fluxo da aplicação e retornam `ServiceResult`/`ServiceResult<T>`.
 - **Abstractions (`Application/Abstractions`)** definem portas usadas pelos UseCases.
 - **Services** implementam essas portas com regras de negócio e acesso a dados.
@@ -53,6 +54,9 @@ O Bud segue uma arquitetura em camadas com separação explícita de responsabil
 - **UseCases + Ports/Adapters**  
   Controllers delegam para UseCases, que dependem de abstrações; serviços implementam essas portas.
   Referências: `docs/adr/ADR-0002-usecases-abstractions-services.md`.
+- **CQRS por portas formais (incremental)**  
+  Quando aplicável, separar contratos de leitura e escrita (`I*QueryService` / `I*CommandService`) para reduzir acoplamento.
+  Referências: `docs/adr/ADR-0016-cqrs-ports-formais-e-aggregate-roots-explicitas.md`.
 - **Policy-based Authorization (Requirement/Handler)**  
   Regras de autorização centralizadas em policies e handlers, reduzindo condicionais espalhadas.
   Referências: `docs/adr/ADR-0004-autenticacao-autorizacao.md`.
@@ -62,6 +66,8 @@ O Bud segue uma arquitetura em camadas com separação explícita de responsabil
 - **Domain Events + Subscribers**  
   Eventos de domínio desacoplam efeitos colaterais e permitem evolução incremental de fluxos.
   Referências: `src/Bud.Server/Domain/*/Events` e `src/Bud.Server/Application/*/Events`.
+- **Event Versioning no Outbox**  
+  O `EventType` persistido no outbox inclui sufixo de versão (`|vN`) com compatibilidade retroativa para eventos sem versão.
 - **UseCase Pipeline (cross-cutting concerns)**  
   Comportamentos transversais (ex.: logging) aplicados via pipeline, sem poluir cada caso de uso.
   Referências: `src/Bud.Server/Application/Common/Pipeline/`.
@@ -74,6 +80,12 @@ O Bud segue uma arquitetura em camadas com separação explícita de responsabil
 - **Governança arquitetural por testes + ADRs**  
   Decisões versionadas (ADR) e proteção contra regressão de fronteiras via testes de arquitetura.
   Referências: `docs/adr/README.md` e `tests/Bud.Server.Tests/Architecture/ArchitectureTests.cs`.
+- **Aggregate Roots explícitas**  
+  Entidades raiz de agregado são marcadas com `IAggregateRoot` para tornar boundaries verificáveis por testes.
+  Referências: `docs/adr/ADR-0016-cqrs-ports-formais-e-aggregate-roots-explicitas.md`.
+- **Invariantes no domínio (modelo rico)**  
+  Regras centrais de negócio são aplicadas por métodos de agregado/entidade (`Create`, `Rename`, `SetScope`, etc.) com tradução para `ServiceResult` na camada de serviço.
+  Inclui Value Objects formais (`PersonName`, `MissionScope`, `ConfidenceLevel`, `MetricRange`) para reduzir primitive obsession.
 
 ### Multi-tenancy
 
@@ -102,7 +114,9 @@ veja a seção **Outbox (resiliência de eventos)** abaixo.
 
 - **Unit tests**: regras de negócio, validações, use cases e componentes de infraestrutura.
 - **Integration tests**: ciclo HTTP completo com PostgreSQL em container.
-- **Architecture tests**: evitam regressão de fronteira entre camadas (ex.: controller depender de service legado).
+- **Architecture tests**: evitam regressão de fronteira entre camadas (ex.: controller depender de service legado) e reforçam guardrails de CQRS (`CommandUseCase` sem dependência de `QueryService`, `QueryUseCase` sem dependência de `CommandService`).
+  Novos serviços compostos (`I*Service` que agregam `Command/Query`) exigem aprovação explícita na allowlist `docs/architecture/composite-services-allowlist.md` e atualização de ADR.
+  A camada de dados exige `IEntityTypeConfiguration<T>` dedicada para todas as entidades do `ApplicationDbContext`.
 - **ADRs**: decisões arquiteturais versionadas em `docs/adr/`.
 
 ### ADRs e fluxo de PR
@@ -358,6 +372,9 @@ dotnet run --project src/Bud.Server
 ## Servidor MCP (Missões e Métricas)
 
 O repositório inclui um servidor MCP HTTP em `src/Bud.Mcp`, que consome a API do `Bud.Server`.
+
+No transporte HTTP do MCP, o endpoint raiz delega o processamento para `IMcpRequestProcessor`/`McpRequestProcessor`,
+mantendo `Program.cs` focado em composição e roteamento.
 
 No ambiente local via Docker Compose:
 - API + frontend: `http://localhost:8080`
@@ -661,7 +678,7 @@ Já existe a migration inicial (`InitialCreate`). Para aplicar no banco com Dock
 docker run --rm -v "$(pwd)/src":/src -w /src/Bud.Server --network bud_default \
   -e ConnectionStrings__DefaultConnection="Host=db;Port=5432;Database=bud;Username=postgres;Password=postgres" \
   mcr.microsoft.com/dotnet/sdk:10.0 \
-  bash -lc "dotnet tool install --tool-path /tmp/tools dotnet-ef --version 10.0.2 && /tmp/tools/dotnet-ef database update"
+  bash -lc "dotnet tool install --tool-path /tmp/tools dotnet-ef --version 10.0.0 && /tmp/tools/dotnet-ef database update"
 ```
 
 No ambiente Development, a API tenta aplicar migrations automaticamente no startup.

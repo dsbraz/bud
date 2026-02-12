@@ -1,5 +1,6 @@
 using System.Net;
 using System.Net.Http.Json;
+using System.Diagnostics;
 using System.Text;
 using System.Text.Json;
 using Bud.Shared.Contracts;
@@ -66,6 +67,18 @@ public class MissionsEndpointsTests : IClassFixture<CustomWebApplicationFactory>
     }
 
     #region Create Tests
+
+    [Fact]
+    public async Task GetAll_ShouldRespondWithinBudget()
+    {
+        var watch = Stopwatch.StartNew();
+
+        var response = await _client.GetAsync("/api/missions?page=1&pageSize=20");
+
+        watch.Stop();
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        watch.ElapsedMilliseconds.Should().BeLessThan(5000);
+    }
 
     [Fact]
     public async Task Create_WithValidRequest_ReturnsCreated()

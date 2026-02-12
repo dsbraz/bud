@@ -1,9 +1,9 @@
 using System.Security.Claims;
 using Bud.Server.Application.Common.Authorization;
 using Bud.Server.Application.Common.ReadModel;
+using Bud.Server.Application.Abstractions;
 using Bud.Server.Application.MetricCheckins;
 using Bud.Server.MultiTenancy;
-using Bud.Server.Services;
 using Bud.Shared.Contracts;
 using Bud.Shared.Models;
 using FluentAssertions;
@@ -39,7 +39,7 @@ public sealed class MetricCheckinCommandUseCaseTests
             OrganizationId = orgId
         };
 
-        var checkinService = new Mock<IMetricCheckinService>(MockBehavior.Strict);
+        var checkinService = new Mock<IMetricCheckinCommandService>(MockBehavior.Strict);
         var authorizationGateway = new Mock<IApplicationAuthorizationGateway>();
         authorizationGateway
             .Setup(g => g.CanAccessTenantOrganizationAsync(User, orgId, It.IsAny<CancellationToken>()))
@@ -92,7 +92,7 @@ public sealed class MetricCheckinCommandUseCaseTests
             ConfidenceLevel = 3
         };
 
-        var checkinService = new Mock<IMetricCheckinService>(MockBehavior.Strict);
+        var checkinService = new Mock<IMetricCheckinCommandService>(MockBehavior.Strict);
         var authorizationGateway = new Mock<IApplicationAuthorizationGateway>();
         authorizationGateway
             .Setup(g => g.CanAccessTenantOrganizationAsync(User, checkin.OrganizationId, It.IsAny<CancellationToken>()))
@@ -141,7 +141,7 @@ public sealed class MetricCheckinCommandUseCaseTests
             ConfidenceLevel = 3
         };
 
-        var checkinService = new Mock<IMetricCheckinService>();
+        var checkinService = new Mock<IMetricCheckinCommandService>();
         checkinService.Setup(s => s.DeleteAsync(checkin.Id, It.IsAny<CancellationToken>()))
             .ReturnsAsync(ServiceResult.Success());
 
@@ -204,7 +204,7 @@ public sealed class MetricCheckinCommandUseCaseTests
             ConfidenceLevel = 3
         };
 
-        var checkinService = new Mock<IMetricCheckinService>();
+        var checkinService = new Mock<IMetricCheckinCommandService>();
         checkinService
             .Setup(s => s.CreateAsync(It.IsAny<CreateMetricCheckinRequest>(), collaboratorId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(ServiceResult<MetricCheckin>.Success(createdCheckin));
@@ -277,7 +277,7 @@ public sealed class MetricCheckinCommandUseCaseTests
             ConfidenceLevel = 4
         };
 
-        var checkinService = new Mock<IMetricCheckinService>();
+        var checkinService = new Mock<IMetricCheckinCommandService>();
         checkinService
             .Setup(s => s.UpdateAsync(checkin.Id, request, It.IsAny<CancellationToken>()))
             .ReturnsAsync(ServiceResult<MetricCheckin>.Success(new MetricCheckin
@@ -339,7 +339,7 @@ public sealed class MetricCheckinCommandUseCaseTests
             ConfidenceLevel = 3
         };
 
-        var checkinService = new Mock<IMetricCheckinService>();
+        var checkinService = new Mock<IMetricCheckinCommandService>();
         checkinService.Setup(s => s.DeleteAsync(checkin.Id, It.IsAny<CancellationToken>()))
             .ReturnsAsync(ServiceResult.Success());
 
