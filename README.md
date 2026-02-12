@@ -361,7 +361,7 @@ O repositório inclui um servidor MCP HTTP em `src/Bud.Mcp`, que consome a API d
 
 No ambiente local via Docker Compose:
 - API + frontend: `http://localhost:8080`
-- MCP: `http://localhost:8081/mcp`
+- MCP: `http://localhost:8081`
 
 ### Configuração (`appsettings` + override por ambiente)
 
@@ -399,7 +399,7 @@ curl -i http://localhost:8081/health/ready
 Exemplo de `initialize` no endpoint MCP:
 
 ```bash
-curl -s http://localhost:8081/mcp \
+curl -s http://localhost:8081/ \
   -H "Content-Type: application/json" \
   -d '{"jsonrpc":"2.0","id":1,"method":"initialize"}'
 ```

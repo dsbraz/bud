@@ -12,7 +12,7 @@ Escopo deste runbook:
 Ao final do deploy, voce deve ter:
 
 - `bud-web` ativo no Cloud Run
-- `bud-mcp-dev` ativo no Cloud Run
+- `bud-mcp` ativo no Cloud Run
 - banco PostgreSQL no Cloud SQL
 - migrations aplicadas no banco
 - endpoints de health respondendo com sucesso
@@ -22,13 +22,13 @@ Ao final do deploy, voce deve ter:
 ### Local (desenvolvimento com Docker)
 
 - `Bud.Server`: `http://localhost:8080`
-- `Bud.Mcp`: `http://localhost:8081/mcp`
+- `Bud.Mcp`: `http://localhost:8081`
 - PostgreSQL: `localhost:5432`
 
 ### Google Cloud
 
 - `bud-web`: URL publica do Cloud Run (porta interna `8080`)
-- `bud-mcp-dev`: URL publica do Cloud Run (porta interna `8080`)
+- `bud-mcp`: URL publica do Cloud Run (porta interna `8080`)
 - Cloud SQL PostgreSQL
 
 Observacao: no Cloud Run nao ha conflito de porta entre servicos.
@@ -134,7 +134,7 @@ curl -i "https://<url-bud-mcp>/health/ready"
 ### Smoke do MCP
 
 ```bash
-curl -i "https://<url-bud-mcp>/mcp" \
+curl -i "https://<url-bud-mcp>/" \
   -H "Content-Type: application/json" \
   -d '{"jsonrpc":"2.0","id":1,"method":"initialize"}'
 ```
@@ -153,7 +153,7 @@ Esperado:
 
 ### Rollback do Bud.Mcp
 
-1. listar revisoes do servico `bud-mcp-dev`
+1. listar revisoes do servico `bud-mcp`
 2. promover revisao anterior no Cloud Run
 
 Observacao: se o rollback envolver schema, valide compatibilidade de migrations antes de promover trafego.
@@ -168,7 +168,7 @@ Observacao: se o rollback envolver schema, valide compatibilidade de migrations 
 
 ### MCP sobe mas nao acessa API
 
-- Verifique `BUD_API_BASE_URL` no `bud-mcp-dev`.
+- Verifique `BUD_API_BASE_URL` no `bud-mcp`.
 - Se necessario, rode `gcp-deploy-mcp.sh` com `WEB_API_URL` explicito.
 
 ### Health `/ready` falhando

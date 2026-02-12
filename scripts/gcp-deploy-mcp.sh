@@ -23,7 +23,7 @@ require_env PROJECT_ID
 require_env REGION
 
 REPO_NAME="${REPO_NAME:-bud}"
-MCP_SERVICE_NAME="${MCP_SERVICE_NAME:-bud-mcp-dev}"
+MCP_SERVICE_NAME="${MCP_SERVICE_NAME:-bud-mcp}"
 WEB_SERVICE_NAME="${WEB_SERVICE_NAME:-bud-web}"
 IMAGE_TAG="${IMAGE_TAG:-$(date +%Y%m%d-%H%M%S)}"
 WEB_API_URL="${WEB_API_URL:-}"
