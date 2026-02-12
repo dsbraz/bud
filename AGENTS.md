@@ -36,6 +36,19 @@ This file provides guidance to coding agents when working with code in this repo
 - For `Bud.Mcp`, keep domain tools (`mission_*`, `mission_metric_*`, `metric_checkin_*`) sourced from `Tools/Generated/mcp-tool-catalog.json` (strict mode, no runtime fallback to ad-hoc schemas).
 - Keep the solution warning-free (`TreatWarningsAsErrors=true`): code changes MUST not introduce build/test warnings.
 
+### Documentation Update Rule (MUST)
+
+When a feature is added, changed, or removed, agents MUST review and update, when applicable:
+
+- `AGENTS.md`
+- `README.md`
+- `DEPLOY.md`
+- ADRs under `docs/adr/`
+
+Minimum expected behavior:
+- Update affected documents in the same change.
+- If no documentation update is required, explicitly justify this in the final task summary.
+
 ### SHOULD
 
 - Prefer composition/extensions over ad-hoc wiring in `Program.cs`.
@@ -120,8 +133,8 @@ Bud is an ASP.NET Core 10 application with a Blazor WebAssembly frontend, using 
   - `Models/`: Domain entities
   - `Contracts/`: Request/response DTOs
 
-- **Bud.Mcp** (`src/Bud.Mcp`): MCP server (`stdio`) para integração com agentes
-  - `Protocol/`: infraestrutura JSON-RPC/MCP over stdio
+- **Bud.Mcp** (`src/Bud.Mcp`): MCP server HTTP para integração com agentes
+  - `Protocol/`: infraestrutura JSON-RPC/MCP over HTTP
   - `Tools/`: definição e execução de ferramentas MCP (incluindo `help_action_schema` e `session_bootstrap` para descoberta orientada)
   - `Tools/Generation/`: geração do catálogo de schemas MCP a partir do OpenAPI (`generate-tool-catalog` / `check-tool-catalog`)
   - `Auth/`: sessão/autenticação e contexto de tenant (com login dinâmico por tool `auth_login`; `BUD_USER_EMAIL` opcional)
@@ -132,7 +145,7 @@ Bud is an ASP.NET Core 10 application with a Blazor WebAssembly frontend, using 
   - `tests/Bud.Server.IntegrationTests/`: Integration tests with WebApplicationFactory
   - `tests/Bud.Mcp.Tests/`: Unit tests do servidor MCP
 
-- **Root**: `docker-compose.yml`, `README.md`, `AGENTS.md`
+- **Root**: `docker-compose.yml`, `README.md`, `DEPLOY.md`, `AGENTS.md`
 
 ## Build and Development Commands
 
@@ -175,7 +188,7 @@ dotnet run --project src/Bud.Mcp/Bud.Mcp.csproj -- check-tool-catalog --fail-on-
 ```
 
 Notas de execução:
-- Se rodar no container `bud-mcp`, usar `docker exec` (a base padrão é `http://web:8080`).
+- No `docker compose`, o serviço `mcp` usa `BUD_API_BASE_URL=http://web:8080` por padrão.
 - Se rodar no host, definir `BUD_API_BASE_URL=http://localhost:8080` para evitar erro de conexão.
 - O `check-tool-catalog --fail-on-diff` também valida contrato mínimo de campos `required`; falha se o catálogo estiver sem os campos obrigatórios por tool.
 
