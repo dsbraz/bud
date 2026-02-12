@@ -44,7 +44,6 @@ load_env_file() {
 }
 
 require_cmd gcloud
-require_cmd docker
 
 ENV_FILE=".env.gcp"
 args=("$@")
@@ -89,9 +88,6 @@ IMAGE_URI="${REGION}-docker.pkg.dev/${PROJECT_ID}/${REPO_NAME}/${MCP_SERVICE_NAM
 echo "==> Configurando projeto"
 gcloud config set project "$PROJECT_ID" >/dev/null
 
-echo "==> Configurando Docker auth"
-gcloud auth configure-docker "${REGION}-docker.pkg.dev" --quiet
-
 if [[ -z "$WEB_API_URL" ]]; then
   echo "==> Obtendo URL da API web ($WEB_SERVICE_NAME)"
   WEB_API_URL="$(gcloud run services describe "$WEB_SERVICE_NAME" --region "$REGION" --project "$PROJECT_ID" --format='value(status.url)')"
@@ -102,11 +98,12 @@ if [[ -z "$WEB_API_URL" ]]; then
   exit 1
 fi
 
-echo "==> Buildando imagem MCP (${IMAGE_URI})"
-docker build --target dev-mcp-web -t "$IMAGE_URI" .
-
-echo "==> Enviando imagem MCP"
-docker push "$IMAGE_URI"
+echo "==> Buildando imagem MCP no Cloud Build (${IMAGE_URI})"
+gcloud builds submit \
+  --project "$PROJECT_ID" \
+  --config "scripts/cloudbuild-image.yaml" \
+  --substitutions "_IMAGE_URI=${IMAGE_URI},_DOCKER_TARGET=dev-mcp-web" \
+  .
 
 echo "==> Deployando MCP no Cloud Run"
 gcloud run deploy "$MCP_SERVICE_NAME" \

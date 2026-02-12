@@ -59,7 +59,6 @@ secret_has_versions() {
 }
 
 require_cmd gcloud
-require_cmd docker
 
 ENV_FILE=".env.gcp"
 args=("$@")
@@ -116,9 +115,6 @@ IMAGE_URI="${REGION}-docker.pkg.dev/${PROJECT_ID}/${REPO_NAME}/${SERVICE_NAME}:$
 echo "==> Configurando projeto"
 gcloud config set project "$PROJECT_ID" >/dev/null
 
-echo "==> Configurando Docker auth"
-gcloud auth configure-docker "${REGION}-docker.pkg.dev" --quiet
-
 echo "==> Validando secrets obrigatorios"
 if ! secret_has_versions "$SECRET_DB_CONNECTION"; then
   echo "Erro: secret '$SECRET_DB_CONNECTION' nao possui versao." >&2
@@ -132,11 +128,12 @@ if ! secret_has_versions "$SECRET_JWT_KEY"; then
   exit 1
 fi
 
-echo "==> Buildando imagem (${IMAGE_URI})"
-docker build --target dev-web -t "$IMAGE_URI" .
-
-echo "==> Enviando imagem"
-docker push "$IMAGE_URI"
+echo "==> Buildando imagem no Cloud Build (${IMAGE_URI})"
+gcloud builds submit \
+  --project "$PROJECT_ID" \
+  --config "scripts/cloudbuild-image.yaml" \
+  --substitutions "_IMAGE_URI=${IMAGE_URI},_DOCKER_TARGET=dev-web" \
+  .
 
 echo "==> Garantindo Cloud Run Job de migracao"
 MIGRATION_COMMAND='dotnet tool install --tool-path /tmp/tools dotnet-ef --version 10.0.2 >/dev/null && /tmp/tools/dotnet-ef database update --project src/Bud.Server'

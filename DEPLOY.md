@@ -1,232 +1,155 @@
-# Deploy da aplicacao no Google Cloud
+# Deploy no Google Cloud (Bud.Server + Bud.Mcp)
 
-Este documento e um guia pratico para publicar e operar a aplicacao no Google Cloud.
+## INTRODUCAO
 
-Escopo deste runbook:
+Este documento descreve o fluxo recomendado para publicar o ambiente remoto de dev no GCP.
 
-- `Bud.Server` (API + frontend Blazor hosted)
-- `Bud.Mcp` (endpoint MCP HTTP remoto)
+Fluxo principal (2 comandos):
 
-## 1. Resultado esperado
+```bash
+./scripts/gcp-bootstrap.sh
+./scripts/gcp-deploy-all.sh
+```
 
-Ao final do deploy, voce deve ter:
+Resumo:
 
-- `bud-web` ativo no Cloud Run
-- `bud-mcp` ativo no Cloud Run
-- banco PostgreSQL no Cloud SQL
-- migrations aplicadas no banco
-- endpoints de health respondendo com sucesso
+- `gcp-bootstrap.sh`: prepara infraestrutura base e atualiza `.env.gcp`
+- `gcp-deploy-all.sh`: publica `bud-web` e `bud-mcp`
 
-## 2. Arquitetura de runtime
+## CRIANDO O AMBIENTE
 
-### Local (desenvolvimento com Docker)
-
-- `Bud.Server`: `http://localhost:8080`
-- `Bud.Mcp`: `http://localhost:8081`
-- PostgreSQL: `localhost:5432`
-
-### Google Cloud
-
-- `bud-web`: URL publica do Cloud Run (porta interna `8080`)
-- `bud-mcp`: URL publica do Cloud Run (porta interna `8080`)
-- Cloud SQL PostgreSQL
-
-Observacao: no Cloud Run nao ha conflito de porta entre servicos.
-
-## 3. Pre-requisitos
-
-1. Projeto GCP criado e com billing ativo.
-2. `gcloud` instalado e autenticado.
-3. Docker instalado.
-4. Permissoes no projeto para Cloud Run, Cloud SQL, Artifact Registry, IAM e Secret Manager.
-
-Comandos de verificacao:
+### Pre-requisitos
 
 ```bash
 gcloud auth list
 gcloud config list project
-docker --version
 ```
 
-## 4. Variaveis de ambiente
-
-Opcao 1 (recomendada): criar `.env.gcp` na raiz do projeto:
+### 1. Criar `.env.gcp`
 
 ```bash
-PROJECT_ID="seu-projeto"
+cp .env.example .env.gcp
+```
+
+Valores principais:
+
+```bash
+PROJECT_ID="getbud-co-dev"
 REGION="us-central1"
-DB_PASS="senha-forte"
-JWT_KEY="chave-jwt-com-32-ou-mais-caracteres"
+DB_PASS=""
+JWT_KEY=""
+SECRET_DB_CONNECTION=""
+SECRET_JWT_KEY=""
 ```
 
-O arquivo `.env.gcp` e carregado automaticamente pelos scripts quando existir.
-
-Opcao 2: passar via parametros (`--project-id`, `--region`, etc.) sem depender de variaveis exportadas.
-
-Defina ao menos:
-
-```bash
-export PROJECT_ID="seu-projeto"
-export REGION="us-central1"
-```
-
-Na primeira publicacao, defina tambem:
-
-```bash
-export DB_PASS="senha-forte"
-export JWT_KEY="chave-jwt-com-32-ou-mais-caracteres"
-```
-
-## 5. Primeira publicacao (novo ambiente)
-
-### Passo 1: bootstrap de infraestrutura
+### 2. Executar bootstrap
 
 ```bash
 ./scripts/gcp-bootstrap.sh
 ```
 
-Sem `.env.gcp`, rode:
+O que o bootstrap faz automaticamente:
+
+- cria projeto (se nao existir e voce confirmar)
+- tenta vincular billing
+- habilita APIs necessarias
+- cria Artifact Registry
+- cria Cloud SQL, database e usuario
+- cria service account e permissoes
+- cria/atualiza secrets no Secret Manager
+- gera automaticamente (quando vazios): `DB_PASS`, `JWT_KEY`, `SECRET_DB_CONNECTION`, `SECRET_JWT_KEY`
+- persiste valores efetivos no `.env.gcp`
+
+Opcional com arquivo explicito:
 
 ```bash
-./scripts/gcp-bootstrap.sh \
-  --project-id "seu-projeto" \
-  --region "us-central1" \
-  --db-pass "senha-forte" \
-  --jwt-key "chave-jwt-com-32-ou-mais-caracteres"
+./scripts/gcp-bootstrap.sh --env-file .env.gcp
 ```
 
-Esse passo prepara:
+## PUBLICANDO AS APLICACOES
 
-- APIs necessarias no GCP
-- Artifact Registry
-- Cloud SQL + database + usuario
-- service account
-- secrets de conexao e JWT
-
-### Passo 2: deploy completo da aplicacao
-
-```bash
-./scripts/gcp-deploy-all.sh
-```
-
-Sem `.env.gcp`:
-
-```bash
-./scripts/gcp-deploy-all.sh \
-  --project-id "seu-projeto" \
-  --region "us-central1"
-```
-
-Esse comando executa em sequencia:
-
-1. deploy do `Bud.Server` (inclui migration)
-2. deploy do `Bud.Mcp` apontando para a URL do `Bud.Server`
-
-## 6. Publicacoes seguintes (release)
-
-### Opcao A: deploy completo
+### Deploy completo
 
 ```bash
 ./scripts/gcp-deploy-all.sh
 ```
 
-### Opcao B: deploy por componente
+Esse comando executa:
 
-Deploy somente web:
+1. deploy do `bud-web` (inclui migration via Cloud Run Job)
+2. deploy do `bud-mcp` apontando para a URL do `bud-web`
+
+### Deploy por servico
 
 ```bash
 ./scripts/gcp-deploy-web.sh
-```
-
-Deploy somente MCP:
-
-```bash
 ./scripts/gcp-deploy-mcp.sh
 ```
 
-Se precisar forcar a URL da API usada pelo MCP:
+Forcar URL da API no MCP:
 
 ```bash
-export WEB_API_URL="https://bud-web-xxxx.a.run.app"
-./scripts/gcp-deploy-mcp.sh
+./scripts/gcp-deploy-mcp.sh --web-api-url "<url-do-web>"
 ```
 
-Ou por parametro:
+### Sem `.env.gcp` (somente parametros)
 
 ```bash
-./scripts/gcp-deploy-mcp.sh --web-api-url "https://bud-web-xxxx.a.run.app"
+./scripts/gcp-bootstrap.sh \
+  --project-id "getbud-co-dev" \
+  --region "us-central1"
+
+./scripts/gcp-deploy-all.sh \
+  --project-id "getbud-co-dev" \
+  --region "us-central1"
 ```
 
-## 7. Validacao pos-deploy
+## OUTRAS CONSIDERACOES
 
-### Health checks
+- `bud-web` e `bud-mcp` rodam em Cloud Run com porta interna `8080`.
+- Script oficiais:
+  - `scripts/gcp-bootstrap.sh`
+  - `scripts/gcp-deploy-web.sh`
+  - `scripts/gcp-deploy-mcp.sh`
+  - `scripts/gcp-deploy-all.sh`
+
+Troubleshooting rapido:
+
+- Migration falhou no web:
+  - rode `./scripts/gcp-deploy-web.sh` novamente
+  - valide secret de conexao e status do Cloud SQL
+- MCP sem acesso a API:
+  - valide URL do `bud-web`
+  - rode `./scripts/gcp-deploy-mcp.sh --web-api-url "<url-do-web>"`
+
+## CHECKLIST
+
+Antes de considerar o deploy concluido:
+
+1. `bootstrap` executado sem erro.
+2. `deploy-all` executado sem erro.
+3. health do web:
+   - `GET /health/live` retorna `200`
+   - `GET /health/ready` retorna `200`
+4. health do mcp:
+   - `GET /health/live` retorna `200`
+   - `GET /health/ready` retorna `200`
+5. smoke MCP:
+   - `POST /` com `initialize` retorna `200`
+   - resposta inclui header `X-Mcp-Session-Id`
+
+Comandos de validacao:
 
 ```bash
-curl -i "https://<url-bud-web>/health/live"
-curl -i "https://<url-bud-web>/health/ready"
-curl -i "https://<url-bud-mcp>/health/live"
-curl -i "https://<url-bud-mcp>/health/ready"
-```
+WEB_URL="$(gcloud run services describe bud-web --region us-central1 --project getbud-co-dev --format='value(status.url)')"
+MCP_URL="$(gcloud run services describe bud-mcp --region us-central1 --project getbud-co-dev --format='value(status.url)')"
 
-### Smoke do MCP
+curl -i "${WEB_URL}/health/live"
+curl -i "${WEB_URL}/health/ready"
+curl -i "${MCP_URL}/health/live"
+curl -i "${MCP_URL}/health/ready"
 
-```bash
-curl -i "https://<url-bud-mcp>/" \
+curl -i "${MCP_URL}/" \
   -H "Content-Type: application/json" \
   -d '{"jsonrpc":"2.0","id":1,"method":"initialize"}'
-```
-
-Esperado:
-
-- resposta `200`
-- header `X-Mcp-Session-Id`
-
-## 8. Rollback operacional
-
-### Rollback do Bud.Server
-
-1. listar revisoes do servico `bud-web`
-2. promover revisao anterior no Cloud Run
-
-### Rollback do Bud.Mcp
-
-1. listar revisoes do servico `bud-mcp`
-2. promover revisao anterior no Cloud Run
-
-Observacao: se o rollback envolver schema, valide compatibilidade de migrations antes de promover trafego.
-
-## 9. Troubleshooting rapido
-
-### Falha em migration no deploy do web
-
-- Verifique secret `ConnectionStrings__DefaultConnection`.
-- Verifique conectividade Cloud Run -> Cloud SQL.
-- Execute novamente `./scripts/gcp-deploy-web.sh` apos ajustar.
-
-### MCP sobe mas nao acessa API
-
-- Verifique `BUD_API_BASE_URL` no `bud-mcp`.
-- Se necessario, rode `gcp-deploy-mcp.sh` com `WEB_API_URL` explicito.
-
-### Health `/ready` falhando
-
-- Verifique logs do Cloud Run.
-- Verifique estado do Cloud SQL.
-- Verifique variaveis de ambiente e secrets no servico.
-
-## 10. Scripts e responsabilidades
-
-- `scripts/gcp-bootstrap.sh`: preparar infraestrutura base (uso inicial).
-- `scripts/gcp-deploy-web.sh`: publicar `Bud.Server` + migration.
-- `scripts/gcp-deploy-mcp.sh`: publicar `Bud.Mcp`.
-- `scripts/gcp-deploy-all.sh`: publicar ambos em sequencia.
-
-## 11. Regras MCP que impactam deploy
-
-- O catalogo MCP e obrigatorio em `src/Bud.Mcp/Tools/Generated/mcp-tool-catalog.json`.
-- Quando houver mudanca nos contratos de dominio MCP, sincronize o catalogo:
-
-```bash
-dotnet run --project src/Bud.Mcp/Bud.Mcp.csproj -- generate-tool-catalog
-dotnet run --project src/Bud.Mcp/Bud.Mcp.csproj -- check-tool-catalog --fail-on-diff
 ```

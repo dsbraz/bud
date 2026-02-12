@@ -449,14 +449,16 @@ Scripts disponíveis:
 - `scripts/gcp-deploy-mcp.sh`: deploy do `Bud.Mcp` HTTP.
 - `scripts/gcp-deploy-all.sh`: executa deploy completo (`Bud.Server` + `Bud.Mcp`).
 
+Observacao: os scripts de deploy remoto usam **Cloud Build** para gerar imagens no GCP (nao dependem de `docker build` local).
+
 Fluxo recomendado:
 
 ```bash
 # .env.gcp (na raiz, ignorado pelo git)
-# PROJECT_ID="seu-projeto"
+# PROJECT_ID="getbud-co-dev"
 # REGION="us-central1"
-# DB_PASS="senha-forte"
-# JWT_KEY="chave-jwt-com-32-ou-mais-caracteres"
+# DB_PASS=""   # opcional: se vazio, bootstrap gera automaticamente
+# JWT_KEY=""   # opcional: se vazio, bootstrap gera automaticamente
 ./scripts/gcp-bootstrap.sh
 ./scripts/gcp-deploy-all.sh
 ```
@@ -465,13 +467,13 @@ Sem `.env.gcp`, use parametros:
 
 ```bash
 ./scripts/gcp-bootstrap.sh \
-  --project-id "seu-projeto" \
+  --project-id "getbud-co-dev" \
   --region "us-central1" \
   --db-pass "senha-forte" \
   --jwt-key "chave-jwt-com-32-ou-mais-caracteres"
 
 ./scripts/gcp-deploy-all.sh \
-  --project-id "seu-projeto" \
+  --project-id "getbud-co-dev" \
   --region "us-central1"
 ```
 
