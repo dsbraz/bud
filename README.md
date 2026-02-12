@@ -223,28 +223,69 @@ sequenceDiagram
 
     UI->>API: POST /api/auth/login
     API->>AUTH: Valida e autentica por e-mail
-    AUTH-->>UI: JWT + organizações disponíveis
+    AUTH-->>UI: JWT + dados básicos da sessão
 
-    UI->>UI: Usuário seleciona organização (ou TODOS)
+    UI->>API: GET /api/auth/my-organizations (X-User-Email)
+    API-->>UI: Lista de organizações disponíveis
+
+    UI->>UI: Usuário seleciona organização (ou "TODOS")
     UI->>API: Request com Authorization: Bearer + X-Tenant-Id (opcional)
     API->>TENANT: Valida autenticação e tenant selecionado
     TENANT->>CTRL: Libera acesso conforme policies
     CTRL-->>UI: Resposta filtrada por tenant
 ```
 
-#### Pipeline de requisição (Controller -> UseCase -> Service)
+#### Fluxo completo de request (fim a fim)
 
 ```mermaid
-flowchart LR
-    A[HTTP Request] --> B[Controller]
-    B --> C[FluentValidation]
-    C --> D[UseCase]
-    D --> E[Application Abstractions]
-    E --> F[Service Implementation]
-    F --> G[(ApplicationDbContext / PostgreSQL)]
-    D --> H[ServiceResult]
-    H --> I[Controller Mapping]
-    I --> J[HTTP Response / ProblemDetails]
+sequenceDiagram
+    participant UI as Bud.Client / Caller
+    participant API as ASP.NET Core Pipeline
+    participant AUTH as AuthN/AuthZ
+    participant TENANT as TenantRequiredMiddleware
+    participant CTRL as Controller
+    participant VAL as FluentValidation
+    participant PIPE as IUseCasePipeline
+    participant UC as UseCase
+    participant SVC as Service
+    participant DB as ApplicationDbContext/PostgreSQL
+    participant OUT as Outbox
+
+    UI->>API: HTTP Request
+    API->>AUTH: Valida JWT/policies
+    AUTH->>TENANT: Valida contexto de tenant (quando aplicável)
+    TENANT->>CTRL: Encaminha request autorizado
+    CTRL->>VAL: Valida payload
+
+    alt Payload inválido
+        VAL-->>CTRL: Erros de validação
+        CTRL-->>UI: 400 ValidationProblemDetails (pt-BR)
+    else Payload válido
+        CTRL->>PIPE: Executa caso de uso
+        PIPE->>UC: Apply behaviors (logging/cross-cutting)
+        UC->>SVC: Orquestra regra de negócio
+        SVC->>DB: Consulta/persistência
+        UC->>OUT: Registra evento no outbox (quando houver)
+        UC-->>CTRL: ServiceResult
+        CTRL-->>UI: 2xx/4xx/5xx + ProblemDetails quando aplicável
+    end
+```
+
+#### Fluxo de request (falhas comuns)
+
+```mermaid
+flowchart TD
+    A[Request recebido] --> B{JWT válido?}
+    B -- Não --> C[401 Não autenticado]
+    B -- Sim --> D{Tenant exigido e selecionado?}
+    D -- Não --> E[403 Tenant obrigatório]
+    D -- Sim --> F{Payload válido?}
+    F -- Não --> G[400 ValidationProblemDetails]
+    F -- Sim --> H{Entidade existe?}
+    H -- Não --> I[404 NotFound]
+    H -- Sim --> J{Conflito de regra?}
+    J -- Sim --> K[409 Conflict]
+    J -- Não --> L[2xx Sucesso]
 ```
 
 #### Módulos do backend e dependências
@@ -445,6 +486,7 @@ Se estiver rodando local com `DOTNET_ENVIRONMENT=Development`, defina:
 - `tenant_list_available`
 - `tenant_set_current`
 - `session_bootstrap`
+- `help_list_actions`
 - `help_action_schema`
 - `mission_create`, `mission_get`, `mission_list`, `mission_update`, `mission_delete`
 - `mission_metric_create`, `mission_metric_get`, `mission_metric_list`, `mission_metric_update`, `mission_metric_delete`
@@ -452,7 +494,7 @@ Se estiver rodando local com `DOTNET_ENVIRONMENT=Development`, defina:
 
 ### Descoberta de parâmetros e bootstrap de sessão no MCP
 
-- `prompts/list` e suportado para compatibilidade de clientes MCP e retorna lista vazia quando nao ha prompts publicados.
+- `prompts/list` é suportado para compatibilidade de clientes MCP e retorna lista vazia quando não há prompts publicados.
 - `auth_login` retorna `whoami`, `requiresTenantForDomainTools` e `nextSteps` para orientar o agente nos próximos passos.
 - `session_bootstrap` retorna snapshot de sessão (`whoami`, `availableTenants`, tenant atual) e `starterSchemas` para fluxos de criação.
 - `help_action_schema` retorna `required`, `inputSchema` e `example` para uma ação específica (ou todas as ações, quando `action` não é informado).
@@ -467,7 +509,7 @@ Scripts disponíveis:
 - `scripts/gcp-deploy-mcp.sh`: deploy do `Bud.Mcp` HTTP.
 - `scripts/gcp-deploy-all.sh`: executa deploy completo (`Bud.Server` + `Bud.Mcp`).
 
-Observacao: os scripts de deploy remoto usam **Cloud Build** para gerar imagens no GCP (nao dependem de `docker build` local).
+Observação: os scripts de deploy remoto usam **Cloud Build** para gerar imagens no GCP (não dependem de `docker build` local).
 
 Fluxo recomendado:
 
@@ -524,10 +566,20 @@ dotnet build
 dotnet run --project src/Bud.Server
 ```
 
+Defina a URL base conforme o modo de execução:
+
+```bash
+# Com Docker Compose
+export BUD_BASE_URL="http://localhost:8080"
+
+# Sem Docker (dotnet run, profile padrão)
+export BUD_BASE_URL="http://localhost:5096"
+```
+
 ### 2) Login e captura do token
 
 ```bash
-curl -s -X POST http://localhost:8080/api/auth/login \
+curl -s -X POST "$BUD_BASE_URL/api/auth/login" \
   -H "Content-Type: application/json" \
   -d '{"email":"admin@getbud.co"}'
 ```
@@ -541,8 +593,8 @@ export BUD_TOKEN="<jwt>"
 ### 3) Descobrir organizações disponíveis
 
 ```bash
-curl -s http://localhost:8080/api/auth/my-organizations \
-  -H "Authorization: Bearer $BUD_TOKEN"
+curl -s "$BUD_BASE_URL/api/auth/my-organizations" \
+  -H "X-User-Email: admin@getbud.co"
 ```
 
 Copie um `id` e exporte:
@@ -554,7 +606,7 @@ export BUD_ORG_ID="<organization-id>"
 ### 4) Smoke test de leitura tenant-scoped
 
 ```bash
-curl -s "http://localhost:8080/api/missions?page=1&pageSize=10" \
+curl -s "$BUD_BASE_URL/api/missions?page=1&pageSize=10" \
   -H "Authorization: Bearer $BUD_TOKEN" \
   -H "X-Tenant-Id: $BUD_ORG_ID"
 ```
@@ -562,7 +614,7 @@ curl -s "http://localhost:8080/api/missions?page=1&pageSize=10" \
 ### 5) Smoke test de criação de missão
 
 ```bash
-curl -s -X POST http://localhost:8080/api/missions \
+curl -s -X POST "$BUD_BASE_URL/api/missions" \
   -H "Authorization: Bearer $BUD_TOKEN" \
   -H "X-Tenant-Id: $BUD_ORG_ID" \
   -H "Content-Type: application/json" \
@@ -577,13 +629,31 @@ curl -s -X POST http://localhost:8080/api/missions \
   }'
 ```
 
-### 6) Debug rápido no backend
+### 6) Diagrama rápido do onboarding HTTP
 
-- Acesse `http://localhost:8080/swagger` para executar os mesmos fluxos pela UI.
+```mermaid
+sequenceDiagram
+    participant Dev as Dev
+    participant API as Bud.Server
+
+    Dev->>API: POST /api/auth/login (email)
+    API-->>Dev: token JWT
+    Dev->>API: GET /api/auth/my-organizations (X-User-Email)
+    API-->>Dev: organizations[]
+    Dev->>Dev: define BUD_ORG_ID
+    Dev->>API: GET /api/missions (Bearer + X-Tenant-Id)
+    API-->>Dev: lista paginada
+    Dev->>API: POST /api/missions (Bearer + X-Tenant-Id)
+    API-->>Dev: missão criada
+```
+
+### 7) Debug rápido no backend
+
+- Acesse `$BUD_BASE_URL/swagger` para executar os mesmos fluxos pela UI.
 - Consulte `GET /health/ready` para validar PostgreSQL + Outbox.
 - Em caso de erro 403, valide se o header `X-Tenant-Id` foi enviado (exceto cenário global admin em "TODOS").
 
-### 7) Troubleshooting rápido (dev local)
+### 8) Troubleshooting rápido (dev local)
 
 - **Porta 8080 ocupada**  
   Sintoma: erro ao subir `docker compose up --build` com bind em `8080`.  
@@ -600,6 +670,21 @@ curl -s -X POST http://localhost:8080/api/missions \
 - **Dados/artefatos antigos no browser**  
   Sintoma: UI não reflete mudanças recentes.  
   Ação: execute `docker compose down -v && docker compose up --build` e force reload no navegador.
+
+#### Fluxo de diagnóstico rápido (401/403)
+
+```mermaid
+flowchart TD
+    A[Erro 401/403] --> B{Tem Bearer token?}
+    B -- Não --> C[Refaça login em /api/auth/login]
+    B -- Sim --> D{Endpoint é tenant-scoped?}
+    D -- Não --> E[Validar payload/headers específicos]
+    D -- Sim --> F{X-Tenant-Id foi enviado?}
+    F -- Não --> G[Enviar X-Tenant-Id]
+    F -- Sim --> H{Usuário pertence ao tenant?}
+    H -- Não --> I[Selecionar tenant válido em /api/auth/my-organizations]
+    H -- Sim --> J[Validar policy/regra de autorização do endpoint]
+```
 
 ## Testes
 
@@ -746,6 +831,9 @@ O endpoint `/health/ready` considera banco e saúde do Outbox.
 - `POST /api/missions`
 - `GET /api/missions`
 - `GET /api/missions/progress`
+- `GET /api/dashboard/my-dashboard`
+- `POST /api/mission-templates`
+- `GET /api/mission-templates`
 - `POST /api/mission-metrics`
 - `GET /api/mission-metrics`
 - `GET /api/mission-metrics/progress`
@@ -763,6 +851,9 @@ O endpoint `/health/ready` considera banco e saúde do Outbox.
 - `GET /api/workspaces/{id}/teams`
 - `GET /api/teams/{id}/subteams`
 - `GET /api/teams/{id}/collaborators`
+- `PUT /api/teams/{id}/collaborators`
+- `GET /api/collaborators/{id}/teams`
+- `PUT /api/collaborators/{id}/teams`
 
 ### Administrativos
 
@@ -782,7 +873,8 @@ Para criação de missão (`POST /api/missions`), os campos mínimos obrigatóri
 
 ```json
 {
-  "name": "Acme"
+  "name": "acme.com.br",
+  "ownerId": "00000000-0000-0000-0000-000000000000"
 }
 ```
 
