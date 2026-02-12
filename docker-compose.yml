@@ -35,19 +35,20 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-      target: dev-mcp
+      target: dev-mcp-web
     container_name: bud-mcp
     environment:
       DOTNET_ENVIRONMENT: Development
-    command: ["tail", "-f", "/dev/null"]
+      BUD_API_BASE_URL: http://web:8080
+      ASPNETCORE_URLS: http://0.0.0.0:8080
+    ports:
+      - "8081:8080"
     volumes:
       - ./src:/src/src
       - ./Directory.Build.props:/src/Directory.Build.props
       - nuget_cache:/root/.nuget/packages
       - dotnet_obj:/tmp/obj
       - dotnet_bin:/tmp/bin
-    stdin_open: true
-    tty: true
     depends_on:
       - web
 

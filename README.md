@@ -18,6 +18,7 @@ Este documento é voltado para devs que precisam:
 - [Como rodar](#como-rodar-com-docker)
 - [Como rodar sem Docker](#como-rodar-sem-docker)
 - [Servidor MCP (Missões e Métricas)](#servidor-mcp-missões-e-métricas)
+- [Deploy no Google Cloud](#deploy-no-google-cloud)
 - [Onboarding rápido (30 min)](#onboarding-rápido-30-min)
 - [Testes](#testes)
 - [Outbox (resiliência de eventos)](#outbox-resiliência-de-eventos)
@@ -356,7 +357,11 @@ dotnet run --project src/Bud.Server
 
 ## Servidor MCP (Missões e Métricas)
 
-O repositório inclui um servidor MCP em `src/Bud.Mcp`, executado em `stdio`, pensado para rodar como sidecar Docker e consumir a API do `Bud.Server`.
+O repositório inclui um servidor MCP HTTP em `src/Bud.Mcp`, que consome a API do `Bud.Server`.
+
+No ambiente local via Docker Compose:
+- API + frontend: `http://localhost:8080`
+- MCP: `http://localhost:8081`
 
 ### Configuração (`appsettings` + override por ambiente)
 
@@ -370,6 +375,7 @@ Chaves suportadas:
 - `BudMcp:UserEmail` (ou `BUD_USER_EMAIL`) opcional, para login automático no boot
 - `BudMcp:DefaultTenantId` (ou `BUD_DEFAULT_TENANT_ID`)
 - `BudMcp:HttpTimeoutSeconds` (ou `BUD_HTTP_TIMEOUT_SECONDS`)
+- `BudMcp:SessionIdleTtlMinutes` (ou `BUD_SESSION_IDLE_TTL_MINUTES`)
 
 ### Subindo via Docker Compose
 
@@ -377,26 +383,34 @@ Chaves suportadas:
 docker compose up --build
 ```
 
-O serviço `mcp` é criado no compose com `stdin_open`/`tty`, usando:
-- `Dockerfile` (target `dev-mcp`; mantém container pronto para `docker exec`)
+O serviço `mcp` é criado no compose usando:
+- `Dockerfile` (target `dev-mcp-web`)
 - `DOTNET_ENVIRONMENT=Development` (usa `src/Bud.Mcp/appsettings.Development.json`)
-- sem usuário fixo; a autenticação é feita pela ferramenta `auth_login`
+- `BUD_API_BASE_URL=http://web:8080` para chamadas internas ao `Bud.Server`
+- mapeamento de porta `8081:8080` para evitar conflito com o `web`
 
-Uso em desenvolvimento (recomendado):
+Health checks do MCP local:
 
 ```bash
-docker exec -i bud-mcp dotnet run --project /src/src/Bud.Mcp/Bud.Mcp.csproj
+curl -i http://localhost:8081/health/live
+curl -i http://localhost:8081/health/ready
 ```
 
-Uso com Claude Desktop:
-- Se o Claude Desktop já estiver configurado para iniciar o `bud-mcp` via `docker exec`, não é necessário rodar comando manual após `docker compose up`.
+Exemplo de `initialize` no endpoint MCP:
+
+```bash
+curl -s http://localhost:8081/ \
+  -H "Content-Type: application/json" \
+  -d '{"jsonrpc":"2.0","id":1,"method":"initialize"}'
+```
+
+A resposta inclui o header `MCP-Session-Id`, que deve ser enviado nas chamadas seguintes (`tools/list`, `tools/call`, etc.).
 
 Fluxo obrigatório para atualizar catálogo MCP:
 
 ```bash
 dotnet run --project src/Bud.Mcp/Bud.Mcp.csproj -- generate-tool-catalog
 dotnet run --project src/Bud.Mcp/Bud.Mcp.csproj -- check-tool-catalog --fail-on-diff
-docker compose restart mcp
 ```
 
 Regras importantes do catálogo:
@@ -421,10 +435,57 @@ Se estiver rodando local com `DOTNET_ENVIRONMENT=Development`, defina:
 
 ### Descoberta de parâmetros e bootstrap de sessão no MCP
 
+- `prompts/list` e suportado para compatibilidade de clientes MCP e retorna lista vazia quando nao ha prompts publicados.
 - `auth_login` retorna `whoami`, `requiresTenantForDomainTools` e `nextSteps` para orientar o agente nos próximos passos.
 - `session_bootstrap` retorna snapshot de sessão (`whoami`, `availableTenants`, tenant atual) e `starterSchemas` para fluxos de criação.
 - `help_action_schema` retorna `required`, `inputSchema` e `example` para uma ação específica (ou todas as ações, quando `action` não é informado).
 - Em erro de validação da API, o MCP retorna `statusCode`, `title`, `detail` e `errors` por campo quando disponível.
+
+## Deploy no Google Cloud
+
+Scripts disponíveis:
+
+- `scripts/gcp-bootstrap.sh`: prepara infraestrutura base (Artifact Registry, Cloud SQL, service account, secrets).
+- `scripts/gcp-deploy-web.sh`: deploy do `Bud.Server` (inclui migration).
+- `scripts/gcp-deploy-mcp.sh`: deploy do `Bud.Mcp` HTTP.
+- `scripts/gcp-deploy-all.sh`: executa deploy completo (`Bud.Server` + `Bud.Mcp`).
+
+Observacao: os scripts de deploy remoto usam **Cloud Build** para gerar imagens no GCP (nao dependem de `docker build` local).
+
+Fluxo recomendado:
+
+```bash
+# .env.gcp (na raiz, ignorado pelo git)
+# PROJECT_ID="getbud-co-dev"
+# REGION="us-central1"
+# DB_PASS=""   # opcional: se vazio, bootstrap gera automaticamente
+# JWT_KEY=""   # opcional: se vazio, bootstrap gera automaticamente
+./scripts/gcp-bootstrap.sh
+./scripts/gcp-deploy-all.sh
+```
+
+Sem `.env.gcp`, use parametros:
+
+```bash
+./scripts/gcp-bootstrap.sh \
+  --project-id "getbud-co-dev" \
+  --region "us-central1" \
+  --db-pass "senha-forte" \
+  --jwt-key "chave-jwt-com-32-ou-mais-caracteres"
+
+./scripts/gcp-deploy-all.sh \
+  --project-id "getbud-co-dev" \
+  --region "us-central1"
+```
+
+Fluxo manual por etapa:
+
+```bash
+./scripts/gcp-deploy-web.sh
+./scripts/gcp-deploy-mcp.sh
+```
+
+Para detalhes operacionais e troubleshooting de deploy, consulte `DEPLOY.md`.
 
 ## Onboarding rápido (30 min)
 
