@@ -50,6 +50,19 @@ docker --version
 
 ## 4. Variaveis de ambiente
 
+Opcao 1 (recomendada): criar `.env.gcp` na raiz do projeto:
+
+```bash
+PROJECT_ID="seu-projeto"
+REGION="us-central1"
+DB_PASS="senha-forte"
+JWT_KEY="chave-jwt-com-32-ou-mais-caracteres"
+```
+
+O arquivo `.env.gcp` e carregado automaticamente pelos scripts quando existir.
+
+Opcao 2: passar via parametros (`--project-id`, `--region`, etc.) sem depender de variaveis exportadas.
+
 Defina ao menos:
 
 ```bash
@@ -72,6 +85,16 @@ export JWT_KEY="chave-jwt-com-32-ou-mais-caracteres"
 ./scripts/gcp-bootstrap.sh
 ```
 
+Sem `.env.gcp`, rode:
+
+```bash
+./scripts/gcp-bootstrap.sh \
+  --project-id "seu-projeto" \
+  --region "us-central1" \
+  --db-pass "senha-forte" \
+  --jwt-key "chave-jwt-com-32-ou-mais-caracteres"
+```
+
 Esse passo prepara:
 
 - APIs necessarias no GCP
@@ -84,6 +107,14 @@ Esse passo prepara:
 
 ```bash
 ./scripts/gcp-deploy-all.sh
+```
+
+Sem `.env.gcp`:
+
+```bash
+./scripts/gcp-deploy-all.sh \
+  --project-id "seu-projeto" \
+  --region "us-central1"
 ```
 
 Esse comando executa em sequencia:
@@ -118,6 +149,12 @@ Se precisar forcar a URL da API usada pelo MCP:
 ```bash
 export WEB_API_URL="https://bud-web-xxxx.a.run.app"
 ./scripts/gcp-deploy-mcp.sh
+```
+
+Ou por parametro:
+
+```bash
+./scripts/gcp-deploy-mcp.sh --web-api-url "https://bud-web-xxxx.a.run.app"
 ```
 
 ## 7. Validacao pos-deploy

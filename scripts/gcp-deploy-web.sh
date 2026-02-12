@@ -1,6 +1,28 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+usage() {
+  cat <<USAGE
+Uso:
+  ./scripts/gcp-deploy-web.sh [opcoes]
+
+Opcoes:
+  --env-file <path>             Arquivo de variaveis (default: .env.gcp, se existir)
+  --project-id <id>             PROJECT_ID
+  --region <region>             REGION
+  --repo-name <nome>            REPO_NAME
+  --service-name <nome>         SERVICE_NAME
+  --sql-instance <nome>         SQL_INSTANCE
+  --db-name <nome>              DB_NAME
+  --db-user <nome>              DB_USER
+  --service-account <nome>      SERVICE_ACCOUNT
+  --secret-db-connection <n>    SECRET_DB_CONNECTION
+  --secret-jwt-key <n>          SECRET_JWT_KEY
+  --migration-job-name <nome>   MIGRATION_JOB_NAME
+  --image-tag <tag>             IMAGE_TAG
+USAGE
+}
+
 require_cmd() {
   if ! command -v "$1" >/dev/null 2>&1; then
     echo "Erro: comando '$1' nao encontrado." >&2
@@ -16,6 +38,16 @@ require_env() {
   fi
 }
 
+load_env_file() {
+  local env_file="$1"
+  if [[ -f "$env_file" ]]; then
+    set -a
+    # shellcheck disable=SC1090
+    source "$env_file"
+    set +a
+  fi
+}
+
 job_exists() {
   local name="$1"
   gcloud run jobs describe "$name" --region "$REGION" --project "$PROJECT_ID" >/dev/null 2>&1
@@ -28,6 +60,40 @@ secret_has_versions() {
 
 require_cmd gcloud
 require_cmd docker
+
+ENV_FILE=".env.gcp"
+args=("$@")
+for ((i = 0; i < ${#args[@]}; i++)); do
+  if [[ "${args[$i]}" == "--env-file" ]]; then
+    if (( i + 1 >= ${#args[@]} )); then
+      echo "Erro: --env-file requer um valor." >&2
+      exit 1
+    fi
+    ENV_FILE="${args[$((i + 1))]}"
+  fi
+done
+
+load_env_file "$ENV_FILE"
+
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --env-file) ENV_FILE="$2"; shift 2 ;;
+    --project-id) PROJECT_ID="$2"; shift 2 ;;
+    --region) REGION="$2"; shift 2 ;;
+    --repo-name) REPO_NAME="$2"; shift 2 ;;
+    --service-name) SERVICE_NAME="$2"; shift 2 ;;
+    --sql-instance) SQL_INSTANCE="$2"; shift 2 ;;
+    --db-name) DB_NAME="$2"; shift 2 ;;
+    --db-user) DB_USER="$2"; shift 2 ;;
+    --service-account) SERVICE_ACCOUNT="$2"; shift 2 ;;
+    --secret-db-connection) SECRET_DB_CONNECTION="$2"; shift 2 ;;
+    --secret-jwt-key) SECRET_JWT_KEY="$2"; shift 2 ;;
+    --migration-job-name) MIGRATION_JOB_NAME="$2"; shift 2 ;;
+    --image-tag) IMAGE_TAG="$2"; shift 2 ;;
+    -h|--help) usage; exit 0 ;;
+    *) echo "Parametro invalido: $1" >&2; usage; exit 1 ;;
+  esac
+done
 
 require_env PROJECT_ID
 require_env REGION

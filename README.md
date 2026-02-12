@@ -452,13 +452,27 @@ Scripts disponíveis:
 Fluxo recomendado:
 
 ```bash
-export PROJECT_ID="seu-projeto"
-export REGION="us-central1"
-export DB_PASS="senha-forte"
-export JWT_KEY="chave-jwt-com-32-ou-mais-caracteres"
-
+# .env.gcp (na raiz, ignorado pelo git)
+# PROJECT_ID="seu-projeto"
+# REGION="us-central1"
+# DB_PASS="senha-forte"
+# JWT_KEY="chave-jwt-com-32-ou-mais-caracteres"
 ./scripts/gcp-bootstrap.sh
 ./scripts/gcp-deploy-all.sh
+```
+
+Sem `.env.gcp`, use parametros:
+
+```bash
+./scripts/gcp-bootstrap.sh \
+  --project-id "seu-projeto" \
+  --region "us-central1" \
+  --db-pass "senha-forte" \
+  --jwt-key "chave-jwt-com-32-ou-mais-caracteres"
+
+./scripts/gcp-deploy-all.sh \
+  --project-id "seu-projeto" \
+  --region "us-central1"
 ```
 
 Fluxo manual por etapa:
