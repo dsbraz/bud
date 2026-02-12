@@ -6,7 +6,8 @@ public sealed record BudMcpOptions(
     string ApiBaseUrl,
     string? UserEmail,
     Guid? DefaultTenantId,
-    int HttpTimeoutSeconds)
+    int HttpTimeoutSeconds,
+    int SessionIdleTtlMinutes = 30)
 {
     public static BudMcpOptions FromEnvironment()
     {
@@ -49,6 +50,21 @@ public sealed record BudMcpOptions(
             }
         }
 
-        return new BudMcpOptions(apiBaseUrl, string.IsNullOrWhiteSpace(userEmail) ? null : userEmail.Trim(), defaultTenantId, timeoutSeconds);
+        var sessionIdleTtlMinutes = 30;
+        var sessionIdleTtlRaw = section["SessionIdleTtlMinutes"] ?? configuration["BUD_SESSION_IDLE_TTL_MINUTES"];
+        if (!string.IsNullOrWhiteSpace(sessionIdleTtlRaw))
+        {
+            if (!int.TryParse(sessionIdleTtlRaw, out sessionIdleTtlMinutes) || sessionIdleTtlMinutes <= 0)
+            {
+                throw new InvalidOperationException("BudMcp:SessionIdleTtlMinutes (ou BUD_SESSION_IDLE_TTL_MINUTES) deve ser um número inteiro positivo.");
+            }
+        }
+
+        return new BudMcpOptions(
+            apiBaseUrl,
+            string.IsNullOrWhiteSpace(userEmail) ? null : userEmail.Trim(),
+            defaultTenantId,
+            timeoutSeconds,
+            sessionIdleTtlMinutes);
     }
 }
