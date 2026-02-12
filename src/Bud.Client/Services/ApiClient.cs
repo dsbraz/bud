@@ -9,15 +9,18 @@ public sealed class ApiClient
 {
     private const int MaxPageSize = 100;
     private readonly HttpClient _http;
+    private readonly ToastService _toastService;
+    private DateTime _lastLoadWarningUtc = DateTime.MinValue;
 
-    public ApiClient(HttpClient http)
+    public ApiClient(HttpClient http, ToastService toastService)
     {
         _http = http;
+        _toastService = toastService;
     }
 
     public async Task<List<OrganizationSummaryDto>?> GetMyOrganizationsAsync()
     {
-        return await _http.GetFromJsonAsync<List<OrganizationSummaryDto>>("api/auth/my-organizations");
+        return await GetSafeAsync<List<OrganizationSummaryDto>>("api/auth/my-organizations");
     }
 
     public async Task<PagedResult<Organization>?> GetOrganizationsAsync(string? search, int page = 1, int pageSize = 10)
@@ -35,7 +38,7 @@ public sealed class ApiClient
         queryParams.Add($"pageSize={pageSize}");
 
         var url = $"api/organizations?{string.Join("&", queryParams)}";
-        return await _http.GetFromJsonAsync<PagedResult<Organization>>(url);
+        return await GetSafeAsync<PagedResult<Organization>>(url);
     }
 
     public async Task<Organization?> CreateOrganizationAsync(CreateOrganizationRequest request)
@@ -82,7 +85,7 @@ public sealed class ApiClient
         {
             url += $"?organizationId={organizationId.Value}";
         }
-        return await _http.GetFromJsonAsync<List<LeaderCollaboratorResponse>>(url);
+        return await GetSafeAsync<List<LeaderCollaboratorResponse>>(url);
     }
 
     public async Task<PagedResult<Workspace>?> GetWorkspacesAsync(Guid? organizationId, string? search, int page = 1, int pageSize = 10)
@@ -104,14 +107,14 @@ public sealed class ApiClient
         queryParams.Add($"pageSize={pageSize}");
 
         var url = $"api/workspaces?{string.Join("&", queryParams)}";
-        return await _http.GetFromJsonAsync<PagedResult<Workspace>>(url);
+        return await GetSafeAsync<PagedResult<Workspace>>(url);
     }
 
     public async Task<PagedResult<Collaborator>?> GetOrganizationCollaboratorsAsync(Guid organizationId, int page = 1, int pageSize = 10)
     {
         (page, pageSize) = NormalizePagination(page, pageSize);
         var url = $"api/organizations/{organizationId}/collaborators?page={page}&pageSize={pageSize}";
-        return await _http.GetFromJsonAsync<PagedResult<Collaborator>>(url);
+        return await GetSafeAsync<PagedResult<Collaborator>>(url);
     }
 
     public async Task<Workspace?> CreateWorkspaceAsync(CreateWorkspaceRequest request)
@@ -174,7 +177,7 @@ public sealed class ApiClient
         queryParams.Add($"pageSize={pageSize}");
 
         var url = $"api/teams?{string.Join("&", queryParams)}";
-        return await _http.GetFromJsonAsync<PagedResult<Team>>(url);
+        return await GetSafeAsync<PagedResult<Team>>(url);
     }
 
     public async Task<Team?> CreateTeamAsync(CreateTeamRequest request)
@@ -233,7 +236,7 @@ public sealed class ApiClient
         queryParams.Add($"pageSize={pageSize}");
 
         var url = $"api/collaborators?{string.Join("&", queryParams)}";
-        return await _http.GetFromJsonAsync<PagedResult<Collaborator>>(url);
+        return await GetSafeAsync<PagedResult<Collaborator>>(url);
     }
 
     public async Task<Collaborator?> CreateCollaboratorAsync(CreateCollaboratorRequest request)
@@ -301,7 +304,7 @@ public sealed class ApiClient
         queryParams.Add($"pageSize={pageSize}");
 
         var url = $"api/missions?{string.Join("&", queryParams)}";
-        return await _http.GetFromJsonAsync<PagedResult<Mission>>(url);
+        return await GetSafeAsync<PagedResult<Mission>>(url);
     }
 
     public async Task<PagedResult<Mission>?> GetMyMissionsAsync(
@@ -320,7 +323,7 @@ public sealed class ApiClient
         queryParams.Add($"pageSize={pageSize}");
 
         var url = $"api/missions/my-missions/{collaboratorId}?{string.Join("&", queryParams)}";
-        return await _http.GetFromJsonAsync<PagedResult<Mission>>(url);
+        return await GetSafeAsync<PagedResult<Mission>>(url);
     }
 
     public async Task<Mission?> CreateMissionAsync(CreateMissionRequest request)
@@ -338,7 +341,7 @@ public sealed class ApiClient
 
     public async Task<MyDashboardResponse?> GetMyDashboardAsync()
     {
-        return await _http.GetFromJsonAsync<MyDashboardResponse>("api/dashboard/my-dashboard");
+        return await GetSafeAsync<MyDashboardResponse>("api/dashboard/my-dashboard");
     }
 
     public async Task<PagedResult<MissionMetric>?> GetMissionMetricsAsync(Guid? missionId, string? search, int page = 1, int pageSize = 10)
@@ -360,7 +363,7 @@ public sealed class ApiClient
         queryParams.Add($"pageSize={pageSize}");
 
         var url = $"api/mission-metrics?{string.Join("&", queryParams)}";
-        return await _http.GetFromJsonAsync<PagedResult<MissionMetric>>(url);
+        return await GetSafeAsync<PagedResult<MissionMetric>>(url);
     }
 
     public async Task<MissionMetric?> CreateMissionMetricAsync(CreateMissionMetricRequest request)
@@ -428,7 +431,7 @@ public sealed class ApiClient
     {
         (page, pageSize) = NormalizePagination(page, pageSize);
         var url = $"api/missions/{missionId}/metrics?page={page}&pageSize={pageSize}";
-        return await _http.GetFromJsonAsync<PagedResult<MissionMetric>>(url);
+        return await GetSafeAsync<PagedResult<MissionMetric>>(url);
     }
 
     // Metric Progress
@@ -440,7 +443,7 @@ public sealed class ApiClient
         }
 
         var ids = string.Join(",", metricIds);
-        return await _http.GetFromJsonAsync<List<MetricProgressDto>>($"api/mission-metrics/progress?ids={ids}");
+        return await GetSafeAsync<List<MetricProgressDto>>($"api/mission-metrics/progress?ids={ids}");
     }
 
     // Mission Progress
@@ -452,7 +455,7 @@ public sealed class ApiClient
         }
 
         var ids = string.Join(",", missionIds);
-        return await _http.GetFromJsonAsync<List<MissionProgressDto>>($"api/missions/progress?ids={ids}");
+        return await GetSafeAsync<List<MissionProgressDto>>($"api/missions/progress?ids={ids}");
     }
 
     // MetricCheckin methods
@@ -475,7 +478,7 @@ public sealed class ApiClient
         queryParams.Add($"pageSize={pageSize}");
 
         var url = $"api/metric-checkins?{string.Join("&", queryParams)}";
-        return await _http.GetFromJsonAsync<PagedResult<MetricCheckin>>(url);
+        return await GetSafeAsync<PagedResult<MetricCheckin>>(url);
     }
 
     public async Task<MetricCheckin?> CreateMetricCheckinAsync(CreateMetricCheckinRequest request)
@@ -531,12 +534,12 @@ public sealed class ApiClient
         queryParams.Add($"pageSize={pageSize}");
 
         var url = $"api/mission-templates?{string.Join("&", queryParams)}";
-        return await _http.GetFromJsonAsync<PagedResult<MissionTemplate>>(url);
+        return await GetSafeAsync<PagedResult<MissionTemplate>>(url);
     }
 
     public async Task<MissionTemplate?> GetMissionTemplateByIdAsync(Guid id)
     {
-        return await _http.GetFromJsonAsync<MissionTemplate>($"api/mission-templates/{id}");
+        return await GetSafeAsync<MissionTemplate>($"api/mission-templates/{id}");
     }
 
     public async Task<MissionTemplate?> CreateMissionTemplateAsync(CreateMissionTemplateRequest request)
@@ -574,6 +577,32 @@ public sealed class ApiClient
             var errorMessage = await ExtractErrorMessageAsync(response);
             throw new HttpRequestException(errorMessage);
         }
+    }
+
+    private async Task<T?> GetSafeAsync<T>(string url)
+    {
+        try
+        {
+            return await _http.GetFromJsonAsync<T>(url);
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"Erro ao carregar dados ({url}): {ex.Message}");
+            ShowLoadWarningThrottled();
+            return default;
+        }
+    }
+
+    private void ShowLoadWarningThrottled()
+    {
+        if ((DateTime.UtcNow - _lastLoadWarningUtc).TotalSeconds < 3)
+        {
+            return;
+        }
+
+        _lastLoadWarningUtc = DateTime.UtcNow;
+        _toastService.ShowWarning("Falha ao carregar dados",
+            "Não foi possível carregar os dados. Verifique sua conexão e tente novamente.");
     }
 
     private static async Task<string> ExtractErrorMessageAsync(HttpResponseMessage response)
@@ -651,13 +680,13 @@ public sealed class ApiClient
     // Collaborator Subordinates (Hierarchy)
     public async Task<List<CollaboratorHierarchyNodeDto>?> GetCollaboratorSubordinatesAsync(Guid collaboratorId)
     {
-        return await _http.GetFromJsonAsync<List<CollaboratorHierarchyNodeDto>>($"api/collaborators/{collaboratorId}/subordinates");
+        return await GetSafeAsync<List<CollaboratorHierarchyNodeDto>>($"api/collaborators/{collaboratorId}/subordinates");
     }
 
     // Collaborator Teams (Many-to-Many)
     public async Task<List<TeamSummaryDto>?> GetCollaboratorTeamsAsync(Guid collaboratorId)
     {
-        return await _http.GetFromJsonAsync<List<TeamSummaryDto>>($"api/collaborators/{collaboratorId}/teams");
+        return await GetSafeAsync<List<TeamSummaryDto>>($"api/collaborators/{collaboratorId}/teams");
     }
 
     public async Task UpdateCollaboratorTeamsAsync(Guid collaboratorId, UpdateCollaboratorTeamsRequest request)
@@ -678,13 +707,13 @@ public sealed class ApiClient
         {
             url += $"?search={Uri.EscapeDataString(search)}";
         }
-        return await _http.GetFromJsonAsync<List<TeamSummaryDto>>(url);
+        return await GetSafeAsync<List<TeamSummaryDto>>(url);
     }
 
     // Team Collaborators (Many-to-Many)
     public async Task<List<CollaboratorSummaryDto>?> GetTeamCollaboratorSummariesAsync(Guid teamId)
     {
-        return await _http.GetFromJsonAsync<List<CollaboratorSummaryDto>>($"api/teams/{teamId}/collaborators-summary");
+        return await GetSafeAsync<List<CollaboratorSummaryDto>>($"api/teams/{teamId}/collaborators-summary");
     }
 
     public async Task UpdateTeamCollaboratorsAsync(Guid teamId, UpdateTeamCollaboratorsRequest request)
@@ -705,7 +734,7 @@ public sealed class ApiClient
         {
             url += $"?search={Uri.EscapeDataString(search)}";
         }
-        return await _http.GetFromJsonAsync<List<CollaboratorSummaryDto>>(url);
+        return await GetSafeAsync<List<CollaboratorSummaryDto>>(url);
     }
 
     // Notification methods
@@ -713,12 +742,12 @@ public sealed class ApiClient
     {
         (page, pageSize) = NormalizePagination(page, pageSize);
         var url = $"api/notifications?page={page}&pageSize={pageSize}";
-        return await _http.GetFromJsonAsync<PagedResult<NotificationDto>>(url);
+        return await GetSafeAsync<PagedResult<NotificationDto>>(url);
     }
 
     public async Task<UnreadCountResponse?> GetNotificationUnreadCountAsync()
     {
-        return await _http.GetFromJsonAsync<UnreadCountResponse>("api/notifications/unread-count");
+        return await GetSafeAsync<UnreadCountResponse>("api/notifications/unread-count");
     }
 
     public async Task MarkNotificationAsReadAsync(Guid id)

@@ -26,7 +26,7 @@ public sealed class ApiClientTests
             BaseAddress = new Uri("http://localhost/")
         };
 
-        var client = new ApiClient(httpClient);
+        var client = new ApiClient(httpClient, new ToastService());
 
         _ = await client.GetOrganizationsAsync(search: null, page: 1, pageSize: 200);
 
@@ -50,7 +50,7 @@ public sealed class ApiClientTests
             BaseAddress = new Uri("http://localhost/")
         };
 
-        var client = new ApiClient(httpClient);
+        var client = new ApiClient(httpClient, new ToastService());
 
         _ = await client.GetOrganizationsAsync(search: null, page: 0, pageSize: 10);
 
@@ -153,6 +153,45 @@ public sealed class ApiClientTests
             .WithMessage("Erro do servidor (500).");
     }
 
+    [Fact]
+    public async Task GetOrganizationsAsync_WhenServerUnavailable_ReturnsNullAndShowsWarningToast()
+    {
+        var handler = new CapturingHandler(_ => throw new HttpRequestException("Connection refused"));
+        var toastService = new ToastService();
+        ToastMessage? receivedToast = null;
+        toastService.OnToastAdded += t => receivedToast = t;
+
+        var client = new ApiClient(
+            new HttpClient(handler) { BaseAddress = new Uri("http://localhost/") },
+            toastService);
+
+        var result = await client.GetOrganizationsAsync(search: null, page: 1, pageSize: 10);
+
+        result.Should().BeNull();
+        receivedToast.Should().NotBeNull();
+        receivedToast!.Type.Should().Be(ToastType.Warning);
+        receivedToast.Title.Should().Be("Falha ao carregar dados");
+    }
+
+    [Fact]
+    public async Task GetSafeAsync_ThrottlesMultipleWarningsWithin3Seconds()
+    {
+        var handler = new CapturingHandler(_ => throw new HttpRequestException("Connection refused"));
+        var toastService = new ToastService();
+        var toastCount = 0;
+        toastService.OnToastAdded += _ => toastCount++;
+
+        var client = new ApiClient(
+            new HttpClient(handler) { BaseAddress = new Uri("http://localhost/") },
+            toastService);
+
+        _ = await client.GetOrganizationsAsync(search: null);
+        _ = await client.GetMissionsAsync(null, null, null);
+        _ = await client.GetMyDashboardAsync();
+
+        toastCount.Should().Be(1);
+    }
+
     private static CapturingHandler CreateSuccessHandler()
         => new(_ =>
             new HttpResponseMessage(HttpStatusCode.OK)
@@ -166,7 +205,7 @@ public sealed class ApiClientTests
         => new(new HttpClient(handler)
         {
             BaseAddress = new Uri("http://localhost/")
-        });
+        }, new ToastService());
     private sealed class CapturingHandler(Func<HttpRequestMessage, HttpResponseMessage> responder) : HttpMessageHandler
     {
         private readonly Func<HttpRequestMessage, HttpResponseMessage> _responder = responder;

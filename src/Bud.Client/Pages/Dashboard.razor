@@ -6,13 +6,9 @@
 @inject OrganizationContext OrgContext
 @inject NavigationManager Navigation
 
-@if (isLoading)
+@if (dashboard is null)
 {
     <p class="muted">Carregando...</p>
-}
-else if (dashboard is null)
-{
-    <p class="muted">Não foi possível carregar o dashboard.</p>
 }
 else
 {
@@ -173,7 +169,6 @@ else
 
 @code {
     private MyDashboardResponse? dashboard;
-    private bool isLoading = true;
 
     protected override async Task OnInitializedAsync()
     {
@@ -184,16 +179,7 @@ else
 
     private async Task LoadDashboard()
     {
-        isLoading = true;
-        try
-        {
-            dashboard = await Api.GetMyDashboardAsync();
-        }
-        catch
-        {
-            dashboard = null;
-        }
-        isLoading = false;
+        dashboard = await Api.GetMyDashboardAsync() ?? new MyDashboardResponse();
     }
 
     private void OnOrganizationChanged()
