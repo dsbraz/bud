@@ -1,3 +1,10 @@
+# Agent Note (non-normative)
+
+Contract-Version: 2026-02-12
+
+The canonical and normative rules start at `# Repository Guidelines` below.
+This note is informational and does not add or override any requirement.
+
 # Repository Guidelines
 
 This file provides guidance to coding agents when working with code in this repository.
