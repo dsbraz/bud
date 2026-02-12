@@ -404,7 +404,7 @@ curl -s http://localhost:8081/ \
   -d '{"jsonrpc":"2.0","id":1,"method":"initialize"}'
 ```
 
-A resposta inclui o header `X-Mcp-Session-Id`, que deve ser enviado nas chamadas seguintes (`tools/list`, `tools/call`, etc.).
+A resposta inclui o header `MCP-Session-Id`, que deve ser enviado nas chamadas seguintes (`tools/list`, `tools/call`, etc.).
 
 Fluxo obrigatório para atualizar catálogo MCP:
 
@@ -435,6 +435,7 @@ Se estiver rodando local com `DOTNET_ENVIRONMENT=Development`, defina:
 
 ### Descoberta de parâmetros e bootstrap de sessão no MCP
 
+- `prompts/list` e suportado para compatibilidade de clientes MCP e retorna lista vazia quando nao ha prompts publicados.
 - `auth_login` retorna `whoami`, `requiresTenantForDomainTools` e `nextSteps` para orientar o agente nos próximos passos.
 - `session_bootstrap` retorna snapshot de sessão (`whoami`, `availableTenants`, tenant atual) e `starterSchemas` para fluxos de criação.
 - `help_action_schema` retorna `required`, `inputSchema` e `example` para uma ação específica (ou todas as ações, quando `action` não é informado).

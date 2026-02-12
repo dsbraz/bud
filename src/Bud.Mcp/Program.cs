@@ -78,7 +78,7 @@ app.MapPost("/", async (
             {
                 return Results.Json(McpJsonRpcDispatcher.CreateErrorResponse(
                     idOrNull,
-                    "Header Mcp-Session-Id é obrigatório para este método."));
+                    "Header MCP-Session-Id é obrigatório para este método."));
             }
 
             sessionContext = await sessionStore.GetExistingAsync(requestedSessionId, cancellationToken);
@@ -106,12 +106,12 @@ await app.RunAsync();
 
 static string? ReadSessionIdHeader(IHeaderDictionary headers)
 {
-    if (!TryGetHeaderValue(headers, out var value, "MCP-Session-Id", "Mcp-Session-Id", "X-Mcp-Session-Id"))
+    if (!headers.TryGetValue("MCP-Session-Id", out var value))
     {
         return null;
     }
 
-    var raw = value;
+    var raw = value.ToString();
     if (string.IsNullOrWhiteSpace(raw))
     {
         return null;
@@ -119,7 +119,7 @@ static string? ReadSessionIdHeader(IHeaderDictionary headers)
 
     if (!Guid.TryParse(raw, out var parsed))
     {
-        throw new InvalidOperationException("Header Mcp-Session-Id deve ser um GUID válido.");
+        throw new InvalidOperationException("Header MCP-Session-Id deve ser um GUID válido.");
     }
 
     return parsed.ToString();
@@ -128,26 +128,6 @@ static string? ReadSessionIdHeader(IHeaderDictionary headers)
 static void SetSessionHeaders(IHeaderDictionary headers, string sessionId)
 {
     headers["MCP-Session-Id"] = sessionId;
-    headers["X-Mcp-Session-Id"] = sessionId;
-}
-
-static bool TryGetHeaderValue(IHeaderDictionary headers, out string? value, params string[] headerNames)
-{
-    foreach (var name in headerNames)
-    {
-        if (headers.TryGetValue(name, out var headerValue))
-        {
-            var raw = headerValue.ToString();
-            if (!string.IsNullOrWhiteSpace(raw))
-            {
-                value = raw;
-                return true;
-            }
-        }
-    }
-
-    value = null;
-    return false;
 }
 
 static JsonNode? TryGetId(JsonElement root)

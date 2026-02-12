@@ -39,7 +39,6 @@ public sealed class McpHttpEndpointsTests : IClassFixture<WebApplicationFactory<
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         response.Headers.Contains("MCP-Session-Id").Should().BeTrue();
-        response.Headers.Contains("X-Mcp-Session-Id").Should().BeTrue();
     }
 
     [Fact]
@@ -59,7 +58,7 @@ public sealed class McpHttpEndpointsTests : IClassFixture<WebApplicationFactory<
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         body.Should().NotBeNull();
         body!["error"]!["message"]!.GetValue<string>()
-            .Should().Be("Header Mcp-Session-Id é obrigatório para este método.");
+            .Should().Be("Header MCP-Session-Id é obrigatório para este método.");
     }
 
     [Fact]
@@ -85,38 +84,6 @@ public sealed class McpHttpEndpointsTests : IClassFixture<WebApplicationFactory<
             })
         };
         listRequest.Headers.Add("MCP-Session-Id", sessionId);
-
-        var listResponse = await client.SendAsync(listRequest);
-        var body = await listResponse.Content.ReadFromJsonAsync<JsonObject>();
-
-        listResponse.StatusCode.Should().Be(HttpStatusCode.OK);
-        body.Should().NotBeNull();
-        body!["result"]!["tools"]!.AsArray().Should().NotBeEmpty();
-    }
-
-    [Fact]
-    public async Task PostMcp_ToolsListWithLegacySessionHeader_ReturnsTools()
-    {
-        using var client = _factory.CreateClient();
-        var initializePayload = new
-        {
-            jsonrpc = "2.0",
-            id = 1,
-            method = "initialize"
-        };
-        var initializeResponse = await client.PostAsJsonAsync("/", initializePayload);
-        var sessionId = initializeResponse.Headers.GetValues("MCP-Session-Id").Single();
-
-        var listRequest = new HttpRequestMessage(HttpMethod.Post, "/")
-        {
-            Content = JsonContent.Create(new
-            {
-                jsonrpc = "2.0",
-                id = 2,
-                method = "tools/list"
-            })
-        };
-        listRequest.Headers.Add("X-Mcp-Session-Id", sessionId);
 
         var listResponse = await client.SendAsync(listRequest);
         var body = await listResponse.Content.ReadFromJsonAsync<JsonObject>();

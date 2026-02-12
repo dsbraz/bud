@@ -34,6 +34,8 @@ This file provides guidance to coding agents when working with code in this repo
 - For `Bud.Server` logging, use source-generated logging (`[LoggerMessage]`) local to each component (`partial` class); do not introduce centralized ad-hoc log catalogs.
 - For `Bud.Mcp`, keep tool schemas explicit (`required`, field types/formats/enums) and propagate API validation details (`errors` by field) in tool errors.
 - For `Bud.Mcp`, keep domain tools (`mission_*`, `mission_metric_*`, `metric_checkin_*`) sourced from `Tools/Generated/mcp-tool-catalog.json` (strict mode, no runtime fallback to ad-hoc schemas).
+- For `Bud.Mcp` HTTP transport, use `MCP-Session-Id` as the session header.
+- For `Bud.Mcp` protocol compatibility, keep `prompts/list` implemented (empty list when no prompts are published) to avoid client discovery regressions.
 - Keep the solution warning-free (`TreatWarningsAsErrors=true`): code changes MUST not introduce build/test warnings.
 
 ### Documentation Update Rule (MUST)

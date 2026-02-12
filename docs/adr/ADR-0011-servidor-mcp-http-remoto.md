@@ -18,7 +18,8 @@ Diretrizes da decisão:
 - O MCP não implementa regras de domínio próprias; ele orquestra chamadas para os endpoints REST existentes do `Bud.Server`.
 - A autenticação do MCP é por sessão, via tool `auth_login` (email -> `/api/auth/login`); `BUD_USER_EMAIL` pode ser usado opcionalmente para auto-login no boot.
 - O tenant é selecionado na sessão MCP por ferramenta dedicada (`tenant_set_current`) e propagado em `X-Tenant-Id`.
-- Sessões MCP remotas são identificadas por `X-Mcp-Session-Id`.
+- Sessões MCP remotas são identificadas por `MCP-Session-Id`.
+- O servidor MCP expõe `prompts/list` para compatibilidade de discovery em clientes MCP, retornando lista vazia quando não houver prompts publicados.
 - As tools de domínio do MCP (`mission_*`, `mission_metric_*`, `metric_checkin_*`) usam catálogo versionado em `Tools/Generated/mcp-tool-catalog.json` como fonte única de schema (modo estrito).
 - A inicialização do MCP falha quando o catálogo está ausente, inválido, vazio ou sem tools/campos obrigatórios mínimos.
 - O escopo inicial inclui CRUD completo de:

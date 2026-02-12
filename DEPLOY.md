@@ -136,7 +136,7 @@ Antes de considerar o deploy concluido:
    - `GET /health/ready` retorna `200`
 5. smoke MCP:
    - `POST /` com `initialize` retorna `200`
-   - resposta inclui header `X-Mcp-Session-Id`
+   - resposta inclui header `MCP-Session-Id`
 
 Comandos de validacao:
 
