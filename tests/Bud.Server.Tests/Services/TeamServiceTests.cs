@@ -22,7 +22,7 @@ public class TeamServiceTests
         return new ApplicationDbContext(options, _tenantProvider);
     }
 
-    private static async Task<(Organization org, Workspace workspace)> CreateTestHierarchy(ApplicationDbContext context)
+    private static async Task<(Organization org, Workspace workspace, Collaborator leader)> CreateTestHierarchy(ApplicationDbContext context)
     {
         var org = new Organization { Id = Guid.NewGuid(), Name = "Test Org" };
         var workspace = new Workspace
@@ -31,12 +31,21 @@ public class TeamServiceTests
             Name = "Test Workspace",
             OrganizationId = org.Id
         };
+        var leader = new Collaborator
+        {
+            Id = Guid.NewGuid(),
+            FullName = "Leader User",
+            Email = "leader@example.com",
+            Role = CollaboratorRole.Leader,
+            OrganizationId = org.Id
+        };
 
         context.Organizations.Add(org);
         context.Workspaces.Add(workspace);
+        context.Collaborators.Add(leader);
         await context.SaveChangesAsync();
 
-        return (org, workspace);
+        return (org, workspace, leader);
     }
 
     #region CreateAsync Tests
@@ -51,7 +60,8 @@ public class TeamServiceTests
         var request = new CreateTeamRequest
         {
             Name = "Test Team",
-            WorkspaceId = Guid.NewGuid() // Non-existent workspace
+            WorkspaceId = Guid.NewGuid(),
+            LeaderId = Guid.NewGuid()
         };
 
         // Act
@@ -69,13 +79,14 @@ public class TeamServiceTests
         // Arrange
         using var context = CreateInMemoryContext();
         var service = new TeamService(context);
-        var (_, workspace) = await CreateTestHierarchy(context);
+        var (_, workspace, leader) = await CreateTestHierarchy(context);
 
         var request = new CreateTeamRequest
         {
             Name = "Sub Team",
             WorkspaceId = workspace.Id,
-            ParentTeamId = Guid.NewGuid() // Non-existent parent team
+            LeaderId = leader.Id,
+            ParentTeamId = Guid.NewGuid()
         };
 
         // Act
@@ -94,7 +105,6 @@ public class TeamServiceTests
         using var context = CreateInMemoryContext();
         var service = new TeamService(context);
 
-        // Create two different workspaces
         var org = new Organization { Id = Guid.NewGuid(), Name = "Test Org" };
         var workspace1 = new Workspace
         {
@@ -108,26 +118,35 @@ public class TeamServiceTests
             Name = "Workspace 2",
             OrganizationId = org.Id
         };
+        var leader = new Collaborator
+        {
+            Id = Guid.NewGuid(),
+            FullName = "Leader",
+            Email = "leader@test.com",
+            Role = CollaboratorRole.Leader,
+            OrganizationId = org.Id
+        };
 
         context.Organizations.Add(org);
         context.Workspaces.AddRange(workspace1, workspace2);
+        context.Collaborators.Add(leader);
 
-        // Create parent team in workspace1
         var parentTeam = new Team
         {
             Id = Guid.NewGuid(),
             Name = "Parent Team",
             OrganizationId = org.Id,
-            WorkspaceId = workspace1.Id
+            WorkspaceId = workspace1.Id,
+            LeaderId = leader.Id
         };
         context.Teams.Add(parentTeam);
         await context.SaveChangesAsync();
 
-        // Try to create child team in workspace2 with parent from workspace1
         var request = new CreateTeamRequest
         {
             Name = "Child Team",
             WorkspaceId = workspace2.Id,
+            LeaderId = leader.Id,
             ParentTeamId = parentTeam.Id
         };
 
@@ -146,24 +165,24 @@ public class TeamServiceTests
         // Arrange
         using var context = CreateInMemoryContext();
         var service = new TeamService(context);
-        var (org, workspace) = await CreateTestHierarchy(context);
+        var (org, workspace, leader) = await CreateTestHierarchy(context);
 
-        // Create parent team
         var parentTeam = new Team
         {
             Id = Guid.NewGuid(),
             Name = "Parent Team",
             OrganizationId = org.Id,
-            WorkspaceId = workspace.Id
+            WorkspaceId = workspace.Id,
+            LeaderId = leader.Id
         };
         context.Teams.Add(parentTeam);
         await context.SaveChangesAsync();
 
-        // Create child team
         var request = new CreateTeamRequest
         {
             Name = "Child Team",
             WorkspaceId = workspace.Id,
+            LeaderId = leader.Id,
             ParentTeamId = parentTeam.Id
         };
 
@@ -177,6 +196,7 @@ public class TeamServiceTests
         result.Value!.WorkspaceId.Should().Be(workspace.Id);
         result.Value!.OrganizationId.Should().Be(org.Id);
         result.Value!.ParentTeamId.Should().Be(parentTeam.Id);
+        result.Value!.LeaderId.Should().Be(leader.Id);
     }
 
     [Fact]
@@ -196,6 +216,7 @@ public class TeamServiceTests
             Id = Guid.NewGuid(),
             FullName = "Owner",
             Email = "owner@test.com",
+            Role = CollaboratorRole.Leader,
             OrganizationId = org.Id
         };
         org.OwnerId = owner.Id;
@@ -223,7 +244,8 @@ public class TeamServiceTests
         var request = new CreateTeamRequest
         {
             Name = "New Team",
-            WorkspaceId = workspace.Id
+            WorkspaceId = workspace.Id,
+            LeaderId = owner.Id
         };
 
         // Act
@@ -251,6 +273,7 @@ public class TeamServiceTests
             Id = Guid.NewGuid(),
             FullName = "Owner",
             Email = "owner@test.com",
+            Role = CollaboratorRole.Leader,
             OrganizationId = org.Id
         };
         org.OwnerId = owner.Id;
@@ -270,7 +293,8 @@ public class TeamServiceTests
         var request = new CreateTeamRequest
         {
             Name = "New Team",
-            WorkspaceId = workspace.Id
+            WorkspaceId = workspace.Id,
+            LeaderId = owner.Id
         };
 
         // Act
@@ -280,6 +304,102 @@ public class TeamServiceTests
         result.IsSuccess.Should().BeTrue();
         result.Value.Should().NotBeNull();
         result.Value!.Name.Should().Be("New Team");
+    }
+
+    [Fact]
+    public async Task CreateTeam_WithNonExistentLeader_ReturnsNotFound()
+    {
+        // Arrange
+        using var context = CreateInMemoryContext();
+        var service = new TeamService(context);
+        var (_, workspace, _) = await CreateTestHierarchy(context);
+
+        var request = new CreateTeamRequest
+        {
+            Name = "Test Team",
+            WorkspaceId = workspace.Id,
+            LeaderId = Guid.NewGuid()
+        };
+
+        // Act
+        var result = await service.CreateAsync(request);
+
+        // Assert
+        result.IsSuccess.Should().BeFalse();
+        result.ErrorType.Should().Be(ServiceErrorType.NotFound);
+        result.Error.Should().Be("Líder não encontrado.");
+    }
+
+    [Fact]
+    public async Task CreateTeam_WithNonLeaderRole_ReturnsValidationError()
+    {
+        // Arrange
+        using var context = CreateInMemoryContext();
+        var service = new TeamService(context);
+        var (org, workspace, _) = await CreateTestHierarchy(context);
+
+        var ic = new Collaborator
+        {
+            Id = Guid.NewGuid(),
+            FullName = "IC User",
+            Email = "ic@example.com",
+            Role = CollaboratorRole.IndividualContributor,
+            OrganizationId = org.Id
+        };
+        context.Collaborators.Add(ic);
+        await context.SaveChangesAsync();
+
+        var request = new CreateTeamRequest
+        {
+            Name = "Test Team",
+            WorkspaceId = workspace.Id,
+            LeaderId = ic.Id
+        };
+
+        // Act
+        var result = await service.CreateAsync(request);
+
+        // Assert
+        result.IsSuccess.Should().BeFalse();
+        result.ErrorType.Should().Be(ServiceErrorType.Validation);
+        result.Error.Should().Be("O colaborador selecionado como líder deve ter o perfil de Líder.");
+    }
+
+    [Fact]
+    public async Task CreateTeam_WithLeaderFromDifferentOrg_ReturnsValidationError()
+    {
+        // Arrange
+        using var context = CreateInMemoryContext();
+        var service = new TeamService(context);
+        var (_, workspace, _) = await CreateTestHierarchy(context);
+
+        var otherOrg = new Organization { Id = Guid.NewGuid(), Name = "Other Org" };
+        context.Organizations.Add(otherOrg);
+        var otherLeader = new Collaborator
+        {
+            Id = Guid.NewGuid(),
+            FullName = "Other Leader",
+            Email = "other-leader@example.com",
+            Role = CollaboratorRole.Leader,
+            OrganizationId = otherOrg.Id
+        };
+        context.Collaborators.Add(otherLeader);
+        await context.SaveChangesAsync();
+
+        var request = new CreateTeamRequest
+        {
+            Name = "Test Team",
+            WorkspaceId = workspace.Id,
+            LeaderId = otherLeader.Id
+        };
+
+        // Act
+        var result = await service.CreateAsync(request);
+
+        // Assert
+        result.IsSuccess.Should().BeFalse();
+        result.ErrorType.Should().Be(ServiceErrorType.Validation);
+        result.Error.Should().Be("O líder deve pertencer à mesma organização do time.");
     }
 
     #endregion
@@ -292,24 +412,24 @@ public class TeamServiceTests
         // Arrange
         using var context = CreateInMemoryContext();
         var service = new TeamService(context);
-        var (org, workspace) = await CreateTestHierarchy(context);
+        var (org, workspace, leader) = await CreateTestHierarchy(context);
 
-        // Create team
         var team = new Team
         {
             Id = Guid.NewGuid(),
             Name = "Test Team",
             OrganizationId = org.Id,
-            WorkspaceId = workspace.Id
+            WorkspaceId = workspace.Id,
+            LeaderId = leader.Id
         };
         context.Teams.Add(team);
         await context.SaveChangesAsync();
 
-        // Try to set itself as parent
         var request = new UpdateTeamRequest
         {
             Name = "Test Team",
-            ParentTeamId = team.Id // Self as parent
+            LeaderId = leader.Id,
+            ParentTeamId = team.Id
         };
 
         // Act
@@ -328,7 +448,6 @@ public class TeamServiceTests
         using var context = CreateInMemoryContext();
         var service = new TeamService(context);
 
-        // Create two workspaces
         var org = new Organization { Id = Guid.NewGuid(), Name = "Test Org" };
         var workspace1 = new Workspace
         {
@@ -342,35 +461,44 @@ public class TeamServiceTests
             Name = "Workspace 2",
             OrganizationId = org.Id
         };
+        var leader = new Collaborator
+        {
+            Id = Guid.NewGuid(),
+            FullName = "Leader",
+            Email = "leader@test.com",
+            Role = CollaboratorRole.Leader,
+            OrganizationId = org.Id
+        };
 
         context.Organizations.Add(org);
         context.Workspaces.AddRange(workspace1, workspace2);
+        context.Collaborators.Add(leader);
 
-        // Create team in workspace1
         var team = new Team
         {
             Id = Guid.NewGuid(),
             Name = "Team 1",
             OrganizationId = org.Id,
-            WorkspaceId = workspace1.Id
+            WorkspaceId = workspace1.Id,
+            LeaderId = leader.Id
         };
 
-        // Create parent team in workspace2
         var parentTeam = new Team
         {
             Id = Guid.NewGuid(),
             Name = "Parent Team",
             OrganizationId = org.Id,
-            WorkspaceId = workspace2.Id
+            WorkspaceId = workspace2.Id,
+            LeaderId = leader.Id
         };
 
         context.Teams.AddRange(team, parentTeam);
         await context.SaveChangesAsync();
 
-        // Try to update team to have parent from different workspace
         var request = new UpdateTeamRequest
         {
             Name = "Team 1",
+            LeaderId = leader.Id,
             ParentTeamId = parentTeam.Id
         };
 
@@ -389,33 +517,33 @@ public class TeamServiceTests
         // Arrange
         using var context = CreateInMemoryContext();
         var service = new TeamService(context);
-        var (org, workspace) = await CreateTestHierarchy(context);
+        var (org, workspace, leader) = await CreateTestHierarchy(context);
 
-        // Create team without parent
         var team = new Team
         {
             Id = Guid.NewGuid(),
             Name = "Original Name",
             OrganizationId = org.Id,
-            WorkspaceId = workspace.Id
+            WorkspaceId = workspace.Id,
+            LeaderId = leader.Id
         };
 
-        // Create parent team
         var parentTeam = new Team
         {
             Id = Guid.NewGuid(),
             Name = "Parent Team",
             OrganizationId = org.Id,
-            WorkspaceId = workspace.Id
+            WorkspaceId = workspace.Id,
+            LeaderId = leader.Id
         };
 
         context.Teams.AddRange(team, parentTeam);
         await context.SaveChangesAsync();
 
-        // Update team with new name and parent
         var request = new UpdateTeamRequest
         {
             Name = "Updated Name",
+            LeaderId = leader.Id,
             ParentTeamId = parentTeam.Id
         };
 
@@ -429,6 +557,84 @@ public class TeamServiceTests
         result.Value!.ParentTeamId.Should().Be(parentTeam.Id);
     }
 
+    [Fact]
+    public async Task UpdateTeam_WithNonExistentLeader_ReturnsNotFound()
+    {
+        // Arrange
+        using var context = CreateInMemoryContext();
+        var service = new TeamService(context);
+        var (org, workspace, leader) = await CreateTestHierarchy(context);
+
+        var team = new Team
+        {
+            Id = Guid.NewGuid(),
+            Name = "Test Team",
+            OrganizationId = org.Id,
+            WorkspaceId = workspace.Id,
+            LeaderId = leader.Id
+        };
+        context.Teams.Add(team);
+        await context.SaveChangesAsync();
+
+        var request = new UpdateTeamRequest
+        {
+            Name = "Test Team",
+            LeaderId = Guid.NewGuid()
+        };
+
+        // Act
+        var result = await service.UpdateAsync(team.Id, request);
+
+        // Assert
+        result.IsSuccess.Should().BeFalse();
+        result.ErrorType.Should().Be(ServiceErrorType.NotFound);
+        result.Error.Should().Be("Líder não encontrado.");
+    }
+
+    [Fact]
+    public async Task UpdateTeam_WithNonLeaderRole_ReturnsValidationError()
+    {
+        // Arrange
+        using var context = CreateInMemoryContext();
+        var service = new TeamService(context);
+        var (org, workspace, leader) = await CreateTestHierarchy(context);
+
+        var ic = new Collaborator
+        {
+            Id = Guid.NewGuid(),
+            FullName = "IC User",
+            Email = "ic@example.com",
+            Role = CollaboratorRole.IndividualContributor,
+            OrganizationId = org.Id
+        };
+        context.Collaborators.Add(ic);
+
+        var team = new Team
+        {
+            Id = Guid.NewGuid(),
+            Name = "Test Team",
+            OrganizationId = org.Id,
+            WorkspaceId = workspace.Id,
+            LeaderId = leader.Id
+        };
+        context.Teams.Add(team);
+        await context.SaveChangesAsync();
+
+        var request = new UpdateTeamRequest
+        {
+            Name = "Test Team",
+            LeaderId = ic.Id
+        };
+
+        // Act
+        var result = await service.UpdateAsync(team.Id, request);
+
+        // Assert
+        result.IsSuccess.Should().BeFalse();
+        result.ErrorType.Should().Be(ServiceErrorType.Validation);
+        result.Error.Should().Be("O colaborador selecionado como líder deve ter o perfil de Líder.");
+    }
+
     #endregion
 
     #region DeleteAsync Tests
@@ -439,31 +645,31 @@ public class TeamServiceTests
         // Arrange
         using var context = CreateInMemoryContext();
         var service = new TeamService(context);
-        var (org, workspace) = await CreateTestHierarchy(context);
+        var (org, workspace, leader) = await CreateTestHierarchy(context);
 
-        // Create parent team
         var parentTeam = new Team
         {
             Id = Guid.NewGuid(),
             Name = "Parent Team",
             OrganizationId = org.Id,
-            WorkspaceId = workspace.Id
+            WorkspaceId = workspace.Id,
+            LeaderId = leader.Id
         };
 
-        // Create sub-team
         var subTeam = new Team
         {
             Id = Guid.NewGuid(),
             Name = "Sub Team",
             OrganizationId = org.Id,
             WorkspaceId = workspace.Id,
-            ParentTeamId = parentTeam.Id
+            ParentTeamId = parentTeam.Id,
+            LeaderId = leader.Id
         };
 
         context.Teams.AddRange(parentTeam, subTeam);
         await context.SaveChangesAsync();
 
-        // Act - Try to delete parent team
+        // Act
         var result = await service.DeleteAsync(parentTeam.Id);
 
         // Assert
@@ -478,15 +684,15 @@ public class TeamServiceTests
         // Arrange
         using var context = CreateInMemoryContext();
         var service = new TeamService(context);
-        var (org, workspace) = await CreateTestHierarchy(context);
+        var (org, workspace, leader) = await CreateTestHierarchy(context);
 
-        // Create team without sub-teams
         var team = new Team
         {
             Id = Guid.NewGuid(),
             Name = "Test Team",
             OrganizationId = org.Id,
-            WorkspaceId = workspace.Id
+            WorkspaceId = workspace.Id,
+            LeaderId = leader.Id
         };
 
         context.Teams.Add(team);
@@ -498,7 +704,6 @@ public class TeamServiceTests
         // Assert
         result.IsSuccess.Should().BeTrue();
 
-        // Verify team was deleted
         var deletedTeam = await context.Teams.FindAsync(team.Id);
         deletedTeam.Should().BeNull();
     }
@@ -509,15 +714,15 @@ public class TeamServiceTests
         // Arrange
         using var context = CreateInMemoryContext();
         var service = new TeamService(context);
-        var (org, workspace) = await CreateTestHierarchy(context);
+        var (org, workspace, leader) = await CreateTestHierarchy(context);
 
-        // Create team with collaborators
         var team = new Team
         {
             Id = Guid.NewGuid(),
             Name = "Test Team",
             OrganizationId = org.Id,
-            WorkspaceId = workspace.Id
+            WorkspaceId = workspace.Id,
+            LeaderId = leader.Id
         };
 
         var collaborator = new Collaborator
@@ -533,13 +738,12 @@ public class TeamServiceTests
         context.Collaborators.Add(collaborator);
         await context.SaveChangesAsync();
 
-        // Act - Delete team (should cascade delete collaborators)
+        // Act
         var result = await service.DeleteAsync(team.Id);
 
         // Assert
         result.IsSuccess.Should().BeTrue();
 
-        // Verify team was deleted
         var deletedTeam = await context.Teams.FindAsync(team.Id);
         deletedTeam.Should().BeNull();
     }
@@ -553,14 +757,15 @@ public class TeamServiceTests
     {
         // Arrange
         using var context = CreateInMemoryContext();
-        var (org, workspace) = await CreateTestHierarchy(context);
+        var (org, workspace, leader) = await CreateTestHierarchy(context);
 
         var team = new Team
         {
             Id = Guid.NewGuid(),
             Name = "Test Team",
             OrganizationId = org.Id,
-            WorkspaceId = workspace.Id
+            WorkspaceId = workspace.Id,
+            LeaderId = leader.Id
         };
         context.Teams.Add(team);
 
@@ -580,7 +785,6 @@ public class TeamServiceTests
         };
         context.Collaborators.AddRange(collaborator1, collaborator2);
 
-        // Add both collaborators to team via junction table
         context.CollaboratorTeams.AddRange(
             new CollaboratorTeam { CollaboratorId = collaborator1.Id, TeamId = team.Id },
             new CollaboratorTeam { CollaboratorId = collaborator2.Id, TeamId = team.Id }
@@ -615,6 +819,132 @@ public class TeamServiceTests
         result.Error.Should().Be("Time não encontrado.");
     }
 
+    [Fact]
+    public async Task CreateTeam_ShouldAddLeaderToCollaboratorTeams()
+    {
+        // Arrange
+        using var context = CreateInMemoryContext();
+        var service = new TeamService(context);
+        var (org, workspace, leader) = await CreateTestHierarchy(context);
+
+        var request = new CreateTeamRequest
+        {
+            Name = "Test Team",
+            WorkspaceId = workspace.Id,
+            LeaderId = leader.Id
+        };
+
+        // Act
+        var result = await service.CreateAsync(request);
+
+        // Assert
+        result.IsSuccess.Should().BeTrue();
+        var teamId = result.Value!.Id;
+
+        var collaboratorTeams = await context.CollaboratorTeams
+            .Where(ct => ct.TeamId == teamId)
+            .ToListAsync();
+        collaboratorTeams.Should().ContainSingle();
+        collaboratorTeams.First().CollaboratorId.Should().Be(leader.Id);
+    }
+
+    [Fact]
+    public async Task UpdateTeam_WithNewLeader_ShouldAddNewLeaderToCollaboratorTeams()
+    {
+        // Arrange
+        using var context = CreateInMemoryContext();
+        var service = new TeamService(context);
+        var (org, workspace, leader) = await CreateTestHierarchy(context);
+
+        var newLeader = new Collaborator
+        {
+            Id = Guid.NewGuid(),
+            FullName = "New Leader",
+            Email = "new-leader@example.com",
+            Role = CollaboratorRole.Leader,
+            OrganizationId = org.Id
+        };
+        context.Collaborators.Add(newLeader);
+
+        var team = new Team
+        {
+            Id = Guid.NewGuid(),
+            Name = "Test Team",
+            OrganizationId = org.Id,
+            WorkspaceId = workspace.Id,
+            LeaderId = leader.Id
+        };
+        context.Teams.Add(team);
+
+        context.CollaboratorTeams.Add(new CollaboratorTeam
+        {
+            CollaboratorId = leader.Id,
+            TeamId = team.Id,
+            AssignedAt = DateTime.UtcNow
+        });
+        await context.SaveChangesAsync();
+
+        var request = new UpdateTeamRequest
+        {
+            Name = "Test Team",
+            LeaderId = newLeader.Id
+        };
+
+        // Act
+        var result = await service.UpdateAsync(team.Id, request);
+
+        // Assert
+        result.IsSuccess.Should().BeTrue();
+
+        var collaboratorTeams = await context.CollaboratorTeams
+            .Where(ct => ct.TeamId == team.Id)
+            .ToListAsync();
+        collaboratorTeams.Should().Contain(ct => ct.CollaboratorId == newLeader.Id);
+    }
+
+    [Fact]
+    public async Task UpdateTeam_WithExistingLeaderInCollaboratorTeams_ShouldNotDuplicate()
+    {
+        // Arrange
+        using var context = CreateInMemoryContext();
+        var service = new TeamService(context);
+        var (org, workspace, leader) = await CreateTestHierarchy(context);
+
+        var team = new Team
+        {
+            Id = Guid.NewGuid(),
+            Name = "Test Team",
+            OrganizationId = org.Id,
+            WorkspaceId = workspace.Id,
+            LeaderId = leader.Id
+        };
+        context.Teams.Add(team);
+        context.CollaboratorTeams.Add(new CollaboratorTeam
+        {
+            CollaboratorId = leader.Id,
+            TeamId = team.Id,
+            AssignedAt = DateTime.UtcNow
+        });
+        await context.SaveChangesAsync();
+
+        var request = new UpdateTeamRequest
+        {
+            Name = "Updated Name",
+            LeaderId = leader.Id
+        };
+
+        // Act
+        var result = await service.UpdateAsync(team.Id, request);
+
+        // Assert
+        result.IsSuccess.Should().BeTrue();
+
+        var collaboratorTeams = await context.CollaboratorTeams
+            .Where(ct => ct.TeamId == team.Id)
+            .ToListAsync();
+        collaboratorTeams.Should().ContainSingle(ct => ct.CollaboratorId == leader.Id);
+    }
+
     #endregion
 
     #region UpdateCollaboratorsAsync Tests
@@ -624,14 +954,15 @@ public class TeamServiceTests
     {
         // Arrange
         using var context = CreateInMemoryContext();
-        var (org, workspace) = await CreateTestHierarchy(context);
+        var (org, workspace, leader) = await CreateTestHierarchy(context);
 
         var team = new Team
         {
             Id = Guid.NewGuid(),
             Name = "Test Team",
             OrganizationId = org.Id,
-            WorkspaceId = workspace.Id
+            WorkspaceId = workspace.Id,
+            LeaderId = leader.Id
         };
         context.Teams.Add(team);
 
@@ -651,16 +982,15 @@ public class TeamServiceTests
         };
         context.Collaborators.AddRange(collaborator1, collaborator2);
 
-        // Initially, only collaborator1 is in team
         context.CollaboratorTeams.Add(new CollaboratorTeam { CollaboratorId = collaborator1.Id, TeamId = team.Id });
         await context.SaveChangesAsync();
 
         var service = new TeamService(context);
 
-        // Act - Replace with collaborator2 only
+        // Act
         var result = await service.UpdateCollaboratorsAsync(team.Id, new UpdateTeamCollaboratorsRequest
         {
-            CollaboratorIds = new List<Guid> { collaborator2.Id }
+            CollaboratorIds = new List<Guid> { leader.Id, collaborator2.Id }
         });
 
         // Assert
@@ -669,8 +999,103 @@ public class TeamServiceTests
         var updatedCollaborators = await context.CollaboratorTeams
             .Where(ct => ct.TeamId == team.Id)
             .ToListAsync();
-        updatedCollaborators.Should().HaveCount(1);
-        updatedCollaborators.First().CollaboratorId.Should().Be(collaborator2.Id);
+        updatedCollaborators.Should().HaveCount(2);
+        updatedCollaborators.Should().Contain(ct => ct.CollaboratorId == leader.Id);
+        updatedCollaborators.Should().Contain(ct => ct.CollaboratorId == collaborator2.Id);
+    }
+
+    [Fact]
+    public async Task UpdateCollaboratorsAsync_WithoutLeaderInList_ShouldReturnValidationError()
+    {
+        // Arrange
+        using var context = CreateInMemoryContext();
+        var (org, workspace, leader) = await CreateTestHierarchy(context);
+
+        var team = new Team
+        {
+            Id = Guid.NewGuid(),
+            Name = "Test Team",
+            OrganizationId = org.Id,
+            WorkspaceId = workspace.Id,
+            LeaderId = leader.Id
+        };
+        context.Teams.Add(team);
+
+        var collaborator = new Collaborator
+        {
+            Id = Guid.NewGuid(),
+            FullName = "Regular User",
+            Email = "regular@example.com",
+            OrganizationId = org.Id
+        };
+        context.Collaborators.Add(collaborator);
+
+        context.CollaboratorTeams.Add(new CollaboratorTeam
+        {
+            CollaboratorId = leader.Id,
+            TeamId = team.Id,
+            AssignedAt = DateTime.UtcNow
+        });
+        await context.SaveChangesAsync();
+
+        var service = new TeamService(context);
+
+        // Act: update collaborators WITHOUT including the leader
+        var result = await service.UpdateCollaboratorsAsync(team.Id, new UpdateTeamCollaboratorsRequest
+        {
+            CollaboratorIds = new List<Guid> { collaborator.Id }
+        });
+
+        // Assert
+        result.IsSuccess.Should().BeFalse();
+        result.ErrorType.Should().Be(ServiceErrorType.Validation);
+        result.Error.Should().Be("O líder da equipe deve estar incluído na lista de membros.");
+    }
+
+    [Fact]
+    public async Task UpdateCollaboratorsAsync_WithLeaderInList_ShouldSucceed()
+    {
+        // Arrange
+        using var context = CreateInMemoryContext();
+        var (org, workspace, leader) = await CreateTestHierarchy(context);
+
+        var team = new Team
+        {
+            Id = Guid.NewGuid(),
+            Name = "Test Team",
+            OrganizationId = org.Id,
+            WorkspaceId = workspace.Id,
+            LeaderId = leader.Id
+        };
+        context.Teams.Add(team);
+
+        var collaborator = new Collaborator
+        {
+            Id = Guid.NewGuid(),
+            FullName = "Regular User",
+            Email = "regular@example.com",
+            OrganizationId = org.Id
+        };
+        context.Collaborators.Add(collaborator);
+        await context.SaveChangesAsync();
+
+        var service = new TeamService(context);
+
+        // Act: update collaborators WITH the leader included
+        var result = await service.UpdateCollaboratorsAsync(team.Id, new UpdateTeamCollaboratorsRequest
+        {
+            CollaboratorIds = new List<Guid> { leader.Id, collaborator.Id }
+        });
+
+        // Assert
+        result.IsSuccess.Should().BeTrue();
+
+        var collaboratorTeams = await context.CollaboratorTeams
+            .Where(ct => ct.TeamId == team.Id)
+            .ToListAsync();
+        collaboratorTeams.Should().HaveCount(2);
+        collaboratorTeams.Should().Contain(ct => ct.CollaboratorId == leader.Id);
+        collaboratorTeams.Should().Contain(ct => ct.CollaboratorId == collaborator.Id);
     }
 
     [Fact]
@@ -697,14 +1122,15 @@ public class TeamServiceTests
     {
         // Arrange
         using var context = CreateInMemoryContext();
-        var (org1, workspace1) = await CreateTestHierarchy(context);
+        var (org1, workspace1, leader) = await CreateTestHierarchy(context);
 
         var team = new Team
         {
             Id = Guid.NewGuid(),
             Name = "Test Team",
             OrganizationId = org1.Id,
-            WorkspaceId = workspace1.Id
+            WorkspaceId = workspace1.Id,
+            LeaderId = leader.Id
         };
         context.Teams.Add(team);
 
@@ -723,10 +1149,10 @@ public class TeamServiceTests
 
         var service = new TeamService(context);
 
-        // Act - Try to add collaborator from different org
+        // Act
         var result = await service.UpdateCollaboratorsAsync(team.Id, new UpdateTeamCollaboratorsRequest
         {
-            CollaboratorIds = new List<Guid> { collaboratorInOrg2.Id }
+            CollaboratorIds = new List<Guid> { leader.Id, collaboratorInOrg2.Id }
         });
 
         // Assert
@@ -744,14 +1170,15 @@ public class TeamServiceTests
     {
         // Arrange
         using var context = CreateInMemoryContext();
-        var (org, workspace) = await CreateTestHierarchy(context);
+        var (org, workspace, leader) = await CreateTestHierarchy(context);
 
         var team = new Team
         {
             Id = Guid.NewGuid(),
             Name = "Test Team",
             OrganizationId = org.Id,
-            WorkspaceId = workspace.Id
+            WorkspaceId = workspace.Id,
+            LeaderId = leader.Id
         };
         context.Teams.Add(team);
 
@@ -771,7 +1198,6 @@ public class TeamServiceTests
         };
         context.Collaborators.AddRange(collaborator1, collaborator2);
 
-        // collaborator1 is already in team
         context.CollaboratorTeams.Add(new CollaboratorTeam { CollaboratorId = collaborator1.Id, TeamId = team.Id });
         await context.SaveChangesAsync();
 
@@ -782,7 +1208,7 @@ public class TeamServiceTests
 
         // Assert
         result.IsSuccess.Should().BeTrue();
-        result.Value.Should().HaveCount(1);
+        // leader + collaborator2 are available (collaborator1 is assigned)
         result.Value.Should().Contain(c => c.Id == collaborator2.Id);
         result.Value.Should().NotContain(c => c.Id == collaborator1.Id);
     }
@@ -792,14 +1218,15 @@ public class TeamServiceTests
     {
         // Arrange
         using var context = CreateInMemoryContext();
-        var (org, workspace) = await CreateTestHierarchy(context);
+        var (org, workspace, leader) = await CreateTestHierarchy(context);
 
         var team = new Team
         {
             Id = Guid.NewGuid(),
             Name = "Test Team",
             OrganizationId = org.Id,
-            WorkspaceId = workspace.Id
+            WorkspaceId = workspace.Id,
+            LeaderId = leader.Id
         };
         context.Teams.Add(team);
 
@@ -838,7 +1265,7 @@ public class TeamServiceTests
     {
         // Arrange
         using var context = CreateInMemoryContext();
-        var (org, workspace) = await CreateTestHierarchy(context);
+        var (org, workspace, leader) = await CreateTestHierarchy(context);
 
         context.Teams.AddRange(
             new Team
@@ -846,14 +1273,16 @@ public class TeamServiceTests
                 Id = Guid.NewGuid(),
                 Name = "ALPHA Team",
                 OrganizationId = org.Id,
-                WorkspaceId = workspace.Id
+                WorkspaceId = workspace.Id,
+                LeaderId = leader.Id
             },
             new Team
             {
                 Id = Guid.NewGuid(),
                 Name = "Beta Team",
                 OrganizationId = org.Id,
-                WorkspaceId = workspace.Id
+                WorkspaceId = workspace.Id,
+                LeaderId = leader.Id
             });
         await context.SaveChangesAsync();
 

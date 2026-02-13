@@ -38,12 +38,26 @@ public sealed class TeamService(ApplicationDbContext dbContext) : ITeamService
                 }
             }
 
+            var leaderValidation = await ValidateLeaderAsync(request.LeaderId, workspace.OrganizationId, cancellationToken);
+            if (leaderValidation is not null)
+            {
+                return leaderValidation;
+            }
+
             var team = Team.Create(
                 Guid.NewGuid(),
                 workspace.OrganizationId,
                 request.WorkspaceId,
                 request.Name,
+                request.LeaderId,
                 request.ParentTeamId);
+
+            team.CollaboratorTeams.Add(new CollaboratorTeam
+            {
+                CollaboratorId = request.LeaderId,
+                TeamId = team.Id,
+                AssignedAt = DateTime.UtcNow
+            });
 
             dbContext.Teams.Add(team);
             await dbContext.SaveChangesAsync(cancellationToken);
@@ -58,7 +72,9 @@ public sealed class TeamService(ApplicationDbContext dbContext) : ITeamService
 
     public async Task<ServiceResult<Team>> UpdateAsync(Guid id, UpdateTeamRequest request, CancellationToken cancellationToken = default)
     {
-        var team = await dbContext.Teams.FindAsync([id], cancellationToken);
+        var team = await dbContext.Teams
+            .Include(t => t.CollaboratorTeams)
+            .FirstOrDefaultAsync(t => t.Id == id, cancellationToken);
 
         if (team is null)
         {
@@ -87,10 +103,28 @@ public sealed class TeamService(ApplicationDbContext dbContext) : ITeamService
             }
         }
 
+        var leaderValidation = await ValidateLeaderAsync(request.LeaderId, team.OrganizationId, cancellationToken);
+        if (leaderValidation is not null)
+        {
+            return leaderValidation;
+        }
+
         try
         {
             team.Rename(request.Name);
+            team.AssignLeader(request.LeaderId);
             team.Reparent(request.ParentTeamId, team.Id);
+
+            if (!team.CollaboratorTeams.Any(ct => ct.CollaboratorId == request.LeaderId))
+            {
+                team.CollaboratorTeams.Add(new CollaboratorTeam
+                {
+                    CollaboratorId = request.LeaderId,
+                    TeamId = team.Id,
+                    AssignedAt = DateTime.UtcNow
+                });
+            }
+
             await dbContext.SaveChangesAsync(cancellationToken);
 
             return ServiceResult<Team>.Success(team);
@@ -133,11 +167,35 @@ public sealed class TeamService(ApplicationDbContext dbContext) : ITeamService
             : ServiceResult<Team>.Success(team);
     }
 
+    private async Task<ServiceResult<Team>?> ValidateLeaderAsync(Guid leaderId, Guid organizationId, CancellationToken cancellationToken)
+    {
+        var leader = await dbContext.Collaborators
+            .AsNoTracking()
+            .FirstOrDefaultAsync(c => c.Id == leaderId, cancellationToken);
+
+        if (leader is null)
+        {
+            return ServiceResult<Team>.NotFound("Líder não encontrado.");
+        }
+
+        if (leader.Role != CollaboratorRole.Leader)
+        {
+            return ServiceResult<Team>.Failure("O colaborador selecionado como líder deve ter o perfil de Líder.", ServiceErrorType.Validation);
+        }
+
+        if (leader.OrganizationId != organizationId)
+        {
+            return ServiceResult<Team>.Failure("O líder deve pertencer à mesma organização do time.", ServiceErrorType.Validation);
+        }
+
+        return null;
+    }
+
     public async Task<ServiceResult<PagedResult<Team>>> GetAllAsync(Guid? workspaceId, Guid? parentTeamId, string? search, int page, int pageSize, CancellationToken cancellationToken = default)
     {
         (page, pageSize) = PaginationNormalizer.Normalize(page, pageSize);
 
-        var query = dbContext.Teams.AsNoTracking();
+        IQueryable<Team> query = dbContext.Teams.AsNoTracking().Include(t => t.Leader);
 
         if (workspaceId.HasValue)
         {
@@ -273,6 +331,11 @@ public sealed class TeamService(ApplicationDbContext dbContext) : ITeamService
         }
 
         var distinctCollaboratorIds = request.CollaboratorIds.Distinct().ToList();
+
+        if (!distinctCollaboratorIds.Contains(team.LeaderId))
+        {
+            return ServiceResult.Failure("O líder da equipe deve estar incluído na lista de membros.", ServiceErrorType.Validation);
+        }
 
         if (distinctCollaboratorIds.Count > 0)
         {

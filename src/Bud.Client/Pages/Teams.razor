@@ -91,6 +91,7 @@
             <thead>
                 <tr>
                     <th>Nome</th>
+                    <th>Líder</th>
                     <th>Espaço de trabalho</th>
                     <th>Equipe pai</th>
                     <th style="width: 120px; text-align: center;">Ações</th>
@@ -104,6 +105,7 @@
                     var isDeleting = deletingTeamId == team.Id;
                     <tr @onclick="() => OpenDetailsModal(team)" style="cursor: pointer;">
                         <td>@team.Name</td>
+                        <td>@(team.Leader?.FullName ?? "—")</td>
                         <td>@(workspace?.Name ?? "—")</td>
                         <td>@(parent?.Name ?? "—")</td>
                         <td style="text-align: center;">
@@ -124,7 +126,7 @@
 
 @if (isModalOpen)
 {
-    <Modal Title="Criar equipe" OnClose="CloseModal">
+    <Modal Title="Criar equipe" Size="lg" OnClose="CloseModal">
         <EditForm Model="@newTeam" OnValidSubmit="CreateTeam">
             <DataAnnotationsValidator />
             <div class="form-row">
@@ -151,6 +153,14 @@
                 <label>Nome</label>
                 <InputText class="input" @bind-Value="newTeam.Name" />
             </div>
+            <TeamCollaboratorSelector
+                Leaders="@createLeaders"
+                LeaderId="@createLeaderId"
+                LeaderIdChanged="@((v) => createLeaderId = v)"
+                AvailableCollaborators="@availableCollaboratorsForCreate"
+                AssignedCollaborators="@assignedCollaboratorsForCreate"
+                AssignedCollaboratorsChanged="OnCreateCollaboratorsChanged"
+                OnAvailableSearch="SearchAvailableCollaboratorsForCreateAsync" />
             <div class="form-actions">
                 <button class="button tertiary" type="button" @onclick="CloseModal">Cancelar</button>
                 <button class="button primary" type="submit">Salvar</button>
@@ -181,22 +191,14 @@
                     }
                 </select>
             </div>
-            <div class="form-row" style="margin-top: var(--spacing-4);">
-                <label>Colaboradores</label>
-                <TransferList TItem="CollaboratorSummaryDto"
-                    AvailableItems="@availableCollaboratorsForEdit"
-                    AssignedItems="@assignedCollaboratorsForEdit"
-                    AssignedItemsChanged="OnCollaboratorsChanged"
-                    OnAvailableSearch="SearchAvailableCollaboratorsAsync"
-                    GetKey="@(c => c.Id)"
-                    GetDisplayText="@(c => c.FullName)"
-                    GetSecondaryText="@(c => c.Email)"
-                    AvailableTitle="Colaboradores disponíveis"
-                    AssignedTitle="Colaboradores atribuídos"
-                    SearchPlaceholder="Buscar colaborador..."
-                    EmptyAvailableMessage="Nenhum colaborador disponível."
-                    EmptyAssignedMessage="Nenhum colaborador atribuído." />
-            </div>
+            <TeamCollaboratorSelector
+                Leaders="@editLeaders"
+                LeaderId="@editLeaderId"
+                LeaderIdChanged="@((v) => editLeaderId = v)"
+                AvailableCollaborators="@availableCollaboratorsForEdit"
+                AssignedCollaborators="@assignedCollaboratorsForEdit"
+                AssignedCollaboratorsChanged="OnCollaboratorsChanged"
+                OnAvailableSearch="SearchAvailableCollaboratorsAsync" />
             <div class="form-actions">
                 <button class="button tertiary" type="button" @onclick="CloseEditModal">Cancelar</button>
                 <button class="button primary" type="submit">Salvar alterações</button>
@@ -253,12 +255,20 @@
     private bool showFilterPanel = false;
     private bool showWorkspaceDropdown = false;
 
+    // Estado do modal de criação — líder + colaboradores
+    private List<LeaderCollaboratorResponse> createLeaders = new();
+    private string createLeaderId = "";
+    private List<CollaboratorSummaryDto> availableCollaboratorsForCreate = new();
+    private List<CollaboratorSummaryDto> assignedCollaboratorsForCreate = new();
+
     // Estado do modal de edição
     private bool isEditModalOpen = false;
     private Team? selectedTeam = null;
     private UpdateTeamRequest editTeam = new();
     private string? editParentTeamId;
     private List<Team> editParentTeams = new();
+    private List<LeaderCollaboratorResponse> editLeaders = new();
+    private string editLeaderId = "";
     private List<CollaboratorSummaryDto> availableCollaboratorsForEdit = new();
     private List<CollaboratorSummaryDto> assignedCollaboratorsForEdit = new();
     private bool collaboratorsModified = false;
@@ -400,12 +410,18 @@
         }
     }
 
-    private void OpenCreateModal()
+    private async Task OpenCreateModal()
     {
         newTeam = new CreateTeamRequest();
         createWorkspaceId = null;
         createParentTeamId = null;
+        createLeaderId = "";
         parentTeams.Clear();
+        assignedCollaboratorsForCreate = new();
+
+        createLeaders = await Api.GetLeadersAsync() ?? new();
+        availableCollaboratorsForCreate = await Api.GetCollaboratorSummariesAsync() ?? new();
+
         isModalOpen = true;
     }
 
@@ -428,18 +444,42 @@
             return;
         }
 
+        if (!Guid.TryParse(createLeaderId, out var leaderId))
+        {
+            ToastService.ShowError("Erro ao criar equipe", "Selecione um líder para a equipe.");
+            return;
+        }
+
         newTeam.WorkspaceId = workspaceId;
+        newTeam.LeaderId = leaderId;
         newTeam.ParentTeamId = Guid.TryParse(createParentTeamId, out var parentId) ? parentId : null;
+
+        if (!assignedCollaboratorsForCreate.Any(c => c.Id == leaderId))
+        {
+            ToastService.ShowError("Erro ao criar equipe", "O líder da equipe deve estar incluído na lista de membros.");
+            return;
+        }
 
         await UiOps.RunAsync(
             async () =>
             {
-                await Api.CreateTeamAsync(newTeam);
+                var createdTeam = await Api.CreateTeamAsync(newTeam);
                 var createdTeamName = newTeam.Name;
+
+                if (createdTeam != null && assignedCollaboratorsForCreate.Count > 0)
+                {
+                    await Api.UpdateTeamCollaboratorsAsync(createdTeam.Id, new UpdateTeamCollaboratorsRequest
+                    {
+                        CollaboratorIds = assignedCollaboratorsForCreate.Select(c => c.Id).ToList()
+                    });
+                }
+
                 newTeam = new CreateTeamRequest();
                 createWorkspaceId = null;
                 createParentTeamId = null;
+                createLeaderId = "";
                 parentTeams.Clear();
+                assignedCollaboratorsForCreate = new();
                 await LoadTeams();
 
                 ToastService.ShowSuccess("Equipe criada com sucesso!", $"A equipe '{createdTeamName}' foi criada.");
@@ -458,12 +498,14 @@
             ParentTeamId = team.ParentTeamId
         };
         editParentTeamId = team.ParentTeamId?.ToString() ?? "";
+        editLeaderId = team.LeaderId.ToString();
 
         // Carregar equipes do mesmo workspace para seleção de equipe pai
         var result = await Api.GetTeamsAsync(team.WorkspaceId, null, null, 1, 100);
         editParentTeams = result?.Items.ToList() ?? new List<Team>();
 
-        // Load collaborators for TransferList
+        // Load leaders and collaborators
+        editLeaders = await Api.GetLeadersAsync() ?? new();
         assignedCollaboratorsForEdit = await Api.GetTeamCollaboratorSummariesAsync(team.Id) ?? new();
         availableCollaboratorsForEdit = await Api.GetAvailableCollaboratorsForTeamAsync(team.Id) ?? new();
         collaboratorsModified = false;
@@ -477,7 +519,9 @@
         selectedTeam = null;
         editTeam = new();
         editParentTeamId = null;
+        editLeaderId = "";
         editParentTeams.Clear();
+        editLeaders = new();
         availableCollaboratorsForEdit = new();
         assignedCollaboratorsForEdit = new();
         collaboratorsModified = false;
@@ -487,7 +531,20 @@
     {
         if (selectedTeam == null) return;
 
+        if (!Guid.TryParse(editLeaderId, out var leaderId))
+        {
+            ToastService.ShowError("Erro ao atualizar", "Selecione um líder para a equipe.");
+            return;
+        }
+
         editTeam.ParentTeamId = Guid.TryParse(editParentTeamId, out var parentId) ? parentId : null;
+        editTeam.LeaderId = leaderId;
+
+        if (collaboratorsModified && !assignedCollaboratorsForEdit.Any(c => c.Id == leaderId))
+        {
+            ToastService.ShowError("Erro ao atualizar", "O líder da equipe deve estar incluído na lista de membros.");
+            return;
+        }
 
         await UiOps.RunAsync(
             async () =>
@@ -495,7 +552,6 @@
                 var result = await Api.UpdateTeamAsync(selectedTeam.Id, editTeam);
                 if (result != null)
                 {
-                    // Update collaborators if modified
                     if (collaboratorsModified)
                     {
                         await Api.UpdateTeamCollaboratorsAsync(selectedTeam.Id, new UpdateTeamCollaboratorsRequest
@@ -512,6 +568,16 @@
             },
             "Erro ao atualizar",
             "Não foi possível atualizar a equipe. Verifique os dados e tente novamente.");
+    }
+
+    private void OnCreateCollaboratorsChanged(List<CollaboratorSummaryDto> collaborators)
+    {
+        assignedCollaboratorsForCreate = collaborators;
+    }
+
+    private async Task SearchAvailableCollaboratorsForCreateAsync(string search)
+    {
+        availableCollaboratorsForCreate = await Api.GetCollaboratorSummariesAsync(search) ?? new();
     }
 
     private void OnCollaboratorsChanged(List<CollaboratorSummaryDto> collaborators)
