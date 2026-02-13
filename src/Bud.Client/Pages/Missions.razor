@@ -3,11 +3,16 @@
 @inject OrganizationContext OrgContext
 @inject AuthState AuthState
 @inject ToastService ToastService
+@inject UiOperationService UiOps
 @implements IDisposable
 
 <MissionsMenu />
 
-<MissionsPageHeader Title="@(showMyMissions ? "Minhas missões" : "Todas as missões")" OnCreate="OpenCreateModal" />
+<ManagementPageHeader
+    Kicker="Missões"
+    Title="@(showMyMissions ? "Minhas missões" : "Todas as missões")"
+    PrimaryActionText="Criar missão"
+    OnPrimaryAction="OpenCreateModal" />
 
 @* Barra de Filtros Compacta *@
 <div class="missions-filter-bar">
@@ -128,11 +133,11 @@
 }
 
 @* Cards de Resumo *@
-<MissionsSummaryCards
-    OverallProgress="GetOverallProgressDisplay()"
-    ExpectedProgress="GetExpectedProgressDisplay()"
-    ActiveMissions="GetActiveMissionsCount()"
-    OutdatedMetrics="GetOutdatedMetricsCount()" />
+<SummaryCards CssClass="missions-summary">
+    <StatCard Value="@($"{GetOverallProgressDisplay()}%")" Label="@($"Esperado {GetExpectedProgressDisplay()}%")" ShowProgress="true" Progress="GetOverallProgressDisplay()" />
+    <StatCard Value="@GetActiveMissionsCount().ToString()" Label="Missões ativas" />
+    <StatCard Value="@GetOutdatedMetricsCount().ToString()" Label="Indicadores desatualizados" />
+</SummaryCards>
 
 @* Lista de Missões em Cards *@
 @if (missions is null)
@@ -1301,8 +1306,7 @@ else
             "Rascunho salvo com sucesso!",
             _ => "A missão foi salva como rascunho.",
             "Erro ao salvar rascunho",
-            "Não foi possível salvar o rascunho da missão. Verifique os dados e tente novamente.",
-            "salvamento de rascunho de missão");
+            "Não foi possível salvar o rascunho da missão. Verifique os dados e tente novamente.");
     }
 
     private void FlushPendingMetric()
@@ -1526,8 +1530,7 @@ else
             "Missão criada com sucesso!",
             createdMission => $"A missão '{createdMission?.Name}' foi criada e está ativa.",
             "Erro ao criar missão",
-            "Não foi possível criar a missão. Verifique os dados e tente novamente.",
-            "criação de missão");
+            "Não foi possível criar a missão. Verifique os dados e tente novamente.");
     }
 
     private bool TryValidateMissionCreation(string errorTitle, out MissionScopeType scopeType, out Guid scopeId)
@@ -1569,12 +1572,11 @@ else
         string successTitle,
         Func<Mission?, string> successMessageFactory,
         string errorTitle,
-        string errorMessage,
-        string operationContext)
+        string errorMessage)
     {
         FlushPendingMetric();
 
-        await UiOperationRunner.RunAsync(
+        await UiOps.RunAsync(
             async () =>
             {
                 newMission.ScopeType = scopeType;
@@ -1599,10 +1601,8 @@ else
                 ToastService.ShowSuccess(successTitle, successMessageFactory(createdMission));
                 CloseModal();
             },
-            ToastService,
             errorTitle,
-            errorMessage,
-            operationContext);
+            errorMessage);
     }
 
     private IEnumerable<ScopeOption> GetScopeOptions(string? scopeTypeValue)
@@ -1946,7 +1946,7 @@ else
         newCheckin.MissionMetricId = selectedCheckinMetric.Id;
         newCheckin.CheckinDate = DateTime.UtcNow;
 
-        await UiOperationRunner.RunAsync(
+        await UiOps.RunAsync(
             async () =>
             {
                 await Api.CreateMetricCheckinAsync(newCheckin);
@@ -1959,10 +1959,8 @@ else
                     await LoadMetricProgress(missionId.Value);
                 }
             },
-            ToastService,
             "Erro ao criar check-in",
-            "Não foi possível criar o check-in. Verifique os dados e tente novamente.",
-            "criação de check-in em missão");
+            "Não foi possível criar o check-in. Verifique os dados e tente novamente.");
     }
 
     private static string GetCheckinTargetHint(MissionMetric metric) => MissionMetricDisplayHelper.GetCheckinTargetHint(metric);
@@ -2061,7 +2059,7 @@ else
 
         var missionId = selectedMission.Id;
 
-        await UiOperationRunner.RunAsync(
+        await UiOps.RunAsync(
             async () =>
             {
                 await Api.UpdateMissionAsync(missionId, editMission);
@@ -2148,10 +2146,8 @@ else
                 ToastService.ShowSuccess("Missão atualizada", "As alterações foram salvas com sucesso.");
                 CloseEditModal();
             },
-            ToastService,
             "Erro ao atualizar",
-            "Não foi possível atualizar a missão. Verifique os dados e tente novamente.",
-            "atualização de missão");
+            "Não foi possível atualizar a missão. Verifique os dados e tente novamente.");
     }
 
     private async Task HandleDeleteClick(Guid missionId)
@@ -2170,17 +2166,15 @@ else
     {
         try
         {
-            await UiOperationRunner.RunAsync(
+            await UiOps.RunAsync(
                 async () =>
                 {
                     await Api.DeleteMissionAsync(missionId);
                     ToastService.ShowSuccess("Missão excluída", "A missão foi removida com sucesso.");
                     await LoadMissions();
                 },
-                ToastService,
-                "Erro ao excluir",
-                "Não foi possível excluir a missão. Tente novamente.",
-                "exclusão de missão");
+            "Erro ao excluir",
+            "Não foi possível excluir a missão. Tente novamente.");
         }
         finally
         {

@@ -233,8 +233,8 @@
 
         return AuthState.Session.Role switch
         {
-            Bud.Shared.Models.CollaboratorRole.Leader => "Líder",
-            Bud.Shared.Models.CollaboratorRole.IndividualContributor => "Colaborador",
+            Bud.Shared.Domain.CollaboratorRole.Leader => "Líder",
+            Bud.Shared.Domain.CollaboratorRole.IndividualContributor => "Colaborador",
             _ => "Sem perfil"
         };
     }

@@ -1,7 +1,7 @@
 using System.Net.Http.Json;
 using System.Text.Json;
 using Bud.Shared.Contracts;
-using Bud.Shared.Models;
+using Bud.Shared.Domain;
 
 namespace Bud.Client.Services;
 

@@ -1,7 +1,7 @@
 using Bud.Server.Data;
-using Bud.Server.Domain.Common.Specifications;
+using Bud.Server.Domain.Specifications;
 using Bud.Shared.Contracts;
-using Bud.Shared.Models;
+using Bud.Shared.Domain;
 using Microsoft.EntityFrameworkCore;
 
 namespace Bud.Server.Services;
@@ -10,39 +10,41 @@ public sealed class MissionService(
     ApplicationDbContext dbContext,
     IMissionScopeResolver missionScopeResolver) : IMissionService
 {
-    public MissionService(ApplicationDbContext dbContext)
-        : this(dbContext, new MissionScopeResolver(dbContext))
-    {
-    }
-
     public async Task<ServiceResult<Mission>> CreateAsync(CreateMissionRequest request, CancellationToken cancellationToken = default)
     {
-        var scopeResolution = await missionScopeResolver.ResolveScopeOrganizationIdAsync(
-            request.ScopeType,
-            request.ScopeId,
-            cancellationToken: cancellationToken);
-        if (!scopeResolution.IsSuccess)
+        try
         {
-            return ServiceResult<Mission>.NotFound(scopeResolution.Error ?? "Escopo não encontrado.");
+            var missionScope = MissionScope.Create(request.ScopeType, request.ScopeId);
+
+            var scopeResolution = await missionScopeResolver.ResolveScopeOrganizationIdAsync(
+                request.ScopeType,
+                request.ScopeId,
+                cancellationToken: cancellationToken);
+            if (!scopeResolution.IsSuccess)
+            {
+                return ServiceResult<Mission>.NotFound(scopeResolution.Error ?? "Escopo não encontrado.");
+            }
+
+            var mission = Mission.Create(
+                Guid.NewGuid(),
+                scopeResolution.Value,
+                request.Name,
+                request.Description,
+                NormalizeToUtc(request.StartDate),
+                NormalizeToUtc(request.EndDate),
+                request.Status);
+
+            mission.SetScope(missionScope);
+
+            dbContext.Missions.Add(mission);
+            await dbContext.SaveChangesAsync(cancellationToken);
+
+            return ServiceResult<Mission>.Success(mission);
         }
-
-        var mission = new Mission
+        catch (DomainInvariantException ex)
         {
-            Id = Guid.NewGuid(),
-            Name = request.Name.Trim(),
-            Description = request.Description?.Trim(),
-            StartDate = NormalizeToUtc(request.StartDate),
-            EndDate = NormalizeToUtc(request.EndDate),
-            Status = request.Status,
-            OrganizationId = scopeResolution.Value,
-        };
-
-        ApplyScope(mission, request.ScopeType, request.ScopeId);
-
-        dbContext.Missions.Add(mission);
-        await dbContext.SaveChangesAsync(cancellationToken);
-
-        return ServiceResult<Mission>.Success(mission);
+            return ServiceResult<Mission>.Failure(ex.Message, ServiceErrorType.Validation);
+        }
     }
 
     public async Task<ServiceResult<Mission>> UpdateAsync(Guid id, UpdateMissionRequest request, CancellationToken cancellationToken = default)
@@ -54,31 +56,41 @@ public sealed class MissionService(
             return ServiceResult<Mission>.NotFound("Missão não encontrada.");
         }
 
-        mission.Name = request.Name.Trim();
-        mission.Description = request.Description?.Trim();
-        mission.StartDate = NormalizeToUtc(request.StartDate);
-        mission.EndDate = NormalizeToUtc(request.EndDate);
-        mission.Status = request.Status;
-
-        var shouldUpdateScope = request.ScopeId != Guid.Empty;
-        if (shouldUpdateScope)
+        try
         {
-            var scopeResolution = await missionScopeResolver.ResolveScopeOrganizationIdAsync(
-                request.ScopeType,
-                request.ScopeId,
-                cancellationToken: cancellationToken);
-            if (!scopeResolution.IsSuccess)
+            mission.UpdateDetails(
+                request.Name,
+                request.Description,
+                NormalizeToUtc(request.StartDate),
+                NormalizeToUtc(request.EndDate),
+                request.Status);
+
+            var shouldUpdateScope = request.ScopeId != Guid.Empty;
+            if (shouldUpdateScope)
             {
-                return ServiceResult<Mission>.NotFound(scopeResolution.Error ?? "Escopo não encontrado.");
+                var missionScope = MissionScope.Create(request.ScopeType, request.ScopeId);
+
+                var scopeResolution = await missionScopeResolver.ResolveScopeOrganizationIdAsync(
+                    request.ScopeType,
+                    request.ScopeId,
+                    cancellationToken: cancellationToken);
+                if (!scopeResolution.IsSuccess)
+                {
+                    return ServiceResult<Mission>.NotFound(scopeResolution.Error ?? "Escopo não encontrado.");
+                }
+
+                mission.OrganizationId = scopeResolution.Value;
+                mission.SetScope(missionScope);
             }
 
-            mission.OrganizationId = scopeResolution.Value;
-            ApplyScope(mission, request.ScopeType, request.ScopeId);
+            await dbContext.SaveChangesAsync(cancellationToken);
+
+            return ServiceResult<Mission>.Success(mission);
         }
-
-        await dbContext.SaveChangesAsync(cancellationToken);
-
-        return ServiceResult<Mission>.Success(mission);
+        catch (DomainInvariantException ex)
+        {
+            return ServiceResult<Mission>.Failure(ex.Message, ServiceErrorType.Validation);
+        }
     }
 
     public async Task<ServiceResult> DeleteAsync(Guid id, CancellationToken cancellationToken = default)
@@ -149,62 +161,18 @@ public sealed class MissionService(
     {
         (page, pageSize) = PaginationNormalizer.Normalize(page, pageSize);
 
-        // Buscar o colaborador com navegação para Team, Workspace e Organization
-        // IgnoreQueryFilters() permite encontrar o colaborador mesmo se o tenant selecionado for diferente
-        var collaborator = await dbContext.Collaborators
-            .IgnoreQueryFilters()
-            .AsNoTracking()
-            .Include(c => c.Team!)
-                .ThenInclude(t => t.Workspace!)
-                    .ThenInclude(w => w.Organization)
-            .FirstOrDefaultAsync(c => c.Id == collaboratorId, cancellationToken);
+        var collaborator = await FindCollaboratorForMyMissionsAsync(collaboratorId, cancellationToken);
 
         if (collaborator is null)
         {
             return ServiceResult<PagedResult<Mission>>.NotFound("Colaborador não encontrado.");
         }
 
-        var organizationId = collaborator.OrganizationId;
-
-        // Collect ALL team IDs (primary + many-to-many via CollaboratorTeams)
-        var additionalTeamIds = await dbContext.CollaboratorTeams
-            .AsNoTracking()
-            .Where(ct => ct.CollaboratorId == collaboratorId)
-            .Select(ct => ct.TeamId)
-            .ToListAsync(cancellationToken);
-
-        var allTeamIds = new HashSet<Guid>(additionalTeamIds);
-        if (collaborator.TeamId.HasValue)
-        {
-            allTeamIds.Add(collaborator.TeamId.Value);
-        }
-
-        // Resolve workspace IDs for all teams
-        var allWorkspaceIds = await dbContext.Teams
-            .AsNoTracking()
-            .IgnoreQueryFilters()
-            .Where(t => allTeamIds.Contains(t.Id))
-            .Select(t => t.WorkspaceId)
-            .Distinct()
-            .ToListAsync(cancellationToken);
-
-        var teamIdList = allTeamIds.ToList();
-        var workspaceIdList = allWorkspaceIds;
-
-        // Buscar missões do colaborador, seus times, workspaces ou organização
-        // Org-scoped missions: OrganizationId matches AND no other scope FK is set
-        var query = dbContext.Missions
-            .AsNoTracking()
-            .Where(m =>
-                m.CollaboratorId == collaboratorId ||
-                (m.TeamId.HasValue && teamIdList.Contains(m.TeamId.Value)) ||
-                (m.WorkspaceId.HasValue && workspaceIdList.Contains(m.WorkspaceId.Value)) ||
-                (m.OrganizationId == organizationId && m.WorkspaceId == null && m.TeamId == null && m.CollaboratorId == null));
-
-        // Aplicar filtro de busca por nome
+        var teamIds = await GetCollaboratorTeamIdsAsync(collaboratorId, collaborator.TeamId, cancellationToken);
+        var workspaceIds = await GetWorkspaceIdsForTeamsAsync(teamIds, cancellationToken);
+        var query = BuildMyMissionsQuery(collaboratorId, collaborator.OrganizationId, teamIds, workspaceIds);
         query = new MissionSearchSpecification(search, dbContext.Database.IsNpgsql()).Apply(query);
 
-        // Paginação
         var total = await query.CountAsync(cancellationToken);
         var items = await query
             .OrderBy(m => m.StartDate)
@@ -222,6 +190,65 @@ public sealed class MissionService(
         };
 
         return ServiceResult<PagedResult<Mission>>.Success(result);
+    }
+
+    private async Task<Collaborator?> FindCollaboratorForMyMissionsAsync(Guid collaboratorId, CancellationToken cancellationToken)
+    {
+        return await dbContext.Collaborators
+            .IgnoreQueryFilters()
+            .AsNoTracking()
+            .Include(c => c.Team!)
+                .ThenInclude(t => t.Workspace!)
+                    .ThenInclude(w => w.Organization)
+            .FirstOrDefaultAsync(c => c.Id == collaboratorId, cancellationToken);
+    }
+
+    private async Task<List<Guid>> GetCollaboratorTeamIdsAsync(Guid collaboratorId, Guid? primaryTeamId, CancellationToken cancellationToken)
+    {
+        var additionalTeamIds = await dbContext.CollaboratorTeams
+            .AsNoTracking()
+            .Where(ct => ct.CollaboratorId == collaboratorId)
+            .Select(ct => ct.TeamId)
+            .ToListAsync(cancellationToken);
+
+        var allTeamIds = new HashSet<Guid>(additionalTeamIds);
+        if (primaryTeamId.HasValue)
+        {
+            allTeamIds.Add(primaryTeamId.Value);
+        }
+
+        return allTeamIds.ToList();
+    }
+
+    private async Task<List<Guid>> GetWorkspaceIdsForTeamsAsync(List<Guid> teamIds, CancellationToken cancellationToken)
+    {
+        if (teamIds.Count == 0)
+        {
+            return [];
+        }
+
+        return await dbContext.Teams
+            .AsNoTracking()
+            .IgnoreQueryFilters()
+            .Where(t => teamIds.Contains(t.Id))
+            .Select(t => t.WorkspaceId)
+            .Distinct()
+            .ToListAsync(cancellationToken);
+    }
+
+    private IQueryable<Mission> BuildMyMissionsQuery(
+        Guid collaboratorId,
+        Guid organizationId,
+        List<Guid> teamIds,
+        List<Guid> workspaceIds)
+    {
+        return dbContext.Missions
+            .AsNoTracking()
+            .Where(m =>
+                m.CollaboratorId == collaboratorId ||
+                (m.TeamId.HasValue && teamIds.Contains(m.TeamId.Value)) ||
+                (m.WorkspaceId.HasValue && workspaceIds.Contains(m.WorkspaceId.Value)) ||
+                (m.OrganizationId == organizationId && m.WorkspaceId == null && m.TeamId == null && m.CollaboratorId == null));
     }
 
     public async Task<ServiceResult<PagedResult<MissionMetric>>> GetMetricsAsync(Guid id, int page, int pageSize, CancellationToken cancellationToken = default)
@@ -254,31 +281,6 @@ public sealed class MissionService(
         };
 
         return ServiceResult<PagedResult<MissionMetric>>.Success(result);
-    }
-
-    private static void ApplyScope(Mission mission, MissionScopeType scopeType, Guid scopeId)
-    {
-        // OrganizationId is always set as tenant discriminator (set in CreateAsync)
-        // Scope FKs indicate the mission's scope level
-        mission.WorkspaceId = null;
-        mission.TeamId = null;
-        mission.CollaboratorId = null;
-
-        switch (scopeType)
-        {
-            case MissionScopeType.Organization:
-                // No additional scope FK needed — OrganizationId already set
-                break;
-            case MissionScopeType.Workspace:
-                mission.WorkspaceId = scopeId;
-                break;
-            case MissionScopeType.Team:
-                mission.TeamId = scopeId;
-                break;
-            case MissionScopeType.Collaborator:
-                mission.CollaboratorId = scopeId;
-                break;
-        }
     }
 
     private static DateTime NormalizeToUtc(DateTime value)

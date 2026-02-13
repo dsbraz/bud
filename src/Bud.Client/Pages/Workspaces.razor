@@ -2,6 +2,7 @@
 @inject ApiClient Api
 @inject ToastService ToastService
 @inject OrganizationContext OrgContext
+@inject UiOperationService UiOps
 @implements IDisposable
 
 <ManagementMenu />
@@ -44,9 +45,10 @@
     </div>
 }
 
-<WorkspacesSummaryCards
-    TotalWorkspaces="GetTotalWorkspacesCount()"
-    TotalTeams="GetTotalTeamsCount()" />
+<SummaryCards CssClass="workspaces-summary">
+    <StatCard Value="@GetTotalWorkspacesCount().ToString()" Label="Total de espaços de trabalho" />
+    <StatCard Value="@GetTotalTeamsCount().ToString()" Label="Equipes" />
+</SummaryCards>
 
 @* Lista de Workspaces *@
 <div class="workspaces-table-container">
@@ -284,7 +286,7 @@
 
         newWorkspace.OrganizationId = OrgContext.SelectedOrganizationId.Value;
 
-        await UiOperationRunner.RunAsync(
+        await UiOps.RunAsync(
             async () =>
             {
                 await Api.CreateWorkspaceAsync(newWorkspace);
@@ -295,11 +297,8 @@
                 ToastService.ShowSuccess("Espaço de trabalho criado com sucesso!", $"O espaço de trabalho '{workspaceName}' foi criado.");
                 CloseModal();
             },
-            ToastService,
             "Erro ao criar espaço de trabalho",
-            "Não foi possível criar o espaço de trabalho. Verifique os dados e tente novamente.",
-            operationContext: "criação de espaço de trabalho",
-            unexpectedErrorMessage: "Não foi possível criar o espaço de trabalho. Tente novamente.");
+            "Não foi possível criar o espaço de trabalho. Verifique os dados e tente novamente.");
     }
 
     private void OpenEditModal(Workspace workspace)
@@ -323,7 +322,7 @@
     {
         if (selectedWorkspace == null) return;
 
-        await UiOperationRunner.RunAsync(
+        await UiOps.RunAsync(
             async () =>
             {
                 var result = await Api.UpdateWorkspaceAsync(selectedWorkspace.Id, editWorkspace);
@@ -334,11 +333,8 @@
                     await LoadWorkspaces();
                 }
             },
-            ToastService,
             "Erro ao atualizar",
-            "Não foi possível atualizar o espaço de trabalho. Verifique os dados e tente novamente.",
-            operationContext: "atualização de espaço de trabalho",
-            unexpectedErrorMessage: "Não foi possível atualizar o espaço de trabalho. Tente novamente.");
+            "Não foi possível atualizar o espaço de trabalho. Verifique os dados e tente novamente.");
     }
 
     private void HandleDeleteClick(Guid workspaceId)
@@ -372,18 +368,15 @@
     {
         try
         {
-            await UiOperationRunner.RunAsync(
+            await UiOps.RunAsync(
                 async () =>
                 {
                     await Api.DeleteWorkspaceAsync(workspaceId);
                     ToastService.ShowSuccess("Espaço de trabalho excluído", "O espaço de trabalho foi removido com sucesso.");
                     await LoadWorkspaces();
                 },
-                ToastService,
                 "Erro ao excluir",
-                "Não foi possível excluir o espaço de trabalho. Tente novamente.",
-                operationContext: "exclusão de espaço de trabalho",
-                unexpectedErrorMessage: "Não foi possível excluir o espaço de trabalho. Tente novamente.");
+                "Não foi possível excluir o espaço de trabalho. Tente novamente.");
         }
         finally
         {

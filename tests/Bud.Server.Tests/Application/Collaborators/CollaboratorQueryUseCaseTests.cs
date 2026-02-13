@@ -1,7 +1,7 @@
-using Bud.Server.Application.Collaborators;
 using Bud.Server.Services;
+using Bud.Server.Application.Collaborators;
 using Bud.Shared.Contracts;
-using Bud.Shared.Models;
+using Bud.Shared.Domain;
 using FluentAssertions;
 using Moq;
 using Xunit;

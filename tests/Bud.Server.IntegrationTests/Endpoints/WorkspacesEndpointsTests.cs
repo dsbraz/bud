@@ -1,7 +1,8 @@
 using System.Net;
 using System.Net.Http.Json;
+using System.Diagnostics;
 using Bud.Shared.Contracts;
-using Bud.Shared.Models;
+using Bud.Shared.Domain;
 using FluentAssertions;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -122,6 +123,18 @@ public class WorkspacesEndpointsTests : IClassFixture<CustomWebApplicationFactor
     }
 
     [Fact]
+    public async Task GetAll_ShouldRespondWithinBudget()
+    {
+        var watch = Stopwatch.StartNew();
+
+        var response = await _adminClient.GetAsync("/api/workspaces?page=1&pageSize=20");
+
+        watch.Stop();
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        watch.ElapsedMilliseconds.Should().BeLessThan(5000);
+    }
+
+    [Fact]
     public async Task Create_WithValidData_ReturnsCreated()
     {
         // Arrange
@@ -161,6 +174,45 @@ public class WorkspacesEndpointsTests : IClassFixture<CustomWebApplicationFactor
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.Forbidden);
+    }
+
+    #endregion
+
+    #region Tenant Isolation Tests
+
+    [Fact]
+    public async Task GetAll_WithTenantClient_ShouldNotReturnWorkspacesFromAnotherTenant()
+    {
+        var orgA = await CreateTestOrganization();
+        var orgB = await CreateTestOrganization();
+
+        var wsAName = $"WS-A-{Guid.NewGuid():N}";
+        var wsBName = $"WS-B-{Guid.NewGuid():N}";
+
+        (await _adminClient.PostAsJsonAsync("/api/workspaces",
+            new CreateWorkspaceRequest { Name = wsAName, OrganizationId = orgA.Id }))
+            .StatusCode.Should().Be(HttpStatusCode.Created);
+
+        (await _adminClient.PostAsJsonAsync("/api/workspaces",
+            new CreateWorkspaceRequest { Name = wsBName, OrganizationId = orgB.Id }))
+            .StatusCode.Should().Be(HttpStatusCode.Created);
+
+        var collaboratorA = await CreateNonOwnerCollaborator(orgA.Id);
+        var tenantClientA = _factory.CreateTenantClient(orgA.Id, collaboratorA.Email, collaboratorA.Id);
+
+        var visibleResponse = await tenantClientA.GetAsync($"/api/workspaces?search={wsAName}");
+        var hiddenResponse = await tenantClientA.GetAsync($"/api/workspaces?search={wsBName}");
+
+        visibleResponse.StatusCode.Should().Be(HttpStatusCode.OK);
+        hiddenResponse.StatusCode.Should().Be(HttpStatusCode.OK);
+
+        var visible = await visibleResponse.Content.ReadFromJsonAsync<PagedResult<Workspace>>();
+        var hidden = await hiddenResponse.Content.ReadFromJsonAsync<PagedResult<Workspace>>();
+
+        visible.Should().NotBeNull();
+        hidden.Should().NotBeNull();
+        visible!.Items.Should().ContainSingle(w => w.Name == wsAName);
+        hidden!.Items.Should().BeEmpty();
     }
 
     #endregion

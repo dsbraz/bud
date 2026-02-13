@@ -2,7 +2,7 @@ using Bud.Server.Data;
 using Bud.Server.Services;
 using Bud.Server.Tests.Helpers;
 using Bud.Shared.Contracts;
-using Bud.Shared.Models;
+using Bud.Shared.Domain;
 using FluentAssertions;
 using Microsoft.EntityFrameworkCore;
 using Xunit;
@@ -239,6 +239,33 @@ public class MetricCheckinServiceTests
     }
 
     [Fact]
+    public async Task CreateAsync_WithInvalidConfidenceLevel_ReturnsValidationError()
+    {
+        // Arrange
+        using var context = CreateInMemoryContext();
+        var service = new MetricCheckinService(context);
+        var (org, mission) = await CreateTestMission(context);
+        var metric = await CreateTestMetric(context, mission.Id, org.Id, MetricType.Quantitative);
+        var collaborator = await CreateTestCollaborator(context, org.Id);
+
+        var request = new CreateMetricCheckinRequest
+        {
+            MissionMetricId = metric.Id,
+            Value = 10m,
+            CheckinDate = DateTime.UtcNow,
+            ConfidenceLevel = 0
+        };
+
+        // Act
+        var result = await service.CreateAsync(request, collaborator.Id);
+
+        // Assert
+        result.IsSuccess.Should().BeFalse();
+        result.ErrorType.Should().Be(ServiceErrorType.Validation);
+        result.Error.Should().Be("Nível de confiança deve estar entre 1 e 5.");
+    }
+
+    [Fact]
     public async Task CreateAsync_TrimsTextAndNote()
     {
         // Arrange
@@ -333,6 +360,79 @@ public class MetricCheckinServiceTests
         result.IsSuccess.Should().BeFalse();
         result.ErrorType.Should().Be(ServiceErrorType.NotFound);
         result.Error.Should().Be("Check-in não encontrado.");
+    }
+
+    [Fact]
+    public async Task UpdateAsync_WhenMetricWasRemoved_ReturnsNotFound()
+    {
+        // Arrange
+        using var context = CreateInMemoryContext();
+        var service = new MetricCheckinService(context);
+        var (org, _) = await CreateTestMission(context);
+        var collaborator = await CreateTestCollaborator(context, org.Id);
+        var checkin = MetricCheckin.Create(
+            Guid.NewGuid(),
+            org.Id,
+            Guid.NewGuid(),
+            collaborator.Id,
+            10m,
+            null,
+            DateTime.UtcNow,
+            null,
+            3);
+        context.MetricCheckins.Add(checkin);
+        await context.SaveChangesAsync();
+
+        var updateRequest = new UpdateMetricCheckinRequest
+        {
+            Value = 11m,
+            CheckinDate = DateTime.UtcNow,
+            ConfidenceLevel = 3
+        };
+
+        // Act
+        var result = await service.UpdateAsync(checkin.Id, updateRequest);
+
+        // Assert
+        result.IsSuccess.Should().BeFalse();
+        result.ErrorType.Should().Be(ServiceErrorType.NotFound);
+        result.Error.Should().Be("Métrica não encontrada.");
+    }
+
+    [Fact]
+    public async Task UpdateAsync_WithInvalidConfidenceLevel_ReturnsValidationError()
+    {
+        // Arrange
+        using var context = CreateInMemoryContext();
+        var service = new MetricCheckinService(context);
+        var (org, mission) = await CreateTestMission(context);
+        var metric = await CreateTestMetric(context, mission.Id, org.Id, MetricType.Quantitative);
+        var collaborator = await CreateTestCollaborator(context, org.Id);
+
+        var createRequest = new CreateMetricCheckinRequest
+        {
+            MissionMetricId = metric.Id,
+            Value = 10m,
+            CheckinDate = DateTime.UtcNow,
+            ConfidenceLevel = 3
+        };
+        var createResult = await service.CreateAsync(createRequest, collaborator.Id);
+        var checkinId = createResult.Value!.Id;
+
+        var updateRequest = new UpdateMetricCheckinRequest
+        {
+            Value = 11m,
+            CheckinDate = DateTime.UtcNow,
+            ConfidenceLevel = 6
+        };
+
+        // Act
+        var result = await service.UpdateAsync(checkinId, updateRequest);
+
+        // Assert
+        result.IsSuccess.Should().BeFalse();
+        result.ErrorType.Should().Be(ServiceErrorType.Validation);
+        result.Error.Should().Be("Nível de confiança deve estar entre 1 e 5.");
     }
 
     [Fact]

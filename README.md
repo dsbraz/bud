@@ -21,7 +21,6 @@ Este documento é voltado para devs que precisam:
 - [Deploy no Google Cloud](#deploy-no-google-cloud)
 - [Onboarding rápido (30 min)](#onboarding-rápido-30-min)
 - [Testes](#testes)
-- [Outbox (resiliência de eventos)](#outbox-resiliência-de-eventos)
 - [Health checks](#health-checks)
 - [Endpoints principais](#endpoints-principais)
 - [Sistema de Design e Tokens](#sistema-de-design-e-tokens)
@@ -34,8 +33,7 @@ O Bud segue uma arquitetura em camadas com separação explícita de responsabil
 
 - **API/Host (`Bud.Server`)**: exposição HTTP, autenticação/autorização, middleware e composição de dependências.
 - **Application**: casos de uso (`Command/Query`), contratos de entrada/saída e regras de orquestração.
-- **Domain**: eventos e conceitos de domínio.
-- **Infrastructure**: implementação de capacidades técnicas (Outbox, processamento em background, serialização de eventos).
+- **Domain**: conceitos de domínio, value objects e specifications.
 - **Data**: EF Core (`ApplicationDbContext`), mapeamentos e migrations.
 - **Client (`Bud.Client`)**: SPA Blazor WASM com consumo da API.
 - **Shared (`Bud.Shared`)**: contratos e modelos compartilhados entre cliente e servidor.
@@ -43,37 +41,33 @@ O Bud segue uma arquitetura em camadas com separação explícita de responsabil
 ### Organização do backend (Bud.Server)
 
 - **Controllers** recebem requests, validam payloads (FluentValidation) e delegam para UseCases.
+  Validações dependentes de dados devem passar por abstrações/serviços de aplicação, não por acesso direto de validator ao `DbContext`.
 - **UseCases** centralizam o fluxo da aplicação e retornam `ServiceResult`/`ServiceResult<T>`.
-- **Abstractions (`Application/Abstractions`)** definem portas usadas pelos UseCases.
-- **Services** implementam essas portas com regras de negócio e acesso a dados.
+- **Services** contêm as interfaces (contratos) e suas implementações com regras de negócio e acesso a dados.
 - **DependencyInjection** modulariza bootstrap (`BudApi`, `BudSecurity`, `BudData`, `BudApplication`).
 
 ### Padrões arquiteturais adotados
 
-- **UseCases + Ports/Adapters**  
-  Controllers delegam para UseCases, que dependem de abstrações; serviços implementam essas portas.
-  Referências: `docs/adr/ADR-0002-usecases-abstractions-services.md`.
-- **Policy-based Authorization (Requirement/Handler)**  
+- **UseCases + Services**
+  Controllers delegam para UseCases, que dependem de interfaces de serviço em `Services/`.
+  Referências: `docs/adr/ADR-0002-usecases-services.md`.
+- **Policy-based Authorization (Requirement/Handler)**
   Regras de autorização centralizadas em policies e handlers, reduzindo condicionais espalhadas.
   Referências: `docs/adr/ADR-0004-autenticacao-autorizacao.md`.
-- **Specification Pattern (consultas reutilizáveis)**  
+- **Specification Pattern (consultas reutilizáveis)**
   Filtros de domínio encapsulados em specifications para evitar duplicação de predicados.
-  Referências: `src/Bud.Server/Domain/Common/Specifications/`.
-- **Domain Events + Subscribers**  
-  Eventos de domínio desacoplam efeitos colaterais e permitem evolução incremental de fluxos.
-  Referências: `src/Bud.Server/Domain/*/Events` e `src/Bud.Server/Application/*/Events`.
-- **UseCase Pipeline (cross-cutting concerns)**  
-  Comportamentos transversais (ex.: logging) aplicados via pipeline, sem poluir cada caso de uso.
-  Referências: `src/Bud.Server/Application/Common/Pipeline/`.
-- **Structured Logging (source-generated)**  
+  Referências: `src/Bud.Server/Domain/Specifications/`.
+- **Structured Logging (source-generated)**
   Logs com `[LoggerMessage]` definidos localmente por componente (`partial`), com `EventId` estável e sem catálogo central global.
-  Referências: `src/Bud.Server/Infrastructure/Events/OutboxEventProcessor.cs`, `src/Bud.Server/Infrastructure/Events/OutboxProcessorBackgroundService.cs`, `src/Bud.Server/Application/Common/Pipeline/LoggingUseCaseBehavior.cs`.
-- **Outbox Pattern (confiabilidade assíncrona)**  
-  Garante processamento assíncrono durável com retry/backoff/dead-letter.
-  Referências: `docs/adr/ADR-0008-outbox-retry-deadletter.md` e seção **Outbox (resiliência de eventos)** abaixo.
 - **Governança arquitetural por testes + ADRs**  
   Decisões versionadas (ADR) e proteção contra regressão de fronteiras via testes de arquitetura.
   Referências: `docs/adr/README.md` e `tests/Bud.Server.Tests/Architecture/ArchitectureTests.cs`.
+- **Aggregate Roots explícitas**
+  Entidades raiz de agregado são marcadas com `IAggregateRoot` para tornar boundaries verificáveis por testes.
+  Referências: `docs/adr/ADR-0012-aggregate-roots-value-objects-invariantes.md`.
+- **Invariantes no domínio (modelo rico)**  
+  Regras centrais de negócio são aplicadas por métodos de agregado/entidade (`Create`, `Rename`, `SetScope`, etc.) com tradução para `ServiceResult` na camada de serviço.
+  Inclui Value Objects formais (`PersonName`, `MissionScope`, `ConfidenceLevel`, `MetricRange`) para reduzir primitive obsession.
 
 ### Multi-tenancy
 
@@ -91,18 +85,15 @@ Isolamento por organização (`OrganizationId`) com:
 3. Controller chama o UseCase correspondente.
 4. UseCase aplica regras de autorização/orquestração e delega para portas/serviços.
 5. Serviço persiste/consulta via `ApplicationDbContext`.
-6. Resultado (`ServiceResult`) é mapeado para resposta HTTP.
-
-### Outbox e processamento assíncrono
-
-Visão geral no fluxo arquitetural. Para detalhes operacionais (endpoints e configuração),
-veja a seção **Outbox (resiliência de eventos)** abaixo.
+6. UseCase cria notificações quando aplicável (missões, check-ins).
+7. Resultado (`ServiceResult`) é mapeado para resposta HTTP.
 
 ### Testes e governança arquitetural
 
 - **Unit tests**: regras de negócio, validações, use cases e componentes de infraestrutura.
 - **Integration tests**: ciclo HTTP completo com PostgreSQL em container.
-- **Architecture tests**: evitam regressão de fronteira entre camadas (ex.: controller depender de service legado).
+- **Architecture tests**: evitam regressão de fronteira entre camadas (ex.: controller depender de service legado), validam tenant isolation, autorização e boundaries de aggregate roots.
+  A camada de dados exige `IEntityTypeConfiguration<T>` dedicada para todas as entidades do `ApplicationDbContext`.
 - **ADRs**: decisões arquiteturais versionadas em `docs/adr/`.
 
 ### ADRs e fluxo de PR
@@ -125,18 +116,13 @@ Para lista atualizada de ADRs e ordem recomendada de leitura, consulte:
 flowchart LR
     A[Bud.Client<br/>Blazor WASM] -->|HTTP + JWT + X-Tenant-Id| B[Bud.Server Controllers]
     B --> C[Application UseCases<br/>Command/Query]
-    C --> D[Application Abstractions]
-    D --> E[Services]
-    E --> F[(PostgreSQL<br/>ApplicationDbContext)]
-    C --> G[Domain Events]
-    G --> H[OutboxDomainEventDispatcher]
-    H --> I[(OutboxMessages)]
-    J[OutboxProcessorBackgroundService] --> K[OutboxEventProcessor]
-    K --> I
-    K --> L[IDomainEventSubscriber handlers]
+    C --> D[Services]
+    D --> E[(PostgreSQL<br/>ApplicationDbContext)]
+    C --> N[Notifications<br/>INotificationService]
+    N --> E
 ```
 
-#### Sequência de processamento do Outbox
+#### Sequência de request com notificações
 
 ```mermaid
 sequenceDiagram
@@ -144,27 +130,16 @@ sequenceDiagram
     participant C as Controller
     participant UC as UseCase
     participant S as Service
+    participant NS as NotificationService
     participant DB as PostgreSQL
-    participant W as Outbox Worker
 
     U->>C: Requisição de comando (create/update/delete)
     C->>UC: Executa caso de uso
     UC->>S: Executa regra de negócio
     S->>DB: Persiste entidade
-    UC->>DB: Persiste evento em OutboxMessages
+    UC->>NS: Cria notificações (quando aplicável)
+    NS->>DB: Persiste notificações
     C-->>U: Resposta HTTP (sucesso)
-
-    loop polling interval
-        W->>DB: Busca mensagens pendentes elegíveis
-        W->>W: Desserializa evento e executa subscribers
-        alt Sucesso
-            W->>DB: Marca ProcessedOnUtc
-        else Falha transitória
-            W->>DB: Incrementa RetryCount e agenda NextAttemptOnUtc (backoff)
-        else Limite de tentativas
-            W->>DB: Marca DeadLetteredOnUtc
-        end
-    end
 ```
 
 #### Modelo de domínio e hierarquia organizacional
@@ -209,28 +184,65 @@ sequenceDiagram
 
     UI->>API: POST /api/auth/login
     API->>AUTH: Valida e autentica por e-mail
-    AUTH-->>UI: JWT + organizações disponíveis
+    AUTH-->>UI: JWT + dados básicos da sessão
 
-    UI->>UI: Usuário seleciona organização (ou TODOS)
+    UI->>API: GET /api/auth/my-organizations (X-User-Email)
+    API-->>UI: Lista de organizações disponíveis
+
+    UI->>UI: Usuário seleciona organização (ou "TODOS")
     UI->>API: Request com Authorization: Bearer + X-Tenant-Id (opcional)
     API->>TENANT: Valida autenticação e tenant selecionado
     TENANT->>CTRL: Libera acesso conforme policies
     CTRL-->>UI: Resposta filtrada por tenant
 ```
 
-#### Pipeline de requisição (Controller -> UseCase -> Service)
+#### Fluxo completo de request (fim a fim)
 
 ```mermaid
-flowchart LR
-    A[HTTP Request] --> B[Controller]
-    B --> C[FluentValidation]
-    C --> D[UseCase]
-    D --> E[Application Abstractions]
-    E --> F[Service Implementation]
-    F --> G[(ApplicationDbContext / PostgreSQL)]
-    D --> H[ServiceResult]
-    H --> I[Controller Mapping]
-    I --> J[HTTP Response / ProblemDetails]
+sequenceDiagram
+    participant UI as Bud.Client / Caller
+    participant API as ASP.NET Core Pipeline
+    participant AUTH as AuthN/AuthZ
+    participant TENANT as TenantRequiredMiddleware
+    participant CTRL as Controller
+    participant VAL as FluentValidation
+    participant UC as UseCase
+    participant SVC as Service
+    participant DB as ApplicationDbContext/PostgreSQL
+
+    UI->>API: HTTP Request
+    API->>AUTH: Valida JWT/policies
+    AUTH->>TENANT: Valida contexto de tenant (quando aplicável)
+    TENANT->>CTRL: Encaminha request autorizado
+    CTRL->>VAL: Valida payload
+
+    alt Payload inválido
+        VAL-->>CTRL: Erros de validação
+        CTRL-->>UI: 400 ValidationProblemDetails (pt-BR)
+    else Payload válido
+        CTRL->>UC: Executa caso de uso
+        UC->>SVC: Orquestra regra de negócio
+        SVC->>DB: Consulta/persistência
+        UC-->>CTRL: ServiceResult
+        CTRL-->>UI: 2xx/4xx/5xx + ProblemDetails quando aplicável
+    end
+```
+
+#### Fluxo de request (falhas comuns)
+
+```mermaid
+flowchart TD
+    A[Request recebido] --> B{JWT válido?}
+    B -- Não --> C[401 Não autenticado]
+    B -- Sim --> D{Tenant exigido e selecionado?}
+    D -- Não --> E[403 Tenant obrigatório]
+    D -- Sim --> F{Payload válido?}
+    F -- Não --> G[400 ValidationProblemDetails]
+    F -- Sim --> H{Entidade existe?}
+    H -- Não --> I[404 NotFound]
+    H -- Sim --> J{Conflito de regra?}
+    J -- Sim --> K[409 Conflict]
+    J -- Não --> L[2xx Sucesso]
 ```
 
 #### Módulos do backend e dependências
@@ -244,15 +256,10 @@ flowchart TB
     end
     subgraph App["Application"]
       UseCases
-      Abstractions
-      Pipeline
     end
     subgraph Domain["Domain"]
-      DomainEvents
-    end
-    subgraph Infra["Infrastructure"]
-      OutboxProcessor
-      EventSerializer
+      Specifications
+      ValueObjects
     end
     subgraph Data["Data"]
       DbContext
@@ -260,16 +267,12 @@ flowchart TB
     end
 
     Controllers --> UseCases
-    UseCases --> Abstractions
-    Abstractions --> Services["Services (implementações)"]
+    UseCases --> Services["Services"]
     Services --> DbContext
-    UseCases --> DomainEvents
-    DomainEvents --> OutboxProcessor
-    OutboxProcessor --> DbContext
+    Services --> Specifications
     DependencyInjection --> Controllers
     DependencyInjection --> UseCases
     DependencyInjection --> Services
-    DependencyInjection --> OutboxProcessor
 ```
 
 #### Fronteira de responsabilidades (Client x API x Dados)
@@ -284,14 +287,13 @@ flowchart LR
     subgraph Api["Bud.Server (API/Aplicação)"]
       Controllers["Controllers"]
       UseCases["UseCases"]
-      Services["Services + Abstractions"]
+      Services["Services"]
       Authz["AuthN/AuthZ + Policies"]
     end
 
     subgraph Dados["Persistência"]
       Db["ApplicationDbContext"]
       Pg["PostgreSQL"]
-      Outbox["OutboxMessages"]
     end
 
     UI --> ApiClient
@@ -301,7 +303,6 @@ flowchart LR
     Controllers --> Authz
     Services --> Db
     Db --> Pg
-    UseCases --> Outbox
 ```
 
 ## Como contribuir
@@ -311,7 +312,7 @@ Fluxo recomendado de contribuição para manter qualidade arquitetural e consist
 1. Crie uma branch curta e focada no objetivo da mudança.
 2. Escreva/atualize testes antes da implementação (TDD: Red -> Green -> Refactor).
 3. Implemente seguindo os padrões do projeto:
-   - Controllers -> UseCases -> Abstractions -> Services
+   - Controllers -> UseCases -> Services
    - autorização por policies/handlers
    - mensagens de erro/validação em pt-BR
 4. Atualize documentação OpenAPI (summary/description/status/errors) quando alterar contratos.
@@ -358,6 +359,9 @@ dotnet run --project src/Bud.Server
 ## Servidor MCP (Missões e Métricas)
 
 O repositório inclui um servidor MCP HTTP em `src/Bud.Mcp`, que consome a API do `Bud.Server`.
+
+No transporte HTTP do MCP, o endpoint raiz delega o processamento para `IMcpRequestProcessor`/`McpRequestProcessor`,
+mantendo `Program.cs` focado em composição e roteamento.
 
 No ambiente local via Docker Compose:
 - API + frontend: `http://localhost:8080`
@@ -428,6 +432,7 @@ Se estiver rodando local com `DOTNET_ENVIRONMENT=Development`, defina:
 - `tenant_list_available`
 - `tenant_set_current`
 - `session_bootstrap`
+- `help_list_actions`
 - `help_action_schema`
 - `mission_create`, `mission_get`, `mission_list`, `mission_update`, `mission_delete`
 - `mission_metric_create`, `mission_metric_get`, `mission_metric_list`, `mission_metric_update`, `mission_metric_delete`
@@ -435,7 +440,7 @@ Se estiver rodando local com `DOTNET_ENVIRONMENT=Development`, defina:
 
 ### Descoberta de parâmetros e bootstrap de sessão no MCP
 
-- `prompts/list` e suportado para compatibilidade de clientes MCP e retorna lista vazia quando nao ha prompts publicados.
+- `prompts/list` é suportado para compatibilidade de clientes MCP e retorna lista vazia quando não há prompts publicados.
 - `auth_login` retorna `whoami`, `requiresTenantForDomainTools` e `nextSteps` para orientar o agente nos próximos passos.
 - `session_bootstrap` retorna snapshot de sessão (`whoami`, `availableTenants`, tenant atual) e `starterSchemas` para fluxos de criação.
 - `help_action_schema` retorna `required`, `inputSchema` e `example` para uma ação específica (ou todas as ações, quando `action` não é informado).
@@ -450,7 +455,7 @@ Scripts disponíveis:
 - `scripts/gcp-deploy-mcp.sh`: deploy do `Bud.Mcp` HTTP.
 - `scripts/gcp-deploy-all.sh`: executa deploy completo (`Bud.Server` + `Bud.Mcp`).
 
-Observacao: os scripts de deploy remoto usam **Cloud Build** para gerar imagens no GCP (nao dependem de `docker build` local).
+Observação: os scripts de deploy remoto usam **Cloud Build** para gerar imagens no GCP (não dependem de `docker build` local).
 
 Fluxo recomendado:
 
@@ -507,10 +512,20 @@ dotnet build
 dotnet run --project src/Bud.Server
 ```
 
+Defina a URL base conforme o modo de execução:
+
+```bash
+# Com Docker Compose
+export BUD_BASE_URL="http://localhost:8080"
+
+# Sem Docker (dotnet run, profile padrão)
+export BUD_BASE_URL="http://localhost:5096"
+```
+
 ### 2) Login e captura do token
 
 ```bash
-curl -s -X POST http://localhost:8080/api/auth/login \
+curl -s -X POST "$BUD_BASE_URL/api/auth/login" \
   -H "Content-Type: application/json" \
   -d '{"email":"admin@getbud.co"}'
 ```
@@ -524,8 +539,8 @@ export BUD_TOKEN="<jwt>"
 ### 3) Descobrir organizações disponíveis
 
 ```bash
-curl -s http://localhost:8080/api/auth/my-organizations \
-  -H "Authorization: Bearer $BUD_TOKEN"
+curl -s "$BUD_BASE_URL/api/auth/my-organizations" \
+  -H "X-User-Email: admin@getbud.co"
 ```
 
 Copie um `id` e exporte:
@@ -537,7 +552,7 @@ export BUD_ORG_ID="<organization-id>"
 ### 4) Smoke test de leitura tenant-scoped
 
 ```bash
-curl -s "http://localhost:8080/api/missions?page=1&pageSize=10" \
+curl -s "$BUD_BASE_URL/api/missions?page=1&pageSize=10" \
   -H "Authorization: Bearer $BUD_TOKEN" \
   -H "X-Tenant-Id: $BUD_ORG_ID"
 ```
@@ -545,7 +560,7 @@ curl -s "http://localhost:8080/api/missions?page=1&pageSize=10" \
 ### 5) Smoke test de criação de missão
 
 ```bash
-curl -s -X POST http://localhost:8080/api/missions \
+curl -s -X POST "$BUD_BASE_URL/api/missions" \
   -H "Authorization: Bearer $BUD_TOKEN" \
   -H "X-Tenant-Id: $BUD_ORG_ID" \
   -H "Content-Type: application/json" \
@@ -560,13 +575,31 @@ curl -s -X POST http://localhost:8080/api/missions \
   }'
 ```
 
-### 6) Debug rápido no backend
+### 6) Diagrama rápido do onboarding HTTP
 
-- Acesse `http://localhost:8080/swagger` para executar os mesmos fluxos pela UI.
-- Consulte `GET /health/ready` para validar PostgreSQL + Outbox.
+```mermaid
+sequenceDiagram
+    participant Dev as Dev
+    participant API as Bud.Server
+
+    Dev->>API: POST /api/auth/login (email)
+    API-->>Dev: token JWT
+    Dev->>API: GET /api/auth/my-organizations (X-User-Email)
+    API-->>Dev: organizations[]
+    Dev->>Dev: define BUD_ORG_ID
+    Dev->>API: GET /api/missions (Bearer + X-Tenant-Id)
+    API-->>Dev: lista paginada
+    Dev->>API: POST /api/missions (Bearer + X-Tenant-Id)
+    API-->>Dev: missão criada
+```
+
+### 7) Debug rápido no backend
+
+- Acesse `$BUD_BASE_URL/swagger` para executar os mesmos fluxos pela UI.
+- Consulte `GET /health/ready` para validar PostgreSQL.
 - Em caso de erro 403, valide se o header `X-Tenant-Id` foi enviado (exceto cenário global admin em "TODOS").
 
-### 7) Troubleshooting rápido (dev local)
+### 8) Troubleshooting rápido (dev local)
 
 - **Porta 8080 ocupada**  
   Sintoma: erro ao subir `docker compose up --build` com bind em `8080`.  
@@ -583,6 +616,21 @@ curl -s -X POST http://localhost:8080/api/missions \
 - **Dados/artefatos antigos no browser**  
   Sintoma: UI não reflete mudanças recentes.  
   Ação: execute `docker compose down -v && docker compose up --build` e force reload no navegador.
+
+#### Fluxo de diagnóstico rápido (401/403)
+
+```mermaid
+flowchart TD
+    A[Erro 401/403] --> B{Tem Bearer token?}
+    B -- Não --> C[Refaça login em /api/auth/login]
+    B -- Sim --> D{Endpoint é tenant-scoped?}
+    D -- Não --> E[Validar payload/headers específicos]
+    D -- Sim --> F{X-Tenant-Id foi enviado?}
+    F -- Não --> G[Enviar X-Tenant-Id]
+    F -- Sim --> H{Usuário pertence ao tenant?}
+    H -- Não --> I[Selecionar tenant válido em /api/auth/my-organizations]
+    H -- Sim --> J[Validar policy/regra de autorização do endpoint]
+```
 
 ## Testes
 
@@ -661,59 +709,15 @@ Já existe a migration inicial (`InitialCreate`). Para aplicar no banco com Dock
 docker run --rm -v "$(pwd)/src":/src -w /src/Bud.Server --network bud_default \
   -e ConnectionStrings__DefaultConnection="Host=db;Port=5432;Database=bud;Username=postgres;Password=postgres" \
   mcr.microsoft.com/dotnet/sdk:10.0 \
-  bash -lc "dotnet tool install --tool-path /tmp/tools dotnet-ef --version 10.0.2 && /tmp/tools/dotnet-ef database update"
+  bash -lc "dotnet tool install --tool-path /tmp/tools dotnet-ef --version 10.0.0 && /tmp/tools/dotnet-ef database update"
 ```
 
 No ambiente Development, a API tenta aplicar migrations automaticamente no startup.
 
-## Outbox (resiliência de eventos)
-
-O projeto usa Outbox para garantir processamento assíncrono confiável de eventos de domínio.
-
-- Persistência transacional de eventos em `OutboxMessages`
-- Worker em background para processamento
-- Retry com backoff exponencial
-- Dead-letter após esgotar tentativas
-- Endpoints administrativos para consulta e reprocessamento
-
-### Observabilidade e logging do Outbox
-
-- Logging estruturado no ciclo completo: início, sucesso, retry e dead-letter.
-- `EventId` estável por tipo de evento de operação para facilitar monitoramento e alertas.
-- Campos-chave registrados: `OutboxMessageId`, `EventType`, `Attempt/RetryCount`, `NextAttemptOnUtc`, `ElapsedMs`, `Error`.
-
-### Endpoints de Outbox (admin)
-
-- `GET /api/outbox/dead-letters?page=1&pageSize=10`
-- `POST /api/outbox/dead-letters/{id}/reprocess`
-- `POST /api/outbox/dead-letters/reprocess`
-
-### Configuração (`appsettings`)
-
-Tudo fica sob a chave `Outbox`:
-
-```json
-"Outbox": {
-  "HealthCheck": {
-    "MaxDeadLetters": 0,
-    "MaxOldestPendingAge": "00:15:00"
-  },
-  "Processing": {
-    "MaxRetries": 5,
-    "BaseRetryDelay": "00:00:05",
-    "MaxRetryDelay": "00:05:00",
-    "BatchSize": 100,
-    "PollingInterval": "00:00:05"
-  }
-}
-```
-
-O endpoint `/health/ready` considera banco e saúde do Outbox.
-
 ## Health checks
 
 - `GET /health/live`: liveness (sempre saudável).
-- `GET /health/ready`: readiness (PostgreSQL + Outbox).
+- `GET /health/ready`: readiness (PostgreSQL).
 
 ## Endpoints principais
 
@@ -729,6 +733,9 @@ O endpoint `/health/ready` considera banco e saúde do Outbox.
 - `POST /api/missions`
 - `GET /api/missions`
 - `GET /api/missions/progress`
+- `GET /api/dashboard/my-dashboard`
+- `POST /api/mission-templates`
+- `GET /api/mission-templates`
 - `POST /api/mission-metrics`
 - `GET /api/mission-metrics`
 - `GET /api/mission-metrics/progress`
@@ -746,12 +753,9 @@ O endpoint `/health/ready` considera banco e saúde do Outbox.
 - `GET /api/workspaces/{id}/teams`
 - `GET /api/teams/{id}/subteams`
 - `GET /api/teams/{id}/collaborators`
-
-### Administrativos
-
-- GET `/api/outbox/dead-letters?page=1&pageSize=10`
-- POST `/api/outbox/dead-letters/{id}/reprocess`
-- POST `/api/outbox/dead-letters/reprocess`
+- `PUT /api/teams/{id}/collaborators`
+- `GET /api/collaborators/{id}/teams`
+- `PUT /api/collaborators/{id}/teams`
 
 ### Exemplo de payloads
 
@@ -765,7 +769,8 @@ Para criação de missão (`POST /api/missions`), os campos mínimos obrigatóri
 
 ```json
 {
-  "name": "Acme"
+  "name": "acme.com.br",
+  "ownerId": "00000000-0000-0000-0000-000000000000"
 }
 ```
 

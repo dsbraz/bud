@@ -2,6 +2,7 @@
 @inject ApiClient Api
 @inject ToastService ToastService
 @inject OrganizationContext OrgContext
+@inject UiOperationService UiOps
 @implements IDisposable
 
 <ManagementMenu />
@@ -347,7 +348,7 @@
             Metrics = formMetrics
         };
 
-        await UiOperationRunner.RunAsync(
+        await UiOps.RunAsync(
             async () =>
             {
                 await Api.CreateMissionTemplateAsync(request);
@@ -355,11 +356,8 @@
                 ToastService.ShowSuccess("Modelo criado com sucesso!", $"O modelo '{formName}' foi criado.");
                 CloseModal();
             },
-            ToastService,
             "Erro ao criar modelo",
-            "Não foi possível criar o modelo. Verifique os dados e tente novamente.",
-            operationContext: "criação de modelo",
-            unexpectedErrorMessage: "Não foi possível criar o modelo. Tente novamente.");
+            "Não foi possível criar o modelo. Verifique os dados e tente novamente.");
     }
 
     private async Task UpdateTemplate()
@@ -376,7 +374,7 @@
             Metrics = formMetrics
         };
 
-        await UiOperationRunner.RunAsync(
+        await UiOps.RunAsync(
             async () =>
             {
                 await Api.UpdateMissionTemplateAsync(editingTemplateId.Value, request);
@@ -384,11 +382,8 @@
                 ToastService.ShowSuccess("Modelo atualizado", "As alterações foram salvas com sucesso.");
                 CloseModal();
             },
-            ToastService,
             "Erro ao atualizar modelo",
-            "Não foi possível atualizar o modelo. Verifique os dados e tente novamente.",
-            operationContext: "atualização de modelo",
-            unexpectedErrorMessage: "Não foi possível atualizar o modelo. Tente novamente.");
+            "Não foi possível atualizar o modelo. Verifique os dados e tente novamente.");
     }
 
     // Metric form methods
@@ -538,18 +533,15 @@
     {
         try
         {
-            await UiOperationRunner.RunAsync(
+            await UiOps.RunAsync(
                 async () =>
                 {
                     await Api.DeleteMissionTemplateAsync(templateId);
                     ToastService.ShowSuccess("Modelo excluído", "O modelo foi removido com sucesso.");
                     await LoadTemplates();
                 },
-                ToastService,
                 "Erro ao excluir",
-                "Não foi possível excluir o modelo. Tente novamente.",
-                operationContext: "exclusão de modelo",
-                unexpectedErrorMessage: "Não foi possível excluir o modelo. Tente novamente.");
+                "Não foi possível excluir o modelo. Tente novamente.");
         }
         finally
         {

@@ -1,6 +1,6 @@
 using Bud.Server.Data;
 using Bud.Shared.Contracts;
-using Bud.Shared.Models;
+using Bud.Shared.Domain;
 using Microsoft.EntityFrameworkCore;
 
 namespace Bud.Server.Services;
@@ -9,30 +9,35 @@ public sealed class MissionMetricService(ApplicationDbContext dbContext) : IMiss
 {
     public async Task<ServiceResult<MissionMetric>> CreateAsync(CreateMissionMetricRequest request, CancellationToken cancellationToken = default)
     {
-        var mission = await dbContext.Missions
-            .AsNoTracking()
-            .FirstOrDefaultAsync(m => m.Id == request.MissionId, cancellationToken);
-
-        if (mission is null)
+        try
         {
-            return ServiceResult<MissionMetric>.NotFound("Missão não encontrada.");
+            var mission = await dbContext.Missions
+                .AsNoTracking()
+                .FirstOrDefaultAsync(m => m.Id == request.MissionId, cancellationToken);
+
+            if (mission is null)
+            {
+                return ServiceResult<MissionMetric>.NotFound("Missão não encontrada.");
+            }
+
+            var metric = MissionMetric.Create(
+                Guid.NewGuid(),
+                mission.OrganizationId,
+                request.MissionId,
+                request.Name,
+                request.Type);
+
+            metric.ApplyTarget(request.Type, request.QuantitativeType, request.MinValue, request.MaxValue, request.Unit, request.TargetText);
+
+            dbContext.MissionMetrics.Add(metric);
+            await dbContext.SaveChangesAsync(cancellationToken);
+
+            return ServiceResult<MissionMetric>.Success(metric);
         }
-
-        var metric = new MissionMetric
+        catch (DomainInvariantException ex)
         {
-            Id = Guid.NewGuid(),
-            OrganizationId = mission.OrganizationId,
-            MissionId = request.MissionId,
-            Name = request.Name.Trim(),
-            Type = request.Type,
-        };
-
-        ApplyMetricTarget(metric, request.Type, request.QuantitativeType, request.MinValue, request.MaxValue, request.Unit, request.TargetText);
-
-        dbContext.MissionMetrics.Add(metric);
-        await dbContext.SaveChangesAsync(cancellationToken);
-
-        return ServiceResult<MissionMetric>.Success(metric);
+            return ServiceResult<MissionMetric>.Failure(ex.Message, ServiceErrorType.Validation);
+        }
     }
 
     public async Task<ServiceResult<MissionMetric>> UpdateAsync(Guid id, UpdateMissionMetricRequest request, CancellationToken cancellationToken = default)
@@ -44,13 +49,19 @@ public sealed class MissionMetricService(ApplicationDbContext dbContext) : IMiss
             return ServiceResult<MissionMetric>.NotFound("Métrica da missão não encontrada.");
         }
 
-        metric.Name = request.Name.Trim();
-        metric.Type = request.Type;
-        ApplyMetricTarget(metric, request.Type, request.QuantitativeType, request.MinValue, request.MaxValue, request.Unit, request.TargetText);
+        try
+        {
+            metric.UpdateDefinition(request.Name, request.Type);
+            metric.ApplyTarget(request.Type, request.QuantitativeType, request.MinValue, request.MaxValue, request.Unit, request.TargetText);
 
-        await dbContext.SaveChangesAsync(cancellationToken);
+            await dbContext.SaveChangesAsync(cancellationToken);
 
-        return ServiceResult<MissionMetric>.Success(metric);
+            return ServiceResult<MissionMetric>.Success(metric);
+        }
+        catch (DomainInvariantException ex)
+        {
+            return ServiceResult<MissionMetric>.Failure(ex.Message, ServiceErrorType.Validation);
+        }
     }
 
     public async Task<ServiceResult> DeleteAsync(Guid id, CancellationToken cancellationToken = default)
@@ -108,25 +119,6 @@ public sealed class MissionMetricService(ApplicationDbContext dbContext) : IMiss
         };
 
         return ServiceResult<PagedResult<MissionMetric>>.Success(result);
-    }
-
-    private static void ApplyMetricTarget(MissionMetric metric, MetricType type, QuantitativeMetricType? quantitativeType, decimal? minValue, decimal? maxValue, MetricUnit? unit, string? targetText)
-    {
-        if (type == MetricType.Qualitative)
-        {
-            metric.TargetText = targetText?.Trim();
-            metric.QuantitativeType = null;
-            metric.MinValue = null;
-            metric.MaxValue = null;
-            metric.Unit = null;
-            return;
-        }
-
-        metric.QuantitativeType = quantitativeType;
-        metric.MinValue = minValue;
-        metric.MaxValue = maxValue;
-        metric.Unit = unit;
-        metric.TargetText = null;
     }
 
     private IQueryable<MissionMetric> ApplyMetricNameSearch(IQueryable<MissionMetric> query, string? search)

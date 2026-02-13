@@ -1,50 +1,29 @@
 using System.Security.Claims;
-using Bud.Server.Application.Common.Authorization;
-using Bud.Server.Application.Common.Events;
-using Bud.Server.Application.Common.Pipeline;
-using Bud.Server.Application.Common.ReadModel;
-using Bud.Server.Domain.Workspaces.Events;
+using Bud.Server.Services;
+using Bud.Server.Authorization;
+using Bud.Server.Data;
 using Bud.Shared.Contracts;
-using Bud.Shared.Models;
+using Bud.Shared.Domain;
 
 namespace Bud.Server.Application.Workspaces;
 
 public sealed class WorkspaceCommandUseCase(
     IWorkspaceService workspaceService,
     IApplicationAuthorizationGateway authorizationGateway,
-    IApplicationEntityLookup entityLookup,
-    IUseCasePipeline? useCasePipeline = null,
-    IDomainEventDispatcher? domainEventDispatcher = null) : IWorkspaceCommandUseCase
+    IApplicationEntityLookup entityLookup) : IWorkspaceCommandUseCase
 {
-    private readonly IUseCasePipeline _useCasePipeline = useCasePipeline ?? NoOpUseCasePipeline.Instance;
-    private readonly IDomainEventDispatcher _domainEventDispatcher = domainEventDispatcher ?? NoOpDomainEventDispatcher.Instance;
-
     public async Task<ServiceResult<Workspace>> CreateAsync(
         ClaimsPrincipal user,
         CreateWorkspaceRequest request,
         CancellationToken cancellationToken = default)
     {
-        return await _useCasePipeline.ExecuteAsync(
-            new UseCaseExecutionContext(nameof(WorkspaceCommandUseCase), nameof(CreateAsync)),
-            async ct =>
-            {
-                var canCreate = await authorizationGateway.IsOrganizationOwnerAsync(user, request.OrganizationId, ct);
-                if (!canCreate)
-                {
-                    return ServiceResult<Workspace>.Forbidden("Apenas o proprietário da organização pode criar workspaces.");
-                }
+        var canCreate = await authorizationGateway.IsOrganizationOwnerAsync(user, request.OrganizationId, cancellationToken);
+        if (!canCreate)
+        {
+            return ServiceResult<Workspace>.Forbidden("Apenas o proprietário da organização pode criar workspaces.");
+        }
 
-                var result = await workspaceService.CreateAsync(request, ct);
-                if (result.IsSuccess)
-                {
-                    await _domainEventDispatcher.DispatchAsync(
-                        new WorkspaceCreatedDomainEvent(result.Value!.Id, result.Value.OrganizationId),
-                        ct);
-                }
-
-                return result;
-            },
-            cancellationToken);
+        return await workspaceService.CreateAsync(request, cancellationToken);
     }
 
     public async Task<ServiceResult<Workspace>> UpdateAsync(
@@ -53,34 +32,20 @@ public sealed class WorkspaceCommandUseCase(
         UpdateWorkspaceRequest request,
         CancellationToken cancellationToken = default)
     {
-        return await _useCasePipeline.ExecuteAsync(
-            new UseCaseExecutionContext(nameof(WorkspaceCommandUseCase), nameof(UpdateAsync)),
-            async ct =>
-            {
-                var workspace = await entityLookup.GetWorkspaceAsync(id, ct);
+        var workspace = await entityLookup.GetWorkspaceAsync(id, cancellationToken);
 
-                if (workspace is null)
-                {
-                    return ServiceResult<Workspace>.NotFound("Workspace não encontrado.");
-                }
+        if (workspace is null)
+        {
+            return ServiceResult<Workspace>.NotFound("Workspace não encontrado.");
+        }
 
-                var canUpdate = await authorizationGateway.CanWriteOrganizationAsync(user, workspace.OrganizationId, ct);
-                if (!canUpdate)
-                {
-                    return ServiceResult<Workspace>.Forbidden("Você não tem permissão para atualizar este workspace.");
-                }
+        var canUpdate = await authorizationGateway.CanWriteOrganizationAsync(user, workspace.OrganizationId, cancellationToken);
+        if (!canUpdate)
+        {
+            return ServiceResult<Workspace>.Forbidden("Você não tem permissão para atualizar este workspace.");
+        }
 
-                var result = await workspaceService.UpdateAsync(id, request, ct);
-                if (result.IsSuccess)
-                {
-                    await _domainEventDispatcher.DispatchAsync(
-                        new WorkspaceUpdatedDomainEvent(result.Value!.Id, result.Value.OrganizationId),
-                        ct);
-                }
-
-                return result;
-            },
-            cancellationToken);
+        return await workspaceService.UpdateAsync(id, request, cancellationToken);
     }
 
     public async Task<ServiceResult> DeleteAsync(
@@ -88,33 +53,19 @@ public sealed class WorkspaceCommandUseCase(
         Guid id,
         CancellationToken cancellationToken = default)
     {
-        return await _useCasePipeline.ExecuteAsync(
-            new UseCaseExecutionContext(nameof(WorkspaceCommandUseCase), nameof(DeleteAsync)),
-            async ct =>
-            {
-                var workspace = await entityLookup.GetWorkspaceAsync(id, ct);
+        var workspace = await entityLookup.GetWorkspaceAsync(id, cancellationToken);
 
-                if (workspace is null)
-                {
-                    return ServiceResult.NotFound("Workspace não encontrado.");
-                }
+        if (workspace is null)
+        {
+            return ServiceResult.NotFound("Workspace não encontrado.");
+        }
 
-                var canDelete = await authorizationGateway.CanWriteOrganizationAsync(user, workspace.OrganizationId, ct);
-                if (!canDelete)
-                {
-                    return ServiceResult.Forbidden("Você não tem permissão para excluir este workspace.");
-                }
+        var canDelete = await authorizationGateway.CanWriteOrganizationAsync(user, workspace.OrganizationId, cancellationToken);
+        if (!canDelete)
+        {
+            return ServiceResult.Forbidden("Você não tem permissão para excluir este workspace.");
+        }
 
-                var result = await workspaceService.DeleteAsync(id, ct);
-                if (result.IsSuccess)
-                {
-                    await _domainEventDispatcher.DispatchAsync(
-                        new WorkspaceDeletedDomainEvent(workspace.Id, workspace.OrganizationId),
-                        ct);
-                }
-
-                return result;
-            },
-            cancellationToken);
+        return await workspaceService.DeleteAsync(id, cancellationToken);
     }
 }

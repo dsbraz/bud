@@ -1,7 +1,7 @@
 using Bud.Server.Data;
 using Bud.Server.Services;
 using Bud.Server.Tests.Helpers;
-using Bud.Shared.Models;
+using Bud.Shared.Domain;
 using FluentAssertions;
 using Microsoft.EntityFrameworkCore;
 using Xunit;

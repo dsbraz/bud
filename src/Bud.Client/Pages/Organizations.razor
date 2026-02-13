@@ -5,6 +5,7 @@
 @inject ToastService ToastService
 @inject NavigationManager Navigation
 @inject OrganizationContext OrgContext
+@inject UiOperationService UiOps
 
 @if (AuthState.Session?.IsGlobalAdmin != true)
 {
@@ -373,7 +374,7 @@ else
 
         try
         {
-            await UiOperationRunner.RunAsync(
+            await UiOps.RunAsync(
                 async () =>
                 {
                     await Api.CreateOrganizationAsync(newOrganization);
@@ -384,11 +385,8 @@ else
                     ToastService.ShowSuccess("Organização criada com sucesso!", "A organização foi criada e está disponível.");
                     CloseModal();
                 },
-                ToastService,
                 "Erro ao criar organização",
-                "Não foi possível criar a organização. Verifique os dados e tente novamente.",
-                operationContext: "criação de organização",
-                unexpectedErrorMessage: "Não foi possível criar a organização. Tente novamente.");
+                "Não foi possível criar a organização. Verifique os dados e tente novamente.");
         }
         finally
         {
@@ -416,7 +414,7 @@ else
 
         try
         {
-            await UiOperationRunner.RunAsync(
+            await UiOps.RunAsync(
                 async () =>
                 {
                     await Api.UpdateOrganizationAsync(editingOrganizationId.Value, editOrganization);
@@ -425,11 +423,8 @@ else
                     ToastService.ShowSuccess("Organização atualizada com sucesso!", "As alterações foram salvas.");
                     CloseModal();
                 },
-                ToastService,
                 "Erro ao atualizar organização",
-                "Não foi possível atualizar a organização. Verifique os dados e tente novamente.",
-                operationContext: "atualização de organização",
-                unexpectedErrorMessage: "Não foi possível atualizar a organização. Tente novamente.");
+                "Não foi possível atualizar a organização. Verifique os dados e tente novamente.");
         }
         finally
         {
@@ -469,7 +464,7 @@ else
 
         var orgName = organizations?.Items.FirstOrDefault(o => o.Id == organizationId)?.Name ?? "organização";
 
-        await UiOperationRunner.RunAsync(
+        await UiOps.RunAsync(
             async () =>
             {
                 await Api.DeleteOrganizationAsync(organizationId);
@@ -477,11 +472,8 @@ else
                 await RefreshAvailableOrganizations();
                 ToastService.ShowSuccess("Organização excluída", $"A organização '{orgName}' foi removida com sucesso.");
             },
-            ToastService,
             "Erro ao excluir organização",
-            "Não foi possível excluir a organização. Tente novamente.",
-            operationContext: "exclusão de organização",
-            unexpectedErrorMessage: "Não foi possível excluir a organização. Tente novamente.");
+            "Não foi possível excluir a organização. Tente novamente.");
     }
 
     private async Task OpenDetailsModal(Organization org)
@@ -514,12 +506,8 @@ else
         }
         catch (Exception ex)
         {
-            UiErrorHandler.HandleUnexpectedError(
-                ToastService,
-                "Erro",
-                "Não foi possível carregar os workspaces.",
-                ex,
-                "carregamento de workspaces da organização");
+            Console.Error.WriteLine($"Erro ao carregar workspaces: {ex.Message}");
+            ToastService.ShowError("Erro", "Não foi possível carregar os workspaces.");
             orgWorkspaces = new PagedResult<Workspace> { Items = Array.Empty<Workspace>() };
         }
     }
@@ -532,12 +520,8 @@ else
         }
         catch (Exception ex)
         {
-            UiErrorHandler.HandleUnexpectedError(
-                ToastService,
-                "Erro",
-                "Não foi possível carregar os colaboradores.",
-                ex,
-                "carregamento de colaboradores da organização");
+            Console.Error.WriteLine($"Erro ao carregar colaboradores: {ex.Message}");
+            ToastService.ShowError("Erro", "Não foi possível carregar os colaboradores.");
             orgCollaborators = new PagedResult<Collaborator> { Items = Array.Empty<Collaborator>() };
         }
     }

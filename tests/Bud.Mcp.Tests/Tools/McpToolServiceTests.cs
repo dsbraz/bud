@@ -3,7 +3,7 @@ using System.Text.Json.Nodes;
 using System.Globalization;
 using Bud.Mcp.Tests.Helpers;
 using Bud.Mcp.Tools;
-using Bud.Shared.Models;
+using Bud.Shared.Domain;
 
 namespace Bud.Mcp.Tests.Tools;
 

@@ -2,6 +2,7 @@
 @inject ApiClient Api
 @inject ToastService ToastService
 @inject OrganizationContext OrgContext
+@inject UiOperationService UiOps
 @implements IDisposable
 
 <MissionsMenu />
@@ -423,7 +424,7 @@
             return;
         }
 
-        await UiOperationRunner.RunAsync(
+        await UiOps.RunAsync(
             async () =>
             {
                 await Api.CreateMetricCheckinAsync(newCheckin);
@@ -431,10 +432,8 @@
                 CloseCreateModal();
                 await LoadCheckins();
             },
-            ToastService,
             "Erro ao criar check-in",
-            "Não foi possível criar o check-in. Verifique os dados e tente novamente.",
-            "criação de check-in");
+            "Não foi possível criar o check-in. Verifique os dados e tente novamente.");
     }
 
     // ---- Edit ----
@@ -467,7 +466,7 @@
 
         editCheckin.CheckinDate = editCheckinDate.ToDateTime(TimeOnly.FromDateTime(DateTime.UtcNow), DateTimeKind.Utc);
 
-        await UiOperationRunner.RunAsync(
+        await UiOps.RunAsync(
             async () =>
             {
                 await Api.UpdateMetricCheckinAsync(selectedCheckin.Id, editCheckin);
@@ -475,10 +474,8 @@
                 CloseEditModal();
                 await LoadCheckins();
             },
-            ToastService,
             "Erro ao atualizar",
-            "Não foi possível atualizar o check-in. Verifique os dados e tente novamente.",
-            "atualização de check-in");
+            "Não foi possível atualizar o check-in. Verifique os dados e tente novamente.");
     }
 
     // ---- Delete ----
@@ -499,17 +496,15 @@
     {
         try
         {
-            await UiOperationRunner.RunAsync(
+            await UiOps.RunAsync(
                 async () =>
                 {
                     await Api.DeleteMetricCheckinAsync(checkinId);
                     ToastService.ShowSuccess("Check-in excluído", "O check-in foi removido com sucesso.");
                     await LoadCheckins();
                 },
-                ToastService,
                 "Erro ao excluir",
-                "Não foi possível excluir o check-in. Tente novamente.",
-                "exclusão de check-in");
+                "Não foi possível excluir o check-in. Tente novamente.");
         }
         finally
         {

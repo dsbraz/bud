@@ -1,8 +1,8 @@
 using Bud.Server.Data;
-using Bud.Server.Domain.Common.Specifications;
+using Bud.Server.Domain.Specifications;
 using Bud.Server.Settings;
 using Bud.Shared.Contracts;
-using Bud.Shared.Models;
+using Bud.Shared.Domain;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 
@@ -17,42 +17,44 @@ public sealed class OrganizationService(
 
     public async Task<ServiceResult<Organization>> CreateAsync(CreateOrganizationRequest request, CancellationToken cancellationToken = default)
     {
-        // 1. Validate Owner Exists
-        var owner = await dbContext.Collaborators
-            .FirstOrDefaultAsync(c => c.Id == request.OwnerId, cancellationToken);
-
-        if (owner == null)
+        try
         {
-            return ServiceResult<Organization>.Failure(
-                "O líder selecionado não foi encontrado.",
-                ServiceErrorType.NotFound);
+            // 1. Validate Owner Exists
+            var owner = await dbContext.Collaborators
+                .FirstOrDefaultAsync(c => c.Id == request.OwnerId, cancellationToken);
+
+            if (owner == null)
+            {
+                return ServiceResult<Organization>.Failure(
+                    "O líder selecionado não foi encontrado.",
+                    ServiceErrorType.NotFound);
+            }
+
+            // 2. Validate Owner is Leader
+            if (owner.Role != CollaboratorRole.Leader)
+            {
+                return ServiceResult<Organization>.Failure(
+                    "O proprietário da organização deve ter a função de Líder.",
+                    ServiceErrorType.Validation);
+            }
+
+            // 3. Create Organization
+            var organization = Organization.Create(Guid.NewGuid(), request.Name, request.OwnerId);
+
+            dbContext.Organizations.Add(organization);
+            await dbContext.SaveChangesAsync(cancellationToken);
+
+            // 5. Load Owner for Response
+            await dbContext.Entry(organization)
+                .Reference(o => o.Owner)
+                .LoadAsync(cancellationToken);
+
+            return ServiceResult<Organization>.Success(organization);
         }
-
-        // 2. Validate Owner is Leader
-        if (owner.Role != CollaboratorRole.Leader)
+        catch (DomainInvariantException ex)
         {
-            return ServiceResult<Organization>.Failure(
-                "O proprietário da organização deve ter a função de Líder.",
-                ServiceErrorType.Validation);
+            return ServiceResult<Organization>.Failure(ex.Message, ServiceErrorType.Validation);
         }
-
-        // 3. Create Organization
-        var organization = new Organization
-        {
-            Id = Guid.NewGuid(),
-            Name = request.Name.Trim(),
-            OwnerId = request.OwnerId
-        };
-
-        dbContext.Organizations.Add(organization);
-        await dbContext.SaveChangesAsync(cancellationToken);
-
-        // 5. Load Owner for Response
-        await dbContext.Entry(organization)
-            .Reference(o => o.Owner)
-            .LoadAsync(cancellationToken);
-
-        return ServiceResult<Organization>.Success(organization);
     }
 
     public async Task<ServiceResult<Organization>> UpdateAsync(Guid id, UpdateOrganizationRequest request, CancellationToken cancellationToken = default)
@@ -75,42 +77,49 @@ public sealed class OrganizationService(
                 ServiceErrorType.Validation);
         }
 
-        // Update name
-        organization.Name = request.Name.Trim();
-
-        // Update owner if provided
-        if (request.OwnerId.HasValue && request.OwnerId.Value != Guid.Empty)
+        try
         {
-            // Validate new owner exists
-            var newOwner = await dbContext.Collaborators
-                .FirstOrDefaultAsync(c => c.Id == request.OwnerId.Value, cancellationToken);
+            // Update name
+            organization.Rename(request.Name);
 
-            if (newOwner == null)
+            // Update owner if provided
+            if (request.OwnerId.HasValue && request.OwnerId.Value != Guid.Empty)
             {
-                return ServiceResult<Organization>.Failure(
-                    "O líder selecionado não foi encontrado.",
-                    ServiceErrorType.NotFound);
+                // Validate new owner exists
+                var newOwner = await dbContext.Collaborators
+                    .FirstOrDefaultAsync(c => c.Id == request.OwnerId.Value, cancellationToken);
+
+                if (newOwner == null)
+                {
+                    return ServiceResult<Organization>.Failure(
+                        "O líder selecionado não foi encontrado.",
+                        ServiceErrorType.NotFound);
+                }
+
+                // Validate new owner is Leader
+                if (newOwner.Role != CollaboratorRole.Leader)
+                {
+                    return ServiceResult<Organization>.Failure(
+                        "O proprietário da organização deve ter a função de Líder.",
+                        ServiceErrorType.Validation);
+                }
+
+                organization.AssignOwner(request.OwnerId.Value);
             }
 
-            // Validate new owner is Leader
-            if (newOwner.Role != CollaboratorRole.Leader)
-            {
-                return ServiceResult<Organization>.Failure(
-                    "O proprietário da organização deve ter a função de Líder.",
-                    ServiceErrorType.Validation);
-            }
+            await dbContext.SaveChangesAsync(cancellationToken);
 
-            organization.OwnerId = request.OwnerId.Value;
+            // Reload owner for response
+            await dbContext.Entry(organization)
+                .Reference(o => o.Owner)
+                .LoadAsync(cancellationToken);
+
+            return ServiceResult<Organization>.Success(organization);
         }
-
-        await dbContext.SaveChangesAsync(cancellationToken);
-
-        // Reload owner for response
-        await dbContext.Entry(organization)
-            .Reference(o => o.Owner)
-            .LoadAsync(cancellationToken);
-
-        return ServiceResult<Organization>.Success(organization);
+        catch (DomainInvariantException ex)
+        {
+            return ServiceResult<Organization>.Failure(ex.Message, ServiceErrorType.Validation);
+        }
     }
 
     public async Task<ServiceResult> DeleteAsync(Guid id, CancellationToken cancellationToken = default)

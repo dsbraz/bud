@@ -1,7 +1,8 @@
 using System.Net;
 using System.Net.Http.Json;
+using System.Diagnostics;
 using Bud.Shared.Contracts;
-using Bud.Shared.Models;
+using Bud.Shared.Domain;
 using FluentAssertions;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -118,6 +119,18 @@ public class TeamsEndpointsTests : IClassFixture<CustomWebApplicationFactory>
     }
 
     [Fact]
+    public async Task GetAll_ShouldRespondWithinBudget()
+    {
+        var watch = Stopwatch.StartNew();
+
+        var response = await _client.GetAsync("/api/teams?page=1&pageSize=20");
+
+        watch.Stop();
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        watch.ElapsedMilliseconds.Should().BeLessThan(5000);
+    }
+
+    [Fact]
     public async Task Create_WithValidParentTeam_ReturnsCreated()
     {
         // Arrange
@@ -207,6 +220,48 @@ public class TeamsEndpointsTests : IClassFixture<CustomWebApplicationFactory>
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+    }
+
+    #endregion
+
+    #region Tenant Isolation Tests
+
+    [Fact]
+    public async Task GetAll_WithTenantClient_ShouldNotReturnTeamsFromAnotherTenant()
+    {
+        // Arrange
+        var (orgA, workspaceA) = await CreateTestHierarchy();
+        var (orgB, workspaceB) = await CreateTestHierarchy();
+
+        var teamAName = $"Isolated-A-{Guid.NewGuid():N}";
+        var teamBName = $"Isolated-B-{Guid.NewGuid():N}";
+
+        var teamAResponse = await _client.PostAsJsonAsync("/api/teams",
+            new CreateTeamRequest { Name = teamAName, WorkspaceId = workspaceA.Id });
+        teamAResponse.StatusCode.Should().Be(HttpStatusCode.Created);
+
+        var teamBResponse = await _client.PostAsJsonAsync("/api/teams",
+            new CreateTeamRequest { Name = teamBName, WorkspaceId = workspaceB.Id });
+        teamBResponse.StatusCode.Should().Be(HttpStatusCode.Created);
+
+        var collaboratorA = await CreateNonOwnerCollaborator(orgA.Id);
+        var tenantClientA = _factory.CreateTenantClient(orgA.Id, collaboratorA.Email, collaboratorA.Id);
+
+        // Act
+        var visibleResponse = await tenantClientA.GetAsync($"/api/teams?search={teamAName}");
+        var hiddenResponse = await tenantClientA.GetAsync($"/api/teams?search={teamBName}");
+
+        // Assert
+        visibleResponse.StatusCode.Should().Be(HttpStatusCode.OK);
+        hiddenResponse.StatusCode.Should().Be(HttpStatusCode.OK);
+
+        var visiblePayload = await visibleResponse.Content.ReadFromJsonAsync<PagedResult<Team>>();
+        var hiddenPayload = await hiddenResponse.Content.ReadFromJsonAsync<PagedResult<Team>>();
+
+        visiblePayload.Should().NotBeNull();
+        hiddenPayload.Should().NotBeNull();
+        visiblePayload!.Items.Should().ContainSingle(t => t.Name == teamAName);
+        hiddenPayload!.Items.Should().BeEmpty();
     }
 
     #endregion

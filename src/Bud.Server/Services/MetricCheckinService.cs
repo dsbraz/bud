@@ -1,6 +1,6 @@
 using Bud.Server.Data;
 using Bud.Shared.Contracts;
-using Bud.Shared.Models;
+using Bud.Shared.Domain;
 using Microsoft.EntityFrameworkCore;
 
 namespace Bud.Server.Services;
@@ -9,56 +9,49 @@ public sealed class MetricCheckinService(ApplicationDbContext dbContext) : IMetr
 {
     public async Task<ServiceResult<MetricCheckin>> CreateAsync(CreateMetricCheckinRequest request, Guid collaboratorId, CancellationToken cancellationToken = default)
     {
-        var metric = await dbContext.MissionMetrics
-            .AsNoTracking()
-            .Include(m => m.Mission)
-            .FirstOrDefaultAsync(m => m.Id == request.MissionMetricId, cancellationToken);
-
-        if (metric is null)
+        try
         {
-            return ServiceResult<MetricCheckin>.NotFound("Métrica não encontrada.");
+            var metric = await dbContext.MissionMetrics
+                .AsNoTracking()
+                .Include(m => m.Mission)
+                .FirstOrDefaultAsync(m => m.Id == request.MissionMetricId, cancellationToken);
+
+            if (metric is null)
+            {
+                return ServiceResult<MetricCheckin>.NotFound("Métrica não encontrada.");
+            }
+
+            if (metric.Mission.Status != MissionStatus.Active)
+            {
+                return ServiceResult<MetricCheckin>.Failure(
+                    "Não é possível fazer check-in em métricas de missões que não estão ativas.",
+                    ServiceErrorType.Validation);
+            }
+
+            // Garantir que o OrganizationId da métrica está definido
+            if (metric.OrganizationId == Guid.Empty)
+            {
+                return ServiceResult<MetricCheckin>.Failure("Métrica sem organização definida.", ServiceErrorType.Validation);
+            }
+
+            var checkin = metric.CreateCheckin(
+                Guid.NewGuid(),
+                collaboratorId,
+                request.Value,
+                request.Text,
+                DateTime.SpecifyKind(request.CheckinDate, DateTimeKind.Utc),
+                request.Note,
+                request.ConfidenceLevel);
+
+            dbContext.MetricCheckins.Add(checkin);
+            await dbContext.SaveChangesAsync(cancellationToken);
+
+            return ServiceResult<MetricCheckin>.Success(checkin);
         }
-
-        if (metric.Mission.Status != MissionStatus.Active)
+        catch (DomainInvariantException ex)
         {
-            return ServiceResult<MetricCheckin>.Failure(
-                "Não é possível fazer check-in em métricas de missões que não estão ativas.",
-                ServiceErrorType.Validation);
+            return ServiceResult<MetricCheckin>.Failure(ex.Message, ServiceErrorType.Validation);
         }
-
-        if (metric.Type == MetricType.Quantitative && request.Value is null)
-        {
-            return ServiceResult<MetricCheckin>.Failure("Valor é obrigatório para métricas quantitativas.", ServiceErrorType.Validation);
-        }
-
-        if (metric.Type == MetricType.Qualitative && string.IsNullOrWhiteSpace(request.Text))
-        {
-            return ServiceResult<MetricCheckin>.Failure("Texto é obrigatório para métricas qualitativas.", ServiceErrorType.Validation);
-        }
-
-        // Garantir que o OrganizationId da métrica está definido
-        if (metric.OrganizationId == Guid.Empty)
-        {
-            return ServiceResult<MetricCheckin>.Failure("Métrica sem organização definida.", ServiceErrorType.Validation);
-        }
-
-        var checkin = new MetricCheckin
-        {
-            Id = Guid.NewGuid(),
-            OrganizationId = metric.OrganizationId,
-            MissionMetricId = request.MissionMetricId,
-            CollaboratorId = collaboratorId,
-            Value = request.Value,
-            Text = request.Text?.Trim(),
-            CheckinDate = DateTime.SpecifyKind(request.CheckinDate, DateTimeKind.Utc),
-            Note = request.Note?.Trim(),
-            ConfidenceLevel = request.ConfidenceLevel
-        };
-
-        dbContext.MetricCheckins.Add(checkin);
-        await dbContext.SaveChangesAsync(cancellationToken);
-
-        return ServiceResult<MetricCheckin>.Success(checkin);
     }
 
     public async Task<ServiceResult<MetricCheckin>> UpdateAsync(Guid id, UpdateMetricCheckinRequest request, CancellationToken cancellationToken = default)
@@ -70,15 +63,33 @@ public sealed class MetricCheckinService(ApplicationDbContext dbContext) : IMetr
             return ServiceResult<MetricCheckin>.NotFound("Check-in não encontrado.");
         }
 
-        checkin.Value = request.Value;
-        checkin.Text = request.Text?.Trim();
-        checkin.CheckinDate = DateTime.SpecifyKind(request.CheckinDate, DateTimeKind.Utc);
-        checkin.Note = request.Note?.Trim();
-        checkin.ConfidenceLevel = request.ConfidenceLevel;
+        var metric = await dbContext.MissionMetrics
+            .AsNoTracking()
+            .FirstOrDefaultAsync(m => m.Id == checkin.MissionMetricId, cancellationToken);
 
-        await dbContext.SaveChangesAsync(cancellationToken);
+        if (metric is null)
+        {
+            return ServiceResult<MetricCheckin>.NotFound("Métrica não encontrada.");
+        }
 
-        return ServiceResult<MetricCheckin>.Success(checkin);
+        try
+        {
+            metric.UpdateCheckin(
+                checkin,
+                request.Value,
+                request.Text,
+                DateTime.SpecifyKind(request.CheckinDate, DateTimeKind.Utc),
+                request.Note,
+                request.ConfidenceLevel);
+
+            await dbContext.SaveChangesAsync(cancellationToken);
+
+            return ServiceResult<MetricCheckin>.Success(checkin);
+        }
+        catch (DomainInvariantException ex)
+        {
+            return ServiceResult<MetricCheckin>.Failure(ex.Message, ServiceErrorType.Validation);
+        }
     }
 
     public async Task<ServiceResult> DeleteAsync(Guid id, CancellationToken cancellationToken = default)

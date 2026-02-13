@@ -1,6 +1,6 @@
 using Bud.Server.Data;
 using Bud.Shared.Contracts;
-using Bud.Shared.Models;
+using Bud.Shared.Domain;
 using Microsoft.EntityFrameworkCore;
 
 namespace Bud.Server.Services;
@@ -9,33 +9,36 @@ public sealed class MissionTemplateService(ApplicationDbContext dbContext) : IMi
 {
     public async Task<ServiceResult<MissionTemplate>> CreateAsync(CreateMissionTemplateRequest request, CancellationToken cancellationToken = default)
     {
-        var template = new MissionTemplate
+        try
         {
-            Id = Guid.NewGuid(),
-            Name = request.Name.Trim(),
-            Description = request.Description?.Trim(),
-            MissionNamePattern = request.MissionNamePattern?.Trim(),
-            MissionDescriptionPattern = request.MissionDescriptionPattern?.Trim(),
-            IsDefault = false,
-            IsActive = true,
-            Metrics = request.Metrics.Select(m => new MissionTemplateMetric
-            {
-                Id = Guid.NewGuid(),
-                Name = m.Name.Trim(),
-                Type = m.Type,
-                OrderIndex = m.OrderIndex,
-                QuantitativeType = m.QuantitativeType,
-                MinValue = m.MinValue,
-                MaxValue = m.MaxValue,
-                Unit = m.Unit,
-                TargetText = m.TargetText?.Trim()
-            }).ToList()
-        };
+            // OrganizationId será preenchido por TenantSaveChangesInterceptor quando necessário.
+            var template = MissionTemplate.Create(
+                Guid.NewGuid(),
+                Guid.Empty,
+                request.Name,
+                request.Description,
+                request.MissionNamePattern,
+                request.MissionDescriptionPattern);
 
-        dbContext.MissionTemplates.Add(template);
-        await dbContext.SaveChangesAsync(cancellationToken);
+            template.ReplaceMetrics(request.Metrics.Select(m => new MissionTemplateMetricDraft(
+                m.Name,
+                m.Type,
+                m.OrderIndex,
+                m.QuantitativeType,
+                m.MinValue,
+                m.MaxValue,
+                m.Unit,
+                m.TargetText)));
 
-        return ServiceResult<MissionTemplate>.Success(template);
+            dbContext.MissionTemplates.Add(template);
+            await dbContext.SaveChangesAsync(cancellationToken);
+
+            return ServiceResult<MissionTemplate>.Success(template);
+        }
+        catch (DomainInvariantException ex)
+        {
+            return ServiceResult<MissionTemplate>.Failure(ex.Message, ServiceErrorType.Validation);
+        }
     }
 
     public async Task<ServiceResult<MissionTemplate>> UpdateAsync(Guid id, UpdateMissionTemplateRequest request, CancellationToken cancellationToken = default)
@@ -49,39 +52,41 @@ public sealed class MissionTemplateService(ApplicationDbContext dbContext) : IMi
             return ServiceResult<MissionTemplate>.NotFound("Template de missão não encontrado.");
         }
 
-        template.Name = request.Name.Trim();
-        template.Description = request.Description?.Trim();
-        template.MissionNamePattern = request.MissionNamePattern?.Trim();
-        template.MissionDescriptionPattern = request.MissionDescriptionPattern?.Trim();
-        template.IsActive = request.IsActive;
-
-        // Replace entire metrics collection
-        dbContext.MissionTemplateMetrics.RemoveRange(template.Metrics);
-
-        var newMetrics = request.Metrics.Select(m => new MissionTemplateMetric
+        try
         {
-            Id = Guid.NewGuid(),
-            MissionTemplateId = template.Id,
-            Name = m.Name.Trim(),
-            Type = m.Type,
-            OrderIndex = m.OrderIndex,
-            QuantitativeType = m.QuantitativeType,
-            MinValue = m.MinValue,
-            MaxValue = m.MaxValue,
-            Unit = m.Unit,
-            TargetText = m.TargetText?.Trim(),
-            OrganizationId = template.OrganizationId
-        }).ToList();
+            template.UpdateBasics(
+                request.Name,
+                request.Description,
+                request.MissionNamePattern,
+                request.MissionDescriptionPattern);
+            template.SetActive(request.IsActive);
 
-        dbContext.MissionTemplateMetrics.AddRange(newMetrics);
-        await dbContext.SaveChangesAsync(cancellationToken);
+            var previousMetrics = template.Metrics.ToList();
+            template.ReplaceMetrics(request.Metrics.Select(m => new MissionTemplateMetricDraft(
+                m.Name,
+                m.Type,
+                m.OrderIndex,
+                m.QuantitativeType,
+                m.MinValue,
+                m.MaxValue,
+                m.Unit,
+                m.TargetText)));
+
+            dbContext.MissionTemplateMetrics.RemoveRange(previousMetrics);
+            dbContext.MissionTemplateMetrics.AddRange(template.Metrics);
+            await dbContext.SaveChangesAsync(cancellationToken);
 
         // Reload to include new metrics in result
-        template = await dbContext.MissionTemplates
-            .Include(t => t.Metrics.OrderBy(m => m.OrderIndex))
-            .FirstAsync(t => t.Id == id, cancellationToken);
+            template = await dbContext.MissionTemplates
+                .Include(t => t.Metrics.OrderBy(m => m.OrderIndex))
+                .FirstAsync(t => t.Id == id, cancellationToken);
 
-        return ServiceResult<MissionTemplate>.Success(template);
+            return ServiceResult<MissionTemplate>.Success(template);
+        }
+        catch (DomainInvariantException ex)
+        {
+            return ServiceResult<MissionTemplate>.Failure(ex.Message, ServiceErrorType.Validation);
+        }
     }
 
     public async Task<ServiceResult> DeleteAsync(Guid id, CancellationToken cancellationToken = default)

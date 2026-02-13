@@ -1,5 +1,4 @@
 using Bud.Server.Data;
-using Bud.Server.Infrastructure.Events;
 using Bud.Server.MultiTenancy;
 using Microsoft.EntityFrameworkCore;
 
@@ -29,13 +28,8 @@ public static class BudDataCompositionExtensions
             return new ApplicationDbContext(optionsBuilder.Options, tenantProvider);
         });
 
-        services.Configure<OutboxHealthCheckOptions>(configuration.GetSection("Outbox:HealthCheck"));
-        services.Configure<OutboxProcessingOptions>(configuration.GetSection("Outbox:Processing"));
-        services.AddScoped<OutboxHealthCheck>();
-
         services.AddHealthChecks()
-            .AddNpgSql(connectionString, name: "postgres", tags: ["db", "ready"])
-            .AddCheck<OutboxHealthCheck>("outbox", tags: ["outbox", "ready"]);
+            .AddNpgSql(connectionString, name: "postgres", tags: ["db", "ready"]);
 
         return services;
     }

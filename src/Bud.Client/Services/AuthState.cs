@@ -69,6 +69,6 @@ public sealed class AuthSession
     public string DisplayName { get; set; } = string.Empty;
     public bool IsGlobalAdmin { get; set; }
     public Guid? CollaboratorId { get; set; }
-    public Bud.Shared.Models.CollaboratorRole? Role { get; set; }
+    public Bud.Shared.Domain.CollaboratorRole? Role { get; set; }
     public Guid? OrganizationId { get; set; }
 }

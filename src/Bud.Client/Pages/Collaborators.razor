@@ -2,6 +2,7 @@
 @inject ApiClient Api
 @inject ToastService ToastService
 @inject OrganizationContext OrgContext
+@inject UiOperationService UiOps
 @implements IDisposable
 
 <ManagementPageHeader
@@ -80,10 +81,11 @@
     </div>
 }
 
-<CollaboratorsSummaryCards
-    TotalCollaborators="GetTotalCollaboratorsCount()"
-    Leaders="GetLeadersCount()"
-    Contributors="GetContributorsCount()" />
+<SummaryCards CssClass="collaborators-summary">
+    <StatCard Value="@GetTotalCollaboratorsCount().ToString()" Label="Total de colaboradores" />
+    <StatCard Value="@GetLeadersCount().ToString()" Label="Líderes" />
+    <StatCard Value="@GetContributorsCount().ToString()" Label="Contribuidores individuais" />
+</SummaryCards>
 
 @* Lista de Colaboradores *@
 <div class="collaborators-table-container">
@@ -484,7 +486,7 @@
         newCollaborator.TeamId = null;
         newCollaborator.LeaderId = Guid.TryParse(createLeaderId, out var leaderId) ? leaderId : null;
 
-        await UiOperationRunner.RunAsync(
+        await UiOps.RunAsync(
             async () =>
             {
                 var created = await Api.CreateCollaboratorAsync(newCollaborator);
@@ -507,11 +509,8 @@
                 ToastService.ShowSuccess("Colaborador criado com sucesso!", $"O colaborador '{createdCollaboratorName}' foi criado.");
                 CloseModal();
             },
-            ToastService,
             "Erro ao criar colaborador",
-            "Não foi possível criar o colaborador. Verifique os dados e tente novamente.",
-            operationContext: "criação de colaborador",
-            unexpectedErrorMessage: "Não foi possível criar o colaborador. Tente novamente.");
+            "Não foi possível criar o colaborador. Verifique os dados e tente novamente.");
     }
 
     private async Task OpenEditModal(Collaborator collaborator)
@@ -574,7 +573,7 @@
 
         editCollaborator.LeaderId = Guid.TryParse(editLeaderId, out var leaderId) ? leaderId : null;
 
-        await UiOperationRunner.RunAsync(
+        await UiOps.RunAsync(
             async () =>
             {
                 var result = await Api.UpdateCollaboratorAsync(selectedCollaborator.Id, editCollaborator);
@@ -595,11 +594,8 @@
                     await LoadAllCollaborators();
                 }
             },
-            ToastService,
             "Erro ao atualizar",
-            "Não foi possível atualizar o colaborador. Verifique os dados e tente novamente.",
-            operationContext: "atualização de colaborador",
-            unexpectedErrorMessage: "Não foi possível atualizar o colaborador. Tente novamente.");
+            "Não foi possível atualizar o colaborador. Verifique os dados e tente novamente.");
     }
 
     private async Task HandleDeleteClick(Guid collaboratorId)
@@ -633,7 +629,7 @@
     {
         try
         {
-            await UiOperationRunner.RunAsync(
+            await UiOps.RunAsync(
                 async () =>
                 {
                     await Api.DeleteCollaboratorAsync(collaboratorId);
@@ -641,11 +637,8 @@
                     await LoadCollaborators();
                     await LoadAllCollaborators();
                 },
-                ToastService,
                 "Erro ao excluir",
-                "Não foi possível excluir o colaborador. Tente novamente.",
-                operationContext: "exclusão de colaborador",
-                unexpectedErrorMessage: "Não foi possível excluir o colaborador. Tente novamente.");
+                "Não foi possível excluir o colaborador. Tente novamente.");
         }
         finally
         {

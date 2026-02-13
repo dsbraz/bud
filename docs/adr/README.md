@@ -14,18 +14,17 @@ Cada ADR registra contexto, decisão, trade-offs e alternativas.
 A ordem abaixo vai das decisões mais abrangentes para as mais específicas:
 
 1. `ADR-0001` - Stack tecnológica
-2. `ADR-0002` - Arquitetura por UseCases + Abstractions + Services
+2. `ADR-0002` - Arquitetura por UseCases e Services
 3. `ADR-0003` - Persistência, EF Core e migrations
 4. `ADR-0004` - Autenticação, autorização e políticas
 5. `ADR-0005` - Multi-tenancy por OrganizationId
 6. `ADR-0006` - Estilo de API e padronização de erros
 7. `ADR-0007` - Estratégia OpenAPI semântica
-8. `ADR-0008` - Outbox com retry/backoff/dead-letter
-9. `ADR-0009` - Estratégia de testes
-10. `ADR-0010` - Governança por testes de arquitetura
-11. `ADR-0011` - Servidor MCP HTTP remoto para missões, métricas e check-ins
-12. `ADR-0012` - Estratégia de logging estruturado com LoggerMessage e observabilidade de Outbox
-13. `ADR-0013` - Sistema de notificações via domain events
+8. `ADR-0008` - Estratégia de testes
+9. `ADR-0009` - Governança por testes de arquitetura
+10. `ADR-0010` - Servidor MCP HTTP remoto para missões, métricas e check-ins
+11. `ADR-0011` - Sistema de notificações em use cases
+12. `ADR-0012` - Aggregate roots explícitas, value objects e invariantes de domínio
 
 ## Status possíveis
 

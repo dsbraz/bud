@@ -1,7 +1,7 @@
 using Bud.Server.Application.Workspaces;
 using Bud.Server.Authorization;
 using Bud.Shared.Contracts;
-using Bud.Shared.Models;
+using Bud.Shared.Domain;
 using FluentValidation;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;

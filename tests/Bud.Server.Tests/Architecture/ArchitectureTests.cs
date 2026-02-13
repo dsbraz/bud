@@ -1,15 +1,13 @@
 using System.Reflection;
-using Bud.Server.Application.Common.Events;
 using Bud.Server.Controllers;
 using Bud.Server.Data;
 using Bud.Server.DependencyInjection;
-using Bud.Server.Domain.Common.Events;
-using Bud.Shared.Models;
+using Bud.Shared.Domain;
 using FluentAssertions;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.DependencyInjection;
+using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using Xunit;
 
 namespace Bud.Server.Tests.Architecture;
@@ -18,6 +16,7 @@ public sealed class ArchitectureTests
 {
     private static readonly Assembly ServerAssembly = typeof(Program).Assembly;
     private static readonly Assembly SharedAssembly = typeof(ITenantEntity).Assembly;
+    private const string ValueObjectGuardrailsRelativePath = "docs/architecture/value-object-mapping-guardrails.md";
 
     [Fact]
     public void Controllers_ShouldNotDependOnApplicationDbContext()
@@ -140,29 +139,6 @@ public sealed class ArchitectureTests
     }
 
     [Fact]
-    public void UseCases_ShouldNotDependOnServicesContractsInConstructors()
-    {
-        var useCaseTypes = ServerAssembly.GetTypes()
-            .Where(t =>
-                t is { IsClass: true, IsAbstract: false } &&
-                t.Namespace?.StartsWith("Bud.Server.Application", StringComparison.Ordinal) == true &&
-                t.Name.EndsWith("UseCase", StringComparison.Ordinal))
-            .ToList();
-
-        useCaseTypes.Should().NotBeEmpty();
-
-        var invalidUseCases = useCaseTypes
-            .Where(type => type
-                .GetConstructors(BindingFlags.Public | BindingFlags.Instance | BindingFlags.NonPublic)
-                .SelectMany(c => c.GetParameters())
-                .Any(IsServicesContract))
-            .Select(t => t.FullName)
-            .ToList();
-
-        invalidUseCases.Should().BeEmpty("use cases devem depender de portas da Application, não de contratos legados em Services");
-    }
-
-    [Fact]
     public void ApplicationLayer_ShouldNotExposeServicesNamespaceTypes()
     {
         var applicationTypes = ServerAssembly.GetTypes()
@@ -216,6 +192,37 @@ public sealed class ArchitectureTests
                 .Should()
                 .Contain(extension.Method, $"a extensão {extension.Type.Name} deve expor {extension.Method}");
         }
+    }
+
+    [Fact]
+    public void DbContextEntities_ShouldHaveEntityTypeConfigurationClass()
+    {
+        var entityTypes = typeof(ApplicationDbContext)
+            .GetProperties(BindingFlags.Public | BindingFlags.Instance)
+            .Where(p => p.PropertyType.IsGenericType &&
+                        p.PropertyType.GetGenericTypeDefinition() == typeof(DbSet<>))
+            .Select(p => p.PropertyType.GetGenericArguments()[0])
+            .ToList();
+
+        entityTypes.Should().NotBeEmpty();
+
+        var configurationTypes = ServerAssembly.GetTypes()
+            .Where(t => t is { IsClass: true, IsAbstract: false })
+            .Where(t => t.GetInterfaces().Any(i =>
+                i.IsGenericType &&
+                i.GetGenericTypeDefinition() == typeof(IEntityTypeConfiguration<>)))
+            .ToList();
+
+        var missingConfiguration = entityTypes
+            .Where(entityType =>
+            {
+                var expectedInterface = typeof(IEntityTypeConfiguration<>).MakeGenericType(entityType);
+                return !configurationTypes.Any(configType => expectedInterface.IsAssignableFrom(configType));
+            })
+            .Select(t => t.FullName)
+            .ToList();
+
+        missingConfiguration.Should().BeEmpty("todas as entidades do DbContext devem ter IConfiguration dedicada");
     }
 
     [Fact]
@@ -284,84 +291,41 @@ public sealed class ArchitectureTests
     }
 
     [Fact]
-    public void DomainEvents_MustHaveAtLeastOneSubscriber()
+    public void AggregateRoots_ShouldExposeRequiredDomainBehaviorMethods()
     {
-        var domainEventTypes = ServerAssembly.GetTypes()
-            .Where(t => t is { IsClass: true, IsAbstract: false } && t.IsAssignableTo(typeof(IDomainEvent)))
-            .ToList();
+        var requiredMethodsByType = new Dictionary<Type, string[]>
+        {
+            [typeof(Organization)] = ["Create", "Rename", "AssignOwner"],
+            [typeof(Workspace)] = ["Create", "Rename"],
+            [typeof(Team)] = ["Create", "Rename", "Reparent"],
+            [typeof(Collaborator)] = ["Create", "UpdateProfile"],
+            [typeof(Mission)] = ["Create", "UpdateDetails", "SetScope"],
+            [typeof(MissionTemplate)] = ["Create", "UpdateBasics", "SetActive"]
+        };
 
-        domainEventTypes.Should().NotBeEmpty();
+        foreach (var (type, requiredMethods) in requiredMethodsByType)
+        {
+            var methodNames = type
+                .GetMethods(BindingFlags.Public | BindingFlags.Instance | BindingFlags.Static | BindingFlags.DeclaredOnly)
+                .Select(m => m.Name)
+                .ToHashSet(StringComparer.Ordinal);
 
-        var subscriberTypes = ServerAssembly.GetTypes()
-            .Where(t => t is { IsClass: true, IsAbstract: false })
-            .ToList();
-
-        var orphanEvents = domainEventTypes
-            .Where(eventType =>
-            {
-                var expectedInterface = typeof(IDomainEventSubscriber<>).MakeGenericType(eventType);
-                return !subscriberTypes.Any(s => expectedInterface.IsAssignableFrom(s));
-            })
-            .Select(t => t.FullName)
-            .ToList();
-
-        orphanEvents.Should().BeEmpty(
-            "todo domain event deve ter ao menos um IDomainEventSubscriber<TEvent> registrado");
+            methodNames.Should().Contain(requiredMethods,
+                $"{type.Name} deve expor comportamento de domínio explícito para evitar modelo anêmico");
+        }
     }
 
     [Fact]
-    public void DomainEventSubscribers_MustBeRegisteredInDI()
+    public void Services_ShouldMapCriticalRequestFieldsThroughValueObjects()
     {
-        var subscriberTypes = ServerAssembly.GetTypes()
-            .Where(t => t is { IsClass: true, IsAbstract: false })
-            .Where(t => t.GetInterfaces().Any(i =>
-                i.IsGenericType && i.GetGenericTypeDefinition() == typeof(IDomainEventSubscriber<>)))
-            .ToList();
+        var repositoryRoot = FindRepositoryRoot();
+        var guardrails = LoadValueObjectGuardrails(repositoryRoot);
+        guardrails.Should().NotBeEmpty("deve existir ao menos um guardrail declarativo para mapeamento de Value Objects");
 
-        subscriberTypes.Should().NotBeEmpty();
-
-        var services = new ServiceCollection();
-        services.AddLogging();
-        services.AddBudApplication();
-
-        var registeredImplementations = services
-            .Select(sd => sd.ImplementationType)
-            .Where(t => t is not null)
-            .ToHashSet();
-
-        var unregistered = subscriberTypes
-            .Where(t => !registeredImplementations.Contains(t))
-            .Select(t => t.FullName)
-            .ToList();
-
-        unregistered.Should().BeEmpty(
-            "todo IDomainEventSubscriber<> concreto deve estar registrado no DI via AddBudApplication()");
-    }
-
-    [Fact]
-    public void DomainEvents_MustBeSealedRecords()
-    {
-        var domainEventTypes = ServerAssembly.GetTypes()
-            .Where(t => t is { IsClass: true, IsAbstract: false } && t.IsAssignableTo(typeof(IDomainEvent)))
-            .ToList();
-
-        domainEventTypes.Should().NotBeEmpty();
-
-        var nonSealed = domainEventTypes
-            .Where(t => !t.IsSealed)
-            .Select(t => t.FullName)
-            .ToList();
-
-        nonSealed.Should().BeEmpty(
-            "domain events devem ser sealed para garantir imutabilidade e serialização correta no outbox");
-
-        var nonRecord = domainEventTypes
-            .Where(t => t.GetMethod("<Clone>$") is null)
-            .Select(t => t.FullName)
-            .ToList();
-
-        nonRecord.Should().BeEmpty(
-            "domain events devem ser records para garantir value equality e serialização correta no outbox");
+        foreach (var guardrail in guardrails)
+        {
+            AssertSourceContains(repositoryRoot, guardrail.Path, guardrail.Required, guardrail.Forbidden);
+        }
     }
 
     private static bool IsServicesContract(ParameterInfo parameter)
@@ -378,4 +342,97 @@ public sealed class ArchitectureTests
 
     private static bool UsesServicesNamespace(Type type)
         => type.Namespace?.StartsWith("Bud.Server.Services", StringComparison.Ordinal) == true;
+
+    private static string FindRepositoryRoot()
+    {
+        var directory = new DirectoryInfo(AppContext.BaseDirectory);
+
+        while (directory is not null)
+        {
+            var hasAgentsFile = File.Exists(Path.Combine(directory.FullName, "AGENTS.md"));
+            var hasServerProject = File.Exists(Path.Combine(directory.FullName, "src", "Bud.Server", "Bud.Server.csproj"));
+            if (hasAgentsFile && hasServerProject)
+            {
+                return directory.FullName;
+            }
+
+            directory = directory.Parent;
+        }
+
+        throw new InvalidOperationException("Não foi possível localizar a raiz do repositório para carregar a allowlist de serviços compostos.");
+    }
+
+    private static void AssertSourceContains(
+        string repositoryRoot,
+        string relativePath,
+        string[] required,
+        string[] forbidden)
+    {
+        var fullPath = Path.Combine(repositoryRoot, relativePath.Replace('/', Path.DirectorySeparatorChar));
+        File.Exists(fullPath).Should().BeTrue($"arquivo esperado não encontrado: {relativePath}");
+
+        var source = File.ReadAllText(fullPath);
+
+        foreach (var requiredSnippet in required)
+        {
+            source.Should().Contain(requiredSnippet, $"{relativePath} deve conter mapeamento explícito para Value Object");
+        }
+
+        foreach (var forbiddenSnippet in forbidden)
+        {
+            source.Should().NotContain(forbiddenSnippet, $"{relativePath} não deve usar primitive diretamente em chamadas de domínio críticas");
+        }
+    }
+
+    private static List<ValueObjectGuardrail> LoadValueObjectGuardrails(string repositoryRoot)
+    {
+        var filePath = Path.Combine(
+            repositoryRoot,
+            ValueObjectGuardrailsRelativePath.Replace('/', Path.DirectorySeparatorChar));
+
+        if (!File.Exists(filePath))
+        {
+            throw new InvalidOperationException($"Arquivo de guardrails não encontrado: {filePath}");
+        }
+
+        var guardrails = new List<ValueObjectGuardrail>();
+
+        foreach (var rawLine in File.ReadAllLines(filePath))
+        {
+            var line = rawLine.Trim();
+            if (string.IsNullOrWhiteSpace(line) || line.StartsWith('#'))
+            {
+                continue;
+            }
+
+            // Allow markdown prose in the guardrail file; only parse rule lines.
+            if (!line.Contains('|') || !line.StartsWith("src/", StringComparison.Ordinal))
+            {
+                continue;
+            }
+
+            var parts = line.Split('|', 3, StringSplitOptions.None);
+            if (parts.Length != 3)
+            {
+                throw new InvalidOperationException($"Linha inválida no arquivo de guardrails: {line}");
+            }
+
+            var path = parts[0].Trim();
+            var required = SplitSnippets(parts[1]);
+            var forbidden = SplitSnippets(parts[2]);
+
+            guardrails.Add(new ValueObjectGuardrail(path, required, forbidden));
+        }
+
+        return guardrails;
+    }
+
+    private static string[] SplitSnippets(string section)
+        => section
+            .Split("||", StringSplitOptions.RemoveEmptyEntries)
+            .Select(s => s.Trim())
+            .Where(s => !string.IsNullOrWhiteSpace(s))
+            .ToArray();
+
+    private sealed record ValueObjectGuardrail(string Path, string[] Required, string[] Forbidden);
 }

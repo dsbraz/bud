@@ -15,7 +15,7 @@ Padronizar OpenAPI com:
 - `ProducesResponseType` em endpoints
 - XML comments em controllers e contratos (`summary`, `remarks`, `response`)
 - `Consumes`/`Produces` quando aplicável
-- Exemplos de payload nos endpoints críticos (missões, métricas, check-ins, outbox)
+- Exemplos de payload nos endpoints críticos (missões, métricas, check-ins)
 - Swagger configurado para incluir XML comments
 
 ## Consequências

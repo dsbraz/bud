@@ -1,5 +1,6 @@
+using Bud.Server.Services;
 using Bud.Shared.Contracts;
-using Bud.Shared.Models;
+using Bud.Shared.Domain;
 
 namespace Bud.Server.Application.MissionMetrics;
 

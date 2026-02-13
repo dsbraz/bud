@@ -53,17 +53,7 @@ public sealed class NotificationsController(
     public async Task<ActionResult<UnreadCountResponse>> GetUnreadCount(CancellationToken cancellationToken)
     {
         var result = await notificationQueryUseCase.GetUnreadCountAsync(cancellationToken);
-        if (!result.IsSuccess)
-        {
-            return result.ErrorType switch
-            {
-                ServiceErrorType.Forbidden => ForbiddenProblem(result.Error ?? "Acesso negado."),
-                ServiceErrorType.NotFound => NotFound(new ProblemDetails { Detail = result.Error }),
-                _ => BadRequest(new ProblemDetails { Detail = result.Error })
-            };
-        }
-
-        return Ok(new UnreadCountResponse { Count = result.Value });
+        return FromResultOk(result, count => new UnreadCountResponse { Count = count });
     }
 
     /// <summary>

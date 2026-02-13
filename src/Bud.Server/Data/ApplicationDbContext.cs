@@ -1,5 +1,5 @@
 using Bud.Server.MultiTenancy;
-using Bud.Shared.Models;
+using Bud.Shared.Domain;
 using Microsoft.EntityFrameworkCore;
 
 namespace Bud.Server.Data;
@@ -34,173 +34,10 @@ public sealed class ApplicationDbContext : DbContext
     public DbSet<MissionTemplateMetric> MissionTemplateMetrics => Set<MissionTemplateMetric>();
     public DbSet<CollaboratorAccessLog> CollaboratorAccessLogs => Set<CollaboratorAccessLog>();
     public DbSet<Notification> Notifications => Set<Notification>();
-    public DbSet<OutboxMessage> OutboxMessages => Set<OutboxMessage>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
-        // Organization
-        modelBuilder.Entity<Organization>()
-            .Property(o => o.Name)
-            .HasMaxLength(200);
-
-        modelBuilder.Entity<Organization>()
-            .HasOne(o => o.Owner)
-            .WithMany()
-            .HasForeignKey(o => o.OwnerId)
-            .OnDelete(DeleteBehavior.Restrict)
-            .IsRequired(false);
-
-        // Workspace
-        modelBuilder.Entity<Workspace>()
-            .Property(w => w.Name)
-            .HasMaxLength(200);
-
-        modelBuilder.Entity<Organization>()
-            .HasMany(o => o.Workspaces)
-            .WithOne(w => w.Organization)
-            .HasForeignKey(w => w.OrganizationId)
-            .OnDelete(DeleteBehavior.Cascade);
-
-        // Team
-        modelBuilder.Entity<Team>()
-            .Property(t => t.Name)
-            .HasMaxLength(200);
-
-        modelBuilder.Entity<Team>()
-            .HasOne(t => t.Organization)
-            .WithMany()
-            .HasForeignKey(t => t.OrganizationId)
-            .OnDelete(DeleteBehavior.Restrict);
-
-        modelBuilder.Entity<Team>()
-            .HasIndex(t => t.OrganizationId);
-
-        modelBuilder.Entity<Workspace>()
-            .HasMany(w => w.Teams)
-            .WithOne(t => t.Workspace)
-            .HasForeignKey(t => t.WorkspaceId)
-            .OnDelete(DeleteBehavior.Cascade);
-
-        modelBuilder.Entity<Team>()
-            .HasMany(t => t.SubTeams)
-            .WithOne(t => t.ParentTeam)
-            .HasForeignKey(t => t.ParentTeamId)
-            .OnDelete(DeleteBehavior.Restrict);
-
-        // Collaborator
-        modelBuilder.Entity<Collaborator>()
-            .Property(c => c.FullName)
-            .HasMaxLength(200);
-
-        modelBuilder.Entity<Collaborator>()
-            .Property(c => c.Email)
-            .HasMaxLength(320);
-
-        modelBuilder.Entity<Collaborator>()
-            .HasOne(c => c.Organization)
-            .WithMany()
-            .HasForeignKey(c => c.OrganizationId)
-            .OnDelete(DeleteBehavior.Restrict);
-
-        modelBuilder.Entity<Collaborator>()
-            .HasIndex(c => c.OrganizationId);
-
-        modelBuilder.Entity<Team>()
-            .HasMany(t => t.Collaborators)
-            .WithOne(c => c.Team)
-            .HasForeignKey(c => c.TeamId)
-            .OnDelete(DeleteBehavior.SetNull)
-            .IsRequired(false);
-
-        modelBuilder.Entity<Collaborator>()
-            .HasOne(c => c.Leader)
-            .WithMany()
-            .HasForeignKey(c => c.LeaderId)
-            .OnDelete(DeleteBehavior.Restrict)
-            .IsRequired(false);
-
-        modelBuilder.Entity<Collaborator>()
-            .HasIndex(c => c.Email)
-            .IsUnique();
-
-        // CollaboratorTeam (many-to-many junction table)
-        modelBuilder.Entity<CollaboratorTeam>()
-            .HasKey(ct => new { ct.CollaboratorId, ct.TeamId });
-
-        modelBuilder.Entity<CollaboratorTeam>()
-            .HasOne(ct => ct.Collaborator)
-            .WithMany(c => c.CollaboratorTeams)
-            .HasForeignKey(ct => ct.CollaboratorId)
-            .OnDelete(DeleteBehavior.Cascade);
-
-        modelBuilder.Entity<CollaboratorTeam>()
-            .HasOne(ct => ct.Team)
-            .WithMany(t => t.CollaboratorTeams)
-            .HasForeignKey(ct => ct.TeamId)
-            .OnDelete(DeleteBehavior.Cascade);
-
-        modelBuilder.Entity<CollaboratorTeam>()
-            .HasIndex(ct => ct.CollaboratorId);
-
-        modelBuilder.Entity<CollaboratorTeam>()
-            .HasIndex(ct => ct.TeamId);
-
-        // Mission
-        modelBuilder.Entity<Mission>()
-            .Property(m => m.Name)
-            .HasMaxLength(200);
-
-        modelBuilder.Entity<Mission>()
-            .HasOne(m => m.Organization)
-            .WithMany()
-            .HasForeignKey(m => m.OrganizationId)
-            .OnDelete(DeleteBehavior.Cascade)
-            .IsRequired();
-
-        modelBuilder.Entity<Mission>()
-            .HasIndex(m => m.OrganizationId);
-
-        modelBuilder.Entity<Mission>()
-            .HasOne(m => m.Workspace)
-            .WithMany()
-            .HasForeignKey(m => m.WorkspaceId)
-            .OnDelete(DeleteBehavior.Cascade);
-
-        modelBuilder.Entity<Mission>()
-            .HasOne(m => m.Team)
-            .WithMany()
-            .HasForeignKey(m => m.TeamId)
-            .OnDelete(DeleteBehavior.Cascade);
-
-        modelBuilder.Entity<Mission>()
-            .HasOne(m => m.Collaborator)
-            .WithMany()
-            .HasForeignKey(m => m.CollaboratorId)
-            .OnDelete(DeleteBehavior.Cascade);
-
-        // MissionMetric
-        modelBuilder.Entity<MissionMetric>()
-            .Property(m => m.Name)
-            .HasMaxLength(200);
-
-        modelBuilder.Entity<MissionMetric>()
-            .Property(m => m.TargetText)
-            .HasMaxLength(1000);
-
-        modelBuilder.Entity<MissionMetric>()
-            .HasOne(mm => mm.Organization)
-            .WithMany()
-            .HasForeignKey(mm => mm.OrganizationId)
-            .OnDelete(DeleteBehavior.Restrict);
-
-        modelBuilder.Entity<MissionMetric>()
-            .HasIndex(mm => mm.OrganizationId);
-
-        modelBuilder.Entity<Mission>()
-            .HasMany(m => m.Metrics)
-            .WithOne(metric => metric.Mission)
-            .HasForeignKey(metric => metric.MissionId)
-            .OnDelete(DeleteBehavior.Cascade);
+        modelBuilder.ApplyConfigurationsFromAssembly(typeof(ApplicationDbContext).Assembly);
 
         // Global Query Filters for multi-tenancy (simplified for performance)
         // SECURITY: Tenant ownership validation is now done in TenantRequiredMiddleware
@@ -248,93 +85,12 @@ public sealed class ApplicationDbContext : DbContext
                 (_tenantId != null && mm.OrganizationId == _tenantId)
             );
 
-        // MetricCheckin
-        modelBuilder.Entity<MetricCheckin>()
-            .Property(mc => mc.Note)
-            .HasMaxLength(1000);
-
-        modelBuilder.Entity<MetricCheckin>()
-            .Property(mc => mc.Text)
-            .HasMaxLength(1000);
-
-        modelBuilder.Entity<MetricCheckin>()
-            .HasOne(mc => mc.Organization)
-            .WithMany()
-            .HasForeignKey(mc => mc.OrganizationId)
-            .OnDelete(DeleteBehavior.Restrict);
-
-        modelBuilder.Entity<MetricCheckin>()
-            .HasIndex(mc => mc.OrganizationId);
-
-        modelBuilder.Entity<MetricCheckin>()
-            .HasOne(mc => mc.Collaborator)
-            .WithMany()
-            .HasForeignKey(mc => mc.CollaboratorId)
-            .OnDelete(DeleteBehavior.Restrict);
-
-        modelBuilder.Entity<MissionMetric>()
-            .HasMany(mm => mm.Checkins)
-            .WithOne(mc => mc.MissionMetric)
-            .HasForeignKey(mc => mc.MissionMetricId)
-            .OnDelete(DeleteBehavior.Cascade);
-
         modelBuilder.Entity<MetricCheckin>()
             .HasQueryFilter(mc =>
                 !_applyTenantFilter ||
                 (_isGlobalAdmin && _tenantId == null) ||
                 (_tenantId != null && mc.OrganizationId == _tenantId)
             );
-
-        // MissionTemplate
-        modelBuilder.Entity<MissionTemplate>()
-            .Property(mt => mt.Name)
-            .HasMaxLength(200);
-
-        modelBuilder.Entity<MissionTemplate>()
-            .Property(mt => mt.Description)
-            .HasMaxLength(1000);
-
-        modelBuilder.Entity<MissionTemplate>()
-            .Property(mt => mt.MissionNamePattern)
-            .HasMaxLength(200);
-
-        modelBuilder.Entity<MissionTemplate>()
-            .Property(mt => mt.MissionDescriptionPattern)
-            .HasMaxLength(1000);
-
-        modelBuilder.Entity<MissionTemplate>()
-            .HasOne(mt => mt.Organization)
-            .WithMany()
-            .HasForeignKey(mt => mt.OrganizationId)
-            .OnDelete(DeleteBehavior.Cascade)
-            .IsRequired();
-
-        modelBuilder.Entity<MissionTemplate>()
-            .HasIndex(mt => mt.OrganizationId);
-
-        // MissionTemplateMetric
-        modelBuilder.Entity<MissionTemplateMetric>()
-            .Property(mtm => mtm.Name)
-            .HasMaxLength(200);
-
-        modelBuilder.Entity<MissionTemplateMetric>()
-            .Property(mtm => mtm.TargetText)
-            .HasMaxLength(1000);
-
-        modelBuilder.Entity<MissionTemplateMetric>()
-            .HasOne(mtm => mtm.Organization)
-            .WithMany()
-            .HasForeignKey(mtm => mtm.OrganizationId)
-            .OnDelete(DeleteBehavior.Restrict);
-
-        modelBuilder.Entity<MissionTemplateMetric>()
-            .HasIndex(mtm => mtm.OrganizationId);
-
-        modelBuilder.Entity<MissionTemplate>()
-            .HasMany(mt => mt.Metrics)
-            .WithOne(mtm => mtm.MissionTemplate)
-            .HasForeignKey(mtm => mtm.MissionTemplateId)
-            .OnDelete(DeleteBehavior.Cascade);
 
         modelBuilder.Entity<MissionTemplate>()
             .HasQueryFilter(mt =>
@@ -350,59 +106,12 @@ public sealed class ApplicationDbContext : DbContext
                 (_tenantId != null && mtm.OrganizationId == _tenantId)
             );
 
-        // CollaboratorAccessLog
-        modelBuilder.Entity<CollaboratorAccessLog>()
-            .HasOne(cal => cal.Organization)
-            .WithMany()
-            .HasForeignKey(cal => cal.OrganizationId)
-            .OnDelete(DeleteBehavior.Restrict);
-
-        modelBuilder.Entity<CollaboratorAccessLog>()
-            .HasOne(cal => cal.Collaborator)
-            .WithMany()
-            .HasForeignKey(cal => cal.CollaboratorId)
-            .OnDelete(DeleteBehavior.Cascade);
-
-        modelBuilder.Entity<CollaboratorAccessLog>()
-            .HasIndex(cal => new { cal.OrganizationId, cal.AccessedAt });
-
         modelBuilder.Entity<CollaboratorAccessLog>()
             .HasQueryFilter(cal =>
                 !_applyTenantFilter ||
                 (_isGlobalAdmin && _tenantId == null) ||
                 (_tenantId != null && cal.OrganizationId == _tenantId)
             );
-
-        // Notification
-        modelBuilder.Entity<Notification>()
-            .Property(n => n.Title)
-            .HasMaxLength(200);
-
-        modelBuilder.Entity<Notification>()
-            .Property(n => n.Message)
-            .HasMaxLength(1000);
-
-        modelBuilder.Entity<Notification>()
-            .Property(n => n.RelatedEntityType)
-            .HasMaxLength(100);
-
-        modelBuilder.Entity<Notification>()
-            .HasOne(n => n.Organization)
-            .WithMany()
-            .HasForeignKey(n => n.OrganizationId)
-            .OnDelete(DeleteBehavior.Restrict);
-
-        modelBuilder.Entity<Notification>()
-            .HasOne(n => n.RecipientCollaborator)
-            .WithMany()
-            .HasForeignKey(n => n.RecipientCollaboratorId)
-            .OnDelete(DeleteBehavior.Cascade);
-
-        modelBuilder.Entity<Notification>()
-            .HasIndex(n => n.OrganizationId);
-
-        modelBuilder.Entity<Notification>()
-            .HasIndex(n => new { n.RecipientCollaboratorId, n.IsRead, n.CreatedAtUtc });
 
         modelBuilder.Entity<Notification>()
             .HasQueryFilter(n =>
@@ -411,23 +120,5 @@ public sealed class ApplicationDbContext : DbContext
                 (_tenantId != null && n.OrganizationId == _tenantId)
             );
 
-        // Outbox
-        modelBuilder.Entity<OutboxMessage>()
-            .HasKey(o => o.Id);
-
-        modelBuilder.Entity<OutboxMessage>()
-            .Property(o => o.EventType)
-            .HasMaxLength(1000);
-
-        modelBuilder.Entity<OutboxMessage>()
-            .Property(o => o.Payload)
-            .HasColumnType("text");
-
-        modelBuilder.Entity<OutboxMessage>()
-            .Property(o => o.Error)
-            .HasColumnType("text");
-
-        modelBuilder.Entity<OutboxMessage>()
-            .HasIndex(o => new { o.ProcessedOnUtc, o.DeadLetteredOnUtc, o.NextAttemptOnUtc, o.OccurredOnUtc });
     }
 }

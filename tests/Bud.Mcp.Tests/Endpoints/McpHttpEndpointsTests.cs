@@ -1,4 +1,5 @@
 using System.Net.Http.Json;
+using System.Text;
 using System.Text.Json.Nodes;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Extensions.Configuration;
@@ -123,5 +124,40 @@ public sealed class McpHttpEndpointsTests : IClassFixture<WebApplicationFactory<
         promptsResponse.StatusCode.Should().Be(HttpStatusCode.OK);
         body.Should().NotBeNull();
         body!["result"]!["prompts"]!.AsArray().Should().BeEmpty();
+    }
+
+    [Fact]
+    public async Task PostMcp_WithInvalidJson_ReturnsBadRequest()
+    {
+        using var client = _factory.CreateClient();
+        using var content = new StringContent("{ invalid json", Encoding.UTF8, "application/json");
+
+        var response = await client.PostAsync("/", content);
+
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+    }
+
+    [Fact]
+    public async Task PostMcp_WithInvalidSessionHeader_ReturnsJsonRpcError()
+    {
+        using var client = _factory.CreateClient();
+        var request = new HttpRequestMessage(HttpMethod.Post, "/")
+        {
+            Content = JsonContent.Create(new
+            {
+                jsonrpc = "2.0",
+                id = 1,
+                method = "tools/list"
+            })
+        };
+        request.Headers.Add("MCP-Session-Id", "not-a-guid");
+
+        var response = await client.SendAsync(request);
+        var body = await response.Content.ReadFromJsonAsync<JsonObject>();
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        body.Should().NotBeNull();
+        body!["error"]!["message"]!.GetValue<string>()
+            .Should().Be("Header MCP-Session-Id deve ser um GUID válido.");
     }
 }

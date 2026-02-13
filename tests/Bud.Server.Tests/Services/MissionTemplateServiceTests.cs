@@ -3,7 +3,7 @@ using Bud.Server.MultiTenancy;
 using Bud.Server.Services;
 using Bud.Server.Tests.Helpers;
 using Bud.Shared.Contracts;
-using Bud.Shared.Models;
+using Bud.Shared.Domain;
 using FluentAssertions;
 using Microsoft.EntityFrameworkCore;
 using Xunit;
@@ -166,6 +166,40 @@ public sealed class MissionTemplateServiceTests
         result.Value.Metrics.Should().ContainSingle();
         result.Value.Metrics.First().Name.Should().Be("Metric Name");
         result.Value.Metrics.First().TargetText.Should().Be("Target Text");
+    }
+
+    [Fact]
+    public async Task CreateAsync_WithQuantitativeMetricWithoutQuantitativeType_ReturnsValidationFailure()
+    {
+        // Arrange
+        using var context = CreateInMemoryContext();
+        _ = await CreateTestOrganization(context);
+        var service = new MissionTemplateService(context);
+
+        var request = new CreateMissionTemplateRequest
+        {
+            Name = "Template sem tipo quantitativo",
+            Metrics =
+            [
+                new MissionTemplateMetricDto
+                {
+                    Name = "Receita",
+                    Type = MetricType.Quantitative,
+                    OrderIndex = 0,
+                    QuantitativeType = null,
+                    MinValue = 0,
+                    MaxValue = 100
+                }
+            ]
+        };
+
+        // Act
+        var result = await service.CreateAsync(request);
+
+        // Assert
+        result.IsSuccess.Should().BeFalse();
+        result.ErrorType.Should().Be(ServiceErrorType.Validation);
+        result.Error.Should().Be("Tipo quantitativo é obrigatório para métricas quantitativas.");
     }
 
     #endregion
