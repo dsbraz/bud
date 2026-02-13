@@ -3378,11 +3378,41 @@ a {
     gap: var(--spacing-5);
 }
 
+.dashboard-section-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--spacing-3);
+}
+
 .dashboard-section-title {
     font-size: var(--font-size-lg);
     font-weight: var(--font-weight-semibold);
     color: var(--neutral-950);
     margin: 0;
+}
+
+.team-select {
+    padding: var(--spacing-1) var(--spacing-3);
+    font-size: var(--font-size-xs);
+    font-weight: var(--font-weight-medium);
+    color: var(--neutral-950);
+    background: var(--color-surface);
+    border: 1px solid var(--caramel-300);
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    transition: all var(--transition-fast);
+}
+
+.team-select:hover {
+    background: var(--caramel-50);
+    border-color: var(--caramel-400);
+}
+
+.team-select:focus {
+    outline: none;
+    border-color: var(--caramel-400);
+    box-shadow: 0 0 0 2px var(--caramel-100);
 }
 
 /* Leader & Team */

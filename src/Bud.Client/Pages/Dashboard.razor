@@ -15,7 +15,20 @@ else
     <div class="dashboard-grid">
         @* Left Column: Team Health *@
         <div class="dashboard-section">
-            <h2 class="dashboard-section-title">Saúde do time</h2>
+            <div class="dashboard-section-header">
+                <h2 class="dashboard-section-title">Saúde do time</h2>
+
+                @if (userTeams is not null && userTeams.Count > 0)
+                {
+                    <select class="team-select" @onchange="OnTeamSelectionChanged">
+                        <option value="">Meu time</option>
+                        @foreach (var team in userTeams)
+                        {
+                            <option value="@team.Id" selected="@(selectedTeamId == team.Id)">@team.Name</option>
+                        }
+                    </select>
+                }
+            </div>
 
             @* Leader + Team Members *@
             <div class="dashboard-leader-row">
@@ -169,23 +182,42 @@ else
 
 @code {
     private MyDashboardResponse? dashboard;
+    private List<TeamSummaryDto>? userTeams;
+    private Guid? selectedTeamId;
 
     protected override async Task OnInitializedAsync()
     {
         await AuthState.EnsureInitializedAsync();
         OrgContext.OnOrganizationChanged += OnOrganizationChanged;
+        await LoadUserTeams();
         await LoadDashboard();
+    }
+
+    private async Task LoadUserTeams()
+    {
+        if (AuthState.Session?.CollaboratorId is { } collaboratorId)
+        {
+            userTeams = await Api.GetCollaboratorTeamsAsync(collaboratorId);
+        }
     }
 
     private async Task LoadDashboard()
     {
-        dashboard = await Api.GetMyDashboardAsync() ?? new MyDashboardResponse();
+        dashboard = await Api.GetMyDashboardAsync(selectedTeamId) ?? new MyDashboardResponse();
+    }
+
+    private async Task OnTeamSelectionChanged(ChangeEventArgs e)
+    {
+        selectedTeamId = Guid.TryParse(e.Value?.ToString(), out var id) ? id : null;
+        await LoadDashboard();
     }
 
     private void OnOrganizationChanged()
     {
         _ = InvokeAsync(async () =>
         {
+            selectedTeamId = null;
+            await LoadUserTeams();
             await LoadDashboard();
             StateHasChanged();
         });
