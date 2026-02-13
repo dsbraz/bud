@@ -37,10 +37,12 @@ public sealed class TeamsPageTests : TestContext
             return new HttpResponseMessage(HttpStatusCode.NotFound);
         });
 
+        var toastService = new ToastService();
         Services.AddSingleton<IJSRuntime>(jsRuntime);
-        Services.AddSingleton(new ToastService());
+        Services.AddSingleton(toastService);
         Services.AddSingleton(new OrganizationContext(jsRuntime));
-        Services.AddSingleton(new ApiClient(new HttpClient(handler) { BaseAddress = new Uri("http://localhost") }, new ToastService()));
+        Services.AddSingleton(new ApiClient(new HttpClient(handler) { BaseAddress = new Uri("http://localhost") }, toastService));
+        Services.AddSingleton(new UiOperationService(toastService));
 
         var cut = RenderComponent<Teams>();
 

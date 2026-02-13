@@ -2,6 +2,7 @@
 @inject ApiClient Api
 @inject ToastService ToastService
 @inject OrganizationContext OrgContext
+@inject UiOperationService UiOps
 @implements IDisposable
 
 <ManagementMenu />
@@ -73,10 +74,11 @@
     </div>
 }
 
-<TeamsSummaryCards
-    TotalTeams="GetTotalTeamsCount()"
-    RootTeams="GetRootTeamsCount()"
-    SubTeams="GetSubTeamsCount()" />
+<SummaryCards CssClass="teams-summary">
+    <StatCard Value="@GetTotalTeamsCount().ToString()" Label="Total de equipes" />
+    <StatCard Value="@GetRootTeamsCount().ToString()" Label="Equipes raiz" />
+    <StatCard Value="@GetSubTeamsCount().ToString()" Label="Subequipes" />
+</SummaryCards>
 
 @* Lista de Equipes *@
 <div class="teams-table-container">
@@ -429,7 +431,7 @@
         newTeam.WorkspaceId = workspaceId;
         newTeam.ParentTeamId = Guid.TryParse(createParentTeamId, out var parentId) ? parentId : null;
 
-        await UiOperationRunner.RunAsync(
+        await UiOps.RunAsync(
             async () =>
             {
                 await Api.CreateTeamAsync(newTeam);
@@ -443,11 +445,8 @@
                 ToastService.ShowSuccess("Equipe criada com sucesso!", $"A equipe '{createdTeamName}' foi criada.");
                 CloseModal();
             },
-            ToastService,
             "Erro ao criar equipe",
-            "Não foi possível criar a equipe. Verifique os dados e tente novamente.",
-            operationContext: "criação de equipe",
-            unexpectedErrorMessage: "Não foi possível criar a equipe. Tente novamente.");
+            "Não foi possível criar a equipe. Verifique os dados e tente novamente.");
     }
 
     private async Task OpenEditModal(Team team)
@@ -490,7 +489,7 @@
 
         editTeam.ParentTeamId = Guid.TryParse(editParentTeamId, out var parentId) ? parentId : null;
 
-        await UiOperationRunner.RunAsync(
+        await UiOps.RunAsync(
             async () =>
             {
                 var result = await Api.UpdateTeamAsync(selectedTeam.Id, editTeam);
@@ -511,11 +510,8 @@
                     await LoadCollaborators();
                 }
             },
-            ToastService,
             "Erro ao atualizar",
-            "Não foi possível atualizar a equipe. Verifique os dados e tente novamente.",
-            operationContext: "atualização de equipe",
-            unexpectedErrorMessage: "Não foi possível atualizar a equipe. Tente novamente.");
+            "Não foi possível atualizar a equipe. Verifique os dados e tente novamente.");
     }
 
     private void OnCollaboratorsChanged(List<CollaboratorSummaryDto> collaborators)
@@ -561,18 +557,15 @@
     {
         try
         {
-            await UiOperationRunner.RunAsync(
+            await UiOps.RunAsync(
                 async () =>
                 {
                     await Api.DeleteTeamAsync(teamId);
                     ToastService.ShowSuccess("Equipe excluída", "A equipe foi removida com sucesso.");
                     await LoadTeams();
                 },
-                ToastService,
                 "Erro ao excluir",
-                "Não foi possível excluir a equipe. Tente novamente.",
-                operationContext: "exclusão de equipe",
-                unexpectedErrorMessage: "Não foi possível excluir a equipe. Tente novamente.");
+                "Não foi possível excluir a equipe. Tente novamente.");
         }
         finally
         {

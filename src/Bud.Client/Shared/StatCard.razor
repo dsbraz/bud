@@ -1,0 +1,19 @@
+<div class="summary-card" style="align-items: center; text-align: center;">
+    <div class="summary-card-value">@Value</div>
+    <div class="summary-card-label">@Label</div>
+    @if (ShowProgress)
+    {
+        <div class="summary-card-progress">
+            <div class="summary-progress-bar">
+                <div class="summary-progress-fill" style="width: @Progress%"></div>
+            </div>
+        </div>
+    }
+</div>
+
+@code {
+    [Parameter, EditorRequired] public string Value { get; set; } = string.Empty;
+    [Parameter, EditorRequired] public string Label { get; set; } = string.Empty;
+    [Parameter] public bool ShowProgress { get; set; }
+    [Parameter] public int Progress { get; set; }
+}

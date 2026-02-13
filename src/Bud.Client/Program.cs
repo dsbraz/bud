@@ -18,5 +18,6 @@ builder.Services.AddScoped(sp =>
 });
 builder.Services.AddScoped<ApiClient>();
 builder.Services.AddSingleton<ToastService>();
+builder.Services.AddScoped<UiOperationService>();
 
 await builder.Build().RunAsync();

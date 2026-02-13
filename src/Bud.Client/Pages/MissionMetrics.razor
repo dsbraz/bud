@@ -2,6 +2,7 @@
 @inject ApiClient Api
 @inject ToastService ToastService
 @inject OrganizationContext OrgContext
+@inject UiOperationService UiOps
 @implements IDisposable
 
 <MissionsMenu />
@@ -467,7 +468,7 @@
             return;
         }
 
-        await UiOperationRunner.RunAsync(
+        await UiOps.RunAsync(
             async () =>
             {
                 await Api.CreateMissionMetricAsync(newMetric);
@@ -478,10 +479,8 @@
                 ToastService.ShowSuccess("Métrica criada com sucesso!", $"A métrica '{createdMetricName}' foi criada.");
                 CloseModal();
             },
-            ToastService,
             errorTitle,
-            "Não foi possível criar a métrica. Verifique os dados e tente novamente.",
-            "criação de métrica");
+            "Não foi possível criar a métrica. Verifique os dados e tente novamente.");
     }
 
     private bool TryPrepareMetricForCreate(string errorTitle, out MetricType metricType)
@@ -674,7 +673,7 @@
                 editMetric.Unit = unit;
         }
 
-        await UiOperationRunner.RunAsync(
+        await UiOps.RunAsync(
             async () =>
             {
                 await Api.UpdateMissionMetricAsync(selectedMetric.Id, editMetric);
@@ -682,10 +681,8 @@
                 CloseEditMetricModal();
                 await LoadMetrics();
             },
-            ToastService,
             "Erro ao atualizar",
-            "Não foi possível atualizar a métrica. Verifique os dados e tente novamente.",
-            "atualização de métrica");
+            "Não foi possível atualizar a métrica. Verifique os dados e tente novamente.");
     }
 
     private async Task OnEditMetricTypeChanged(ChangeEventArgs e)
@@ -726,17 +723,15 @@
     {
         try
         {
-            await UiOperationRunner.RunAsync(
+            await UiOps.RunAsync(
                 async () =>
                 {
                     await Api.DeleteMissionMetricAsync(metricId);
                     ToastService.ShowSuccess("Métrica excluída", "A métrica foi removida com sucesso.");
                     await LoadMetrics();
                 },
-                ToastService,
                 "Erro ao excluir",
-                "Não foi possível excluir a métrica. Tente novamente.",
-                "exclusão de métrica");
+                "Não foi possível excluir a métrica. Tente novamente.");
         }
         finally
         {
