@@ -2875,6 +2875,7 @@ a {
 }
 
 .missions-grid .metric-row {
+    position: relative;
     flex-direction: column;
     align-items: flex-start;
     gap: var(--spacing-2);
