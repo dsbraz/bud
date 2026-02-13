@@ -10,6 +10,7 @@ public abstract class ApiControllerBase : ControllerBase
         where TEntity : class;
     protected sealed record GuidCsvParseResult(List<Guid>? Values, ActionResult? Failure);
     protected sealed record SearchValidationResult(string? Value, ActionResult? Failure);
+    protected sealed record ListParametersValidationResult(string? Search, ActionResult? Failure);
 
     protected ActionResult ValidationProblemFrom(ValidationResult validationResult)
     {
@@ -106,6 +107,22 @@ public abstract class ApiControllerBase : ControllerBase
         return FromResult(result, value => Ok(value));
     }
 
+    protected ActionResult<TResult> FromResultOk<T, TResult>(ServiceResult<T> result, Func<T, TResult> mapper)
+    {
+        if (result.IsSuccess)
+        {
+            return Ok(mapper(result.Value!));
+        }
+
+        return result.ErrorType switch
+        {
+            ServiceErrorType.NotFound => NotFound(new ProblemDetails { Detail = result.Error }),
+            ServiceErrorType.Conflict => Conflict(new ProblemDetails { Detail = result.Error }),
+            ServiceErrorType.Forbidden => ForbiddenProblem(result.Error ?? "Você não tem permissão para realizar esta ação."),
+            _ => BadRequest(new ProblemDetails { Detail = result.Error })
+        };
+    }
+
     protected ActionResult? ValidatePagination(int page, int pageSize, int maxPageSize = 100)
     {
         if (page < 1)
@@ -167,5 +184,27 @@ public abstract class ApiControllerBase : ControllerBase
         }
 
         return new SearchValidationResult(normalized, null);
+    }
+
+    protected ListParametersValidationResult ValidateListParameters(
+        string? search,
+        int page,
+        int pageSize,
+        int maxPageSize = 100,
+        int maxSearchLength = 200)
+    {
+        var searchValidation = ValidateAndNormalizeSearch(search, maxSearchLength);
+        if (searchValidation.Failure is not null)
+        {
+            return new ListParametersValidationResult(null, searchValidation.Failure);
+        }
+
+        var paginationFailure = ValidatePagination(page, pageSize, maxPageSize);
+        if (paginationFailure is not null)
+        {
+            return new ListParametersValidationResult(null, paginationFailure);
+        }
+
+        return new ListParametersValidationResult(searchValidation.Value, null);
     }
 }

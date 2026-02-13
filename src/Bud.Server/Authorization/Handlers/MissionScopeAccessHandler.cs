@@ -51,7 +51,7 @@ public sealed class MissionScopeAccessHandler(
 
         if (resource.TeamId.HasValue)
         {
-            var belongsToTeam = await dbContext.Set<Bud.Shared.Models.CollaboratorTeam>()
+            var belongsToTeam = await dbContext.Set<Bud.Shared.Domain.CollaboratorTeam>()
                 .AnyAsync(ct => ct.CollaboratorId == collaboratorId.Value
                                 && ct.TeamId == resource.TeamId.Value);
 
@@ -65,7 +65,7 @@ public sealed class MissionScopeAccessHandler(
 
         if (resource.WorkspaceId.HasValue)
         {
-            var belongsToWorkspace = await dbContext.Set<Bud.Shared.Models.CollaboratorTeam>()
+            var belongsToWorkspace = await dbContext.Set<Bud.Shared.Domain.CollaboratorTeam>()
                 .AnyAsync(ct => ct.CollaboratorId == collaboratorId.Value
                                 && ct.Team.WorkspaceId == resource.WorkspaceId.Value);
 

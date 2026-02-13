@@ -1,7 +1,7 @@
-using Bud.Server.Application.Abstractions;
+using Bud.Server.Services;
 using Bud.Server.Application.Workspaces;
 using Bud.Shared.Contracts;
-using Bud.Shared.Models;
+using Bud.Shared.Domain;
 using FluentAssertions;
 using Moq;
 using Xunit;
@@ -15,7 +15,7 @@ public sealed class WorkspaceQueryUseCaseTests
     {
         // Arrange
         var workspaceId = Guid.NewGuid();
-        var workspaceService = new Mock<IWorkspaceQueryService>();
+        var workspaceService = new Mock<IWorkspaceService>();
         workspaceService
             .Setup(s => s.GetByIdAsync(workspaceId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(ServiceResult<Workspace>.Success(new Workspace { Id = workspaceId, Name = "Plataforma", OrganizationId = Guid.NewGuid() }));
@@ -35,7 +35,7 @@ public sealed class WorkspaceQueryUseCaseTests
     {
         // Arrange
         var organizationId = Guid.NewGuid();
-        var workspaceService = new Mock<IWorkspaceQueryService>();
+        var workspaceService = new Mock<IWorkspaceService>();
         workspaceService
             .Setup(s => s.GetAllAsync(organizationId, "ops", 2, 15, It.IsAny<CancellationToken>()))
             .ReturnsAsync(ServiceResult<PagedResult<Workspace>>.Success(new PagedResult<Workspace>

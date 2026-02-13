@@ -1,11 +1,11 @@
-using Bud.Server.Application.Abstractions;
+using Bud.Server.Services;
 using Bud.Shared.Contracts;
-using Bud.Shared.Models;
+using Bud.Shared.Domain;
 
 namespace Bud.Server.Application.Missions;
 
 public sealed class MissionQueryUseCase(
-    IMissionQueryService missionService,
+    IMissionService missionService,
     IMissionProgressService missionProgressService) : IMissionQueryUseCase
 {
     public Task<ServiceResult<Mission>> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)

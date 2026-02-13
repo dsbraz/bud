@@ -1,6 +1,6 @@
-using Bud.Shared.Models;
+using Bud.Shared.Domain;
 
-namespace Bud.Server.Application.Common.ReadModel;
+namespace Bud.Server.Data;
 
 public interface IApplicationEntityLookup
 {

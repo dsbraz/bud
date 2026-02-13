@@ -1,4 +1,4 @@
-namespace Bud.Server.Domain.Common.ValueObjects;
+namespace Bud.Server.Domain.ValueObjects;
 
 public readonly record struct EmailAddress
 {

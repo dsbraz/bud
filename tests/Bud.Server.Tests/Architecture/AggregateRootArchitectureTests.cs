@@ -1,5 +1,5 @@
 using System.Reflection;
-using Bud.Shared.Models;
+using Bud.Shared.Domain;
 using FluentAssertions;
 using Xunit;
 

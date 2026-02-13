@@ -1,4 +1,4 @@
-namespace Bud.Server.Application.Abstractions;
+namespace Bud.Server.Services;
 
 public interface ICollaboratorValidationService
 {

@@ -1,8 +1,8 @@
 using Bud.Server.Services;
-using Bud.Shared.Models;
+using Bud.Shared.Domain;
 using Microsoft.EntityFrameworkCore;
 
-namespace Bud.Server.Domain.Common.Specifications;
+namespace Bud.Server.Domain.Specifications;
 
 public sealed class CollaboratorSearchSpecification(string? search, bool isNpgsql) : IQuerySpecification<Collaborator>
 {

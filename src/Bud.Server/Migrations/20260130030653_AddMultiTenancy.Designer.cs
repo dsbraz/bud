@@ -23,7 +23,7 @@ namespace Bud.Server.Migrations;
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
 
-            modelBuilder.Entity("Bud.Shared.Models.Collaborator", b =>
+            modelBuilder.Entity("Bud.Shared.Domain.Collaborator", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
@@ -57,7 +57,7 @@ namespace Bud.Server.Migrations;
                     b.ToTable("Collaborators");
                 });
 
-            modelBuilder.Entity("Bud.Shared.Models.Mission", b =>
+            modelBuilder.Entity("Bud.Shared.Domain.Mission", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
@@ -102,7 +102,7 @@ namespace Bud.Server.Migrations;
                     b.ToTable("Missions");
                 });
 
-            modelBuilder.Entity("Bud.Shared.Models.MissionMetric", b =>
+            modelBuilder.Entity("Bud.Shared.Domain.MissionMetric", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
@@ -141,7 +141,7 @@ namespace Bud.Server.Migrations;
                     b.ToTable("MissionMetrics");
                 });
 
-            modelBuilder.Entity("Bud.Shared.Models.Organization", b =>
+            modelBuilder.Entity("Bud.Shared.Domain.Organization", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
@@ -162,7 +162,7 @@ namespace Bud.Server.Migrations;
                     b.ToTable("Organizations");
                 });
 
-            modelBuilder.Entity("Bud.Shared.Models.Team", b =>
+            modelBuilder.Entity("Bud.Shared.Domain.Team", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
@@ -193,7 +193,7 @@ namespace Bud.Server.Migrations;
                     b.ToTable("Teams");
                 });
 
-            modelBuilder.Entity("Bud.Shared.Models.Workspace", b =>
+            modelBuilder.Entity("Bud.Shared.Domain.Workspace", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
@@ -214,15 +214,15 @@ namespace Bud.Server.Migrations;
                     b.ToTable("Workspaces");
                 });
 
-            modelBuilder.Entity("Bud.Shared.Models.Collaborator", b =>
+            modelBuilder.Entity("Bud.Shared.Domain.Collaborator", b =>
                 {
-                    b.HasOne("Bud.Shared.Models.Organization", "Organization")
+                    b.HasOne("Bud.Shared.Domain.Organization", "Organization")
                         .WithMany()
                         .HasForeignKey("OrganizationId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.HasOne("Bud.Shared.Models.Team", "Team")
+                    b.HasOne("Bud.Shared.Domain.Team", "Team")
                         .WithMany("Collaborators")
                         .HasForeignKey("TeamId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -233,25 +233,25 @@ namespace Bud.Server.Migrations;
                     b.Navigation("Team");
                 });
 
-            modelBuilder.Entity("Bud.Shared.Models.Mission", b =>
+            modelBuilder.Entity("Bud.Shared.Domain.Mission", b =>
                 {
-                    b.HasOne("Bud.Shared.Models.Collaborator", "Collaborator")
+                    b.HasOne("Bud.Shared.Domain.Collaborator", "Collaborator")
                         .WithMany()
                         .HasForeignKey("CollaboratorId")
                         .OnDelete(DeleteBehavior.Cascade);
 
-                    b.HasOne("Bud.Shared.Models.Organization", "Organization")
+                    b.HasOne("Bud.Shared.Domain.Organization", "Organization")
                         .WithMany()
                         .HasForeignKey("OrganizationId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("Bud.Shared.Models.Team", "Team")
+                    b.HasOne("Bud.Shared.Domain.Team", "Team")
                         .WithMany()
                         .HasForeignKey("TeamId")
                         .OnDelete(DeleteBehavior.Cascade);
 
-                    b.HasOne("Bud.Shared.Models.Workspace", "Workspace")
+                    b.HasOne("Bud.Shared.Domain.Workspace", "Workspace")
                         .WithMany()
                         .HasForeignKey("WorkspaceId")
                         .OnDelete(DeleteBehavior.Cascade);
@@ -265,15 +265,15 @@ namespace Bud.Server.Migrations;
                     b.Navigation("Workspace");
                 });
 
-            modelBuilder.Entity("Bud.Shared.Models.MissionMetric", b =>
+            modelBuilder.Entity("Bud.Shared.Domain.MissionMetric", b =>
                 {
-                    b.HasOne("Bud.Shared.Models.Mission", "Mission")
+                    b.HasOne("Bud.Shared.Domain.Mission", "Mission")
                         .WithMany("Metrics")
                         .HasForeignKey("MissionId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("Bud.Shared.Models.Organization", "Organization")
+                    b.HasOne("Bud.Shared.Domain.Organization", "Organization")
                         .WithMany()
                         .HasForeignKey("OrganizationId")
                         .OnDelete(DeleteBehavior.Restrict)
@@ -284,9 +284,9 @@ namespace Bud.Server.Migrations;
                     b.Navigation("Organization");
                 });
 
-            modelBuilder.Entity("Bud.Shared.Models.Organization", b =>
+            modelBuilder.Entity("Bud.Shared.Domain.Organization", b =>
                 {
-                    b.HasOne("Bud.Shared.Models.Collaborator", "Owner")
+                    b.HasOne("Bud.Shared.Domain.Collaborator", "Owner")
                         .WithMany()
                         .HasForeignKey("OwnerId")
                         .OnDelete(DeleteBehavior.Restrict);
@@ -294,20 +294,20 @@ namespace Bud.Server.Migrations;
                     b.Navigation("Owner");
                 });
 
-            modelBuilder.Entity("Bud.Shared.Models.Team", b =>
+            modelBuilder.Entity("Bud.Shared.Domain.Team", b =>
                 {
-                    b.HasOne("Bud.Shared.Models.Organization", "Organization")
+                    b.HasOne("Bud.Shared.Domain.Organization", "Organization")
                         .WithMany()
                         .HasForeignKey("OrganizationId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.HasOne("Bud.Shared.Models.Team", "ParentTeam")
+                    b.HasOne("Bud.Shared.Domain.Team", "ParentTeam")
                         .WithMany("SubTeams")
                         .HasForeignKey("ParentTeamId")
                         .OnDelete(DeleteBehavior.Restrict);
 
-                    b.HasOne("Bud.Shared.Models.Workspace", "Workspace")
+                    b.HasOne("Bud.Shared.Domain.Workspace", "Workspace")
                         .WithMany("Teams")
                         .HasForeignKey("WorkspaceId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -320,9 +320,9 @@ namespace Bud.Server.Migrations;
                     b.Navigation("Workspace");
                 });
 
-            modelBuilder.Entity("Bud.Shared.Models.Workspace", b =>
+            modelBuilder.Entity("Bud.Shared.Domain.Workspace", b =>
                 {
-                    b.HasOne("Bud.Shared.Models.Organization", "Organization")
+                    b.HasOne("Bud.Shared.Domain.Organization", "Organization")
                         .WithMany("Workspaces")
                         .HasForeignKey("OrganizationId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -331,24 +331,24 @@ namespace Bud.Server.Migrations;
                     b.Navigation("Organization");
                 });
 
-            modelBuilder.Entity("Bud.Shared.Models.Mission", b =>
+            modelBuilder.Entity("Bud.Shared.Domain.Mission", b =>
                 {
                     b.Navigation("Metrics");
                 });
 
-            modelBuilder.Entity("Bud.Shared.Models.Organization", b =>
+            modelBuilder.Entity("Bud.Shared.Domain.Organization", b =>
                 {
                     b.Navigation("Workspaces");
                 });
 
-            modelBuilder.Entity("Bud.Shared.Models.Team", b =>
+            modelBuilder.Entity("Bud.Shared.Domain.Team", b =>
                 {
                     b.Navigation("Collaborators");
 
                     b.Navigation("SubTeams");
                 });
 
-            modelBuilder.Entity("Bud.Shared.Models.Workspace", b =>
+            modelBuilder.Entity("Bud.Shared.Domain.Workspace", b =>
                 {
                     b.Navigation("Teams");
                 });

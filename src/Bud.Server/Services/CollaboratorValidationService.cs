@@ -1,8 +1,7 @@
-using Bud.Server.Application.Abstractions;
 using Bud.Server.Data;
-using Bud.Server.Domain.Common.ValueObjects;
+using Bud.Server.Domain.ValueObjects;
 using Bud.Server.MultiTenancy;
-using Bud.Shared.Models;
+using Bud.Shared.Domain;
 using Microsoft.EntityFrameworkCore;
 
 namespace Bud.Server.Services;

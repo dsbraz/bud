@@ -1,4 +1,4 @@
-# ADR-0010: Governança por testes de arquitetura
+# ADR-0009: Governança por testes de arquitetura
 
 ## Status
 Accepted
@@ -23,18 +23,11 @@ Manter testes de arquitetura automatizados em `tests/Bud.Server.Tests/Architectu
 - Todo controller (exceto `AuthController`) deve ter `[Authorize]` no nível de classe
 - Todo controller deve herdar de `ApiControllerBase`
 
-### Domain events e observabilidade
-
-- Todo `IDomainEvent` concreto deve ter ao menos um `IDomainEventSubscriber<TEvent>`
-- Todo `IDomainEventSubscriber<>` concreto deve estar registrado no DI (`AddBudApplication()`)
-- Todo `IDomainEvent` deve ser `sealed record` (imutabilidade + serialização outbox)
-
 ## Consequências
 
 - Regressões arquiteturais detectadas cedo
 - Revisões de PR mais objetivas
 - Invariantes de segurança (tenant isolation, authorization) protegidos por testes automatizados
-- Contratos de domain events (subscriber coverage, DI registration, sealed record convention) validados em build time
 - Necessidade de manutenção dos testes conforme evolução da arquitetura
 
 ## Alternativas consideradas

@@ -1,5 +1,4 @@
-using Bud.Server.Application.Common.ReadModel;
-using Bud.Shared.Models;
+using Bud.Shared.Domain;
 using Microsoft.EntityFrameworkCore;
 
 namespace Bud.Server.Data;

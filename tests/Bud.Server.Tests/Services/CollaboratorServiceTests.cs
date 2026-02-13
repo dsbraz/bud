@@ -2,7 +2,7 @@ using Bud.Server.Data;
 using Bud.Server.Services;
 using Bud.Server.Tests.Helpers;
 using Bud.Shared.Contracts;
-using Bud.Shared.Models;
+using Bud.Shared.Domain;
 using FluentAssertions;
 using Microsoft.EntityFrameworkCore;
 using Xunit;
@@ -891,6 +891,496 @@ public class CollaboratorServiceTests
         result.IsSuccess.Should().BeFalse();
         result.ErrorType.Should().Be(ServiceErrorType.NotFound);
         result.Error.Should().Be("Colaborador não encontrado.");
+    }
+
+    #endregion
+
+    #region CreateAsync Validation Tests
+
+    [Fact]
+    public async Task CreateAsync_WithNoTenantId_ReturnsValidationError()
+    {
+        // Arrange
+        var tenantProvider = new TestTenantProvider { TenantId = null, IsGlobalAdmin = false };
+        var options = new DbContextOptionsBuilder<ApplicationDbContext>()
+            .UseInMemoryDatabase(databaseName: Guid.NewGuid().ToString())
+            .Options;
+        using var context = new ApplicationDbContext(options, tenantProvider);
+        var service = new CollaboratorService(context, tenantProvider);
+
+        var request = new CreateCollaboratorRequest
+        {
+            FullName = "Test User",
+            Email = "test@example.com",
+            Role = CollaboratorRole.IndividualContributor
+        };
+
+        // Act
+        var result = await service.CreateAsync(request);
+
+        // Assert
+        result.IsSuccess.Should().BeFalse();
+        result.ErrorType.Should().Be(ServiceErrorType.Validation);
+        result.Error.Should().Be("Contexto de organização não encontrado.");
+    }
+
+    [Fact]
+    public async Task CreateAsync_WithInvalidEmail_ReturnsValidationError()
+    {
+        // Arrange
+        _tenantProvider.IsGlobalAdmin = true;
+        using var context = CreateInMemoryContext();
+        var (org, _, _) = await CreateTestHierarchy(context);
+        _tenantProvider.TenantId = org.Id;
+
+        var service = new CollaboratorService(context, _tenantProvider);
+        var request = new CreateCollaboratorRequest
+        {
+            FullName = "Valid Name",
+            Email = "invalid-email",
+            Role = CollaboratorRole.IndividualContributor
+        };
+
+        // Act
+        var result = await service.CreateAsync(request);
+
+        // Assert
+        result.IsSuccess.Should().BeFalse();
+        result.ErrorType.Should().Be(ServiceErrorType.Validation);
+        result.Error.Should().Be("E-mail inválido.");
+    }
+
+    #endregion
+
+    #region UpdateAsync Validation Tests
+
+    [Fact]
+    public async Task UpdateAsync_WithNonExistentCollaborator_ReturnsNotFound()
+    {
+        // Arrange
+        using var context = CreateInMemoryContext();
+        var service = new CollaboratorService(context, _tenantProvider);
+
+        var request = new UpdateCollaboratorRequest
+        {
+            FullName = "Valid Name",
+            Email = "valid@example.com",
+            Role = CollaboratorRole.IndividualContributor
+        };
+
+        // Act
+        var result = await service.UpdateAsync(Guid.NewGuid(), request);
+
+        // Assert
+        result.IsSuccess.Should().BeFalse();
+        result.ErrorType.Should().Be(ServiceErrorType.NotFound);
+        result.Error.Should().Be("Colaborador não encontrado.");
+    }
+
+    [Fact]
+    public async Task UpdateAsync_WithInvalidEmail_ReturnsValidationError()
+    {
+        // Arrange
+        using var context = CreateInMemoryContext();
+        var (org, _, _) = await CreateTestHierarchy(context);
+
+        var collaborator = new Collaborator
+        {
+            Id = Guid.NewGuid(),
+            FullName = "Test User",
+            Email = "test@example.com",
+            OrganizationId = org.Id
+        };
+        context.Collaborators.Add(collaborator);
+        await context.SaveChangesAsync();
+
+        var service = new CollaboratorService(context, _tenantProvider);
+        var request = new UpdateCollaboratorRequest
+        {
+            FullName = "Valid Name",
+            Email = "invalid-email",
+            Role = CollaboratorRole.IndividualContributor
+        };
+
+        // Act
+        var result = await service.UpdateAsync(collaborator.Id, request);
+
+        // Assert
+        result.IsSuccess.Should().BeFalse();
+        result.ErrorType.Should().Be(ServiceErrorType.Validation);
+        result.Error.Should().Be("E-mail inválido.");
+    }
+
+    [Fact]
+    public async Task UpdateAsync_WithDuplicateEmail_ReturnsValidationError()
+    {
+        // Arrange
+        using var context = CreateInMemoryContext();
+        var (org, _, _) = await CreateTestHierarchy(context);
+
+        var collaborator1 = new Collaborator
+        {
+            Id = Guid.NewGuid(),
+            FullName = "User 1",
+            Email = "user1@example.com",
+            OrganizationId = org.Id
+        };
+        var collaborator2 = new Collaborator
+        {
+            Id = Guid.NewGuid(),
+            FullName = "User 2",
+            Email = "user2@example.com",
+            OrganizationId = org.Id
+        };
+        context.Collaborators.AddRange(collaborator1, collaborator2);
+        await context.SaveChangesAsync();
+
+        var service = new CollaboratorService(context, _tenantProvider);
+        var request = new UpdateCollaboratorRequest
+        {
+            FullName = "User 1 Updated",
+            Email = "user2@example.com", // Try to use existing email
+            Role = CollaboratorRole.IndividualContributor
+        };
+
+        // Act
+        var result = await service.UpdateAsync(collaborator1.Id, request);
+
+        // Assert
+        result.IsSuccess.Should().BeFalse();
+        result.ErrorType.Should().Be(ServiceErrorType.Validation);
+        result.Error.Should().Be("O email já está em uso.");
+    }
+
+    [Fact]
+    public async Task UpdateAsync_WithNonExistentLeader_ReturnsNotFound()
+    {
+        // Arrange
+        using var context = CreateInMemoryContext();
+        var (org, _, _) = await CreateTestHierarchy(context);
+
+        var collaborator = new Collaborator
+        {
+            Id = Guid.NewGuid(),
+            FullName = "Test User",
+            Email = "test@example.com",
+            OrganizationId = org.Id
+        };
+        context.Collaborators.Add(collaborator);
+        await context.SaveChangesAsync();
+
+        var service = new CollaboratorService(context, _tenantProvider);
+        var request = new UpdateCollaboratorRequest
+        {
+            FullName = "Test User",
+            Email = "test@example.com",
+            Role = CollaboratorRole.IndividualContributor,
+            LeaderId = Guid.NewGuid() // Non-existent leader
+        };
+
+        // Act
+        var result = await service.UpdateAsync(collaborator.Id, request);
+
+        // Assert
+        result.IsSuccess.Should().BeFalse();
+        result.ErrorType.Should().Be(ServiceErrorType.NotFound);
+        result.Error.Should().Be("Líder não encontrado.");
+    }
+
+    [Fact]
+    public async Task UpdateAsync_WithLeaderFromDifferentOrg_ReturnsValidationError()
+    {
+        // Arrange
+        using var context = CreateInMemoryContext();
+        var (org1, workspace1, _) = await CreateTestHierarchy(context);
+
+        var org2 = new Organization { Id = Guid.NewGuid(), Name = "Org 2" };
+        context.Organizations.Add(org2);
+
+        var leaderInOrg2 = new Collaborator
+        {
+            Id = Guid.NewGuid(),
+            FullName = "Leader Org2",
+            Email = "leader@org2.com",
+            Role = CollaboratorRole.Leader,
+            OrganizationId = org2.Id
+        };
+
+        var collaboratorInOrg1 = new Collaborator
+        {
+            Id = Guid.NewGuid(),
+            FullName = "User Org1",
+            Email = "user@org1.com",
+            OrganizationId = org1.Id
+        };
+
+        context.Collaborators.AddRange(leaderInOrg2, collaboratorInOrg1);
+        await context.SaveChangesAsync();
+
+        var service = new CollaboratorService(context, _tenantProvider);
+        var request = new UpdateCollaboratorRequest
+        {
+            FullName = "User Org1",
+            Email = "user@org1.com",
+            Role = CollaboratorRole.IndividualContributor,
+            LeaderId = leaderInOrg2.Id
+        };
+
+        // Act
+        var result = await service.UpdateAsync(collaboratorInOrg1.Id, request);
+
+        // Assert
+        result.IsSuccess.Should().BeFalse();
+        result.ErrorType.Should().Be(ServiceErrorType.Validation);
+        result.Error.Should().Be("O líder deve pertencer à mesma organização.");
+    }
+
+    [Fact]
+    public async Task UpdateAsync_WithLeaderNotHavingLeaderRole_ReturnsValidationError()
+    {
+        // Arrange
+        using var context = CreateInMemoryContext();
+        var (org, _, _) = await CreateTestHierarchy(context);
+
+        var nonLeader = new Collaborator
+        {
+            Id = Guid.NewGuid(),
+            FullName = "Not A Leader",
+            Email = "notleader@example.com",
+            Role = CollaboratorRole.IndividualContributor,
+            OrganizationId = org.Id
+        };
+
+        var collaborator = new Collaborator
+        {
+            Id = Guid.NewGuid(),
+            FullName = "User",
+            Email = "user@example.com",
+            OrganizationId = org.Id
+        };
+
+        context.Collaborators.AddRange(nonLeader, collaborator);
+        await context.SaveChangesAsync();
+
+        var service = new CollaboratorService(context, _tenantProvider);
+        var request = new UpdateCollaboratorRequest
+        {
+            FullName = "User",
+            Email = "user@example.com",
+            Role = CollaboratorRole.IndividualContributor,
+            LeaderId = nonLeader.Id
+        };
+
+        // Act
+        var result = await service.UpdateAsync(collaborator.Id, request);
+
+        // Assert
+        result.IsSuccess.Should().BeFalse();
+        result.ErrorType.Should().Be(ServiceErrorType.Validation);
+        result.Error.Should().Be("O colaborador selecionado não é um líder.");
+    }
+
+    [Fact]
+    public async Task UpdateAsync_DemoteLeaderWithTeamMembers_ReturnsValidationError()
+    {
+        // Arrange
+        using var context = CreateInMemoryContext();
+        var (org, _, _) = await CreateTestHierarchy(context);
+
+        var leader = new Collaborator
+        {
+            Id = Guid.NewGuid(),
+            FullName = "Leader",
+            Email = "leader@example.com",
+            Role = CollaboratorRole.Leader,
+            OrganizationId = org.Id
+        };
+
+        var subordinate = new Collaborator
+        {
+            Id = Guid.NewGuid(),
+            FullName = "Subordinate",
+            Email = "sub@example.com",
+            Role = CollaboratorRole.IndividualContributor,
+            OrganizationId = org.Id,
+            LeaderId = leader.Id
+        };
+
+        context.Collaborators.AddRange(leader, subordinate);
+        await context.SaveChangesAsync();
+
+        var service = new CollaboratorService(context, _tenantProvider);
+        var request = new UpdateCollaboratorRequest
+        {
+            FullName = "Leader",
+            Email = "leader@example.com",
+            Role = CollaboratorRole.IndividualContributor // Trying to demote
+        };
+
+        // Act
+        var result = await service.UpdateAsync(leader.Id, request);
+
+        // Assert
+        result.IsSuccess.Should().BeFalse();
+        result.ErrorType.Should().Be(ServiceErrorType.Validation);
+        result.Error.Should().Be("Não é possível alterar o perfil. Este líder possui membros de equipe.");
+    }
+
+    [Fact]
+    public async Task UpdateAsync_DemoteLeaderWhoIsOrgOwner_ReturnsValidationError()
+    {
+        // Arrange
+        using var context = CreateInMemoryContext();
+        var (org, _, _) = await CreateTestHierarchy(context);
+
+        var leader = new Collaborator
+        {
+            Id = Guid.NewGuid(),
+            FullName = "Owner Leader",
+            Email = "owner@example.com",
+            Role = CollaboratorRole.Leader,
+            OrganizationId = org.Id
+        };
+        org.OwnerId = leader.Id;
+
+        context.Collaborators.Add(leader);
+        await context.SaveChangesAsync();
+
+        var service = new CollaboratorService(context, _tenantProvider);
+        var request = new UpdateCollaboratorRequest
+        {
+            FullName = "Owner Leader",
+            Email = "owner@example.com",
+            Role = CollaboratorRole.IndividualContributor // Trying to demote
+        };
+
+        // Act
+        var result = await service.UpdateAsync(leader.Id, request);
+
+        // Assert
+        result.IsSuccess.Should().BeFalse();
+        result.ErrorType.Should().Be(ServiceErrorType.Validation);
+        result.Error.Should().Be("Não é possível alterar o perfil. Este líder é proprietário de uma organização.");
+    }
+
+    #endregion
+
+    #region DeleteAsync Validation Tests
+
+    [Fact]
+    public async Task DeleteAsync_WithNonExistentCollaborator_ReturnsNotFound()
+    {
+        // Arrange
+        using var context = CreateInMemoryContext();
+        var service = new CollaboratorService(context, _tenantProvider);
+
+        // Act
+        var result = await service.DeleteAsync(Guid.NewGuid());
+
+        // Assert
+        result.IsSuccess.Should().BeFalse();
+        result.ErrorType.Should().Be(ServiceErrorType.NotFound);
+        result.Error.Should().Be("Colaborador não encontrado.");
+    }
+
+    [Fact]
+    public async Task DeleteAsync_WhenCollaboratorIsOrgOwner_ReturnsConflict()
+    {
+        // Arrange
+        using var context = CreateInMemoryContext();
+        var (org, _, _) = await CreateTestHierarchy(context);
+
+        var owner = new Collaborator
+        {
+            Id = Guid.NewGuid(),
+            FullName = "Owner",
+            Email = "owner@example.com",
+            OrganizationId = org.Id
+        };
+        org.OwnerId = owner.Id;
+        context.Collaborators.Add(owner);
+        await context.SaveChangesAsync();
+
+        var service = new CollaboratorService(context, _tenantProvider);
+
+        // Act
+        var result = await service.DeleteAsync(owner.Id);
+
+        // Assert
+        result.IsSuccess.Should().BeFalse();
+        result.ErrorType.Should().Be(ServiceErrorType.Conflict);
+        result.Error.Should().Be("Não é possível excluir o colaborador. Ele é proprietário de uma organização.");
+    }
+
+    [Fact]
+    public async Task DeleteAsync_WhenCollaboratorHasTeamMembers_ReturnsConflict()
+    {
+        // Arrange
+        using var context = CreateInMemoryContext();
+        var (org, _, _) = await CreateTestHierarchy(context);
+
+        var leader = new Collaborator
+        {
+            Id = Guid.NewGuid(),
+            FullName = "Leader",
+            Email = "leader@example.com",
+            Role = CollaboratorRole.Leader,
+            OrganizationId = org.Id
+        };
+
+        var subordinate = new Collaborator
+        {
+            Id = Guid.NewGuid(),
+            FullName = "Subordinate",
+            Email = "sub@example.com",
+            Role = CollaboratorRole.IndividualContributor,
+            OrganizationId = org.Id,
+            LeaderId = leader.Id
+        };
+
+        context.Collaborators.AddRange(leader, subordinate);
+        await context.SaveChangesAsync();
+
+        var service = new CollaboratorService(context, _tenantProvider);
+
+        // Act
+        var result = await service.DeleteAsync(leader.Id);
+
+        // Assert
+        result.IsSuccess.Should().BeFalse();
+        result.ErrorType.Should().Be(ServiceErrorType.Conflict);
+        result.Error.Should().Be("Não é possível excluir o colaborador. Ele é líder de outros colaboradores.");
+    }
+
+    [Fact]
+    public async Task DeleteAsync_WithValidCollaborator_Succeeds()
+    {
+        // Arrange
+        using var context = CreateInMemoryContext();
+        var (org, _, _) = await CreateTestHierarchy(context);
+
+        var collaborator = new Collaborator
+        {
+            Id = Guid.NewGuid(),
+            FullName = "Regular User",
+            Email = "user@example.com",
+            OrganizationId = org.Id
+        };
+        context.Collaborators.Add(collaborator);
+        await context.SaveChangesAsync();
+
+        var service = new CollaboratorService(context, _tenantProvider);
+
+        // Act
+        var result = await service.DeleteAsync(collaborator.Id);
+
+        // Assert
+        result.IsSuccess.Should().BeTrue();
+
+        var deletedCollaborator = await context.Collaborators
+            .IgnoreQueryFilters()
+            .FirstOrDefaultAsync(c => c.Id == collaborator.Id);
+        deletedCollaborator.Should().BeNull();
     }
 
     #endregion

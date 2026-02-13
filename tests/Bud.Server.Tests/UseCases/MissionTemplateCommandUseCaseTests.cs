@@ -1,11 +1,9 @@
 using System.Security.Claims;
-using Bud.Server.Application.Common.Authorization;
-using Bud.Server.Application.Common.Events;
+using Bud.Server.Authorization;
 using Bud.Server.Application.MissionTemplates;
-using Bud.Server.Domain.MissionTemplates.Events;
 using Bud.Server.MultiTenancy;
 using Bud.Shared.Contracts;
-using Bud.Shared.Models;
+using Bud.Shared.Domain;
 using FluentAssertions;
 using Moq;
 using Xunit;
@@ -52,52 +50,6 @@ public sealed class MissionTemplateCommandUseCaseTests
         result.IsSuccess.Should().BeTrue();
         result.Value!.Id.Should().Be(createdTemplate.Id);
         templateService.Verify(s => s.CreateAsync(request, It.IsAny<CancellationToken>()), Times.Once);
-    }
-
-    [Fact]
-    public async Task CreateAsync_WhenCreated_DispatchesDomainEvent()
-    {
-        var organizationId = Guid.NewGuid();
-        var createdTemplate = new MissionTemplate
-        {
-            Id = Guid.NewGuid(),
-            Name = "Template",
-            OrganizationId = organizationId
-        };
-
-        var templateService = new Mock<IMissionTemplateService>();
-        templateService
-            .Setup(s => s.CreateAsync(It.IsAny<CreateMissionTemplateRequest>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(ServiceResult<MissionTemplate>.Success(createdTemplate));
-
-        var authorizationGateway = new Mock<IApplicationAuthorizationGateway>();
-        authorizationGateway
-            .Setup(g => g.CanAccessTenantOrganizationAsync(User, organizationId, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(true);
-
-        var tenantProvider = new Mock<ITenantProvider>();
-        tenantProvider.SetupGet(t => t.TenantId).Returns(organizationId);
-
-        var dispatcher = new Mock<IDomainEventDispatcher>();
-        dispatcher
-            .Setup(d => d.DispatchAsync(It.IsAny<Bud.Server.Domain.Common.Events.IDomainEvent>(), It.IsAny<CancellationToken>()))
-            .Returns(Task.CompletedTask);
-
-        var useCase = new MissionTemplateCommandUseCase(
-            templateService.Object,
-            authorizationGateway.Object,
-            tenantProvider.Object,
-            null,
-            dispatcher.Object);
-
-        var request = new CreateMissionTemplateRequest { Name = "Template" };
-
-        var result = await useCase.CreateAsync(User, request);
-
-        result.IsSuccess.Should().BeTrue();
-        dispatcher.Verify(d => d.DispatchAsync(
-            It.IsAny<MissionTemplateCreatedDomainEvent>(),
-            It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact]
@@ -173,58 +125,6 @@ public sealed class MissionTemplateCommandUseCaseTests
     }
 
     [Fact]
-    public async Task UpdateAsync_WhenUpdated_DispatchesDomainEvent()
-    {
-        var template = new MissionTemplate
-        {
-            Id = Guid.NewGuid(),
-            Name = "Template",
-            OrganizationId = Guid.NewGuid()
-        };
-
-        var request = new UpdateMissionTemplateRequest { Name = "Template 2" };
-
-        var templateService = new Mock<IMissionTemplateService>();
-        templateService
-            .Setup(s => s.GetByIdAsync(template.Id, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(ServiceResult<MissionTemplate>.Success(template));
-        templateService
-            .Setup(s => s.UpdateAsync(template.Id, request, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(ServiceResult<MissionTemplate>.Success(new MissionTemplate
-            {
-                Id = template.Id,
-                Name = request.Name,
-                OrganizationId = template.OrganizationId
-            }));
-
-        var authorizationGateway = new Mock<IApplicationAuthorizationGateway>();
-        authorizationGateway
-            .Setup(g => g.CanAccessTenantOrganizationAsync(User, template.OrganizationId, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(true);
-
-        var tenantProvider = new Mock<ITenantProvider>(MockBehavior.Strict);
-
-        var dispatcher = new Mock<IDomainEventDispatcher>();
-        dispatcher
-            .Setup(d => d.DispatchAsync(It.IsAny<Bud.Server.Domain.Common.Events.IDomainEvent>(), It.IsAny<CancellationToken>()))
-            .Returns(Task.CompletedTask);
-
-        var useCase = new MissionTemplateCommandUseCase(
-            templateService.Object,
-            authorizationGateway.Object,
-            tenantProvider.Object,
-            null,
-            dispatcher.Object);
-
-        var result = await useCase.UpdateAsync(User, template.Id, request);
-
-        result.IsSuccess.Should().BeTrue();
-        dispatcher.Verify(d => d.DispatchAsync(
-            It.IsAny<MissionTemplateUpdatedDomainEvent>(),
-            It.IsAny<CancellationToken>()), Times.Once);
-    }
-
-    [Fact]
     public async Task UpdateAsync_WhenNotFound_ReturnsNotFound()
     {
         var templateService = new Mock<IMissionTemplateService>();
@@ -284,51 +184,6 @@ public sealed class MissionTemplateCommandUseCaseTests
 
         result.IsSuccess.Should().BeTrue();
         templateService.Verify(s => s.DeleteAsync(template.Id, It.IsAny<CancellationToken>()), Times.Once);
-    }
-
-    [Fact]
-    public async Task DeleteAsync_WhenDeleted_DispatchesDomainEvent()
-    {
-        var template = new MissionTemplate
-        {
-            Id = Guid.NewGuid(),
-            Name = "Template",
-            OrganizationId = Guid.NewGuid()
-        };
-
-        var templateService = new Mock<IMissionTemplateService>();
-        templateService
-            .Setup(s => s.GetByIdAsync(template.Id, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(ServiceResult<MissionTemplate>.Success(template));
-        templateService
-            .Setup(s => s.DeleteAsync(template.Id, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(ServiceResult.Success());
-
-        var authorizationGateway = new Mock<IApplicationAuthorizationGateway>();
-        authorizationGateway
-            .Setup(g => g.CanAccessTenantOrganizationAsync(User, template.OrganizationId, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(true);
-
-        var tenantProvider = new Mock<ITenantProvider>(MockBehavior.Strict);
-
-        var dispatcher = new Mock<IDomainEventDispatcher>();
-        dispatcher
-            .Setup(d => d.DispatchAsync(It.IsAny<Bud.Server.Domain.Common.Events.IDomainEvent>(), It.IsAny<CancellationToken>()))
-            .Returns(Task.CompletedTask);
-
-        var useCase = new MissionTemplateCommandUseCase(
-            templateService.Object,
-            authorizationGateway.Object,
-            tenantProvider.Object,
-            null,
-            dispatcher.Object);
-
-        var result = await useCase.DeleteAsync(User, template.Id);
-
-        result.IsSuccess.Should().BeTrue();
-        dispatcher.Verify(d => d.DispatchAsync(
-            It.IsAny<MissionTemplateDeletedDomainEvent>(),
-            It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact]

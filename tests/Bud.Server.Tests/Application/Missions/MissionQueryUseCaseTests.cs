@@ -1,7 +1,7 @@
-using Bud.Server.Application.Abstractions;
+using Bud.Server.Services;
 using Bud.Server.Application.Missions;
 using Bud.Shared.Contracts;
-using Bud.Shared.Models;
+using Bud.Shared.Domain;
 using FluentAssertions;
 using Moq;
 using Xunit;
@@ -15,7 +15,7 @@ public sealed class MissionQueryUseCaseTests
     {
         // Arrange
         var missionId = Guid.NewGuid();
-        var missionService = new Mock<IMissionQueryService>();
+        var missionService = new Mock<IMissionService>();
         var progressService = new Mock<IMissionProgressService>();
         missionService
             .Setup(s => s.GetByIdAsync(missionId, It.IsAny<CancellationToken>()))
@@ -36,7 +36,7 @@ public sealed class MissionQueryUseCaseTests
     {
         // Arrange
         var ids = new List<Guid> { Guid.NewGuid() };
-        var missionService = new Mock<IMissionQueryService>();
+        var missionService = new Mock<IMissionService>();
         var progressService = new Mock<IMissionProgressService>();
         progressService
             .Setup(s => s.GetProgressAsync(ids, It.IsAny<CancellationToken>()))

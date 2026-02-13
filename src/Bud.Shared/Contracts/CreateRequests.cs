@@ -1,4 +1,4 @@
-using Bud.Shared.Models;
+using Bud.Shared.Domain;
 
 namespace Bud.Shared.Contracts;
 

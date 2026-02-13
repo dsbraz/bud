@@ -1,4 +1,4 @@
-namespace Bud.Server.Application.Common.Results;
+namespace Bud.Server.Services;
 
 public sealed class ServiceResult
 {

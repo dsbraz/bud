@@ -1,7 +1,7 @@
-using Bud.Server.Application.Abstractions;
+using Bud.Server.Services;
 using Bud.Server.Application.MissionMetrics;
 using Bud.Shared.Contracts;
-using Bud.Shared.Models;
+using Bud.Shared.Domain;
 using FluentAssertions;
 using Moq;
 using Xunit;
@@ -15,7 +15,7 @@ public sealed class MissionMetricQueryUseCaseTests
     {
         // Arrange
         var metricId = Guid.NewGuid();
-        var metricService = new Mock<IMissionMetricQueryService>();
+        var metricService = new Mock<IMissionMetricService>();
         var progressService = new Mock<IMissionProgressService>();
         metricService
             .Setup(s => s.GetByIdAsync(metricId, It.IsAny<CancellationToken>()))
@@ -36,7 +36,7 @@ public sealed class MissionMetricQueryUseCaseTests
     {
         // Arrange
         var ids = new List<Guid> { Guid.NewGuid() };
-        var metricService = new Mock<IMissionMetricQueryService>();
+        var metricService = new Mock<IMissionMetricService>();
         var progressService = new Mock<IMissionProgressService>();
         progressService
             .Setup(s => s.GetMetricProgressAsync(ids, It.IsAny<CancellationToken>()))

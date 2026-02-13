@@ -1,11 +1,11 @@
-using Bud.Server.Application.Abstractions;
+using Bud.Server.Services;
 using Bud.Shared.Contracts;
-using Bud.Shared.Models;
+using Bud.Shared.Domain;
 
 namespace Bud.Server.Application.MissionMetrics;
 
 public sealed class MissionMetricQueryUseCase(
-    IMissionMetricQueryService metricService,
+    IMissionMetricService metricService,
     IMissionProgressService missionProgressService) : IMissionMetricQueryUseCase
 {
     public Task<ServiceResult<MissionMetric>> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)

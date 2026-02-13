@@ -1,16 +1,13 @@
 using System.Reflection;
-using Bud.Server.Application.Common.Events;
 using Bud.Server.Controllers;
 using Bud.Server.Data;
 using Bud.Server.DependencyInjection;
-using Bud.Server.Domain.Common.Events;
-using Bud.Shared.Models;
+using Bud.Shared.Domain;
 using FluentAssertions;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
-using Microsoft.Extensions.DependencyInjection;
 using Xunit;
 
 namespace Bud.Server.Tests.Architecture;
@@ -19,7 +16,6 @@ public sealed class ArchitectureTests
 {
     private static readonly Assembly ServerAssembly = typeof(Program).Assembly;
     private static readonly Assembly SharedAssembly = typeof(ITenantEntity).Assembly;
-    private const string CompositeServiceAllowlistRelativePath = "docs/architecture/composite-services-allowlist.md";
     private const string ValueObjectGuardrailsRelativePath = "docs/architecture/value-object-mapping-guardrails.md";
 
     [Fact]
@@ -140,216 +136,6 @@ public sealed class ArchitectureTests
             .ToList();
 
         invalidControllers.Should().BeEmpty("controllers devem depender de use cases e não de contratos legados da camada Services");
-    }
-
-    [Fact]
-    public void UseCases_ShouldNotDependOnServicesContractsInConstructors()
-    {
-        var useCaseTypes = ServerAssembly.GetTypes()
-            .Where(t =>
-                t is { IsClass: true, IsAbstract: false } &&
-                t.Namespace?.StartsWith("Bud.Server.Application", StringComparison.Ordinal) == true &&
-                t.Name.EndsWith("UseCase", StringComparison.Ordinal))
-            .ToList();
-
-        useCaseTypes.Should().NotBeEmpty();
-
-        var invalidUseCases = useCaseTypes
-            .Where(type => type
-                .GetConstructors(BindingFlags.Public | BindingFlags.Instance | BindingFlags.NonPublic)
-                .SelectMany(c => c.GetParameters())
-                .Any(IsServicesContract))
-            .Select(t => t.FullName)
-            .ToList();
-
-        invalidUseCases.Should().BeEmpty("use cases devem depender de portas da Application, não de contratos legados em Services");
-    }
-
-    [Fact]
-    public void CommandUseCases_ShouldNotDependOnQueryServicesInConstructors()
-    {
-        var commandUseCases = ServerAssembly.GetTypes()
-            .Where(t =>
-                t is { IsClass: true, IsAbstract: false } &&
-                t.Namespace?.StartsWith("Bud.Server.Application", StringComparison.Ordinal) == true &&
-                t.Name.EndsWith("CommandUseCase", StringComparison.Ordinal))
-            .ToList();
-
-        commandUseCases.Should().NotBeEmpty();
-
-        var invalidUseCases = commandUseCases
-            .Where(type => type
-                .GetConstructors(BindingFlags.Public | BindingFlags.Instance | BindingFlags.NonPublic)
-                .SelectMany(c => c.GetParameters())
-                .Any(p =>
-                    p.ParameterType.Namespace?.StartsWith("Bud.Server.Application.Abstractions", StringComparison.Ordinal) == true &&
-                    p.ParameterType.Name.EndsWith("QueryService", StringComparison.Ordinal)))
-            .Select(t => t.FullName)
-            .ToList();
-
-        invalidUseCases.Should().BeEmpty("command use cases não devem depender de portas query");
-    }
-
-    [Fact]
-    public void QueryUseCases_ShouldNotDependOnCommandServicesInConstructors()
-    {
-        var queryUseCases = ServerAssembly.GetTypes()
-            .Where(t =>
-                t is { IsClass: true, IsAbstract: false } &&
-                t.Namespace?.StartsWith("Bud.Server.Application", StringComparison.Ordinal) == true &&
-                t.Name.EndsWith("QueryUseCase", StringComparison.Ordinal))
-            .ToList();
-
-        queryUseCases.Should().NotBeEmpty();
-
-        var invalidUseCases = queryUseCases
-            .Where(type => type
-                .GetConstructors(BindingFlags.Public | BindingFlags.Instance | BindingFlags.NonPublic)
-                .SelectMany(c => c.GetParameters())
-                .Any(p =>
-                    p.ParameterType.Namespace?.StartsWith("Bud.Server.Application.Abstractions", StringComparison.Ordinal) == true &&
-                    p.ParameterType.Name.EndsWith("CommandService", StringComparison.Ordinal)))
-            .Select(t => t.FullName)
-            .ToList();
-
-        invalidUseCases.Should().BeEmpty("query use cases não devem depender de portas command");
-    }
-
-    [Fact]
-    public void UseCases_ShouldNotDependOnCompositeService_WhenCommandAndQueryPortsExist()
-    {
-        var abstractionsNamespace = "Bud.Server.Application.Abstractions";
-        var allTypes = ServerAssembly.GetTypes();
-
-        var compositeServices = allTypes
-            .Where(t =>
-                t.IsInterface &&
-                t.Namespace == abstractionsNamespace &&
-                t.Name.StartsWith('I') &&
-                t.Name.EndsWith("Service", StringComparison.Ordinal) &&
-                !t.Name.EndsWith("CommandService", StringComparison.Ordinal) &&
-                !t.Name.EndsWith("QueryService", StringComparison.Ordinal))
-            .ToList();
-
-        var compositesWithSplitPorts = compositeServices
-            .Where(composite =>
-            {
-                var baseName = composite.Name[..^"Service".Length];
-                return allTypes.Any(t => t.Namespace == abstractionsNamespace && t.Name == $"{baseName}CommandService") &&
-                       allTypes.Any(t => t.Namespace == abstractionsNamespace && t.Name == $"{baseName}QueryService");
-            })
-            .ToList();
-
-        compositesWithSplitPorts.Should().NotBeEmpty();
-
-        var useCaseTypes = allTypes
-            .Where(t =>
-                t is { IsClass: true, IsAbstract: false } &&
-                t.Namespace?.StartsWith("Bud.Server.Application", StringComparison.Ordinal) == true &&
-                t.Name.EndsWith("UseCase", StringComparison.Ordinal))
-            .ToList();
-
-        var compositeSet = compositesWithSplitPorts.ToHashSet();
-
-        var invalidUseCases = useCaseTypes
-            .Where(type => type
-                .GetConstructors(BindingFlags.Public | BindingFlags.Instance | BindingFlags.NonPublic)
-                .SelectMany(c => c.GetParameters())
-                .Any(p => compositeSet.Contains(p.ParameterType)))
-            .Select(t => t.FullName)
-            .ToList();
-
-        invalidUseCases.Should().BeEmpty("use cases devem depender de portas command/query quando essas portas já existirem para o domínio");
-    }
-
-    [Fact]
-    public void CompositeServices_ShouldBeExplicitlyApproved()
-    {
-        var abstractionsNamespace = "Bud.Server.Application.Abstractions";
-        var allTypes = ServerAssembly.GetTypes();
-        var approvedCompositeServices = LoadApprovedCompositeServices();
-
-        var compositeServices = allTypes
-            .Where(t =>
-                t.IsInterface &&
-                t.Namespace == abstractionsNamespace &&
-                t.Name.StartsWith('I') &&
-                t.Name.EndsWith("Service", StringComparison.Ordinal) &&
-                !t.Name.EndsWith("CommandService", StringComparison.Ordinal) &&
-                !t.Name.EndsWith("QueryService", StringComparison.Ordinal))
-            .Where(t =>
-            {
-                var baseInterfaces = t.GetInterfaces();
-                return baseInterfaces.Any(i => i.Name.EndsWith("CommandService", StringComparison.Ordinal)) &&
-                       baseInterfaces.Any(i => i.Name.EndsWith("QueryService", StringComparison.Ordinal));
-            })
-            .Select(t => t.Name)
-            .OrderBy(name => name)
-            .ToList();
-
-        compositeServices.Should().NotBeEmpty();
-
-        var unexpectedComposites = compositeServices
-            .Where(name => !approvedCompositeServices.Contains(name))
-            .ToList();
-
-        unexpectedComposites.Should().BeEmpty(
-            "novos serviços compostos exigem decisão arquitetural explícita (atualize ADR e allowlist de serviços compostos)");
-    }
-
-    [Fact]
-    public void CompositeServicesAllowlist_ShouldNotContainOrphanEntries()
-    {
-        var abstractionsNamespace = "Bud.Server.Application.Abstractions";
-        var allTypes = ServerAssembly.GetTypes();
-        var approvedCompositeServices = LoadApprovedCompositeServices();
-
-        var compositeServices = allTypes
-            .Where(t =>
-                t.IsInterface &&
-                t.Namespace == abstractionsNamespace &&
-                t.Name.StartsWith('I') &&
-                t.Name.EndsWith("Service", StringComparison.Ordinal) &&
-                !t.Name.EndsWith("CommandService", StringComparison.Ordinal) &&
-                !t.Name.EndsWith("QueryService", StringComparison.Ordinal))
-            .Where(t =>
-            {
-                var baseInterfaces = t.GetInterfaces();
-                return baseInterfaces.Any(i => i.Name.EndsWith("CommandService", StringComparison.Ordinal)) &&
-                       baseInterfaces.Any(i => i.Name.EndsWith("QueryService", StringComparison.Ordinal));
-            })
-            .Select(t => t.Name)
-            .ToHashSet(StringComparer.Ordinal);
-
-        var orphanAllowlistEntries = approvedCompositeServices
-            .Where(name => !compositeServices.Contains(name))
-            .OrderBy(name => name, StringComparer.Ordinal)
-            .ToList();
-
-        orphanAllowlistEntries.Should().BeEmpty(
-            "a allowlist não deve conter entradas órfãs; remova entradas inexistentes ou ajuste o contrato composto correspondente");
-    }
-
-    [Fact]
-    public void CompositeServicesAllowlist_ShouldBeUniqueAndSorted()
-    {
-        var entries = LoadApprovedCompositeServiceEntries();
-        entries.Should().NotBeEmpty();
-
-        var duplicateEntries = entries
-            .GroupBy(name => name, StringComparer.Ordinal)
-            .Where(group => group.Count() > 1)
-            .Select(group => group.Key)
-            .OrderBy(name => name, StringComparer.Ordinal)
-            .ToList();
-
-        duplicateEntries.Should().BeEmpty("a allowlist de serviços compostos não deve conter entradas duplicadas");
-
-        var sortedEntries = entries
-            .OrderBy(name => name, StringComparer.Ordinal)
-            .ToList();
-
-        entries.Should().Equal(sortedEntries, "a allowlist de serviços compostos deve estar ordenada alfabeticamente");
     }
 
     [Fact]
@@ -505,87 +291,6 @@ public sealed class ArchitectureTests
     }
 
     [Fact]
-    public void DomainEvents_MustHaveAtLeastOneSubscriber()
-    {
-        var domainEventTypes = ServerAssembly.GetTypes()
-            .Where(t => t is { IsClass: true, IsAbstract: false } && t.IsAssignableTo(typeof(IDomainEvent)))
-            .ToList();
-
-        domainEventTypes.Should().NotBeEmpty();
-
-        var subscriberTypes = ServerAssembly.GetTypes()
-            .Where(t => t is { IsClass: true, IsAbstract: false })
-            .ToList();
-
-        var orphanEvents = domainEventTypes
-            .Where(eventType =>
-            {
-                var expectedInterface = typeof(IDomainEventSubscriber<>).MakeGenericType(eventType);
-                return !subscriberTypes.Any(s => expectedInterface.IsAssignableFrom(s));
-            })
-            .Select(t => t.FullName)
-            .ToList();
-
-        orphanEvents.Should().BeEmpty(
-            "todo domain event deve ter ao menos um IDomainEventSubscriber<TEvent> registrado");
-    }
-
-    [Fact]
-    public void DomainEventSubscribers_MustBeRegisteredInDI()
-    {
-        var subscriberTypes = ServerAssembly.GetTypes()
-            .Where(t => t is { IsClass: true, IsAbstract: false })
-            .Where(t => t.GetInterfaces().Any(i =>
-                i.IsGenericType && i.GetGenericTypeDefinition() == typeof(IDomainEventSubscriber<>)))
-            .ToList();
-
-        subscriberTypes.Should().NotBeEmpty();
-
-        var services = new ServiceCollection();
-        services.AddLogging();
-        services.AddBudApplication();
-
-        var registeredImplementations = services
-            .Select(sd => sd.ImplementationType)
-            .Where(t => t is not null)
-            .ToHashSet();
-
-        var unregistered = subscriberTypes
-            .Where(t => !registeredImplementations.Contains(t))
-            .Select(t => t.FullName)
-            .ToList();
-
-        unregistered.Should().BeEmpty(
-            "todo IDomainEventSubscriber<> concreto deve estar registrado no DI via AddBudApplication()");
-    }
-
-    [Fact]
-    public void DomainEvents_MustBeSealedRecords()
-    {
-        var domainEventTypes = ServerAssembly.GetTypes()
-            .Where(t => t is { IsClass: true, IsAbstract: false } && t.IsAssignableTo(typeof(IDomainEvent)))
-            .ToList();
-
-        domainEventTypes.Should().NotBeEmpty();
-
-        var nonSealed = domainEventTypes
-            .Where(t => !t.IsSealed)
-            .Select(t => t.FullName)
-            .ToList();
-
-        nonSealed.Should().BeEmpty(
-            "domain events devem ser sealed para garantir imutabilidade e serialização correta no outbox");
-
-        var nonRecord = domainEventTypes
-            .Where(t => t.GetMethod("<Clone>$") is null)
-            .Select(t => t.FullName)
-            .ToList();
-
-        nonRecord.Should().BeEmpty(
-            "domain events devem ser records para garantir value equality e serialização correta no outbox");
-    }
-
-    [Fact]
     public void AggregateRoots_ShouldExposeRequiredDomainBehaviorMethods()
     {
         var requiredMethodsByType = new Dictionary<Type, string[]>
@@ -637,66 +342,6 @@ public sealed class ArchitectureTests
 
     private static bool UsesServicesNamespace(Type type)
         => type.Namespace?.StartsWith("Bud.Server.Services", StringComparison.Ordinal) == true;
-
-    private static HashSet<string> LoadApprovedCompositeServices()
-        => LoadApprovedCompositeServiceEntries().ToHashSet(StringComparer.Ordinal);
-
-    private static List<string> LoadApprovedCompositeServiceEntries()
-    {
-        var repositoryRoot = FindRepositoryRoot();
-        var allowlistPath = Path.Combine(
-            repositoryRoot,
-            CompositeServiceAllowlistRelativePath.Replace('/', Path.DirectorySeparatorChar));
-
-        if (!File.Exists(allowlistPath))
-        {
-            throw new InvalidOperationException($"Arquivo de allowlist não encontrado: {allowlistPath}");
-        }
-
-        var names = File.ReadAllLines(allowlistPath)
-            .Select(ParseAllowlistEntry)
-            .Where(name => !string.IsNullOrWhiteSpace(name))
-            .Cast<string>()
-            .ToList();
-
-        if (names.Count == 0)
-        {
-            throw new InvalidOperationException($"Arquivo de allowlist sem entradas válidas: {allowlistPath}");
-        }
-
-        return names;
-    }
-
-    private static string? ParseAllowlistEntry(string line)
-    {
-        var trimmed = line.Trim();
-        if (string.IsNullOrWhiteSpace(trimmed) || trimmed.StartsWith('#'))
-        {
-            return null;
-        }
-
-        if (trimmed.StartsWith('-') || trimmed.StartsWith('*'))
-        {
-            trimmed = trimmed[1..].TrimStart();
-        }
-
-        string candidate;
-        if (trimmed.StartsWith('`'))
-        {
-            var closeTickIndex = trimmed.IndexOf('`', 1);
-            candidate = closeTickIndex > 1 ? trimmed[1..closeTickIndex] : trimmed.Trim('`');
-        }
-        else
-        {
-            candidate = trimmed.Split(' ', StringSplitOptions.RemoveEmptyEntries)[0];
-        }
-
-        candidate = candidate.TrimEnd('.', ',', ';', ':');
-
-        return candidate.StartsWith('I') && candidate.EndsWith("Service", StringComparison.Ordinal)
-            ? candidate
-            : null;
-    }
 
     private static string FindRepositoryRoot()
     {

@@ -1,6 +1,6 @@
-using Bud.Shared.Models;
+using Bud.Shared.Domain;
 
-namespace Bud.Server.Application.Abstractions;
+namespace Bud.Server.Services;
 
 public interface IMissionScopeResolver
 {

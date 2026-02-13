@@ -2,7 +2,7 @@ using System.Net;
 using System.Net.Http.Json;
 using System.Diagnostics;
 using Bud.Shared.Contracts;
-using Bud.Shared.Models;
+using Bud.Shared.Domain;
 using FluentAssertions;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;

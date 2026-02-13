@@ -1,4 +1,4 @@
-using Bud.Server.Domain.Common.ValueObjects;
+using Bud.Server.Domain.ValueObjects;
 using FluentAssertions;
 using Xunit;
 

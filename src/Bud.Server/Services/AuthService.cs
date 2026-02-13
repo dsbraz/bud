@@ -4,7 +4,7 @@ using System.Text;
 using Bud.Server.Data;
 using Bud.Server.Settings;
 using Bud.Shared.Contracts;
-using Bud.Shared.Models;
+using Bud.Shared.Domain;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;

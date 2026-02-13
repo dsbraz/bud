@@ -1,4 +1,4 @@
-namespace Bud.Server.Domain.Common.Specifications;
+namespace Bud.Server.Domain.Specifications;
 
 public interface IQuerySpecification<T>
 {

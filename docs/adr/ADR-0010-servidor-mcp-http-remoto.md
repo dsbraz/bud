@@ -1,4 +1,4 @@
-# ADR-0011: Servidor MCP HTTP remoto para operações de missões
+# ADR-0010: Servidor MCP HTTP remoto para operações de missões
 
 ## Status
 Accepted
@@ -22,6 +22,7 @@ Diretrizes da decisão:
 - O servidor MCP expõe `prompts/list` para compatibilidade de discovery em clientes MCP, retornando lista vazia quando não houver prompts publicados.
 - As tools de domínio do MCP (`mission_*`, `mission_metric_*`, `metric_checkin_*`) usam catálogo versionado em `Tools/Generated/mcp-tool-catalog.json` como fonte única de schema (modo estrito).
 - A inicialização do MCP falha quando o catálogo está ausente, inválido, vazio ou sem tools/campos obrigatórios mínimos.
+- O fluxo HTTP é encapsulado em `IMcpRequestProcessor`/`McpRequestProcessor`, mantendo `Program.cs` apenas como composição e roteamento.
 - O escopo inicial inclui CRUD completo de:
   - missões
   - métricas de missão

@@ -1,10 +1,10 @@
-using Bud.Server.Application.Abstractions;
+using Bud.Server.Services;
 using Bud.Shared.Contracts;
-using Bud.Shared.Models;
+using Bud.Shared.Domain;
 
 namespace Bud.Server.Application.Teams;
 
-public sealed class TeamQueryUseCase(ITeamQueryService teamService) : ITeamQueryUseCase
+public sealed class TeamQueryUseCase(ITeamService teamService) : ITeamQueryUseCase
 {
     public Task<ServiceResult<Team>> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
         => teamService.GetByIdAsync(id, cancellationToken);

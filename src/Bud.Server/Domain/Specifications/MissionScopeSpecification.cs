@@ -1,6 +1,6 @@
-using Bud.Shared.Models;
+using Bud.Shared.Domain;
 
-namespace Bud.Server.Domain.Common.Specifications;
+namespace Bud.Server.Domain.Specifications;
 
 public sealed class MissionScopeSpecification(MissionScopeType? scopeType, Guid? scopeId) : IQuerySpecification<Mission>
 {

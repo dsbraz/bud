@@ -1,6 +1,6 @@
 using System.Security.Claims;
 
-namespace Bud.Server.Application.Common.Authorization;
+namespace Bud.Server.Authorization;
 
 public interface IApplicationAuthorizationGateway
 {

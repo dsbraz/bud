@@ -1,4 +1,4 @@
-using Bud.Server.Application.Abstractions;
+using Bud.Server.Services;
 using Bud.Server.MultiTenancy;
 
 namespace Bud.Server.Application.Notifications;

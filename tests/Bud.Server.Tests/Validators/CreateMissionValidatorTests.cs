@@ -1,6 +1,6 @@
 using Bud.Server.Validators;
 using Bud.Shared.Contracts;
-using Bud.Shared.Models;
+using Bud.Shared.Domain;
 using FluentAssertions;
 using Xunit;
 

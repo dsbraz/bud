@@ -1,5 +1,5 @@
-using Bud.Server.Domain.Common.Specifications;
-using Bud.Shared.Models;
+using Bud.Server.Domain.Specifications;
+using Bud.Shared.Domain;
 using FluentAssertions;
 using Xunit;
 
