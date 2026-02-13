@@ -1,12 +1,12 @@
-# ADR-0003: Persistência com EF Core, PostgreSQL e migrations
+# ADR-0003: Persistência com EF Core e PostgreSQL
 
 ## Status
 Accepted
 
 ## Contexto
 
-O sistema precisava de persistência relacional com boa produtividade de evolução de schema
-e suporte robusto a consultas tenant-scoped.
+O sistema precisa de persistência relacional com boa produtividade de evolução de schema
+e suporte robusto a consultas tenant-scoped. Durante desenvolvimento, não há dados de produção a preservar.
 
 ## Decisão
 
@@ -14,17 +14,18 @@ Adotar EF Core + PostgreSQL com:
 
 - `ApplicationDbContext` central
 - Configuração de relacionamentos e query filters no `OnModelCreating`
-- Migrations versionadas no repositório
-- Aplicação automática de migrations em Development no startup
+- Schema criado a partir do modelo via `EnsureCreated()` no startup em Development
 - Uso de `OrganizationId` denormalizado em entidades tenant-scoped para eficiência de filtro
+- Migrations serão introduzidas apenas quando houver ambiente de produção com dados a preservar
 
 ## Consequências
 
-- Evolução de schema rastreável e reproduzível
+- Schema sempre derivado do modelo atual, sem overhead de arquivos de migration
+- Dados locais recriados pelo `DbSeeder` quando o modelo muda
 - Boa integração com testes de integração via banco real
-- Atenção necessária em mudanças de schema para manter compatibilidade de dados
 
 ## Alternativas consideradas
 
-- SQL manual sem migrations: menor controle de evolução e maior risco operacional
-- ORM alternativo com menor convenção: possível, sem vantagem clara no contexto atual
+- Migrations versionadas no repositório: overhead sem valor enquanto não há produção
+- SQL manual sem ORM: menor controle de evolução e maior risco operacional
+- ORM alternativo: possível, sem vantagem clara no contexto atual

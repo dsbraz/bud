@@ -126,7 +126,7 @@ Bud is an ASP.NET Core 10 application with a Blazor WebAssembly frontend, using 
   - `Domain/`: specifications (`Domain/Specifications/`), value objects, and domain-specific contracts
   - `Data/`: `ApplicationDbContext`, `ApplicationEntityLookup`, `IApplicationEntityLookup`, `Configurations/` (EF Core entity configurations), and `DbSeeder`
   - `DependencyInjection/`: modular composition (`Bud*CompositionExtensions`)
-  - `Migrations/`: database migrations
+  - *(No migrations — database is created from model via `EnsureCreated()` during development)*
   - `Services/`: domain/application service implementations and supporting helpers
   - `Validators/`: FluentValidation validators
   - `Middleware/`: global exception handling and other middleware
@@ -205,13 +205,15 @@ Execution notes:
 - When running on the host, set `BUD_API_BASE_URL=http://localhost:8080` to avoid connection errors.
 - `check-tool-catalog --fail-on-diff` also validates minimum `required` field contracts; fails if the catalog is missing required fields per tool.
 
-### Migrations
+### Database Setup (Development)
 
-Migrations are automatically applied on startup in Development mode.
+The database schema is created automatically from the EF Core model on startup via `EnsureCreated()`. No migrations are used during development — the schema is always derived from the current model in `ApplicationDbContext`.
 
-To create a new migration:
+When the model changes, drop and recreate the database (automatic on next startup if the database doesn't exist, or manually via `docker compose down -v && docker compose up --build`).
+
+When the project approaches production, reintroduce migrations with:
 ```bash
-dotnet ef migrations add MigrationName --project src/Bud.Server
+dotnet ef migrations add Initial --project src/Bud.Server
 ```
 
 ## Architecture
@@ -394,7 +396,7 @@ See [OrganizationsController.cs](src/Bud.Server/Controllers/OrganizationsControl
 - All entities are in `Bud.Shared/Domain`
 - Entity configurations (`IEntityTypeConfiguration<T>`) are in `Data/Configurations/`, loaded via `ApplyConfigurationsFromAssembly`
 - **Global Query Filters** (multi-tenancy) are applied via configurations
-- The DbContext accepts an optional `ITenantProvider` for tenant-aware queries (nullable for migrations and tests)
+- The DbContext accepts an optional `ITenantProvider` for tenant-aware queries (nullable for schema creation and tests)
 
 ### Client Architecture
 
@@ -463,7 +465,7 @@ See [OrganizationsController.cs](src/Bud.Server/Controllers/OrganizationsControl
 - **Database Strategy:**
   - Use **Testcontainers.PostgreSql** to spin up real PostgreSQL container
   - [CustomWebApplicationFactory.cs](tests/Bud.Server.IntegrationTests/CustomWebApplicationFactory.cs) configures the test container
-  - PostgreSQL 16 image with automatic migrations on startup
+  - PostgreSQL 16 image with automatic schema creation on startup
   - Container lifecycle managed by xUnit's `IAsyncLifetime`
 - **Multi-tenancy in integration tests:**
   - `factory.CreateGlobalAdminClient()` — `HttpClient` with global admin JWT, bypasses `TenantRequiredMiddleware`
@@ -498,16 +500,15 @@ Follow this sequence as a MUST checklist:
 2. Add `DbSet<TEntity>` to `ApplicationDbContext`
 3. Create `IEntityTypeConfiguration<TEntity>` in `src/Bud.Server/Data/Configurations/`
    - If tenant-scoped: add FK/index for `OrganizationId` (`DeleteBehavior.Restrict`) and add a `HasQueryFilter` following the existing pattern
-4. Create a migration: `dotnet ef migrations add AddEntityName --project src/Bud.Server`
-5. Create request/response contracts in `src/Bud.Shared/Contracts/`
-6. Create FluentValidation validators in `src/Bud.Server/Validators/`
-7. Create/adjust use case contracts in `src/Bud.Server/Application/*`
-8. Create service interface and implementation in `src/Bud.Server/Services/`
+4. Create request/response contracts in `src/Bud.Shared/Contracts/`
+5. Create FluentValidation validators in `src/Bud.Server/Validators/`
+6. Create/adjust use case contracts in `src/Bud.Server/Application/*`
+7. Create service interface and implementation in `src/Bud.Server/Services/`
    - If tenant-scoped: resolve and set `OrganizationId` from the parent entity in `CreateAsync`
-9. Register implementations and use cases in [BudApplicationCompositionExtensions.cs](src/Bud.Server/DependencyInjection/BudApplicationCompositionExtensions.cs)
-10. Create controller in `src/Bud.Server/Controllers/`
-11. Write unit tests in `tests/Bud.Server.Tests/`
-12. Write integration tests in `tests/Bud.Server.IntegrationTests/`
+8. Register implementations and use cases in [BudApplicationCompositionExtensions.cs](src/Bud.Server/DependencyInjection/BudApplicationCompositionExtensions.cs)
+9. Create controller in `src/Bud.Server/Controllers/`
+10. Write unit tests in `tests/Bud.Server.Tests/`
+11. Write integration tests in `tests/Bud.Server.IntegrationTests/`
 
 ### Adding a New Blazor Page
 

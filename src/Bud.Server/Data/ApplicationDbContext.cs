@@ -45,7 +45,7 @@ public sealed class ApplicationDbContext : DbContext
         // Global admins see all ONLY when no tenant is selected; otherwise they see the selected tenant
         modelBuilder.Entity<Organization>()
             .HasQueryFilter(o =>
-                !_applyTenantFilter || // No tenant provider (migrations/tests)
+                !_applyTenantFilter || // No tenant provider (schema creation/tests)
                 (_isGlobalAdmin && _tenantId == null) || // Global admin with no tenant selected sees all
                 (_tenantId != null && o.Id == _tenantId) // Anyone with tenant selected sees only that tenant
             );

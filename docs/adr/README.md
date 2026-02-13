@@ -15,7 +15,7 @@ A ordem abaixo vai das decisões mais abrangentes para as mais específicas:
 
 1. `ADR-0001` - Stack tecnológica
 2. `ADR-0002` - Arquitetura por UseCases e Services
-3. `ADR-0003` - Persistência, EF Core e migrations
+3. `ADR-0003` - Persistência, EF Core e PostgreSQL
 4. `ADR-0004` - Autenticação, autorização e políticas
 5. `ADR-0005` - Multi-tenancy por OrganizationId
 6. `ADR-0006` - Estilo de API e padronização de erros

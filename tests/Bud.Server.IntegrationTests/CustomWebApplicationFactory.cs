@@ -56,14 +56,14 @@ public class CustomWebApplicationFactory : WebApplicationFactory<Program>, IAsyn
                 return new ApplicationDbContext(optionsBuilder.Options, tenantProvider);
             });
 
-            // Build service provider and apply migrations
+            // Build service provider and create database from model
             var sp = services.BuildServiceProvider();
             using var scope = sp.CreateScope();
             var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
 
-            // Ensure database is deleted and recreated with latest schema
+            // Recreate database from current model (no migrations needed)
             db.Database.EnsureDeleted();
-            db.Database.Migrate();
+            db.Database.EnsureCreated();
 
             // Seed bootstrap data
             DbSeeder.SeedAsync(db).Wait();

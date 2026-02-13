@@ -34,7 +34,7 @@ O Bud segue uma arquitetura em camadas com separação explícita de responsabil
 - **API/Host (`Bud.Server`)**: exposição HTTP, autenticação/autorização, middleware e composição de dependências.
 - **Application**: casos de uso (`Command/Query`), contratos de entrada/saída e regras de orquestração.
 - **Domain**: conceitos de domínio, value objects e specifications.
-- **Data**: EF Core (`ApplicationDbContext`), mapeamentos e migrations.
+- **Data**: EF Core (`ApplicationDbContext`) e mapeamentos.
 - **Client (`Bud.Client`)**: SPA Blazor WASM com consumo da API.
 - **Shared (`Bud.Shared`)**: contratos e modelos compartilhados entre cliente e servidor.
 
@@ -263,7 +263,6 @@ flowchart TB
     end
     subgraph Data["Data"]
       DbContext
-      Migrations
     end
 
     Controllers --> UseCases
@@ -451,7 +450,7 @@ Se estiver rodando local com `DOTNET_ENVIRONMENT=Development`, defina:
 Scripts disponíveis:
 
 - `scripts/gcp-bootstrap.sh`: prepara infraestrutura base (Artifact Registry, Cloud SQL, service account, secrets).
-- `scripts/gcp-deploy-web.sh`: deploy do `Bud.Server` (inclui migration).
+- `scripts/gcp-deploy-web.sh`: deploy do `Bud.Server`.
 - `scripts/gcp-deploy-mcp.sh`: deploy do `Bud.Mcp` HTTP.
 - `scripts/gcp-deploy-all.sh`: executa deploy completo (`Bud.Server` + `Bud.Mcp`).
 
@@ -701,18 +700,16 @@ Veja [DESIGN_TOKENS.md](DESIGN_TOKENS.md) para:
 - Convenções de nomenclatura
 - Boas práticas
 
-## Migrations (EF Core)
+## Banco de Dados (Desenvolvimento)
 
-Já existe a migration inicial (`InitialCreate`). Para aplicar no banco com Docker rodando:
+O schema do banco é criado automaticamente a partir do modelo EF Core via `EnsureCreated()` no startup em Development. Não são usadas migrations durante o desenvolvimento.
 
+Para recriar o banco após mudanças no modelo:
 ```bash
-docker run --rm -v "$(pwd)/src":/src -w /src/Bud.Server --network bud_default \
-  -e ConnectionStrings__DefaultConnection="Host=db;Port=5432;Database=bud;Username=postgres;Password=postgres" \
-  mcr.microsoft.com/dotnet/sdk:10.0 \
-  bash -lc "dotnet tool install --tool-path /tmp/tools dotnet-ef --version 10.0.0 && /tmp/tools/dotnet-ef database update"
+docker compose down -v && docker compose up --build
 ```
 
-No ambiente Development, a API tenta aplicar migrations automaticamente no startup.
+Quando o projeto se aproximar de produção, migrations serão reintroduzidas.
 
 ## Health checks
 

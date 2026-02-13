@@ -5,7 +5,7 @@ namespace Bud.Server.DependencyInjection;
 
 public static partial class WebApplicationExtensions
 {
-    public static async Task ApplyDevelopmentMigrationsAndSeedAsync(this WebApplication app)
+    public static async Task EnsureDevelopmentDatabaseAsync(this WebApplication app)
     {
         if (!app.Environment.IsDevelopment())
         {
@@ -15,28 +15,28 @@ public static partial class WebApplicationExtensions
         using var scope = app.Services.CreateScope();
         var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
         var logger = scope.ServiceProvider.GetRequiredService<ILoggerFactory>()
-            .CreateLogger("DatabaseMigration");
+            .CreateLogger("DatabaseSetup");
 
         const int maxAttempts = 5;
-        var migrated = false;
+        var created = false;
         for (var attempt = 1; attempt <= maxAttempts; attempt++)
         {
             try
             {
-                dbContext.Database.Migrate();
-                migrated = true;
+                dbContext.Database.EnsureCreated();
+                created = true;
                 break;
             }
             catch (Exception ex)
             {
-                LogMigrationAttemptFailed(logger, ex, attempt);
+                LogDatabaseSetupAttemptFailed(logger, ex, attempt);
                 Thread.Sleep(TimeSpan.FromSeconds(3));
             }
         }
 
-        if (!migrated)
+        if (!created)
         {
-            LogMigrationFailedAfterAttempts(logger, maxAttempts);
+            LogDatabaseSetupFailedAfterAttempts(logger, maxAttempts);
             return;
         }
 
@@ -47,14 +47,14 @@ public static partial class WebApplicationExtensions
     [LoggerMessage(
         EventId = 3500,
         Level = LogLevel.Warning,
-        Message = "Migration attempt {Attempt} failed.")]
-    private static partial void LogMigrationAttemptFailed(ILogger logger, Exception exception, int attempt);
+        Message = "Database setup attempt {Attempt} failed.")]
+    private static partial void LogDatabaseSetupAttemptFailed(ILogger logger, Exception exception, int attempt);
 
     [LoggerMessage(
         EventId = 3501,
         Level = LogLevel.Error,
-        Message = "Database migration failed after {Attempts} attempts.")]
-    private static partial void LogMigrationFailedAfterAttempts(ILogger logger, int attempts);
+        Message = "Database setup failed after {Attempts} attempts.")]
+    private static partial void LogDatabaseSetupFailedAfterAttempts(ILogger logger, int attempts);
 
     [LoggerMessage(
         EventId = 3502,

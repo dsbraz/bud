@@ -17,7 +17,7 @@ if (app.Environment.IsDevelopment())
     });
 }
 
-await app.ApplyDevelopmentMigrationsAndSeedAsync();
+await app.EnsureDevelopmentDatabaseAsync();
 
 app.UseExceptionHandler();
 app.UseHttpsRedirection();

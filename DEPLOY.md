@@ -76,7 +76,7 @@ Opcional com arquivo explicito:
 
 Esse comando executa:
 
-1. deploy do `bud-web` (inclui migration via Cloud Run Job)
+1. deploy do `bud-web`
 2. deploy do `bud-mcp` apontando para a URL do `bud-web`
 
 ### Deploy por servico
@@ -115,9 +115,6 @@ Forcar URL da API no MCP:
 
 Troubleshooting rapido:
 
-- Migration falhou no web:
-  - rode `./scripts/gcp-deploy-web.sh` novamente
-  - valide secret de conexao e status do Cloud SQL
 - MCP sem acesso a API:
   - valide URL do `bud-web`
   - rode `./scripts/gcp-deploy-mcp.sh --web-api-url "<url-do-web>"`
