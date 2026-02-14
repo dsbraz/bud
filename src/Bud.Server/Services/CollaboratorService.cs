@@ -409,6 +409,30 @@ public sealed class CollaboratorService(
         return ServiceResult.Success();
     }
 
+    public async Task<ServiceResult<List<CollaboratorSummaryDto>>> GetSummariesAsync(string? search = null, CancellationToken cancellationToken = default)
+    {
+        var query = dbContext.Collaborators.AsNoTracking();
+
+        if (!string.IsNullOrWhiteSpace(search))
+        {
+            query = new CollaboratorSearchSpecification(search, dbContext.Database.IsNpgsql()).Apply(query);
+        }
+
+        var collaborators = await query
+            .Select(c => new CollaboratorSummaryDto
+            {
+                Id = c.Id,
+                FullName = c.FullName,
+                Email = c.Email,
+                Role = c.Role
+            })
+            .OrderBy(c => c.FullName)
+            .Take(50)
+            .ToListAsync(cancellationToken);
+
+        return ServiceResult<List<CollaboratorSummaryDto>>.Success(collaborators);
+    }
+
     public async Task<ServiceResult<List<TeamSummaryDto>>> GetAvailableTeamsAsync(Guid collaboratorId, string? search = null, CancellationToken cancellationToken = default)
     {
         var collaborator = await dbContext.Collaborators

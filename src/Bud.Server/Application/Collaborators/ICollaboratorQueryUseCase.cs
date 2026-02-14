@@ -30,4 +30,8 @@ public interface ICollaboratorQueryUseCase
         Guid collaboratorId,
         string? search,
         CancellationToken cancellationToken = default);
+
+    Task<ServiceResult<List<CollaboratorSummaryDto>>> GetSummariesAsync(
+        string? search,
+        CancellationToken cancellationToken = default);
 }

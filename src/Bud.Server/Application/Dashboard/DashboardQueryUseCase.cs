@@ -10,6 +10,7 @@ public sealed class DashboardQueryUseCase(
 {
     public Task<ServiceResult<MyDashboardResponse>> GetMyDashboardAsync(
         ClaimsPrincipal user,
+        Guid? teamId = null,
         CancellationToken cancellationToken = default)
     {
         _ = user;
@@ -19,6 +20,6 @@ public sealed class DashboardQueryUseCase(
             return Task.FromResult(ServiceResult<MyDashboardResponse>.Forbidden("Colaborador não identificado."));
         }
 
-        return dashboardService.GetMyDashboardAsync(tenantProvider.CollaboratorId.Value, cancellationToken);
+        return dashboardService.GetMyDashboardAsync(tenantProvider.CollaboratorId.Value, teamId, cancellationToken);
     }
 }

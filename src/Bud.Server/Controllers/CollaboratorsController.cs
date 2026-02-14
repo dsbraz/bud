@@ -101,6 +101,28 @@ public sealed class CollaboratorsController(
     }
 
     /// <summary>
+    /// Lista resumo dos colaboradores da organização.
+    /// </summary>
+    /// <response code="200">Lista retornada com sucesso.</response>
+    /// <response code="400">Parâmetros inválidos.</response>
+    [HttpGet("summaries")]
+    [ProducesResponseType(typeof(List<CollaboratorSummaryDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
+    public async Task<ActionResult<List<CollaboratorSummaryDto>>> GetSummaries(
+        [FromQuery] string? search,
+        CancellationToken cancellationToken)
+    {
+        var searchValidation = ValidateAndNormalizeSearch(search);
+        if (searchValidation.Failure is not null)
+        {
+            return searchValidation.Failure;
+        }
+
+        var result = await collaboratorQueryUseCase.GetSummariesAsync(searchValidation.Value, cancellationToken);
+        return FromResultOk(result);
+    }
+
+    /// <summary>
     /// Lista colaboradores líderes.
     /// </summary>
     /// <response code="200">Lista retornada com sucesso.</response>

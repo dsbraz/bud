@@ -25,7 +25,7 @@ public sealed class DashboardQueryUseCaseTests
         result.IsSuccess.Should().BeFalse();
         result.ErrorType.Should().Be(ServiceErrorType.Forbidden);
         result.Error.Should().Be("Colaborador não identificado.");
-        dashboardService.Verify(s => s.GetMyDashboardAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()), Times.Never);
+        dashboardService.Verify(s => s.GetMyDashboardAsync(It.IsAny<Guid>(), It.IsAny<Guid?>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
     [Fact]
@@ -36,7 +36,7 @@ public sealed class DashboardQueryUseCaseTests
         var tenantProvider = new Mock<ITenantProvider>();
         tenantProvider.SetupGet(x => x.CollaboratorId).Returns(collaboratorId);
         dashboardService
-            .Setup(s => s.GetMyDashboardAsync(collaboratorId, It.IsAny<CancellationToken>()))
+            .Setup(s => s.GetMyDashboardAsync(collaboratorId, null, It.IsAny<CancellationToken>()))
             .ReturnsAsync(ServiceResult<MyDashboardResponse>.Success(new MyDashboardResponse()));
 
         var useCase = new DashboardQueryUseCase(dashboardService.Object, tenantProvider.Object);
@@ -45,7 +45,7 @@ public sealed class DashboardQueryUseCaseTests
         var result = await useCase.GetMyDashboardAsync(user);
 
         result.IsSuccess.Should().BeTrue();
-        dashboardService.Verify(s => s.GetMyDashboardAsync(collaboratorId, It.IsAny<CancellationToken>()), Times.Once);
+        dashboardService.Verify(s => s.GetMyDashboardAsync(collaboratorId, null, It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact]
@@ -56,7 +56,7 @@ public sealed class DashboardQueryUseCaseTests
         var tenantProvider = new Mock<ITenantProvider>();
         tenantProvider.SetupGet(x => x.CollaboratorId).Returns(collaboratorId);
         dashboardService
-            .Setup(s => s.GetMyDashboardAsync(collaboratorId, It.IsAny<CancellationToken>()))
+            .Setup(s => s.GetMyDashboardAsync(collaboratorId, null, It.IsAny<CancellationToken>()))
             .ReturnsAsync(ServiceResult<MyDashboardResponse>.NotFound("Colaborador não encontrado."));
 
         var useCase = new DashboardQueryUseCase(dashboardService.Object, tenantProvider.Object);
@@ -66,5 +66,26 @@ public sealed class DashboardQueryUseCaseTests
 
         result.IsSuccess.Should().BeFalse();
         result.Error.Should().Be("Colaborador não encontrado.");
+    }
+
+    [Fact]
+    public async Task GetMyDashboardAsync_WithTeamId_PassesTeamIdToService()
+    {
+        var collaboratorId = Guid.NewGuid();
+        var teamId = Guid.NewGuid();
+        var dashboardService = new Mock<IDashboardService>();
+        var tenantProvider = new Mock<ITenantProvider>();
+        tenantProvider.SetupGet(x => x.CollaboratorId).Returns(collaboratorId);
+        dashboardService
+            .Setup(s => s.GetMyDashboardAsync(collaboratorId, teamId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(ServiceResult<MyDashboardResponse>.Success(new MyDashboardResponse()));
+
+        var useCase = new DashboardQueryUseCase(dashboardService.Object, tenantProvider.Object);
+        var user = new ClaimsPrincipal(new ClaimsIdentity());
+
+        var result = await useCase.GetMyDashboardAsync(user, teamId);
+
+        result.IsSuccess.Should().BeTrue();
+        dashboardService.Verify(s => s.GetMyDashboardAsync(collaboratorId, teamId, It.IsAny<CancellationToken>()), Times.Once);
     }
 }

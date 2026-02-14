@@ -23,9 +23,10 @@ public sealed class DashboardController(IDashboardQueryUseCase dashboardQueryUse
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status403Forbidden)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
     public async Task<ActionResult<MyDashboardResponse>> GetMyDashboard(
+        [FromQuery] Guid? teamId,
         CancellationToken cancellationToken)
     {
-        var result = await dashboardQueryUseCase.GetMyDashboardAsync(User, cancellationToken);
+        var result = await dashboardQueryUseCase.GetMyDashboardAsync(User, teamId, cancellationToken);
         return FromResultOk(result);
     }
 }

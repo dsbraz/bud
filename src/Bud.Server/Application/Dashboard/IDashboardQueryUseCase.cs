@@ -5,5 +5,5 @@ namespace Bud.Server.Application.Dashboard;
 
 public interface IDashboardQueryUseCase
 {
-    Task<ServiceResult<MyDashboardResponse>> GetMyDashboardAsync(ClaimsPrincipal user, CancellationToken cancellationToken = default);
+    Task<ServiceResult<MyDashboardResponse>> GetMyDashboardAsync(ClaimsPrincipal user, Guid? teamId = null, CancellationToken cancellationToken = default);
 }

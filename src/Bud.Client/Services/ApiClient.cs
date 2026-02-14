@@ -339,9 +339,14 @@ public sealed class ApiClient
         return await response.Content.ReadFromJsonAsync<Mission>();
     }
 
-    public async Task<MyDashboardResponse?> GetMyDashboardAsync()
+    public async Task<MyDashboardResponse?> GetMyDashboardAsync(Guid? teamId = null)
     {
-        return await GetSafeAsync<MyDashboardResponse>("api/dashboard/my-dashboard");
+        var url = "api/dashboard/my-dashboard";
+        if (teamId.HasValue)
+        {
+            url += $"?teamId={teamId.Value}";
+        }
+        return await GetSafeAsync<MyDashboardResponse>(url);
     }
 
     public async Task<PagedResult<MissionMetric>?> GetMissionMetricsAsync(Guid? missionId, string? search, int page = 1, int pageSize = 10)
@@ -708,6 +713,17 @@ public sealed class ApiClient
             url += $"?search={Uri.EscapeDataString(search)}";
         }
         return await GetSafeAsync<List<TeamSummaryDto>>(url);
+    }
+
+    // Collaborator Summaries
+    public async Task<List<CollaboratorSummaryDto>?> GetCollaboratorSummariesAsync(string? search = null)
+    {
+        var url = "api/collaborators/summaries";
+        if (!string.IsNullOrWhiteSpace(search))
+        {
+            url += $"?search={Uri.EscapeDataString(search)}";
+        }
+        return await GetSafeAsync<List<CollaboratorSummaryDto>>(url);
     }
 
     // Team Collaborators (Many-to-Many)

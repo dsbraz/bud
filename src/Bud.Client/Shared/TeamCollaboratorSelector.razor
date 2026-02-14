@@ -1,0 +1,49 @@
+<div class="form-row">
+    <label>Líder</label>
+    <select class="input" value="@LeaderId" @onchange="OnLeaderChanged">
+        <option value="">Selecione um líder</option>
+        @foreach (var leader in Leaders)
+        {
+            <option value="@leader.Id">@leader.FullName</option>
+        }
+    </select>
+</div>
+
+<div class="form-row" style="margin-top: var(--spacing-4);">
+    <label>Colaboradores</label>
+    <TransferList TItem="CollaboratorSummaryDto"
+        AvailableItems="@AvailableCollaborators"
+        AssignedItems="@AssignedCollaborators"
+        AssignedItemsChanged="OnAssignedChanged"
+        OnAvailableSearch="OnAvailableSearch"
+        GetKey="@(c => c.Id)"
+        GetDisplayText="@(c => c.FullName)"
+        GetSecondaryText="@(c => c.Email)"
+        AvailableTitle="Colaboradores disponíveis"
+        AssignedTitle="Colaboradores atribuídos"
+        SearchPlaceholder="Buscar colaborador..."
+        EmptyAvailableMessage="Nenhum colaborador disponível."
+        EmptyAssignedMessage="Nenhum colaborador atribuído." />
+</div>
+
+@code {
+    [Parameter] public List<LeaderCollaboratorResponse> Leaders { get; set; } = new();
+    [Parameter] public string LeaderId { get; set; } = "";
+    [Parameter] public EventCallback<string> LeaderIdChanged { get; set; }
+
+    [Parameter] public List<CollaboratorSummaryDto> AvailableCollaborators { get; set; } = new();
+    [Parameter] public List<CollaboratorSummaryDto> AssignedCollaborators { get; set; } = new();
+    [Parameter] public EventCallback<List<CollaboratorSummaryDto>> AssignedCollaboratorsChanged { get; set; }
+    [Parameter] public EventCallback<string> OnAvailableSearch { get; set; }
+
+    private async Task OnLeaderChanged(ChangeEventArgs e)
+    {
+        var value = e.Value?.ToString() ?? "";
+        await LeaderIdChanged.InvokeAsync(value);
+    }
+
+    private async Task OnAssignedChanged(List<CollaboratorSummaryDto> collaborators)
+    {
+        await AssignedCollaboratorsChanged.InvokeAsync(collaborators);
+    }
+}

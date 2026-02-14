@@ -37,4 +37,9 @@ public sealed class CollaboratorQueryUseCase(ICollaboratorService collaboratorSe
         string? search,
         CancellationToken cancellationToken = default)
         => collaboratorService.GetAvailableTeamsAsync(collaboratorId, search, cancellationToken);
+
+    public Task<ServiceResult<List<CollaboratorSummaryDto>>> GetSummariesAsync(
+        string? search,
+        CancellationToken cancellationToken = default)
+        => collaboratorService.GetSummariesAsync(search, cancellationToken);
 }

@@ -4,5 +4,5 @@ namespace Bud.Server.Services;
 
 public interface IDashboardService
 {
-    Task<ServiceResult<MyDashboardResponse>> GetMyDashboardAsync(Guid collaboratorId, CancellationToken cancellationToken = default);
+    Task<ServiceResult<MyDashboardResponse>> GetMyDashboardAsync(Guid collaboratorId, Guid? teamId = null, CancellationToken cancellationToken = default);
 }
