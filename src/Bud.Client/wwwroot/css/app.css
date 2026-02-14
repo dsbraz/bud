@@ -1373,6 +1373,147 @@ a {
 }
 
 /* ========================================
+   WIZARD TABS - Mission Creation Wizard
+   ======================================== */
+
+.wizard-tabs {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-1);
+    margin-bottom: var(--spacing-6);
+    padding-bottom: var(--spacing-4);
+    border-bottom: 1px solid var(--color-border-light);
+}
+
+.wizard-tab {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-2);
+    padding: var(--spacing-2) var(--spacing-3);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-full);
+    background: var(--color-surface);
+    color: var(--color-text-muted);
+    font-size: var(--font-size-sm);
+    font-weight: var(--font-weight-medium);
+    cursor: pointer;
+    transition: all var(--transition-fast);
+    white-space: nowrap;
+}
+
+.wizard-tab:hover {
+    background: var(--color-hover);
+    border-color: var(--color-border-dark);
+    color: var(--color-text-primary);
+}
+
+.wizard-tab.active {
+    background: var(--color-brand-primary);
+    border-color: var(--color-brand-primary);
+    color: var(--color-text-inverse);
+}
+
+.wizard-tab-number {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 20px;
+    height: 20px;
+    border-radius: var(--radius-circle);
+    background: var(--color-border);
+    color: var(--color-text-muted);
+    font-size: var(--font-size-xs);
+    font-weight: var(--font-weight-bold);
+}
+
+.wizard-tab.active .wizard-tab-number {
+    background: rgba(255, 255, 255, 0.3);
+    color: var(--color-text-inverse);
+}
+
+.wizard-tab-separator {
+    width: 16px;
+    height: 1px;
+    background: var(--color-border);
+    flex-shrink: 0;
+}
+
+.wizard-tab-badge {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 18px;
+    height: 18px;
+    padding: 0 var(--spacing-1);
+    border-radius: var(--radius-full);
+    background: var(--color-border);
+    color: var(--color-text-muted);
+    font-size: var(--font-size-xs);
+    font-weight: var(--font-weight-bold);
+}
+
+.wizard-tab.active .wizard-tab-badge {
+    background: rgba(255, 255, 255, 0.3);
+    color: var(--color-text-inverse);
+}
+
+.wizard-tab-content {
+    min-height: 200px;
+}
+
+.wizard-tab-hint {
+    font-size: var(--font-size-sm);
+    color: var(--color-text-muted);
+    margin-bottom: var(--spacing-4);
+}
+
+.wizard-objective-form {
+    padding: var(--spacing-4);
+    background: var(--color-surface);
+    border: 1px solid var(--caramel-200);
+    border-radius: var(--radius-md);
+}
+
+.wizard-objective-card {
+    padding: var(--spacing-4);
+    border: 1px solid var(--caramel-200);
+    border-radius: var(--radius-sm);
+    background: var(--color-surface);
+}
+
+.wizard-objective-header {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--spacing-3);
+}
+
+.wizard-objective-icon {
+    flex-shrink: 0;
+    width: 20px;
+    height: 20px;
+    color: var(--caramel-600);
+    margin-top: 2px;
+}
+
+.wizard-objective-icon svg {
+    width: 100%;
+    height: 100%;
+}
+
+.metric-objective-tag {
+    display: inline-flex;
+    align-items: center;
+    padding: 1px var(--spacing-2);
+    margin-left: var(--spacing-2);
+    border-radius: var(--radius-full);
+    background: var(--caramel-100);
+    color: var(--caramel-700);
+    font-size: var(--font-size-xs);
+    font-weight: var(--font-weight-medium);
+    white-space: nowrap;
+}
+
+/* ========================================
    MISSION MODAL - Specific Styles
    ======================================== */
 
@@ -2357,6 +2498,11 @@ a {
     justify-content: center;
 }
 
+.summary-card-centered {
+    align-items: center;
+    text-align: center;
+}
+
 .summary-card-value {
     font-size: var(--font-size-title-md);
     font-weight: var(--font-weight-bold);
@@ -2909,6 +3055,126 @@ a {
 .metric-row.clickable:hover {
     background: var(--caramel-100);
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+}
+
+/* ========================================
+   OBJECTIVE SECTIONS (Accordion)
+   ======================================== */
+
+.objective-section {
+    border: 1px solid var(--caramel-200);
+    border-radius: var(--radius-sm);
+    margin-bottom: var(--spacing-2);
+    overflow: hidden;
+}
+
+.objective-section.expanded {
+    border-color: var(--caramel-300);
+}
+
+.objective-header {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-3);
+    padding: var(--spacing-3) var(--spacing-4);
+    cursor: pointer;
+    transition: background-color 0.15s ease;
+}
+
+.objective-header:hover {
+    background: var(--caramel-50);
+}
+
+.objective-expand-icon {
+    width: 16px;
+    height: 16px;
+    flex-shrink: 0;
+    color: var(--neutral-500);
+    transition: transform 0.2s ease;
+}
+
+.objective-expand-icon.expanded {
+    transform: rotate(180deg);
+}
+
+.objective-header-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.objective-name {
+    font-size: var(--font-size-sm);
+    font-weight: var(--font-weight-semibold);
+    color: var(--neutral-950);
+}
+
+.objective-description {
+    font-size: var(--font-size-xs);
+    color: var(--neutral-500);
+    margin-top: 2px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.objective-progress-inline {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-2);
+    width: 140px;
+    flex-shrink: 0;
+}
+
+.objective-progress-inline .metric-progress-bar {
+    flex: 1;
+}
+
+.objective-progress-value {
+    font-size: var(--font-size-xs);
+    font-weight: var(--font-weight-medium);
+    color: var(--neutral-700);
+    min-width: 32px;
+    text-align: right;
+}
+
+.objective-actions {
+    display: flex;
+    gap: var(--spacing-1);
+    flex-shrink: 0;
+}
+
+.objective-metrics {
+    padding: var(--spacing-2) var(--spacing-4) var(--spacing-3) var(--spacing-8);
+    border-top: 1px solid var(--caramel-100);
+    background: var(--white);
+}
+
+.direct-metrics-label {
+    font-size: var(--font-size-xs);
+    font-weight: var(--font-weight-semibold);
+    color: var(--neutral-500);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-top: var(--spacing-3);
+    margin-bottom: var(--spacing-2);
+    padding-left: var(--spacing-1);
+}
+
+/* Grid view adjustments for objectives */
+.missions-grid .objective-section {
+    margin-bottom: var(--spacing-1);
+}
+
+.missions-grid .objective-header {
+    padding: var(--spacing-2) var(--spacing-3);
+}
+
+.missions-grid .objective-progress-inline {
+    display: none;
+}
+
+.missions-grid .objective-metrics {
+    padding-left: var(--spacing-4);
 }
 
 /* ========================================

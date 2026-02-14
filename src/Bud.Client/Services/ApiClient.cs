@@ -439,6 +439,75 @@ public sealed class ApiClient
         return await GetSafeAsync<PagedResult<MissionMetric>>(url);
     }
 
+    // MissionObjective methods
+    public async Task<PagedResult<MissionObjective>?> GetMissionObjectivesAsync(Guid missionId, Guid? parentObjectiveId = null, int page = 1, int pageSize = 100)
+    {
+        (page, pageSize) = NormalizePagination(page, pageSize);
+
+        var queryParams = new List<string>
+        {
+            $"missionId={missionId}",
+            $"page={page}",
+            $"pageSize={pageSize}"
+        };
+
+        if (parentObjectiveId.HasValue)
+        {
+            queryParams.Add($"parentObjectiveId={parentObjectiveId.Value}");
+        }
+
+        var url = $"api/mission-objectives?{string.Join("&", queryParams)}";
+        return await GetSafeAsync<PagedResult<MissionObjective>>(url);
+    }
+
+    public async Task<MissionObjective?> CreateMissionObjectiveAsync(CreateMissionObjectiveRequest request)
+    {
+        var response = await _http.PostAsJsonAsync("api/mission-objectives", request);
+
+        if (!response.IsSuccessStatusCode)
+        {
+            var errorMessage = await ExtractErrorMessageAsync(response);
+            throw new HttpRequestException(errorMessage);
+        }
+
+        return await response.Content.ReadFromJsonAsync<MissionObjective>();
+    }
+
+    public async Task<MissionObjective?> UpdateMissionObjectiveAsync(Guid id, UpdateMissionObjectiveRequest request)
+    {
+        var response = await _http.PutAsJsonAsync($"api/mission-objectives/{id}", request);
+
+        if (!response.IsSuccessStatusCode)
+        {
+            var errorMessage = await ExtractErrorMessageAsync(response);
+            throw new HttpRequestException(errorMessage);
+        }
+
+        return await response.Content.ReadFromJsonAsync<MissionObjective>();
+    }
+
+    public async Task DeleteMissionObjectiveAsync(Guid id)
+    {
+        var response = await _http.DeleteAsync($"api/mission-objectives/{id}");
+
+        if (!response.IsSuccessStatusCode)
+        {
+            var errorMessage = await ExtractErrorMessageAsync(response);
+            throw new HttpRequestException(errorMessage);
+        }
+    }
+
+    public async Task<List<ObjectiveProgressDto>?> GetObjectiveProgressAsync(List<Guid> objectiveIds)
+    {
+        if (objectiveIds.Count == 0)
+        {
+            return [];
+        }
+
+        var ids = string.Join(",", objectiveIds);
+        return await GetSafeAsync<List<ObjectiveProgressDto>>($"api/mission-objectives/progress?ids={ids}");
+    }
+
     // Metric Progress
     public async Task<List<MetricProgressDto>?> GetMetricProgressAsync(List<Guid> metricIds)
     {
