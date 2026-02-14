@@ -1,0 +1,63 @@
+@using Bud.Client.Services
+
+<div class="objective-section @(IsExpanded ? "expanded" : "")">
+    <div class="objective-header" @onclick="() => OnToggleExpand.InvokeAsync()" @onclick:stopPropagation="true">
+        <svg class="objective-expand-icon @(IsExpanded ? "expanded" : "")" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M6 9l6 6 6-6" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        <div class="objective-header-info">
+            <div class="objective-name">@Objective.Name</div>
+            @if (!string.IsNullOrWhiteSpace(Objective.Description))
+            {
+                <div class="objective-description">@Objective.Description</div>
+            }
+        </div>
+        <div class="objective-progress-inline">
+            <div class="metric-progress-bar">
+                <div class="metric-progress-fill @GetProgressStatusClass()" style="width: @(ProgressPercent)%"></div>
+            </div>
+            <span class="objective-progress-value">@(ProgressPercent)%</span>
+        </div>
+    </div>
+    @if (IsExpanded)
+    {
+        <div class="objective-metrics">
+            @foreach (var metric in ObjectiveMetrics)
+            {
+                <MissionMetricRow Mission="Mission"
+                                  Metric="metric"
+                                  MissionProgress="MissionProgress"
+                                  MetricProgress="@(MetricProgressCache.GetValueOrDefault(metric.Id))"
+                                  OnCheckinClick="OnCheckinClick"
+                                  OnHistoryClick="OnHistoryClick" />
+            }
+            @if (ObjectiveMetrics.Count == 0)
+            {
+                <p class="muted" style="padding: var(--spacing-2) var(--spacing-4); font-size: var(--font-size-xs);">Nenhuma métrica neste objetivo.</p>
+            }
+        </div>
+    }
+</div>
+
+@code {
+    [Parameter, EditorRequired] public Mission Mission { get; set; } = default!;
+    [Parameter, EditorRequired] public MissionObjective Objective { get; set; } = default!;
+    [Parameter] public ObjectiveProgressDto? ObjectiveProgress { get; set; }
+    [Parameter] public MissionProgressDto? MissionProgress { get; set; }
+    [Parameter] public List<MissionMetric> ObjectiveMetrics { get; set; } = [];
+    [Parameter] public Dictionary<Guid, MetricProgressDto> MetricProgressCache { get; set; } = new();
+    [Parameter] public bool IsExpanded { get; set; }
+    [Parameter] public EventCallback OnToggleExpand { get; set; }
+    [Parameter] public EventCallback<MissionMetric> OnCheckinClick { get; set; }
+    [Parameter] public EventCallback<MissionMetric> OnHistoryClick { get; set; }
+
+    private int ProgressPercent => (int)(ObjectiveProgress?.OverallProgress ?? 0);
+    private decimal ExpectedProgress => MissionProgress?.ExpectedProgress ?? 0m;
+
+    private string GetProgressStatusClass()
+    {
+        if (ProgressPercent >= (int)ExpectedProgress) return "on-track";
+        if (ProgressPercent >= (int)(ExpectedProgress * 0.7m)) return "at-risk";
+        return "off-track";
+    }
+}

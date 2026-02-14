@@ -1,0 +1,787 @@
+@inject ToastService ToastService
+
+@if (IsOpen)
+{
+    <Modal Title="@(IsEditMode ? "Editar missão" : "Criar missão")" Breadcrumb="@OrganizationName" Size="lg" OnClose="HandleClose">
+        <ChildContent>
+            @* Wizard Tabs *@
+            <div class="wizard-tabs">
+                <button type="button" class="wizard-tab @(wizardStep == 1 ? "active" : "")" @onclick="() => wizardStep = 1">
+                    <span class="wizard-tab-number">1</span>
+                    <span>Missão</span>
+                </button>
+                <div class="wizard-tab-separator"></div>
+                <button type="button" class="wizard-tab @(wizardStep == 2 ? "active" : "")" @onclick="() => wizardStep = 2">
+                    <span class="wizard-tab-number">2</span>
+                    <span>Métricas</span>
+                    @{ var directMetricCount = tempMetrics.Count(m => m.ObjectiveTempId is null); }
+                    @if (directMetricCount > 0)
+                    {
+                        <span class="wizard-tab-badge">@directMetricCount</span>
+                    }
+                </button>
+                <div class="wizard-tab-separator"></div>
+                <button type="button" class="wizard-tab @(wizardStep == 3 ? "active" : "")" @onclick="() => wizardStep = 3">
+                    <span class="wizard-tab-number">3</span>
+                    <span>Objetivos</span>
+                    @if (tempObjectives.Count > 0)
+                    {
+                        <span class="wizard-tab-badge">@tempObjectives.Count</span>
+                    }
+                </button>
+            </div>
+
+            @* Tab 1: Missão *@
+            @if (wizardStep == 1)
+            {
+                <div>
+                    <div class="mission-header">
+                        <input type="text" class="mission-title-input" @bind="name" placeholder="Nome da missão" />
+                        <input type="text" class="mission-subtitle-input" @bind="description" placeholder="Adicionar breve descrição" />
+                    </div>
+
+                    <div class="chips-container">
+                        <div class="chip" @onclick="() => showResponsibleSelector = !showResponsibleSelector">
+                            <span class="chip-icon">👤</span>
+                            <span>@GetResponsibleLabel()</span>
+                        </div>
+                        <div class="chip" @onclick="() => showPeriodSelector = !showPeriodSelector">
+                            <span class="chip-icon">📅</span>
+                            <span>@GetPeriodLabel()</span>
+                        </div>
+                        @if (IsEditMode)
+                        {
+                            <div class="chip" @onclick="() => showStatusSelector = !showStatusSelector">
+                                <span class="chip-icon">📊</span>
+                                <span>@GetStatusChipLabel()</span>
+                            </div>
+                        }
+                    </div>
+
+                    @if (IsEditMode && showStatusSelector)
+                    {
+                        <div class="form-row">
+                            <label>Status</label>
+                            <select class="input" @bind="statusValue">
+                                @foreach (var status in Enum.GetValues<MissionStatus>())
+                                {
+                                    <option value="@status">@GetStatusLabel(status)</option>
+                                }
+                            </select>
+                        </div>
+                    }
+
+                    @if (showResponsibleSelector)
+                    {
+                        <div class="form-row">
+                            <label>Escopo</label>
+                            <select class="input" value="@scopeTypeValue" @onchange="HandleScopeTypeChanged">
+                                <option value="">Selecione</option>
+                                @foreach (var scopeType in Enum.GetValues<MissionScopeType>())
+                                {
+                                    <option value="@scopeType">@GetScopeLabel(scopeType)</option>
+                                }
+                            </select>
+                        </div>
+                        <div class="form-row">
+                            <label>Referência</label>
+                            <select class="input" @bind="scopeId">
+                                <option value="">Selecione</option>
+                                @foreach (var option in GetScopeOptions(scopeTypeValue))
+                                {
+                                    <option value="@option.Id">@option.Name</option>
+                                }
+                            </select>
+                        </div>
+                    }
+
+                    @if (showPeriodSelector)
+                    {
+                        <div class="form-row">
+                            <label>Data de início</label>
+                            <input type="date" class="input" @bind="startDate" @bind:format="yyyy-MM-dd" />
+                        </div>
+                        <div class="form-row">
+                            <label>Data de fim</label>
+                            <input type="date" class="input" @bind="endDate" @bind:format="yyyy-MM-dd" />
+                        </div>
+                    }
+                </div>
+            }
+
+            @* Tab 2: Métricas diretas *@
+            @if (wizardStep == 2)
+            {
+                <div class="wizard-tab-content">
+                    <div class="mission-metrics-section">
+                        <div class="mission-metrics-section-header">
+                            <svg class="mission-metrics-section-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M3 3v18h18" stroke-linecap="round" stroke-linejoin="round"/>
+                                <path d="M18 9l-5 5-4-4-3 3" stroke-linecap="round" stroke-linejoin="round"/>
+                            </svg>
+                            <h3>Métricas diretas</h3>
+                        </div>
+
+                        @if (tempObjectives.Count > 0)
+                        {
+                            <p class="wizard-tab-hint">Métricas que não pertencem a nenhum objetivo. Para adicionar métricas a um objetivo, use a aba Objetivos.</p>
+                        }
+
+                        <MetricFormFields Model="newMetricModel" OnSave="AddMetricFromForm" OnCancel="CancelAddMetricForm" ShowAddButton="true" />
+
+                        @{
+                            var directMetrics = tempMetrics
+                                .Select((m, idx) => (Metric: m, Index: idx))
+                                .Where(x => x.Metric.ObjectiveTempId is null)
+                                .ToList();
+                        }
+
+                        @if (directMetrics.Any())
+                        {
+                            <div class="metrics-list">
+                                @foreach (var (metric, metricIndex) in directMetrics)
+                                {
+                                    @if (editingTempMetricIndex == metricIndex)
+                                    {
+                                        <div class="metric-item" style="flex-direction: column; align-items: stretch;">
+                                            <MetricFormFields Model="editTempMetricModel" OnSave="SaveTempMetric" OnCancel="CancelTempMetric" />
+                                        </div>
+                                    }
+                                    else
+                                    {
+                                        <div class="metric-item">
+                                            <div class="metric-info">
+                                                <div class="metric-name">@metric.Name</div>
+                                                <div class="metric-details">@metric.Details</div>
+                                            </div>
+                                            <CrudRowActions
+                                                EditTitle="Editar métrica"
+                                                OnEdit="@(() => StartTempMetric(metricIndex))"
+                                                IsDeleteConfirming="false"
+                                                DeleteTitle="Excluir métrica"
+                                                OnDelete="@(() => RemoveMetric(metric))" />
+                                        </div>
+                                    }
+                                }
+                            </div>
+                        }
+                    </div>
+                </div>
+            }
+
+            @* Tab 3: Objetivos *@
+            @if (wizardStep == 3)
+            {
+                <div class="wizard-tab-content">
+                    <div class="mission-metrics-section">
+                        <div class="mission-metrics-section-header">
+                            <svg class="mission-metrics-section-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <circle cx="12" cy="12" r="10" stroke-linecap="round"/>
+                                <circle cx="12" cy="12" r="6" stroke-linecap="round"/>
+                                <circle cx="12" cy="12" r="2" stroke-linecap="round"/>
+                            </svg>
+                            <h3>Objetivos</h3>
+                        </div>
+
+                        @if (tempObjectives.Count > 0)
+                        {
+                            <p class="wizard-tab-hint">Organize as métricas da missão em objetivos. Cada objetivo pode ter suas próprias métricas.</p>
+                        }
+
+                        @if (showObjectiveForm)
+                        {
+                            <div class="wizard-objective-form">
+                                <div class="form-row">
+                                    <label>Nome do objetivo</label>
+                                    <input type="text" class="input" @bind="tempObjectiveName" placeholder="Ex: Aumentar engajamento, Reduzir churn..." maxlength="200" />
+                                </div>
+                                <div class="form-row">
+                                    <label>Descrição (opcional)</label>
+                                    <textarea class="input" @bind="tempObjectiveDescription" placeholder="Breve descrição do objetivo" maxlength="1000" rows="2"></textarea>
+                                </div>
+                                <div class="form-actions" style="margin-top: var(--spacing-3);">
+                                    <button type="button" class="button tertiary" @onclick="CancelAddObjective">Cancelar</button>
+                                    <button type="button" class="button primary" @onclick="AddTempObjective">Salvar objetivo</button>
+                                </div>
+                            </div>
+                        }
+                        else
+                        {
+                            <button type="button" class="metrics-add-button" @onclick="() => showObjectiveForm = true">
+                                <span>Adicionar objetivo</span>
+                                <span class="metrics-add-icon">+</span>
+                            </button>
+                        }
+
+                        @if (tempObjectives.Count > 0)
+                        {
+                            <div class="metrics-list">
+                                @for (var i = 0; i < tempObjectives.Count; i++)
+                                {
+                                    var index = i;
+                                    var obj = tempObjectives[index];
+
+                                    @if (editingTempObjectiveIndex == index)
+                                    {
+                                        <div class="wizard-objective-card">
+                                            <div class="form-row">
+                                                <label>Nome</label>
+                                                <input type="text" class="input" @bind="editingObjectiveName" maxlength="200" />
+                                            </div>
+                                            <div class="form-row">
+                                                <label>Descrição</label>
+                                                <textarea class="input" @bind="editingObjectiveDescription" maxlength="1000" rows="2"></textarea>
+                                            </div>
+                                            <div class="form-actions" style="margin-top: var(--spacing-3);">
+                                                <button type="button" class="button tertiary" @onclick="CancelEditTempObjective">Cancelar</button>
+                                                <button type="button" class="button primary" @onclick="SaveEditTempObjective">Salvar</button>
+                                            </div>
+                                        </div>
+                                    }
+                                    else
+                                    {
+                                        <div class="wizard-objective-card">
+                                            <div class="wizard-objective-header">
+                                                <div class="wizard-objective-icon">
+                                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                                        <circle cx="12" cy="12" r="10" stroke-linecap="round"/>
+                                                        <circle cx="12" cy="12" r="6" stroke-linecap="round"/>
+                                                        <circle cx="12" cy="12" r="2" stroke-linecap="round"/>
+                                                    </svg>
+                                                </div>
+                                                <div class="metric-info">
+                                                    <div class="metric-name">@obj.Name</div>
+                                                    @if (!string.IsNullOrWhiteSpace(obj.Description))
+                                                    {
+                                                        <div class="metric-details">@obj.Description</div>
+                                                    }
+                                                </div>
+                                                <CrudRowActions
+                                                    EditTitle="Editar objetivo"
+                                                    OnEdit="@(() => StartEditTempObjective(index))"
+                                                    IsDeleteConfirming="false"
+                                                    DeleteTitle="Excluir objetivo"
+                                                    OnDelete="@(() => RemoveTempObjective(index))" />
+                                            </div>
+
+                                            @* Adicionar métrica ao objetivo *@
+                                            @if (addingMetricToObjectiveTempId == obj.TempId)
+                                            {
+                                                <div style="margin-top: var(--spacing-3);">
+                                                    <MetricFormFields Model="newMetricModel" OnSave="AddMetricToObjective" OnCancel="CancelAddMetricToObjective" />
+                                                </div>
+                                            }
+                                            else
+                                            {
+                                                <button type="button" class="metrics-add-button" style="margin-top: var(--spacing-3);" @onclick="() => StartAddMetricToObjective(obj.TempId)">
+                                                    <span>Adicionar métrica</span>
+                                                    <span class="metrics-add-icon">+</span>
+                                                </button>
+                                            }
+
+                                            @* Métricas deste objetivo *@
+                                            @{
+                                                var objMetrics = tempMetrics
+                                                    .Select((m, idx) => (Metric: m, Index: idx))
+                                                    .Where(x => x.Metric.ObjectiveTempId == obj.TempId)
+                                                    .ToList();
+                                            }
+
+                                            @if (objMetrics.Any())
+                                            {
+                                                <div class="metrics-list" style="margin-top: var(--spacing-3);">
+                                                    @foreach (var (metric, metricIndex) in objMetrics)
+                                                    {
+                                                        @if (editingTempMetricIndex == metricIndex)
+                                                        {
+                                                            <div class="metric-item" style="flex-direction: column; align-items: stretch;">
+                                                                <MetricFormFields Model="editTempMetricModel" OnSave="SaveTempMetric" OnCancel="CancelTempMetric" />
+                                                            </div>
+                                                        }
+                                                        else
+                                                        {
+                                                            <div class="metric-item">
+                                                                <div class="metric-info">
+                                                                    <div class="metric-name">@metric.Name</div>
+                                                                    <div class="metric-details">@metric.Details</div>
+                                                                </div>
+                                                                <CrudRowActions
+                                                                    EditTitle="Editar métrica"
+                                                                    OnEdit="@(() => StartTempMetric(metricIndex))"
+                                                                    IsDeleteConfirming="false"
+                                                                    DeleteTitle="Excluir métrica"
+                                                                    OnDelete="@(() => RemoveMetric(metric))" />
+                                                            </div>
+                                                        }
+                                                    }
+                                                </div>
+                                            }
+                                        </div>
+                                    }
+                                }
+                            </div>
+                        }
+                    </div>
+                </div>
+            }
+        </ChildContent>
+        <Footer>
+            <div class="modal-footer-actions">
+                <div class="modal-footer-secondary">
+                    <button class="button tertiary" type="button" @onclick="HandleClose">Cancelar</button>
+                </div>
+                <div class="modal-footer-primary">
+                    @if (wizardStep > 1)
+                    {
+                        <button class="button tertiary" type="button" @onclick="() => wizardStep--">Voltar</button>
+                    }
+                    @if (wizardStep < 3)
+                    {
+                        <button class="button secondary" type="button" @onclick="() => wizardStep++">Próximo</button>
+                    }
+                    else
+                    {
+                        @if (IsEditMode)
+                        {
+                            <button class="button primary" type="button" @onclick="HandleSave">Salvar alterações</button>
+                        }
+                        else
+                        {
+                            <button class="button secondary" type="button" @onclick="HandleSaveDraft">Salvar rascunho</button>
+                            <button class="button primary" type="button" @onclick="HandleSave">Criar missão</button>
+                        }
+                    }
+                </div>
+            </div>
+        </Footer>
+    </Modal>
+}
+
+@code {
+    [Parameter] public bool IsOpen { get; set; }
+    [Parameter] public bool IsEditMode { get; set; }
+    [Parameter] public string OrganizationName { get; set; } = "Organização";
+    [Parameter] public MissionWizardModel? InitialModel { get; set; }
+    [Parameter] public Func<string?, IEnumerable<ScopeOption>> GetScopeOptions { get; set; } = _ => [];
+    [Parameter] public EventCallback OnClose { get; set; }
+    [Parameter] public EventCallback<MissionWizardResult> OnSave { get; set; }
+    [Parameter] public EventCallback<MissionWizardResult> OnSaveDraft { get; set; }
+
+    // Wizard step
+    private int wizardStep = 1;
+
+    // Mission form fields
+    private string name = "";
+    private string? description;
+    private DateTime startDate = DateTime.Today;
+    private DateTime endDate = DateTime.Today.AddDays(7);
+    private string? scopeTypeValue;
+    private string? scopeId;
+    private string? statusValue;
+    private bool showResponsibleSelector;
+    private bool showPeriodSelector;
+    private bool showStatusSelector;
+
+    // Metrics
+    private List<TempMetric> tempMetrics = [];
+    private MetricFormFields.MetricFormModel newMetricModel = new();
+    private MetricFormFields.MetricFormModel editTempMetricModel = new();
+    private int? editingTempMetricIndex;
+
+    // Objectives
+    private List<TempObjective> tempObjectives = [];
+    private string tempObjectiveName = "";
+    private string? tempObjectiveDescription;
+    private int? editingTempObjectiveIndex;
+    private string editingObjectiveName = "";
+    private string? editingObjectiveDescription;
+    private string? addingMetricToObjectiveTempId;
+    private bool showObjectiveForm;
+
+    // Edit tracking
+    private HashSet<Guid> deletedMetricIds = [];
+    private HashSet<Guid> deletedObjectiveIds = [];
+
+    private bool wasOpen;
+
+    protected override void OnParametersSet()
+    {
+        if (IsOpen && !wasOpen)
+        {
+            InitializeFromModel(InitialModel);
+        }
+        wasOpen = IsOpen;
+    }
+
+    private void InitializeFromModel(MissionWizardModel? model)
+    {
+        wizardStep = 1;
+        name = model?.Name ?? "";
+        description = model?.Description;
+        startDate = model?.StartDate ?? DateTime.Today;
+        endDate = model?.EndDate ?? DateTime.Today.AddDays(7);
+        scopeTypeValue = model?.ScopeTypeValue;
+        scopeId = model?.ScopeId;
+        statusValue = model?.StatusValue;
+        showResponsibleSelector = false;
+        showPeriodSelector = false;
+        showStatusSelector = false;
+        tempMetrics = model?.Metrics?.ToList() ?? [];
+        tempObjectives = model?.Objectives?.ToList() ?? [];
+        newMetricModel = new();
+        editTempMetricModel = new();
+        editingTempMetricIndex = null;
+        tempObjectiveName = "";
+        tempObjectiveDescription = null;
+        editingTempObjectiveIndex = null;
+        editingObjectiveName = "";
+        editingObjectiveDescription = null;
+        addingMetricToObjectiveTempId = null;
+        showObjectiveForm = false;
+        deletedMetricIds = [];
+        deletedObjectiveIds = [];
+    }
+
+    // ---- Save / Close ----
+
+    private async Task HandleSave()
+    {
+        var errorTitle = IsEditMode ? "Erro ao salvar" : "Erro ao criar missão";
+        if (!Validate(errorTitle)) return;
+        FlushPendingMetric();
+        await OnSave.InvokeAsync(BuildResult());
+    }
+
+    private async Task HandleSaveDraft()
+    {
+        if (!Validate("Erro ao salvar rascunho")) return;
+        FlushPendingMetric();
+        await OnSaveDraft.InvokeAsync(BuildResult());
+    }
+
+    private async Task HandleClose() => await OnClose.InvokeAsync();
+
+    private bool Validate(string errorTitle)
+    {
+        if (string.IsNullOrWhiteSpace(name))
+        {
+            ToastService.ShowError(errorTitle, "Informe o nome da missão.");
+            return false;
+        }
+        if (string.IsNullOrEmpty(scopeTypeValue) || !Enum.TryParse<MissionScopeType>(scopeTypeValue, out _))
+        {
+            ToastService.ShowError(errorTitle, "Selecione o escopo.");
+            return false;
+        }
+        if (string.IsNullOrEmpty(scopeId) || !Guid.TryParse(scopeId, out _))
+        {
+            ToastService.ShowError(errorTitle, "Selecione a referência do escopo.");
+            return false;
+        }
+        if (endDate < startDate)
+        {
+            ToastService.ShowError(errorTitle, "A data de fim precisa ser igual ou maior que a data de início.");
+            return false;
+        }
+        return true;
+    }
+
+    private MissionWizardResult BuildResult() => new()
+    {
+        Name = name.Trim(),
+        Description = description,
+        StartDate = startDate,
+        EndDate = endDate,
+        ScopeTypeValue = scopeTypeValue,
+        ScopeId = scopeId,
+        StatusValue = statusValue,
+        Metrics = tempMetrics.ToList(),
+        Objectives = tempObjectives.ToList(),
+        DeletedMetricIds = new HashSet<Guid>(deletedMetricIds),
+        DeletedObjectiveIds = new HashSet<Guid>(deletedObjectiveIds)
+    };
+
+    // ---- Scope ----
+
+    private void HandleScopeTypeChanged(ChangeEventArgs e)
+    {
+        scopeTypeValue = e.Value?.ToString();
+        scopeId = null;
+    }
+
+    // ---- Metric Methods ----
+
+    private void FlushPendingMetric()
+    {
+        if (!string.IsNullOrWhiteSpace(newMetricModel.Name) && !string.IsNullOrWhiteSpace(newMetricModel.TypeValue))
+        {
+            var details = newMetricModel.TypeValue == "Quantitative"
+                ? BuildQuantitativeDetails(newMetricModel.QuantitativeTypeValue, newMetricModel.MinValue, newMetricModel.MaxValue, newMetricModel.UnitValue)
+                : newMetricModel.TargetText ?? "";
+
+            tempMetrics.Add(new TempMetric(
+                null, newMetricModel.Name, newMetricModel.TypeValue, details,
+                newMetricModel.QuantitativeTypeValue, newMetricModel.MinValue, newMetricModel.MaxValue,
+                newMetricModel.TargetText, newMetricModel.UnitValue));
+
+            newMetricModel.Clear();
+        }
+    }
+
+    private void AddMetricFromForm()
+    {
+        if (!ValidateMetricModel(newMetricModel)) return;
+
+        var details = newMetricModel.TypeValue == "Quantitative"
+            ? BuildQuantitativeDetails(newMetricModel.QuantitativeTypeValue, newMetricModel.MinValue, newMetricModel.MaxValue, newMetricModel.UnitValue)
+            : newMetricModel.TargetText ?? "";
+
+        tempMetrics.Add(new TempMetric(
+            null, newMetricModel.Name, newMetricModel.TypeValue!, details,
+            newMetricModel.QuantitativeTypeValue, newMetricModel.MinValue, newMetricModel.MaxValue,
+            newMetricModel.TargetText, newMetricModel.UnitValue));
+
+        newMetricModel.Clear();
+    }
+
+    private void CancelAddMetricForm() => newMetricModel.Clear();
+
+    private void RemoveMetric(TempMetric metric)
+    {
+        tempMetrics.Remove(metric);
+        if (IsEditMode && metric.OriginalId.HasValue)
+        {
+            deletedMetricIds.Add(metric.OriginalId.Value);
+        }
+    }
+
+    private void StartAddMetricToObjective(string objectiveTempId)
+    {
+        addingMetricToObjectiveTempId = objectiveTempId;
+        newMetricModel.Clear();
+    }
+
+    private void AddMetricToObjective()
+    {
+        if (!ValidateMetricModel(newMetricModel)) return;
+
+        var details = newMetricModel.TypeValue == "Quantitative"
+            ? BuildQuantitativeDetails(newMetricModel.QuantitativeTypeValue, newMetricModel.MinValue, newMetricModel.MaxValue, newMetricModel.UnitValue)
+            : newMetricModel.TargetText ?? "";
+
+        tempMetrics.Add(new TempMetric(
+            null, newMetricModel.Name, newMetricModel.TypeValue!, details,
+            newMetricModel.QuantitativeTypeValue, newMetricModel.MinValue, newMetricModel.MaxValue,
+            newMetricModel.TargetText, newMetricModel.UnitValue, addingMetricToObjectiveTempId));
+
+        newMetricModel.Clear();
+        addingMetricToObjectiveTempId = null;
+    }
+
+    private void CancelAddMetricToObjective()
+    {
+        addingMetricToObjectiveTempId = null;
+        newMetricModel.Clear();
+    }
+
+    private void StartTempMetric(int index)
+    {
+        var metric = tempMetrics[index];
+        editingTempMetricIndex = index;
+        editTempMetricModel = new MetricFormFields.MetricFormModel
+        {
+            Name = metric.Name,
+            TypeValue = metric.Type,
+            QuantitativeTypeValue = metric.QuantitativeType,
+            UnitValue = metric.Unit,
+            MinValue = metric.MinValue,
+            MaxValue = metric.MaxValue,
+            TargetText = metric.TargetText
+        };
+    }
+
+    private void CancelTempMetric()
+    {
+        editingTempMetricIndex = null;
+        editTempMetricModel.Clear();
+    }
+
+    private void SaveTempMetric()
+    {
+        if (editingTempMetricIndex is null) return;
+        if (!ValidateMetricModel(editTempMetricModel)) return;
+
+        var details = editTempMetricModel.TypeValue == "Quantitative"
+            ? BuildQuantitativeDetails(editTempMetricModel.QuantitativeTypeValue, editTempMetricModel.MinValue, editTempMetricModel.MaxValue, editTempMetricModel.UnitValue)
+            : editTempMetricModel.TargetText ?? "";
+
+        var existing = tempMetrics[editingTempMetricIndex.Value];
+        tempMetrics[editingTempMetricIndex.Value] = new TempMetric(
+            existing.OriginalId, editTempMetricModel.Name, editTempMetricModel.TypeValue!, details,
+            editTempMetricModel.QuantitativeTypeValue, editTempMetricModel.MinValue, editTempMetricModel.MaxValue,
+            editTempMetricModel.TargetText, editTempMetricModel.UnitValue, existing.ObjectiveTempId);
+
+        CancelTempMetric();
+    }
+
+    private bool ValidateMetricModel(MetricFormFields.MetricFormModel model)
+    {
+        if (string.IsNullOrWhiteSpace(model.Name) || string.IsNullOrWhiteSpace(model.TypeValue))
+        {
+            ToastService.ShowError("Erro de validação", "Informe o nome e tipo da métrica.");
+            return false;
+        }
+        return true;
+    }
+
+    // ---- Objective Methods ----
+
+    private void AddTempObjective()
+    {
+        if (string.IsNullOrWhiteSpace(tempObjectiveName))
+        {
+            ToastService.ShowError("Erro de validação", "Informe o nome do objetivo.");
+            return;
+        }
+
+        tempObjectives.Add(new TempObjective(
+            TempId: Guid.NewGuid().ToString(),
+            Name: tempObjectiveName.Trim(),
+            Description: string.IsNullOrWhiteSpace(tempObjectiveDescription) ? null : tempObjectiveDescription.Trim()));
+
+        tempObjectiveName = "";
+        tempObjectiveDescription = null;
+        showObjectiveForm = false;
+    }
+
+    private void CancelAddObjective()
+    {
+        tempObjectiveName = "";
+        tempObjectiveDescription = null;
+        showObjectiveForm = false;
+    }
+
+    private void StartEditTempObjective(int index)
+    {
+        var obj = tempObjectives[index];
+        editingTempObjectiveIndex = index;
+        editingObjectiveName = obj.Name;
+        editingObjectiveDescription = obj.Description;
+    }
+
+    private void CancelEditTempObjective()
+    {
+        editingTempObjectiveIndex = null;
+        editingObjectiveName = "";
+        editingObjectiveDescription = null;
+    }
+
+    private void SaveEditTempObjective()
+    {
+        if (editingTempObjectiveIndex is null || string.IsNullOrWhiteSpace(editingObjectiveName)) return;
+
+        var existing = tempObjectives[editingTempObjectiveIndex.Value];
+        tempObjectives[editingTempObjectiveIndex.Value] = new TempObjective(
+            TempId: existing.TempId,
+            Name: editingObjectiveName.Trim(),
+            Description: string.IsNullOrWhiteSpace(editingObjectiveDescription) ? null : editingObjectiveDescription.Trim(),
+            OriginalId: existing.OriginalId);
+
+        CancelEditTempObjective();
+    }
+
+    private void RemoveTempObjective(int index)
+    {
+        var obj = tempObjectives[index];
+        var removedTempId = obj.TempId;
+        tempObjectives.RemoveAt(index);
+
+        if (IsEditMode && obj.OriginalId.HasValue)
+        {
+            deletedObjectiveIds.Add(obj.OriginalId.Value);
+        }
+
+        var metricsToRemove = tempMetrics.Where(m => m.ObjectiveTempId == removedTempId).ToList();
+        foreach (var metric in metricsToRemove)
+        {
+            if (IsEditMode && metric.OriginalId.HasValue)
+            {
+                deletedMetricIds.Add(metric.OriginalId.Value);
+            }
+            tempMetrics.Remove(metric);
+        }
+
+        if (editingTempObjectiveIndex.HasValue)
+        {
+            if (editingTempObjectiveIndex.Value == index)
+                CancelEditTempObjective();
+            else if (editingTempObjectiveIndex.Value > index)
+                editingTempObjectiveIndex--;
+        }
+    }
+
+    // ---- Display Helpers ----
+
+    private string GetResponsibleLabel()
+    {
+        if (!string.IsNullOrEmpty(scopeId) && Enum.TryParse<MissionScopeType>(scopeTypeValue, out _))
+        {
+            var option = GetScopeOptions(scopeTypeValue).FirstOrDefault(o => o.Id == scopeId);
+            if (option != null) return $"Responsável: {option.Name}";
+        }
+        return "Responsável";
+    }
+
+    private string GetPeriodLabel()
+    {
+        if (startDate != DateTime.MinValue && endDate != DateTime.MinValue)
+            return $"Período de início e fim: {startDate:dd/MM/yyyy} - {endDate:dd/MM/yyyy}";
+        return "Período de início e fim";
+    }
+
+    private string GetStatusChipLabel()
+    {
+        if (Enum.TryParse<MissionStatus>(statusValue, out var status))
+            return $"Status: {GetStatusLabel(status)}";
+        return "Status";
+    }
+
+    private static string GetStatusLabel(MissionStatus status) => status switch
+    {
+        MissionStatus.Planned => "Planejada",
+        MissionStatus.Active => "Ativa",
+        MissionStatus.Completed => "Concluída",
+        MissionStatus.Cancelled => "Cancelada",
+        _ => status.ToString()
+    };
+
+    private static string GetScopeLabel(MissionScopeType scopeType) => scopeType switch
+    {
+        MissionScopeType.Organization => "Organização",
+        MissionScopeType.Workspace => "Espaço de trabalho",
+        MissionScopeType.Team => "Equipe",
+        MissionScopeType.Collaborator => "Colaborador",
+        _ => scopeType.ToString()
+    };
+
+    private static string BuildQuantitativeDetails(string? quantitativeType, decimal? minValue, decimal? maxValue, string? unit)
+    {
+        var unitLabel = unit switch
+        {
+            "Integer" or "Decimal" => "un",
+            "Percentage" => "%",
+            "Hours" => "h",
+            "Points" => "pts",
+            _ => ""
+        };
+        return quantitativeType switch
+        {
+            "KeepAbove" => $"Acima de {minValue} {unitLabel}",
+            "KeepBelow" => $"Abaixo de {maxValue} {unitLabel}",
+            "KeepBetween" => $"Entre {minValue} e {maxValue} {unitLabel}",
+            "Achieve" => $"Atingir {maxValue} {unitLabel}",
+            "Reduce" => $"Reduzir para {maxValue} {unitLabel}",
+            _ => ""
+        };
+    }
+}

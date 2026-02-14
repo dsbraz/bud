@@ -1,0 +1,41 @@
+@if (IsOpen)
+{
+    <Modal Title="Como deseja criar sua missão?" Size="lg" OnClose="() => OnClose.InvokeAsync()">
+        <ChildContent>
+            <div class="template-picker-grid">
+                <div class="template-picker-card" @onclick="() => OnCreateFromScratch.InvokeAsync()">
+                    <div class="template-picker-icon">
+                        <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
+                            <path d="M8 4H20L26 10V28H8V4Z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>
+                            <path d="M20 4V10H26" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>
+                        </svg>
+                    </div>
+                    <div class="template-picker-name">Começar do zero</div>
+                    <div class="template-picker-description">Crie uma missão em branco e configure tudo manualmente.</div>
+                </div>
+                @foreach (var template in Templates)
+                {
+                    <div class="template-picker-card" @onclick="() => OnSelectTemplate.InvokeAsync(template)">
+                        <div class="template-picker-icon">
+                            <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
+                                <path d="M6 6H26V26H6V6Z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>
+                                <path d="M11 12H21M11 16H21M11 20H17" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                            </svg>
+                        </div>
+                        <div class="template-picker-name">@template.Name</div>
+                        <div class="template-picker-description">@(template.Description ?? "Sem descrição")</div>
+                        <div class="template-picker-badge">@template.Metrics.Count métrica(s)</div>
+                    </div>
+                }
+            </div>
+        </ChildContent>
+    </Modal>
+}
+
+@code {
+    [Parameter] public bool IsOpen { get; set; }
+    [Parameter] public List<MissionTemplate> Templates { get; set; } = [];
+    [Parameter] public EventCallback OnClose { get; set; }
+    [Parameter] public EventCallback OnCreateFromScratch { get; set; }
+    [Parameter] public EventCallback<MissionTemplate> OnSelectTemplate { get; set; }
+}
