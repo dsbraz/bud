@@ -137,7 +137,7 @@ Bud is an ASP.NET Core 10 application with a Blazor WebAssembly frontend, using 
   - `Pages/`: Blazor pages with routing
   - `Layout/`: Layout components (MainLayout, AuthLayout, NavMenu, ManagementMenu)
   - `Shared/`: Reusable Razor components (Modal, TransferList, PagedTableSection, CrudRowActions, Toast/ToastContainer, summary cards, form fields, ConfirmDeleteButton, NotificationDropdown, etc.)
-  - `Services/`: ApiClient, AuthState, OrganizationContext, TenantDelegatingHandler, ToastService, UiErrorHandler, UiOperationRunner, EnumParsingHelper, MissionMetricDisplayHelper, MissionProgressDisplayHelper
+  - `Services/`: ApiClient, AuthState, OrganizationContext, TenantDelegatingHandler, ToastService, UiOperationService, EnumParsingHelper, MissionMetricDisplayHelper, MissionProgressDisplayHelper
 
 - **Bud.Shared** (`src/Bud.Shared`): Shared models, contracts, and DTOs used by both Client and Server
   - `Domain/`: Domain entities, value objects, `IAggregateRoot`, `ITenantEntity`, `DomainInvariantException`
@@ -405,7 +405,7 @@ See [OrganizationsController.cs](src/Bud.Server/Controllers/OrganizationsControl
 - API communication through [ApiClient.cs](src/Bud.Client/Services/ApiClient.cs)
 - Auth state managed by [AuthState.cs](src/Bud.Client/Services/AuthState.cs)
 - Tenant context managed by [OrganizationContext.cs](src/Bud.Client/Services/OrganizationContext.cs)
-- UI helpers: `UiErrorHandler` (error handling), `UiOperationRunner` (operation wrapper), `ToastService` (notifications)
+- UI helpers: `UiOperationService` (operation wrapping and error handling), `ToastService` (notifications)
 - Display helpers: `MissionMetricDisplayHelper`, `MissionProgressDisplayHelper`, `EnumParsingHelper`
 - Tenant selection UI in sidebar ([MainLayout.razor](src/Bud.Client/Layout/MainLayout.razor))
 - Layouts in `src/Bud.Client/Layout/` (MainLayout, AuthLayout)

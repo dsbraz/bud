@@ -13,7 +13,8 @@ e suporte robusto a consultas tenant-scoped. Durante desenvolvimento, não há d
 Adotar EF Core + PostgreSQL com:
 
 - `ApplicationDbContext` central
-- Configuração de relacionamentos e query filters no `OnModelCreating`
+- Configuração de relacionamentos via `IEntityTypeConfiguration<T>` em `Data/Configurations/`, carregados por `ApplyConfigurationsFromAssembly`
+- Query filters de multi-tenancy no `OnModelCreating`
 - Schema criado a partir do modelo via `EnsureCreated()` no startup em Development
 - Uso de `OrganizationId` denormalizado em entidades tenant-scoped para eficiência de filtro
 - Migrations serão introduzidas apenas quando houver ambiente de produção com dados a preservar

@@ -718,52 +718,109 @@ Quando o projeto se aproximar de produção, migrations serão reintroduzidas.
 
 ## Endpoints principais
 
-### Uso diário
+Referência completa com exemplos interativos disponível em `/swagger` (ambiente Development).
+
+### Auth
 
 - `POST /api/auth/login`
 - `POST /api/auth/logout`
 - `GET /api/auth/my-organizations`
+
+### Organizations (CRUD + relacionamentos)
+
 - `POST /api/organizations`
+- `GET /api/organizations` — listagem paginada (`?search=&page=1&pageSize=10`)
+- `GET /api/organizations/{id}`
+- `PUT /api/organizations/{id}`
+- `DELETE /api/organizations/{id}`
+- `GET /api/organizations/{id}/workspaces`
+- `GET /api/organizations/{id}/collaborators`
+
+### Workspaces (CRUD + relacionamentos)
+
 - `POST /api/workspaces`
+- `GET /api/workspaces` — listagem paginada (`?organizationId=&search=&page=1&pageSize=10`)
+- `GET /api/workspaces/{id}`
+- `PUT /api/workspaces/{id}`
+- `DELETE /api/workspaces/{id}`
+- `GET /api/workspaces/{id}/teams`
+
+### Teams (CRUD + relacionamentos)
+
 - `POST /api/teams`
+- `GET /api/teams` — listagem paginada (`?workspaceId=&parentTeamId=&search=&page=1&pageSize=10`)
+- `GET /api/teams/{id}`
+- `PUT /api/teams/{id}`
+- `DELETE /api/teams/{id}`
+- `GET /api/teams/{id}/subteams`
+- `GET /api/teams/{id}/collaborators`
+- `GET /api/teams/{id}/collaborators-summary`
+- `PUT /api/teams/{id}/collaborators`
+- `GET /api/teams/{id}/available-collaborators`
+
+### Collaborators (CRUD + relacionamentos)
+
 - `POST /api/collaborators`
+- `GET /api/collaborators` — listagem paginada (`?teamId=&search=&page=1&pageSize=10`)
+- `GET /api/collaborators/{id}`
+- `PUT /api/collaborators/{id}`
+- `DELETE /api/collaborators/{id}`
+- `GET /api/collaborators/leaders`
+- `GET /api/collaborators/{id}/subordinates`
+- `GET /api/collaborators/{id}/teams`
+- `PUT /api/collaborators/{id}/teams`
+- `GET /api/collaborators/{id}/available-teams`
+
+### Missions (CRUD + consultas)
+
 - `POST /api/missions`
-- `GET /api/missions`
+- `GET /api/missions` — listagem paginada
+- `GET /api/missions/{id}`
+- `PUT /api/missions/{id}`
+- `DELETE /api/missions/{id}`
 - `GET /api/missions/progress`
-- `GET /api/dashboard/my-dashboard`
-- `POST /api/mission-templates`
-- `GET /api/mission-templates`
+- `GET /api/missions/my-missions/{collaboratorId}`
+- `GET /api/missions/{id}/metrics`
+
+### Mission Metrics (CRUD)
+
 - `POST /api/mission-metrics`
-- `GET /api/mission-metrics`
+- `GET /api/mission-metrics` — listagem paginada
+- `GET /api/mission-metrics/{id}`
+- `PUT /api/mission-metrics/{id}`
+- `DELETE /api/mission-metrics/{id}`
 - `GET /api/mission-metrics/progress`
+
+### Metric Checkins (CRUD)
+
 - `POST /api/metric-checkins`
-- `GET /api/metric-checkins`
-- `GET /api/organizations?search=&page=1&pageSize=10`
-- `GET /api/workspaces?organizationId=&search=&page=1&pageSize=10`
-- `GET /api/teams?workspaceId=&parentTeamId=&search=&page=1&pageSize=10`
-- `GET /api/collaborators?teamId=&search=&page=1&pageSize=10`
-- `GET /api/notifications?page=1&pageSize=20`
+- `GET /api/metric-checkins` — listagem paginada
+- `GET /api/metric-checkins/{id}`
+- `PUT /api/metric-checkins/{id}`
+- `DELETE /api/metric-checkins/{id}`
+
+### Mission Templates (CRUD)
+
+- `POST /api/mission-templates`
+- `GET /api/mission-templates` — listagem paginada
+- `GET /api/mission-templates/{id}`
+- `PUT /api/mission-templates/{id}`
+- `DELETE /api/mission-templates/{id}`
+
+### Notifications
+
+- `GET /api/notifications` — listagem paginada
 - `GET /api/notifications/unread-count`
 - `PUT /api/notifications/{id}/read`
 - `PUT /api/notifications/read-all`
-- `GET /api/organizations/{id}/workspaces`
-- `GET /api/workspaces/{id}/teams`
-- `GET /api/teams/{id}/subteams`
-- `GET /api/teams/{id}/collaborators`
-- `PUT /api/teams/{id}/collaborators`
-- `GET /api/collaborators/{id}/teams`
-- `PUT /api/collaborators/{id}/teams`
 
-### Exemplo de payloads
+### Dashboard
 
-Para criação de missão (`POST /api/missions`), os campos mínimos obrigatórios são:
-- `name`
-- `startDate`
-- `endDate`
-- `status`
-- `scopeType`
-- `scopeId`
+- `GET /api/dashboard/my-dashboard`
 
+### Exemplos de payloads de criação
+
+**Organization:**
 ```json
 {
   "name": "acme.com.br",
@@ -771,6 +828,7 @@ Para criação de missão (`POST /api/missions`), os campos mínimos obrigatóri
 }
 ```
 
+**Workspace:**
 ```json
 {
   "name": "Produto",
@@ -778,6 +836,7 @@ Para criação de missão (`POST /api/missions`), os campos mínimos obrigatóri
 }
 ```
 
+**Team:**
 ```json
 {
   "name": "Time A",
@@ -786,6 +845,7 @@ Para criação de missão (`POST /api/missions`), os campos mínimos obrigatóri
 }
 ```
 
+**Collaborator:**
 ```json
 {
   "fullName": "Maria Silva",
@@ -795,6 +855,7 @@ Para criação de missão (`POST /api/missions`), os campos mínimos obrigatóri
 }
 ```
 
+**Mission:**
 ```json
 {
   "name": "Aumentar NPS",
@@ -807,6 +868,7 @@ Para criação de missão (`POST /api/missions`), os campos mínimos obrigatóri
 }
 ```
 
+**Metric Checkin:**
 ```json
 {
   "missionMetricId": "00000000-0000-0000-0000-000000000000",
