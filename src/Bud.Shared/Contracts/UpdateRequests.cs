@@ -16,6 +16,7 @@ public sealed class UpdateWorkspaceRequest
 public sealed class UpdateTeamRequest
 {
     public string Name { get; set; } = string.Empty;
+    public Guid LeaderId { get; set; }
     public Guid? ParentTeamId { get; set; }
 }
 

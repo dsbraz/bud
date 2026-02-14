@@ -109,7 +109,8 @@ public class MissionServiceTests
             Id = Guid.NewGuid(),
             Name = "Test Team",
             WorkspaceId = workspace.Id,
-            OrganizationId = org.Id
+            OrganizationId = org.Id,
+            LeaderId = Guid.NewGuid()
         };
 
         context.Organizations.Add(org);
@@ -154,7 +155,8 @@ public class MissionServiceTests
             Id = Guid.NewGuid(),
             Name = "Test Team",
             WorkspaceId = workspace.Id,
-            OrganizationId = org.Id
+            OrganizationId = org.Id,
+            LeaderId = Guid.NewGuid()
         };
         var collaborator = new Collaborator
         {
@@ -400,7 +402,8 @@ public class MissionServiceTests
             Id = Guid.NewGuid(),
             Name = "Test Team",
             WorkspaceId = workspace.Id,
-            OrganizationId = org.Id
+            OrganizationId = org.Id,
+            LeaderId = Guid.NewGuid()
         };
 
         context.Organizations.Add(org);
@@ -448,7 +451,8 @@ public class MissionServiceTests
             Id = Guid.NewGuid(),
             Name = "Test Team",
             WorkspaceId = workspace.Id,
-            OrganizationId = org.Id
+            OrganizationId = org.Id,
+            LeaderId = Guid.NewGuid()
         };
         var collaborator = new Collaborator
         {
@@ -663,7 +667,8 @@ public class MissionServiceTests
             Id = Guid.NewGuid(),
             Name = "Test Team",
             WorkspaceId = workspace.Id,
-            OrganizationId = org.Id
+            OrganizationId = org.Id,
+            LeaderId = Guid.NewGuid()
         };
         var collaborator = new Collaborator
         {
@@ -806,7 +811,8 @@ public class MissionServiceTests
             Id = Guid.NewGuid(),
             Name = "Test Team",
             WorkspaceId = workspace.Id,
-            OrganizationId = org.Id
+            OrganizationId = org.Id,
+            LeaderId = Guid.NewGuid()
         };
         var collaborator = new Collaborator
         {
@@ -875,7 +881,8 @@ public class MissionServiceTests
             Id = Guid.NewGuid(),
             Name = "Test Team",
             WorkspaceId = workspace.Id,
-            OrganizationId = org.Id
+            OrganizationId = org.Id,
+            LeaderId = Guid.NewGuid()
         };
         var collaborator = new Collaborator
         {
@@ -935,10 +942,10 @@ public class MissionServiceTests
         var workspace1 = new Workspace { Id = Guid.NewGuid(), Name = "Workspace 1", OrganizationId = org.Id };
         var workspace2 = new Workspace { Id = Guid.NewGuid(), Name = "Workspace 2", OrganizationId = org.Id };
 
-        var teamA = new Team { Id = Guid.NewGuid(), Name = "Team A", WorkspaceId = workspace1.Id, OrganizationId = org.Id };
-        var teamB = new Team { Id = Guid.NewGuid(), Name = "Team B", WorkspaceId = workspace2.Id, OrganizationId = org.Id };
-        var teamC = new Team { Id = Guid.NewGuid(), Name = "Team C", WorkspaceId = workspace2.Id, OrganizationId = org.Id };
-        var teamD = new Team { Id = Guid.NewGuid(), Name = "Team D", WorkspaceId = workspace1.Id, OrganizationId = org.Id };
+        var teamA = new Team { Id = Guid.NewGuid(), Name = "Team A", WorkspaceId = workspace1.Id, OrganizationId = org.Id, LeaderId = Guid.NewGuid() };
+        var teamB = new Team { Id = Guid.NewGuid(), Name = "Team B", WorkspaceId = workspace2.Id, OrganizationId = org.Id, LeaderId = Guid.NewGuid() };
+        var teamC = new Team { Id = Guid.NewGuid(), Name = "Team C", WorkspaceId = workspace2.Id, OrganizationId = org.Id, LeaderId = Guid.NewGuid() };
+        var teamD = new Team { Id = Guid.NewGuid(), Name = "Team D", WorkspaceId = workspace1.Id, OrganizationId = org.Id, LeaderId = Guid.NewGuid() };
 
         var collaborator = new Collaborator
         {
@@ -992,8 +999,8 @@ public class MissionServiceTests
         var workspaceA = new Workspace { Id = Guid.NewGuid(), Name = "Workspace A", OrganizationId = org.Id };
         var workspaceB = new Workspace { Id = Guid.NewGuid(), Name = "Workspace B", OrganizationId = org.Id };
 
-        var primaryTeam = new Team { Id = Guid.NewGuid(), Name = "Primary Team", WorkspaceId = workspaceA.Id, OrganizationId = org.Id };
-        var additionalTeam = new Team { Id = Guid.NewGuid(), Name = "Additional Team", WorkspaceId = workspaceB.Id, OrganizationId = org.Id };
+        var primaryTeam = new Team { Id = Guid.NewGuid(), Name = "Primary Team", WorkspaceId = workspaceA.Id, OrganizationId = org.Id, LeaderId = Guid.NewGuid() };
+        var additionalTeam = new Team { Id = Guid.NewGuid(), Name = "Additional Team", WorkspaceId = workspaceB.Id, OrganizationId = org.Id, LeaderId = Guid.NewGuid() };
 
         var collaborator = new Collaborator
         {
@@ -1053,7 +1060,8 @@ public class MissionServiceTests
             Id = Guid.NewGuid(),
             Name = "Test Team",
             WorkspaceId = workspace.Id,
-            OrganizationId = org.Id
+            OrganizationId = org.Id,
+            LeaderId = Guid.NewGuid()
         };
         var collaborator = new Collaborator
         {

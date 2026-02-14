@@ -40,22 +40,22 @@ public class MetricCheckinsEndpointsTests : IClassFixture<CustomWebApplicationFa
         var workspace = new Workspace { Id = Guid.NewGuid(), Name = "getbud.co", OrganizationId = org.Id };
         dbContext.Workspaces.Add(workspace);
 
-        var team = new Team { Id = Guid.NewGuid(), Name = "getbud.co", WorkspaceId = workspace.Id, OrganizationId = org.Id };
-        dbContext.Teams.Add(team);
-
         var adminLeader = new Collaborator
         {
             Id = Guid.NewGuid(),
             FullName = "Administrador",
             Email = "admin@getbud.co",
             Role = CollaboratorRole.Leader,
-            TeamId = team.Id,
             OrganizationId = org.Id
         };
         dbContext.Collaborators.Add(adminLeader);
 
+        var team = new Team { Id = Guid.NewGuid(), Name = "getbud.co", WorkspaceId = workspace.Id, OrganizationId = org.Id, LeaderId = adminLeader.Id };
+        dbContext.Teams.Add(team);
+
         await dbContext.SaveChangesAsync();
 
+        adminLeader.TeamId = team.Id;
         org.OwnerId = adminLeader.Id;
         await dbContext.SaveChangesAsync();
 
@@ -118,7 +118,7 @@ public class MetricCheckinsEndpointsTests : IClassFixture<CustomWebApplicationFa
         return (org, quantMetric, qualMetric, collaborator, tenantClient);
     }
 
-    private async Task<Collaborator> CreateCollaboratorInOrg(Guid organizationId)
+    private async Task<Collaborator> CreateCollaboratorInOrg(Guid organizationId, CollaboratorRole role = CollaboratorRole.IndividualContributor)
     {
         using var scope = _factory.Services.CreateScope();
         var dbContext = scope.ServiceProvider.GetRequiredService<Bud.Server.Data.ApplicationDbContext>();
@@ -128,7 +128,7 @@ public class MetricCheckinsEndpointsTests : IClassFixture<CustomWebApplicationFa
             Id = Guid.NewGuid(),
             FullName = "Colaborador Teste",
             Email = $"collab-{Guid.NewGuid():N}@test.com",
-            Role = CollaboratorRole.IndividualContributor,
+            Role = role,
             OrganizationId = organizationId
         };
 
@@ -724,18 +724,21 @@ public class MetricCheckinsEndpointsTests : IClassFixture<CustomWebApplicationFa
     public async Task Create_WithTeamScopedMission_TeamMemberCanCheckin()
     {
         // Arrange: Create team-scoped mission
-        var leaderId = await GetOrCreateAdminLeader();
+        var adminLeaderId = await GetOrCreateAdminLeader();
 
         var orgResponse = await _adminClient.PostAsJsonAsync("/api/organizations",
-            new CreateOrganizationRequest { Name = $"scope-team-{Guid.NewGuid():N}.com", OwnerId = leaderId });
+            new CreateOrganizationRequest { Name = $"scope-team-{Guid.NewGuid():N}.com", OwnerId = adminLeaderId });
         var org = (await orgResponse.Content.ReadFromJsonAsync<Organization>())!;
 
         var wsResponse = await _adminClient.PostAsJsonAsync("/api/workspaces",
             new CreateWorkspaceRequest { Name = "Test WS", OrganizationId = org.Id });
         var ws = (await wsResponse.Content.ReadFromJsonAsync<Workspace>())!;
 
+        // Create leader in the new org for team creation
+        var orgLeader = await CreateCollaboratorInOrg(org.Id, CollaboratorRole.Leader);
+
         var teamResponse = await _adminClient.PostAsJsonAsync("/api/teams",
-            new CreateTeamRequest { Name = "Test Team", WorkspaceId = ws.Id });
+            new CreateTeamRequest { Name = "Test Team", WorkspaceId = ws.Id, LeaderId = orgLeader.Id });
         var team = (await teamResponse.Content.ReadFromJsonAsync<Team>())!;
 
         // Create collaborators

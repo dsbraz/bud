@@ -25,7 +25,7 @@ public class NotificationRecipientResolverTests
     {
         var org = new Organization { Id = Guid.NewGuid(), Name = "Test Org" };
         var workspace = new Workspace { Id = Guid.NewGuid(), Name = "Test Workspace", OrganizationId = org.Id };
-        var team = new Team { Id = Guid.NewGuid(), Name = "Test Team", WorkspaceId = workspace.Id, OrganizationId = org.Id };
+        var team = new Team { Id = Guid.NewGuid(), Name = "Test Team", WorkspaceId = workspace.Id, OrganizationId = org.Id, LeaderId = Guid.NewGuid() };
         var leader = new Collaborator
         {
             Id = Guid.NewGuid(),

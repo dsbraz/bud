@@ -18,6 +18,11 @@ public sealed class TeamConfiguration : IEntityTypeConfiguration<Team>
 
         builder.HasIndex(t => t.OrganizationId);
 
+        builder.HasOne(t => t.Leader)
+            .WithMany()
+            .HasForeignKey(t => t.LeaderId)
+            .OnDelete(DeleteBehavior.Restrict);
+
         builder.HasMany(t => t.SubTeams)
             .WithOne(t => t.ParentTeam)
             .HasForeignKey(t => t.ParentTeamId)

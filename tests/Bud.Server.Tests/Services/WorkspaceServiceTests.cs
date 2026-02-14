@@ -54,7 +54,8 @@ public class WorkspaceServiceTests
             Id = Guid.NewGuid(),
             Name = "Team A",
             OrganizationId = org.Id,
-            WorkspaceId = workspace2.Id
+            WorkspaceId = workspace2.Id,
+            LeaderId = Guid.NewGuid()
         };
 
         var collaborator = new Collaborator

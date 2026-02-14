@@ -94,7 +94,8 @@ public class AuthServiceTests
             Id = Guid.NewGuid(),
             Name = "Test Team",
             OrganizationId = org.Id,
-            WorkspaceId = workspace.Id
+            WorkspaceId = workspace.Id,
+            LeaderId = Guid.NewGuid()
         };
         var collaborator = new Collaborator
         {
@@ -137,7 +138,7 @@ public class AuthServiceTests
 
         var org = new Organization { Id = Guid.NewGuid(), Name = "Test Org" };
         var workspace = new Workspace { Id = Guid.NewGuid(), Name = "Test Workspace", OrganizationId = org.Id };
-        var team = new Team { Id = Guid.NewGuid(), Name = "Test Team", OrganizationId = org.Id, WorkspaceId = workspace.Id };
+        var team = new Team { Id = Guid.NewGuid(), Name = "Test Team", OrganizationId = org.Id, WorkspaceId = workspace.Id, LeaderId = Guid.NewGuid() };
         var collaborator = new Collaborator
         {
             Id = Guid.NewGuid(),
@@ -247,7 +248,8 @@ public class AuthServiceTests
             Id = Guid.NewGuid(),
             Name = "Test Team",
             OrganizationId = org.Id,
-            WorkspaceId = workspace.Id
+            WorkspaceId = workspace.Id,
+            LeaderId = Guid.NewGuid()
         };
         var collaborator = new Collaborator
         {
@@ -292,7 +294,7 @@ public class AuthServiceTests
         // Create a collaborator with the global admin email
         var org = new Organization { Id = Guid.NewGuid(), Name = "Admin Org" };
         var workspace = new Workspace { Id = Guid.NewGuid(), Name = "Admin Workspace", OrganizationId = org.Id };
-        var team = new Team { Id = Guid.NewGuid(), Name = "Admin Team", OrganizationId = org.Id, WorkspaceId = workspace.Id };
+        var team = new Team { Id = Guid.NewGuid(), Name = "Admin Team", OrganizationId = org.Id, WorkspaceId = workspace.Id, LeaderId = Guid.NewGuid() };
         var adminCollaborator = new Collaborator
         {
             Id = Guid.NewGuid(),
@@ -333,7 +335,7 @@ public class AuthServiceTests
 
         var org = new Organization { Id = Guid.NewGuid(), Name = "Admin Org" };
         var workspace = new Workspace { Id = Guid.NewGuid(), Name = "Admin Workspace", OrganizationId = org.Id };
-        var team = new Team { Id = Guid.NewGuid(), Name = "Admin Team", OrganizationId = org.Id, WorkspaceId = workspace.Id };
+        var team = new Team { Id = Guid.NewGuid(), Name = "Admin Team", OrganizationId = org.Id, WorkspaceId = workspace.Id, LeaderId = Guid.NewGuid() };
         var adminCollaborator = new Collaborator
         {
             Id = Guid.NewGuid(),
@@ -404,7 +406,7 @@ public class AuthServiceTests
 
         // Create workspace and team for user's org
         var workspace = new Workspace { Id = Guid.NewGuid(), Name = "Workspace", OrganizationId = org1.Id };
-        var team = new Team { Id = Guid.NewGuid(), Name = "Team", OrganizationId = org1.Id, WorkspaceId = workspace.Id };
+        var team = new Team { Id = Guid.NewGuid(), Name = "Team", OrganizationId = org1.Id, WorkspaceId = workspace.Id, LeaderId = Guid.NewGuid() };
         context.Workspaces.Add(workspace);
         context.Teams.Add(team);
 
@@ -445,7 +447,7 @@ public class AuthServiceTests
         context.Organizations.Add(org);
 
         var workspace = new Workspace { Id = Guid.NewGuid(), Name = "Workspace", OrganizationId = org.Id };
-        var team = new Team { Id = Guid.NewGuid(), Name = "Team", OrganizationId = org.Id, WorkspaceId = workspace.Id };
+        var team = new Team { Id = Guid.NewGuid(), Name = "Team", OrganizationId = org.Id, WorkspaceId = workspace.Id, LeaderId = Guid.NewGuid() };
         context.Workspaces.Add(workspace);
         context.Teams.Add(team);
 

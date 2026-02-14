@@ -181,7 +181,7 @@ public sealed class MissionScopeAccessHandlerTests
 
         context.Organizations.Add(new Organization { Id = orgId, Name = "Test Org" });
         context.Workspaces.Add(new Workspace { Id = workspaceId, Name = "Test Workspace", OrganizationId = orgId });
-        context.Teams.Add(new Team { Id = teamId, Name = "Test Team", OrganizationId = orgId, WorkspaceId = workspaceId });
+        context.Teams.Add(new Team { Id = teamId, Name = "Test Team", OrganizationId = orgId, WorkspaceId = workspaceId, LeaderId = Guid.NewGuid() });
         context.Collaborators.Add(new Collaborator
         {
             Id = collaboratorId,
@@ -229,7 +229,7 @@ public sealed class MissionScopeAccessHandlerTests
 
         context.Organizations.Add(new Organization { Id = orgId, Name = "Test Org" });
         context.Workspaces.Add(new Workspace { Id = workspaceId, Name = "Test Workspace", OrganizationId = orgId });
-        context.Teams.Add(new Team { Id = teamId, Name = "Test Team", OrganizationId = orgId, WorkspaceId = workspaceId });
+        context.Teams.Add(new Team { Id = teamId, Name = "Test Team", OrganizationId = orgId, WorkspaceId = workspaceId, LeaderId = Guid.NewGuid() });
         context.Collaborators.Add(new Collaborator
         {
             Id = collaboratorId,
@@ -276,7 +276,7 @@ public sealed class MissionScopeAccessHandlerTests
 
         context.Organizations.Add(new Organization { Id = orgId, Name = "Test Org" });
         context.Workspaces.Add(new Workspace { Id = workspaceId, Name = "Test Workspace", OrganizationId = orgId });
-        context.Teams.Add(new Team { Id = teamId, Name = "Test Team", OrganizationId = orgId, WorkspaceId = workspaceId });
+        context.Teams.Add(new Team { Id = teamId, Name = "Test Team", OrganizationId = orgId, WorkspaceId = workspaceId, LeaderId = Guid.NewGuid() });
         context.Collaborators.Add(new Collaborator
         {
             Id = collaboratorId,
@@ -331,7 +331,8 @@ public sealed class MissionScopeAccessHandlerTests
             Id = teamInOtherWorkspaceId,
             Name = "Team in Other Workspace",
             OrganizationId = orgId,
-            WorkspaceId = otherWorkspaceId
+            WorkspaceId = otherWorkspaceId,
+            LeaderId = Guid.NewGuid()
         });
         context.Collaborators.Add(new Collaborator
         {

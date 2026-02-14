@@ -52,7 +52,7 @@ public class OrganizationsEndpointsTests : IClassFixture<CustomWebApplicationFac
             var existingTeam = await dbContext.Teams.IgnoreQueryFilters().FirstOrDefaultAsync();
             if (existingTeam == null)
             {
-                existingTeam = new Team { Id = Guid.NewGuid(), Name = "Bud", WorkspaceId = existingWorkspace.Id, OrganizationId = existingOrg.Id };
+                existingTeam = new Team { Id = Guid.NewGuid(), Name = "Bud", WorkspaceId = existingWorkspace.Id, OrganizationId = existingOrg.Id, LeaderId = existingLeader.Id };
                 dbContext.Teams.Add(existingTeam);
             }
 
@@ -77,29 +77,31 @@ public class OrganizationsEndpointsTests : IClassFixture<CustomWebApplicationFac
         };
         dbContext.Workspaces.Add(workspace);
 
-        var team = new Team
-        {
-            Id = Guid.NewGuid(),
-            Name = "Bud",
-            WorkspaceId = workspace.Id,
-            OrganizationId = org.Id
-        };
-        dbContext.Teams.Add(team);
-
         var adminLeader = new Collaborator
         {
             Id = Guid.NewGuid(),
             FullName = "Administrador",
             Email = "admin@getbud.co",
             Role = CollaboratorRole.Leader,
-            TeamId = team.Id,
+            TeamId = null,
             OrganizationId = org.Id
         };
         dbContext.Collaborators.Add(adminLeader);
-
         await dbContext.SaveChangesAsync();
 
-        // Update org with owner
+        var team = new Team
+        {
+            Id = Guid.NewGuid(),
+            Name = "Bud",
+            WorkspaceId = workspace.Id,
+            OrganizationId = org.Id,
+            LeaderId = adminLeader.Id
+        };
+        dbContext.Teams.Add(team);
+        await dbContext.SaveChangesAsync();
+
+        // Update collaborator's team and org owner
+        adminLeader.TeamId = team.Id;
         org.OwnerId = adminLeader.Id;
         await dbContext.SaveChangesAsync();
 

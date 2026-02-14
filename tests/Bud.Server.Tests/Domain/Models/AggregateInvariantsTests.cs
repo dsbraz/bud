@@ -39,7 +39,7 @@ public sealed class AggregateInvariantsTests
     public void Team_Reparent_ToSelf_ShouldThrow()
     {
         var id = Guid.NewGuid();
-        var team = Team.Create(id, Guid.NewGuid(), Guid.NewGuid(), "Team");
+        var team = Team.Create(id, Guid.NewGuid(), Guid.NewGuid(), "Team", Guid.NewGuid());
 
         var act = () => team.Reparent(id, id);
 

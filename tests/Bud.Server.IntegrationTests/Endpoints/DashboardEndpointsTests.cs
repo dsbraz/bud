@@ -73,6 +73,92 @@ public sealed class DashboardEndpointsTests : IClassFixture<CustomWebApplication
         problem!.Detail.Should().Be("Colaborador não encontrado.");
     }
 
+    [Fact]
+    public async Task GetMyDashboard_WithTeamId_ReturnsOk()
+    {
+        var tenantUser = await GetOrCreateTenantUserAsync();
+        var teamId = await GetOrCreateTeamWithMemberAsync(tenantUser.OrganizationId);
+        var client = _factory.CreateTenantClient(tenantUser.OrganizationId, tenantUser.Email, tenantUser.CollaboratorId);
+
+        var response = await client.GetAsync($"/api/dashboard/my-dashboard?teamId={teamId}");
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+    }
+
+    [Fact]
+    public async Task GetMyDashboard_WithNonExistentTeamId_ReturnsOkEmpty()
+    {
+        var tenantUser = await GetOrCreateTenantUserAsync();
+        var client = _factory.CreateTenantClient(tenantUser.OrganizationId, tenantUser.Email, tenantUser.CollaboratorId);
+
+        var response = await client.GetAsync($"/api/dashboard/my-dashboard?teamId={Guid.NewGuid()}");
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+    }
+
+    private async Task<Guid> GetOrCreateTeamWithMemberAsync(Guid organizationId)
+    {
+        using var scope = _factory.Services.CreateScope();
+        var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+
+        var workspace = await dbContext.Workspaces
+            .IgnoreQueryFilters()
+            .FirstOrDefaultAsync(w => w.OrganizationId == organizationId);
+
+        if (workspace is null)
+        {
+            workspace = new Workspace
+            {
+                Id = Guid.NewGuid(),
+                Name = "WS Filter Test",
+                OrganizationId = organizationId
+            };
+            dbContext.Workspaces.Add(workspace);
+        }
+
+        var teamId = Guid.NewGuid();
+
+        var leader = new Collaborator
+        {
+            Id = Guid.NewGuid(),
+            FullName = "Dashboard Filter Leader",
+            Email = $"filter-leader-{teamId:N}@test.com",
+            Role = CollaboratorRole.Leader,
+            TeamId = null,
+            OrganizationId = organizationId
+        };
+        dbContext.Collaborators.Add(leader);
+        await dbContext.SaveChangesAsync();
+
+        var team = new Team
+        {
+            Id = teamId,
+            Name = "Dashboard Filter Team",
+            WorkspaceId = workspace.Id,
+            OrganizationId = organizationId,
+            LeaderId = leader.Id
+        };
+        dbContext.Teams.Add(team);
+
+        var member = new Collaborator
+        {
+            Id = Guid.NewGuid(),
+            FullName = "Team Member",
+            Email = $"team-member-{teamId:N}@test.com",
+            OrganizationId = organizationId
+        };
+        dbContext.Collaborators.Add(member);
+
+        dbContext.Set<CollaboratorTeam>().Add(new CollaboratorTeam
+        {
+            CollaboratorId = member.Id,
+            TeamId = teamId
+        });
+
+        await dbContext.SaveChangesAsync();
+        return teamId;
+    }
+
     private async Task<(Guid OrganizationId, Guid CollaboratorId, string Email)> GetOrCreateTenantUserAsync()
     {
         const string email = "admin@getbud.co";
@@ -104,25 +190,29 @@ public sealed class DashboardEndpointsTests : IClassFixture<CustomWebApplication
         };
         dbContext.Workspaces.Add(workspace);
 
-        var team = new Team
-        {
-            Id = Guid.NewGuid(),
-            Name = "Time Dashboard",
-            WorkspaceId = workspace.Id,
-            OrganizationId = org.Id
-        };
-        dbContext.Teams.Add(team);
-
         var leader = new Collaborator
         {
             Id = Guid.NewGuid(),
             FullName = "Administrador Dashboard",
             Email = email,
             Role = CollaboratorRole.Leader,
-            TeamId = team.Id,
+            TeamId = null,
             OrganizationId = org.Id
         };
         dbContext.Collaborators.Add(leader);
+        await dbContext.SaveChangesAsync();
+
+        var team = new Team
+        {
+            Id = Guid.NewGuid(),
+            Name = "Time Dashboard",
+            WorkspaceId = workspace.Id,
+            OrganizationId = org.Id,
+            LeaderId = leader.Id
+        };
+        dbContext.Teams.Add(team);
+
+        leader.TeamId = team.Id;
 
         await dbContext.SaveChangesAsync();
 

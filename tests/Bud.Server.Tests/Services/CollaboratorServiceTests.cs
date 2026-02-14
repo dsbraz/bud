@@ -36,7 +36,8 @@ public class CollaboratorServiceTests
             Id = Guid.NewGuid(),
             Name = "Test Team",
             OrganizationId = org.Id,
-            WorkspaceId = workspace.Id
+            WorkspaceId = workspace.Id,
+            LeaderId = Guid.NewGuid()
         };
 
         context.Organizations.Add(org);
@@ -65,7 +66,8 @@ public class CollaboratorServiceTests
             Id = Guid.NewGuid(),
             Name = "Test Team",
             OrganizationId = org.Id,
-            WorkspaceId = workspace.Id
+            WorkspaceId = workspace.Id,
+            LeaderId = Guid.NewGuid()
         };
 
         var owner = new Collaborator
@@ -132,7 +134,8 @@ public class CollaboratorServiceTests
             Id = Guid.NewGuid(),
             Name = "Test Team",
             OrganizationId = org.Id,
-            WorkspaceId = workspace.Id
+            WorkspaceId = workspace.Id,
+            LeaderId = Guid.NewGuid()
         };
 
         var owner = new Collaborator
@@ -247,7 +250,8 @@ public class CollaboratorServiceTests
             Id = Guid.NewGuid(),
             Name = "Team 2",
             OrganizationId = org.Id,
-            WorkspaceId = workspace.Id
+            WorkspaceId = workspace.Id,
+            LeaderId = Guid.NewGuid()
         };
         context.Teams.Add(team2);
 
@@ -338,7 +342,8 @@ public class CollaboratorServiceTests
             Id = Guid.NewGuid(),
             Name = "Team 2",
             OrganizationId = org.Id,
-            WorkspaceId = workspace.Id
+            WorkspaceId = workspace.Id,
+            LeaderId = Guid.NewGuid()
         };
         context.Teams.Add(team2);
 
@@ -411,7 +416,8 @@ public class CollaboratorServiceTests
             Id = Guid.NewGuid(),
             Name = "Team in Org 2",
             OrganizationId = org2.Id,
-            WorkspaceId = workspace2.Id
+            WorkspaceId = workspace2.Id,
+            LeaderId = Guid.NewGuid()
         };
 
         context.Organizations.Add(org2);
@@ -762,7 +768,8 @@ public class CollaboratorServiceTests
             Id = Guid.NewGuid(),
             Name = "Team 2",
             OrganizationId = org.Id,
-            WorkspaceId = workspace.Id
+            WorkspaceId = workspace.Id,
+            LeaderId = Guid.NewGuid()
         };
         context.Teams.Add(team2);
 
@@ -803,14 +810,16 @@ public class CollaboratorServiceTests
             Id = Guid.NewGuid(),
             Name = "Alpha Team",
             OrganizationId = org.Id,
-            WorkspaceId = workspace.Id
+            WorkspaceId = workspace.Id,
+            LeaderId = Guid.NewGuid()
         };
         var betaTeam = new Team
         {
             Id = Guid.NewGuid(),
             Name = "Beta Team",
             OrganizationId = org.Id,
-            WorkspaceId = workspace.Id
+            WorkspaceId = workspace.Id,
+            LeaderId = Guid.NewGuid()
         };
         context.Teams.AddRange(alphaTeam, betaTeam);
 

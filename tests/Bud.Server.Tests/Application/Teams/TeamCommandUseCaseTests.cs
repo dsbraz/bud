@@ -26,7 +26,7 @@ public sealed class TeamCommandUseCaseTests
             .ReturnsAsync((Workspace?)null);
 
         var useCase = new TeamCommandUseCase(teamService.Object, authorizationGateway.Object, entityLookup.Object);
-        var request = new CreateTeamRequest { Name = "Team", WorkspaceId = Guid.NewGuid() };
+        var request = new CreateTeamRequest { Name = "Team", WorkspaceId = Guid.NewGuid(), LeaderId = Guid.NewGuid() };
 
         var result = await useCase.CreateAsync(User, request);
 
@@ -60,7 +60,7 @@ public sealed class TeamCommandUseCaseTests
             .ReturnsAsync(team);
 
         var useCase = new TeamCommandUseCase(teamService.Object, authorizationGateway.Object, entityLookup.Object);
-        var request = new UpdateTeamRequest { Name = "Novo Team" };
+        var request = new UpdateTeamRequest { Name = "Novo Team", LeaderId = Guid.NewGuid() };
 
         var result = await useCase.UpdateAsync(User, team.Id, request);
 

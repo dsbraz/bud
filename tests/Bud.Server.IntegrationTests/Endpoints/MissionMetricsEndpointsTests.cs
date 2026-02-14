@@ -41,22 +41,22 @@ public class MissionMetricsEndpointsTests : IClassFixture<CustomWebApplicationFa
         var workspace = new Workspace { Id = Guid.NewGuid(), Name = "getbud.co", OrganizationId = org.Id };
         dbContext.Workspaces.Add(workspace);
 
-        var team = new Team { Id = Guid.NewGuid(), Name = "getbud.co", WorkspaceId = workspace.Id, OrganizationId = org.Id };
-        dbContext.Teams.Add(team);
-
         var adminLeader = new Collaborator
         {
             Id = Guid.NewGuid(),
             FullName = "Administrador",
             Email = "admin@getbud.co",
             Role = CollaboratorRole.Leader,
-            TeamId = team.Id,
             OrganizationId = org.Id
         };
         dbContext.Collaborators.Add(adminLeader);
 
+        var team = new Team { Id = Guid.NewGuid(), Name = "getbud.co", WorkspaceId = workspace.Id, OrganizationId = org.Id, LeaderId = adminLeader.Id };
+        dbContext.Teams.Add(team);
+
         await dbContext.SaveChangesAsync();
 
+        adminLeader.TeamId = team.Id;
         org.OwnerId = adminLeader.Id;
         await dbContext.SaveChangesAsync();
 

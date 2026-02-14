@@ -18,7 +18,7 @@ public sealed class TeamQueryUseCaseTests
         var teamService = new Mock<ITeamService>();
         teamService
             .Setup(s => s.GetByIdAsync(teamId, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(ServiceResult<Team>.Success(new Team { Id = teamId, Name = "Produto", WorkspaceId = Guid.NewGuid(), OrganizationId = Guid.NewGuid() }));
+            .ReturnsAsync(ServiceResult<Team>.Success(new Team { Id = teamId, Name = "Produto", WorkspaceId = Guid.NewGuid(), OrganizationId = Guid.NewGuid(), LeaderId = Guid.NewGuid() }));
 
         var useCase = new TeamQueryUseCase(teamService.Object);
 

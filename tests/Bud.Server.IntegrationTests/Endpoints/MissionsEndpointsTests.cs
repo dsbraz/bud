@@ -44,22 +44,23 @@ public class MissionsEndpointsTests : IClassFixture<CustomWebApplicationFactory>
         var workspace = new Workspace { Id = Guid.NewGuid(), Name = "getbud.co", OrganizationId = org.Id };
         dbContext.Workspaces.Add(workspace);
 
-        var team = new Team { Id = Guid.NewGuid(), Name = "getbud.co", WorkspaceId = workspace.Id, OrganizationId = org.Id };
-        dbContext.Teams.Add(team);
-
         var adminLeader = new Collaborator
         {
             Id = Guid.NewGuid(),
             FullName = "Administrador",
             Email = "admin@getbud.co",
             Role = CollaboratorRole.Leader,
-            TeamId = team.Id,
+            TeamId = null,
             OrganizationId = org.Id
         };
         dbContext.Collaborators.Add(adminLeader);
 
+        var team = new Team { Id = Guid.NewGuid(), Name = "getbud.co", WorkspaceId = workspace.Id, OrganizationId = org.Id, LeaderId = adminLeader.Id };
+        dbContext.Teams.Add(team);
+
         await dbContext.SaveChangesAsync();
 
+        adminLeader.TeamId = team.Id;
         org.OwnerId = adminLeader.Id;
         await dbContext.SaveChangesAsync();
 
@@ -478,28 +479,40 @@ public class MissionsEndpointsTests : IClassFixture<CustomWebApplicationFactory>
     public async Task GetMyMissions_WithValidCollaborator_ReturnsHierarchyMissions()
     {
         // Arrange: Create full hierarchy
-        var leaderId = await GetOrCreateAdminLeader();
+        var adminLeaderId = await GetOrCreateAdminLeader();
         var orgResponse = await _client.PostAsJsonAsync("/api/organizations",
-            new CreateOrganizationRequest { Name = "test-org.com", OwnerId = leaderId });
+            new CreateOrganizationRequest { Name = "test-org.com", OwnerId = adminLeaderId });
         var org = await orgResponse.Content.ReadFromJsonAsync<Organization>();
 
         var workspaceResponse = await _client.PostAsJsonAsync("/api/workspaces",
             new CreateWorkspaceRequest { Name = "Test Workspace", OrganizationId = org!.Id });
         var workspace = await workspaceResponse.Content.ReadFromJsonAsync<Workspace>();
 
-        var teamResponse = await _client.PostAsJsonAsync("/api/teams",
-            new CreateTeamRequest { Name = "Test Team", WorkspaceId = workspace!.Id });
-        var team = await teamResponse.Content.ReadFromJsonAsync<Team>();
-
-        // Create collaborator directly in database (since API doesn't support creating with TeamId)
+        // Create a leader in the new org for team creation
         using var scope = _factory.Services.CreateScope();
         var dbContext = scope.ServiceProvider.GetRequiredService<Bud.Server.Data.ApplicationDbContext>();
+
+        var orgLeader = new Collaborator
+        {
+            Id = Guid.NewGuid(),
+            FullName = "Líder Org Teste",
+            Email = $"leader-{Guid.NewGuid():N}@test-org.com",
+            Role = CollaboratorRole.Leader,
+            OrganizationId = org!.Id,
+            TeamId = null
+        };
+        dbContext.Collaborators.Add(orgLeader);
+        await dbContext.SaveChangesAsync();
+
+        var teamResponse = await _client.PostAsJsonAsync("/api/teams",
+            new CreateTeamRequest { Name = "Test Team", WorkspaceId = workspace!.Id, LeaderId = orgLeader.Id });
+        var team = await teamResponse.Content.ReadFromJsonAsync<Team>();
 
         var collaborator = new Collaborator
         {
             Id = Guid.NewGuid(),
             FullName = "Test User",
-            Email = "test@example.com",
+            Email = $"test-{Guid.NewGuid():N}@example.com",
             Role = CollaboratorRole.IndividualContributor,
             OrganizationId = org!.Id,
             TeamId = team!.Id

@@ -83,7 +83,7 @@ public class TenantAuthorizationServiceTests
         // Create org with owner
         var org = new Organization { Id = Guid.NewGuid(), Name = "Test Org" };
         var workspace = new Workspace { Id = Guid.NewGuid(), Name = "Workspace", OrganizationId = org.Id };
-        var team = new Team { Id = Guid.NewGuid(), Name = "Team", OrganizationId = org.Id, WorkspaceId = workspace.Id };
+        var team = new Team { Id = Guid.NewGuid(), Name = "Team", OrganizationId = org.Id, WorkspaceId = workspace.Id, LeaderId = Guid.NewGuid() };
         var owner = new Collaborator
         {
             Id = Guid.NewGuid(),
@@ -123,7 +123,7 @@ public class TenantAuthorizationServiceTests
         // Create org with collaborator
         var org = new Organization { Id = Guid.NewGuid(), Name = "Test Org" };
         var workspace = new Workspace { Id = Guid.NewGuid(), Name = "Workspace", OrganizationId = org.Id };
-        var team = new Team { Id = Guid.NewGuid(), Name = "Team", OrganizationId = org.Id, WorkspaceId = workspace.Id };
+        var team = new Team { Id = Guid.NewGuid(), Name = "Team", OrganizationId = org.Id, WorkspaceId = workspace.Id, LeaderId = Guid.NewGuid() };
         var collaborator = new Collaborator
         {
             Id = Guid.NewGuid(),
@@ -258,8 +258,8 @@ public class TenantAuthorizationServiceTests
         var memberWorkspace = new Workspace { Id = Guid.NewGuid(), Name = "Member Workspace", OrganizationId = memberOrg.Id };
         context.Workspaces.AddRange(ownedWorkspace, memberWorkspace);
 
-        var ownedTeam = new Team { Id = Guid.NewGuid(), Name = "Owned Team", OrganizationId = ownedOrg.Id, WorkspaceId = ownedWorkspace.Id };
-        var memberTeam = new Team { Id = Guid.NewGuid(), Name = "Member Team", OrganizationId = memberOrg.Id, WorkspaceId = memberWorkspace.Id };
+        var ownedTeam = new Team { Id = Guid.NewGuid(), Name = "Owned Team", OrganizationId = ownedOrg.Id, WorkspaceId = ownedWorkspace.Id, LeaderId = Guid.NewGuid() };
+        var memberTeam = new Team { Id = Guid.NewGuid(), Name = "Member Team", OrganizationId = memberOrg.Id, WorkspaceId = memberWorkspace.Id, LeaderId = Guid.NewGuid() };
         context.Teams.AddRange(ownedTeam, memberTeam);
 
         // Create owner collaborator in ownedOrg
@@ -316,7 +316,7 @@ public class TenantAuthorizationServiceTests
         var workspace = new Workspace { Id = Guid.NewGuid(), Name = "Workspace", OrganizationId = org.Id };
         context.Workspaces.Add(workspace);
 
-        var team = new Team { Id = Guid.NewGuid(), Name = "Team", OrganizationId = org.Id, WorkspaceId = workspace.Id };
+        var team = new Team { Id = Guid.NewGuid(), Name = "Team", OrganizationId = org.Id, WorkspaceId = workspace.Id, LeaderId = Guid.NewGuid() };
         context.Teams.Add(team);
 
         // User is owner and collaborator of the same org
