@@ -120,8 +120,8 @@ Bud is an ASP.NET Core 10 application with a Blazor WebAssembly frontend, using 
 ## Project Structure
 
 - **Bud.Server** (`src/Bud.Server`): ASP.NET Core API hosting both the API endpoints and the Blazor WebAssembly app
-  - `Controllers/`: REST endpoints for auth, organizations, workspaces, teams, collaborators, missions, mission-metrics, metric-checkins, mission-templates, dashboard, notifications
-  - `Application/`: use cases organized by domain (Auth, Collaborators, Dashboard, MetricCheckins, MissionMetrics, MissionTemplates, Missions, Notifications, Organizations, Teams, Workspaces)
+  - `Controllers/`: REST endpoints for auth, organizations, workspaces, teams, collaborators, missions, mission-objectives, mission-metrics, metric-checkins, mission-templates, dashboard, notifications
+  - `Application/`: use cases organized by domain (Auth, Collaborators, Dashboard, MetricCheckins, MissionMetrics, MissionObjectives, MissionTemplates, Missions, Notifications, Organizations, Teams, Workspaces)
   - `Authorization/`: policy-based authorization (requirements, handlers, `IApplicationAuthorizationGateway`)
   - `Domain/`: specifications (`Domain/Specifications/`), value objects, and domain-specific contracts
   - `Data/`: `ApplicationDbContext`, `ApplicationEntityLookup`, `IApplicationEntityLookup`, `Configurations/` (EF Core entity configurations), and `DbSeeder`
@@ -234,7 +234,10 @@ Organization
           └── CollaboratorTeam (many-to-many join)
 
 Mission (can be scoped to Organization, Workspace, Team, or Collaborator)
-  └── MissionMetric(s)
+  ├── MissionObjective(s) (hierarchical via ParentObjectiveId)
+  │   └── MissionMetric(s) (metrics linked to objectives)
+  │       └── MetricCheckin(s)
+  └── MissionMetric(s) (direct metrics, MissionObjectiveId = null)
       └── MetricCheckin(s)
 
 MissionTemplate
@@ -247,7 +250,9 @@ CollaboratorAccessLog (tenant-scoped, audit trail)
 **Critical cascade behaviors:**
 - Organization → Workspace = `Cascade`; Organization → Team and Organization → Collaborator = `Restrict` (Teams are reached indirectly via Workspace → Team = `Cascade`; Collaborators get `TeamId = null` via `SetNull`)
 - SubTeams have `DeleteBehavior.Restrict` on ParentTeam to prevent orphaned hierarchies
-- All Mission relationships cascade delete
+- MissionObjective → SubObjectives = `Restrict` (must delete children first, same pattern as SubTeams)
+- Mission → MissionObjective = `Cascade`; MissionObjective → MissionMetric = `Cascade`
+- All other Mission relationships cascade delete
 
 ### Multi-Tenancy
 

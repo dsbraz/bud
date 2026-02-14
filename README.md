@@ -152,6 +152,7 @@ flowchart TD
     ST[SubTeam]
     C[Collaborator]
     M[Mission]
+    MO[MissionObjective]
     MM[MissionMetric]
     MC[MetricCheckin]
 
@@ -165,6 +166,9 @@ flowchart TD
     T -. escopo .-> M
     C -. escopo .-> M
 
+    M --> MO
+    MO --> MO
+    MO --> MM
     M --> MM
     MM --> MC
 
@@ -417,7 +421,7 @@ dotnet run --project src/Bud.Mcp/Bud.Mcp.csproj -- check-tool-catalog --fail-on-
 ```
 
 Regras importantes do catálogo:
-- As ferramentas de domínio (`mission_*`, `mission_metric_*`, `metric_checkin_*`) são carregadas exclusivamente do arquivo `src/Bud.Mcp/Tools/Generated/mcp-tool-catalog.json`.
+- As ferramentas de domínio (`mission_*`, `mission_objective_*`, `mission_metric_*`, `metric_checkin_*`) são carregadas exclusivamente do arquivo `src/Bud.Mcp/Tools/Generated/mcp-tool-catalog.json`.
 - O `Bud.Mcp` falha na inicialização se o catálogo estiver ausente, inválido, vazio ou sem ferramentas de domínio obrigatórias.
 - O comando `check-tool-catalog --fail-on-diff` também valida o contrato mínimo de campos `required` por ferramenta e retorna erro quando houver quebra de contrato.
 
@@ -434,6 +438,7 @@ Se estiver rodando local com `DOTNET_ENVIRONMENT=Development`, defina:
 - `help_list_actions`
 - `help_action_schema`
 - `mission_create`, `mission_get`, `mission_list`, `mission_update`, `mission_delete`
+- `mission_objective_create`, `mission_objective_get`, `mission_objective_list`, `mission_objective_update`, `mission_objective_delete`
 - `mission_metric_create`, `mission_metric_get`, `mission_metric_list`, `mission_metric_update`, `mission_metric_delete`
 - `metric_checkin_create`, `metric_checkin_get`, `metric_checkin_list`, `metric_checkin_update`, `metric_checkin_delete`
 
@@ -781,6 +786,16 @@ Referência completa com exemplos interativos disponível em `/swagger` (ambient
 - `GET /api/missions/progress`
 - `GET /api/missions/my-missions/{collaboratorId}`
 - `GET /api/missions/{id}/metrics`
+- `GET /api/missions/{id}/objectives`
+
+### Mission Objectives (CRUD)
+
+- `POST /api/mission-objectives`
+- `GET /api/mission-objectives` — listagem paginada (filtro por `missionId` e `parentObjectiveId`)
+- `GET /api/mission-objectives/{id}`
+- `PUT /api/mission-objectives/{id}`
+- `DELETE /api/mission-objectives/{id}`
+- `GET /api/mission-objectives/progress`
 
 ### Mission Metrics (CRUD)
 
