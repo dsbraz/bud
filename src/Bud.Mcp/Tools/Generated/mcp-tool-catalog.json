@@ -3,183 +3,597 @@
   "tools": [
     {
       "name": "mission_create",
-      "description": "Cria uma missão.",
+      "description": "Cria uma miss\u00E3o.",
       "inputSchema": {
         "type": "object",
-        "additionalProperties": false,
-        "required": ["name", "startDate", "endDate", "status", "scopeType", "scopeId"],
         "properties": {
-          "name": { "type": "string" },
-          "description": { "type": ["null", "string"] },
-          "startDate": { "type": "string", "format": "date-time" },
-          "endDate": { "type": "string", "format": "date-time" },
-          "status": { "type": "integer" },
-          "scopeType": { "type": "integer" },
-          "scopeId": { "type": "string", "format": "uuid" }
-        }
+          "name": {
+            "type": "string"
+          },
+          "description": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "startDate": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "endDate": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "status": {
+            "type": "integer"
+          },
+          "scopeType": {
+            "type": "integer"
+          },
+          "scopeId": {
+            "type": "string",
+            "format": "uuid"
+          }
+        },
+        "additionalProperties": false,
+        "required": [
+          "name",
+          "startDate",
+          "endDate",
+          "status",
+          "scopeType",
+          "scopeId"
+        ]
       }
     },
     {
       "name": "mission_get",
-      "description": "Busca uma missão por ID.",
+      "description": "Busca uma miss\u00E3o por ID.",
       "inputSchema": {
         "type": "object",
         "additionalProperties": false,
-        "required": ["id"],
+        "required": [
+          "id"
+        ],
         "properties": {
-          "id": { "type": "string", "format": "uuid" }
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          }
         }
       }
     },
     {
       "name": "mission_list",
-      "description": "Lista missões com filtros.",
+      "description": "Lista miss\u00F5es com filtros.",
       "inputSchema": {
         "type": "object",
         "additionalProperties": false,
         "properties": {
-          "scopeType": { "type": "integer" },
-          "scopeId": { "type": "string", "format": "uuid" },
-          "search": { "type": "string" },
-          "page": { "type": "integer", "default": 1 },
-          "pageSize": { "type": "integer", "default": 10 }
+          "scopeType": {
+            "type": "integer"
+          },
+          "scopeId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "search": {
+            "type": "string"
+          },
+          "page": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32",
+            "default": 1
+          },
+          "pageSize": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32",
+            "default": 10
+          }
         }
       }
     },
     {
       "name": "mission_update",
-      "description": "Atualiza uma missão.",
+      "description": "Atualiza uma miss\u00E3o.",
       "inputSchema": {
         "type": "object",
         "additionalProperties": false,
-        "required": ["id", "payload"],
+        "required": [
+          "id",
+          "payload"
+        ],
         "properties": {
-          "id": { "type": "string", "format": "uuid" },
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
           "payload": {
             "type": "object",
-            "additionalProperties": false,
             "properties": {
-              "name": { "type": "string" },
-              "description": { "type": ["null", "string"] },
-              "startDate": { "type": "string", "format": "date-time" },
-              "endDate": { "type": "string", "format": "date-time" },
-              "status": { "type": "integer" },
-              "scopeType": { "type": "integer" },
-              "scopeId": { "type": "string", "format": "uuid" }
-            }
+              "name": {
+                "type": "string"
+              },
+              "description": {
+                "type": [
+                  "null",
+                  "string"
+                ]
+              },
+              "startDate": {
+                "type": "string",
+                "format": "date-time"
+              },
+              "endDate": {
+                "type": "string",
+                "format": "date-time"
+              },
+              "status": {
+                "type": "integer"
+              },
+              "scopeType": {
+                "type": "integer"
+              },
+              "scopeId": {
+                "type": "string",
+                "format": "uuid"
+              }
+            },
+            "additionalProperties": false,
+            "required": [
+              "name",
+              "startDate",
+              "endDate",
+              "status",
+              "scopeType",
+              "scopeId"
+            ]
           }
         }
       }
     },
     {
       "name": "mission_delete",
-      "description": "Remove uma missão.",
+      "description": "Remove uma miss\u00E3o.",
       "inputSchema": {
         "type": "object",
         "additionalProperties": false,
-        "required": ["id"],
+        "required": [
+          "id"
+        ],
         "properties": {
-          "id": { "type": "string", "format": "uuid" }
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          }
         }
       }
     },
     {
       "name": "mission_metric_create",
-      "description": "Cria uma métrica de missão.",
+      "description": "Cria uma m\u00E9trica de miss\u00E3o.",
       "inputSchema": {
         "type": "object",
-        "additionalProperties": false,
-        "required": ["missionId", "name", "type"],
         "properties": {
-          "missionId": { "type": "string", "format": "uuid" },
-          "name": { "type": "string" },
-          "type": { "type": "integer" },
-          "quantitativeType": { "type": ["null", "integer"] },
-          "minValue": { "type": ["null", "number"] },
-          "maxValue": { "type": ["null", "number"] },
-          "unit": { "type": ["null", "integer"] },
-          "targetText": { "type": ["null", "string"] }
-        }
+          "missionId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "missionObjectiveId": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "uuid"
+          },
+          "name": {
+            "type": "string"
+          },
+          "type": {
+            "type": "integer"
+          },
+          "quantitativeType": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/QuantitativeMetricType"
+              }
+            ]
+          },
+          "minValue": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d\u002B)?$",
+            "type": [
+              "null",
+              "number",
+              "string"
+            ],
+            "format": "double"
+          },
+          "maxValue": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d\u002B)?$",
+            "type": [
+              "null",
+              "number",
+              "string"
+            ],
+            "format": "double"
+          },
+          "unit": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/MetricUnit"
+              }
+            ]
+          },
+          "targetText": {
+            "type": [
+              "null",
+              "string"
+            ]
+          }
+        },
+        "additionalProperties": false,
+        "required": [
+          "missionId",
+          "name",
+          "type"
+        ]
       }
     },
     {
       "name": "mission_metric_get",
-      "description": "Busca uma métrica por ID.",
+      "description": "Busca uma m\u00E9trica por ID.",
       "inputSchema": {
         "type": "object",
         "additionalProperties": false,
-        "required": ["id"],
+        "required": [
+          "id"
+        ],
         "properties": {
-          "id": { "type": "string", "format": "uuid" }
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          }
         }
       }
     },
     {
       "name": "mission_metric_list",
-      "description": "Lista métricas de missão.",
+      "description": "Lista m\u00E9tricas de miss\u00E3o.",
       "inputSchema": {
         "type": "object",
         "additionalProperties": false,
         "properties": {
-          "missionId": { "type": "string", "format": "uuid" },
-          "search": { "type": "string" },
-          "page": { "type": "integer", "default": 1 },
-          "pageSize": { "type": "integer", "default": 10 }
+          "missionId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "objectiveId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "search": {
+            "type": "string"
+          },
+          "page": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32",
+            "default": 1
+          },
+          "pageSize": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32",
+            "default": 10
+          }
         }
       }
     },
     {
       "name": "mission_metric_update",
-      "description": "Atualiza uma métrica de missão.",
+      "description": "Atualiza uma m\u00E9trica de miss\u00E3o.",
       "inputSchema": {
         "type": "object",
         "additionalProperties": false,
-        "required": ["id", "payload"],
+        "required": [
+          "id",
+          "payload"
+        ],
         "properties": {
-          "id": { "type": "string", "format": "uuid" },
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
           "payload": {
             "type": "object",
-            "additionalProperties": false,
             "properties": {
-              "name": { "type": "string" },
-              "type": { "type": "integer" },
-              "quantitativeType": { "type": ["null", "integer"] },
-              "minValue": { "type": ["null", "number"] },
-              "maxValue": { "type": ["null", "number"] },
-              "unit": { "type": ["null", "integer"] },
-              "targetText": { "type": ["null", "string"] }
-            }
+              "name": {
+                "type": "string"
+              },
+              "type": {
+                "type": "integer"
+              },
+              "quantitativeType": {
+                "oneOf": [
+                  {
+                    "type": "null"
+                  },
+                  {
+                    "$ref": "#/components/schemas/QuantitativeMetricType"
+                  }
+                ]
+              },
+              "minValue": {
+                "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d\u002B)?$",
+                "type": [
+                  "null",
+                  "number",
+                  "string"
+                ],
+                "format": "double"
+              },
+              "maxValue": {
+                "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d\u002B)?$",
+                "type": [
+                  "null",
+                  "number",
+                  "string"
+                ],
+                "format": "double"
+              },
+              "unit": {
+                "oneOf": [
+                  {
+                    "type": "null"
+                  },
+                  {
+                    "$ref": "#/components/schemas/MetricUnit"
+                  }
+                ]
+              },
+              "targetText": {
+                "type": [
+                  "null",
+                  "string"
+                ]
+              }
+            },
+            "additionalProperties": false,
+            "required": [
+              "name",
+              "type"
+            ]
           }
         }
       }
     },
     {
       "name": "mission_metric_delete",
-      "description": "Remove uma métrica de missão.",
+      "description": "Remove uma m\u00E9trica de miss\u00E3o.",
       "inputSchema": {
         "type": "object",
         "additionalProperties": false,
-        "required": ["id"],
+        "required": [
+          "id"
+        ],
         "properties": {
-          "id": { "type": "string", "format": "uuid" }
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          }
+        }
+      }
+    },
+    {
+      "name": "mission_objective_create",
+      "description": "Cria um objetivo de miss\u00E3o.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "missionId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "name": {
+            "type": "string"
+          },
+          "description": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "parentObjectiveId": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "uuid"
+          }
+        },
+        "additionalProperties": false,
+        "required": [
+          "missionId",
+          "name"
+        ]
+      }
+    },
+    {
+      "name": "mission_objective_get",
+      "description": "Busca um objetivo por ID.",
+      "inputSchema": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          }
+        }
+      }
+    },
+    {
+      "name": "mission_objective_list",
+      "description": "Lista objetivos de uma miss\u00E3o.",
+      "inputSchema": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "missionId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "parentObjectiveId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "page": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32",
+            "default": 1
+          },
+          "pageSize": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32",
+            "default": 10
+          }
+        }
+      }
+    },
+    {
+      "name": "mission_objective_update",
+      "description": "Atualiza um objetivo de miss\u00E3o.",
+      "inputSchema": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "payload"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "payload": {
+            "type": "object",
+            "properties": {
+              "name": {
+                "type": "string"
+              },
+              "description": {
+                "type": [
+                  "null",
+                  "string"
+                ]
+              }
+            },
+            "additionalProperties": false,
+            "required": [
+              "name"
+            ]
+          }
+        }
+      }
+    },
+    {
+      "name": "mission_objective_delete",
+      "description": "Remove um objetivo de miss\u00E3o.",
+      "inputSchema": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          }
         }
       }
     },
     {
       "name": "metric_checkin_create",
-      "description": "Cria um check-in de métrica.",
+      "description": "Cria um check-in de m\u00E9trica.",
       "inputSchema": {
         "type": "object",
-        "additionalProperties": false,
-        "required": ["missionMetricId", "checkinDate", "confidenceLevel"],
         "properties": {
-          "missionMetricId": { "type": "string", "format": "uuid" },
-          "value": { "type": ["null", "number"] },
-          "text": { "type": ["null", "string"] },
-          "checkinDate": { "type": "string", "format": "date-time" },
-          "note": { "type": ["null", "string"] },
-          "confidenceLevel": { "type": "integer" }
-        }
+          "missionMetricId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "value": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d\u002B)?$",
+            "type": [
+              "null",
+              "number",
+              "string"
+            ],
+            "format": "double"
+          },
+          "text": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "checkinDate": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "note": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "confidenceLevel": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          }
+        },
+        "additionalProperties": false,
+        "required": [
+          "missionMetricId",
+          "checkinDate",
+          "confidenceLevel"
+        ]
       }
     },
     {
@@ -188,9 +602,14 @@
       "inputSchema": {
         "type": "object",
         "additionalProperties": false,
-        "required": ["id"],
+        "required": [
+          "id"
+        ],
         "properties": {
-          "id": { "type": "string", "format": "uuid" }
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          }
         }
       }
     },
@@ -201,10 +620,32 @@
         "type": "object",
         "additionalProperties": false,
         "properties": {
-          "missionMetricId": { "type": "string", "format": "uuid" },
-          "missionId": { "type": "string", "format": "uuid" },
-          "page": { "type": "integer", "default": 1 },
-          "pageSize": { "type": "integer", "default": 10 }
+          "missionMetricId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "missionId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "page": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32",
+            "default": 1
+          },
+          "pageSize": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32",
+            "default": 10
+          }
         }
       }
     },
@@ -214,19 +655,57 @@
       "inputSchema": {
         "type": "object",
         "additionalProperties": false,
-        "required": ["id", "payload"],
+        "required": [
+          "id",
+          "payload"
+        ],
         "properties": {
-          "id": { "type": "string", "format": "uuid" },
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
           "payload": {
             "type": "object",
-            "additionalProperties": false,
             "properties": {
-              "value": { "type": ["null", "number"] },
-              "text": { "type": ["null", "string"] },
-              "checkinDate": { "type": "string", "format": "date-time" },
-              "note": { "type": ["null", "string"] },
-              "confidenceLevel": { "type": "integer" }
-            }
+              "value": {
+                "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d\u002B)?$",
+                "type": [
+                  "null",
+                  "number",
+                  "string"
+                ],
+                "format": "double"
+              },
+              "text": {
+                "type": [
+                  "null",
+                  "string"
+                ]
+              },
+              "checkinDate": {
+                "type": "string",
+                "format": "date-time"
+              },
+              "note": {
+                "type": [
+                  "null",
+                  "string"
+                ]
+              },
+              "confidenceLevel": {
+                "pattern": "^-?(?:0|[1-9]\\d*)$",
+                "type": [
+                  "integer",
+                  "string"
+                ],
+                "format": "int32"
+              }
+            },
+            "additionalProperties": false,
+            "required": [
+              "checkinDate",
+              "confidenceLevel"
+            ]
           }
         }
       }
@@ -237,9 +716,14 @@
       "inputSchema": {
         "type": "object",
         "additionalProperties": false,
-        "required": ["id"],
+        "required": [
+          "id"
+        ],
         "properties": {
-          "id": { "type": "string", "format": "uuid" }
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          }
         }
       }
     }

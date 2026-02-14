@@ -38,5 +38,10 @@ public sealed class MissionConfiguration : IEntityTypeConfiguration<Mission>
             .WithOne(metric => metric.Mission)
             .HasForeignKey(metric => metric.MissionId)
             .OnDelete(DeleteBehavior.Cascade);
+
+        builder.HasMany(m => m.Objectives)
+            .WithOne(o => o.Mission)
+            .HasForeignKey(o => o.MissionId)
+            .OnDelete(DeleteBehavior.Cascade);
     }
 }

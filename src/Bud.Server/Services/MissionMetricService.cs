@@ -29,6 +29,26 @@ public sealed class MissionMetricService(ApplicationDbContext dbContext) : IMiss
 
             metric.ApplyTarget(request.Type, request.QuantitativeType, request.MinValue, request.MaxValue, request.Unit, request.TargetText);
 
+            if (request.MissionObjectiveId.HasValue)
+            {
+                var objective = await dbContext.MissionObjectives
+                    .AsNoTracking()
+                    .FirstOrDefaultAsync(o => o.Id == request.MissionObjectiveId.Value, cancellationToken);
+
+                if (objective is null)
+                {
+                    return ServiceResult<MissionMetric>.NotFound("Objetivo não encontrado.");
+                }
+
+                if (objective.MissionId != request.MissionId)
+                {
+                    return ServiceResult<MissionMetric>.Failure(
+                        "Objetivo deve pertencer à mesma missão.", ServiceErrorType.Validation);
+                }
+
+                metric.MissionObjectiveId = request.MissionObjectiveId.Value;
+            }
+
             dbContext.MissionMetrics.Add(metric);
             await dbContext.SaveChangesAsync(cancellationToken);
 
@@ -90,7 +110,7 @@ public sealed class MissionMetricService(ApplicationDbContext dbContext) : IMiss
             : ServiceResult<MissionMetric>.Success(metric);
     }
 
-    public async Task<ServiceResult<PagedResult<MissionMetric>>> GetAllAsync(Guid? missionId, string? search, int page, int pageSize, CancellationToken cancellationToken = default)
+    public async Task<ServiceResult<PagedResult<MissionMetric>>> GetAllAsync(Guid? missionId, Guid? objectiveId, string? search, int page, int pageSize, CancellationToken cancellationToken = default)
     {
         (page, pageSize) = PaginationNormalizer.Normalize(page, pageSize);
 
@@ -99,6 +119,11 @@ public sealed class MissionMetricService(ApplicationDbContext dbContext) : IMiss
         if (missionId.HasValue)
         {
             query = query.Where(m => m.MissionId == missionId.Value);
+        }
+
+        if (objectiveId.HasValue)
+        {
+            query = query.Where(m => m.MissionObjectiveId == objectiveId.Value);
         }
 
         query = ApplyMetricNameSearch(query, search);

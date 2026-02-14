@@ -62,6 +62,14 @@ public sealed class UpdateMissionTemplateRequest
     public List<MissionTemplateMetricDto> Metrics { get; set; } = [];
 }
 
+public sealed class UpdateMissionObjectiveRequest
+{
+    /// <summary>Nome do objetivo.</summary>
+    public string Name { get; set; } = string.Empty;
+    /// <summary>Descrição opcional do objetivo.</summary>
+    public string? Description { get; set; }
+}
+
 public sealed class UpdateMissionMetricRequest
 {
     /// <summary>Nome da métrica.</summary>

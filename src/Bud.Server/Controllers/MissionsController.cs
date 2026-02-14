@@ -1,3 +1,4 @@
+using Bud.Server.Application.MissionObjectives;
 using Bud.Server.Application.Missions;
 using Bud.Server.Authorization;
 using Bud.Shared.Contracts;
@@ -15,6 +16,7 @@ namespace Bud.Server.Controllers;
 public sealed class MissionsController(
     IMissionCommandUseCase missionCommandUseCase,
     IMissionQueryUseCase missionQueryUseCase,
+    IMissionObjectiveQueryUseCase missionObjectiveQueryUseCase,
     IValidator<CreateMissionRequest> createValidator,
     IValidator<UpdateMissionRequest> updateValidator) : ApiControllerBase
 {
@@ -210,6 +212,35 @@ public sealed class MissionsController(
         }
 
         var result = await missionQueryUseCase.GetMetricsAsync(id, page, pageSize, cancellationToken);
+        return FromResultOk(result);
+    }
+
+    /// <summary>
+    /// Lista objetivos associados a uma missão.
+    /// </summary>
+    /// <remarks>
+    /// Quando parentObjectiveId não é informado, retorna apenas objetivos de nível superior (sem pai).
+    /// Quando informado, retorna os sub-objetivos do objetivo pai especificado.
+    /// </remarks>
+    /// <response code="200">Objetivos retornados com sucesso.</response>
+    /// <response code="400">Parâmetros de paginação inválidos.</response>
+    [HttpGet("{id:guid}/objectives")]
+    [ProducesResponseType(typeof(PagedResult<MissionObjective>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
+    public async Task<ActionResult<PagedResult<MissionObjective>>> GetObjectives(
+        Guid id,
+        [FromQuery] Guid? parentObjectiveId,
+        [FromQuery] int page = 1,
+        [FromQuery] int pageSize = 10,
+        CancellationToken cancellationToken = default)
+    {
+        var paginationValidation = ValidatePagination(page, pageSize);
+        if (paginationValidation is not null)
+        {
+            return paginationValidation;
+        }
+
+        var result = await missionObjectiveQueryUseCase.GetByMissionAsync(id, parentObjectiveId, page, pageSize, cancellationToken);
         return FromResultOk(result);
     }
 }

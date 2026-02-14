@@ -163,6 +163,15 @@ public sealed class ToolCatalogCommandRunnerTests
           "put": { "parameters": [ { "name": "id", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } } ], "requestBody": { "content": { "application/json": { "schema": { "$ref": "#/components/schemas/UpdateMissionMetricRequest" } } } } },
           "delete": { "parameters": [ { "name": "id", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } } ] }
         },
+        "/api/mission-objectives": {
+          "post": { "requestBody": { "content": { "application/json": { "schema": { "$ref": "#/components/schemas/CreateMissionObjectiveRequest" } } } } },
+          "get": { "parameters": [] }
+        },
+        "/api/mission-objectives/{id}": {
+          "get": { "parameters": [ { "name": "id", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } } ] },
+          "put": { "parameters": [ { "name": "id", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } } ], "requestBody": { "content": { "application/json": { "schema": { "$ref": "#/components/schemas/UpdateMissionObjectiveRequest" } } } } },
+          "delete": { "parameters": [ { "name": "id", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } } ] }
+        },
         "/api/metric-checkins": {
           "post": { "requestBody": { "content": { "application/json": { "schema": { "$ref": "#/components/schemas/CreateMetricCheckinRequest" } } } } },
           "get": { "parameters": [] }
@@ -208,6 +217,24 @@ public sealed class ToolCatalogCommandRunnerTests
             "required": ["name"],
             "properties": {
               "name": { "type": "string" }
+            }
+          },
+          "CreateMissionObjectiveRequest": {
+            "type": "object",
+            "required": ["missionId", "name"],
+            "properties": {
+              "missionId": { "type": "string", "format": "uuid" },
+              "name": { "type": "string" },
+              "description": { "type": ["null", "string"] },
+              "parentObjectiveId": { "type": ["null", "string"], "format": "uuid" }
+            }
+          },
+          "UpdateMissionObjectiveRequest": {
+            "type": "object",
+            "required": ["name"],
+            "properties": {
+              "name": { "type": "string" },
+              "description": { "type": ["null", "string"] }
             }
           },
           "CreateMetricCheckinRequest": {
@@ -263,6 +290,15 @@ public sealed class ToolCatalogCommandRunnerTests
           "put": { "parameters": [ { "name": "id", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } } ], "requestBody": { "content": { "application/json": { "schema": { "$ref": "#/components/schemas/UpdateMissionMetricRequest" } } } } },
           "delete": { "parameters": [ { "name": "id", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } } ] }
         },
+        "/api/mission-objectives": {
+          "post": { "requestBody": { "content": { "application/json": { "schema": { "$ref": "#/components/schemas/CreateMissionObjectiveRequest" } } } } },
+          "get": { "parameters": [] }
+        },
+        "/api/mission-objectives/{id}": {
+          "get": { "parameters": [ { "name": "id", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } } ] },
+          "put": { "parameters": [ { "name": "id", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } } ], "requestBody": { "content": { "application/json": { "schema": { "$ref": "#/components/schemas/UpdateMissionObjectiveRequest" } } } } },
+          "delete": { "parameters": [ { "name": "id", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } } ] }
+        },
         "/api/metric-checkins": {
           "post": { "requestBody": { "content": { "application/json": { "schema": { "$ref": "#/components/schemas/CreateMetricCheckinRequest" } } } } },
           "get": { "parameters": [] }
@@ -297,6 +333,20 @@ public sealed class ToolCatalogCommandRunnerTests
             }
           },
           "UpdateMissionMetricRequest": {
+            "type": "object",
+            "required": ["name"],
+            "properties": {
+              "name": { "type": "string" }
+            }
+          },
+          "CreateMissionObjectiveRequest": {
+            "type": "object",
+            "required": ["missionId"],
+            "properties": {
+              "missionId": { "type": "string", "format": "uuid" }
+            }
+          },
+          "UpdateMissionObjectiveRequest": {
             "type": "object",
             "required": ["name"],
             "properties": {

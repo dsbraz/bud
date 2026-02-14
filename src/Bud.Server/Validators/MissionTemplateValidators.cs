@@ -71,7 +71,6 @@ public sealed class MissionTemplateMetricDtoValidator : AbstractValidator<Missio
         When(x => x.Type == MetricType.Qualitative, () =>
         {
             RuleFor(x => x.TargetText)
-                .NotEmpty().WithMessage("Texto alvo é obrigatório para métricas qualitativas.")
                 .MaximumLength(1000).WithMessage("Texto alvo deve ter no máximo 1000 caracteres.");
         });
 

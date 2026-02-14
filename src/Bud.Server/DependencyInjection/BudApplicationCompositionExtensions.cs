@@ -3,6 +3,7 @@ using Bud.Server.Application.Collaborators;
 using Bud.Server.Application.Dashboard;
 using Bud.Server.Application.MetricCheckins;
 using Bud.Server.Application.MissionMetrics;
+using Bud.Server.Application.MissionObjectives;
 using Bud.Server.Application.Missions;
 using Bud.Server.Application.MissionTemplates;
 using Bud.Server.Application.Notifications;
@@ -42,6 +43,10 @@ public static class BudApplicationCompositionExtensions
         services.AddScoped<IMissionService, MissionService>();
         services.AddScoped<IMissionCommandUseCase, MissionCommandUseCase>();
         services.AddScoped<IMissionQueryUseCase, MissionQueryUseCase>();
+
+        services.AddScoped<IMissionObjectiveService, MissionObjectiveService>();
+        services.AddScoped<IMissionObjectiveCommandUseCase, MissionObjectiveCommandUseCase>();
+        services.AddScoped<IMissionObjectiveQueryUseCase, MissionObjectiveQueryUseCase>();
 
         services.AddScoped<IMissionMetricService, MissionMetricService>();
         services.AddScoped<IMissionMetricCommandUseCase, MissionMetricCommandUseCase>();

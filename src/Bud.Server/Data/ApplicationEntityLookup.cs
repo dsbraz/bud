@@ -57,6 +57,20 @@ public sealed class ApplicationEntityLookup(ApplicationDbContext dbContext) : IA
         return await query.FirstOrDefaultAsync(m => m.Id == missionMetricId, cancellationToken);
     }
 
+    public async Task<MissionObjective?> GetMissionObjectiveAsync(
+        Guid objectiveId,
+        bool ignoreQueryFilters = false,
+        CancellationToken cancellationToken = default)
+    {
+        var query = dbContext.MissionObjectives.AsNoTracking();
+        if (ignoreQueryFilters)
+        {
+            query = query.IgnoreQueryFilters();
+        }
+
+        return await query.FirstOrDefaultAsync(o => o.Id == objectiveId, cancellationToken);
+    }
+
     public async Task<MetricCheckin?> GetMetricCheckinAsync(
         Guid metricCheckinId,
         bool ignoreQueryFilters = false,

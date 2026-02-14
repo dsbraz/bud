@@ -32,6 +32,7 @@ public sealed class ApplicationDbContext : DbContext
     public DbSet<MetricCheckin> MetricCheckins => Set<MetricCheckin>();
     public DbSet<MissionTemplate> MissionTemplates => Set<MissionTemplate>();
     public DbSet<MissionTemplateMetric> MissionTemplateMetrics => Set<MissionTemplateMetric>();
+    public DbSet<MissionObjective> MissionObjectives => Set<MissionObjective>();
     public DbSet<CollaboratorAccessLog> CollaboratorAccessLogs => Set<CollaboratorAccessLog>();
     public DbSet<Notification> Notifications => Set<Notification>();
 
@@ -76,6 +77,13 @@ public sealed class ApplicationDbContext : DbContext
                 !_applyTenantFilter ||
                 (_isGlobalAdmin && _tenantId == null) ||
                 (_tenantId != null && m.OrganizationId == _tenantId)
+            );
+
+        modelBuilder.Entity<MissionObjective>()
+            .HasQueryFilter(mo =>
+                !_applyTenantFilter ||
+                (_isGlobalAdmin && _tenantId == null) ||
+                (_tenantId != null && mo.OrganizationId == _tenantId)
             );
 
         modelBuilder.Entity<MissionMetric>()

@@ -63,10 +63,24 @@ public sealed class CreateMissionTemplateRequest
     public List<MissionTemplateMetricDto> Metrics { get; set; } = [];
 }
 
+public sealed class CreateMissionObjectiveRequest
+{
+    /// <summary>Identificador da missão.</summary>
+    public Guid MissionId { get; set; }
+    /// <summary>Nome do objetivo.</summary>
+    public string Name { get; set; } = string.Empty;
+    /// <summary>Descrição opcional do objetivo.</summary>
+    public string? Description { get; set; }
+    /// <summary>Identificador do objetivo pai (null = objetivo de primeiro nível).</summary>
+    public Guid? ParentObjectiveId { get; set; }
+}
+
 public sealed class CreateMissionMetricRequest
 {
     /// <summary>Identificador da missão.</summary>
     public Guid MissionId { get; set; }
+    /// <summary>Identificador opcional do objetivo (null = métrica direta da missão).</summary>
+    public Guid? MissionObjectiveId { get; set; }
     /// <summary>Nome da métrica.</summary>
     public string Name { get; set; } = string.Empty;
     /// <summary>Tipo da métrica (quantitativa ou qualitativa).</summary>

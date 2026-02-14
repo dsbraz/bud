@@ -94,6 +94,10 @@ public sealed class MissionProgressService(ApplicationDbContext dbContext) : IMi
 
             var expectedProgress = CalculateExpectedProgress(mission.StartDate, mission.EndDate, now);
 
+            // Build objective-level progress breakdown
+            var objectiveProgress = BuildObjectiveProgress(
+                mission.Metrics, latestCheckinByMetric, firstCheckins, oneWeekAgo);
+
             results.Add(new MissionProgressDto
             {
                 MissionId = mission.Id,
@@ -102,7 +106,8 @@ public sealed class MissionProgressService(ApplicationDbContext dbContext) : IMi
                 AverageConfidence = Math.Round(averageConfidence, 1),
                 TotalMetrics = totalMetrics,
                 MetricsWithCheckins = metricsWithCheckins,
-                OutdatedMetrics = outdatedMetrics
+                OutdatedMetrics = outdatedMetrics,
+                ObjectiveProgress = objectiveProgress
             });
         }
 
@@ -322,6 +327,132 @@ public sealed class MissionProgressService(ApplicationDbContext dbContext) : IMi
 
         var elapsedDays = (now - startDate).TotalDays;
         return Clamp((decimal)(elapsedDays / totalDays) * 100m);
+    }
+
+    public async Task<ServiceResult<List<ObjectiveProgressDto>>> GetObjectiveProgressAsync(
+        List<Guid> objectiveIds,
+        CancellationToken cancellationToken = default)
+    {
+        if (objectiveIds.Count == 0)
+        {
+            return ServiceResult<List<ObjectiveProgressDto>>.Success([]);
+        }
+
+        var metrics = await dbContext.MissionMetrics
+            .AsNoTracking()
+            .Where(m => m.MissionObjectiveId.HasValue && objectiveIds.Contains(m.MissionObjectiveId.Value))
+            .ToListAsync(cancellationToken);
+
+        var metricIds = metrics.Select(m => m.Id).ToList();
+
+        var allCheckins = await dbContext.MetricCheckins
+            .AsNoTracking()
+            .Where(c => metricIds.Contains(c.MissionMetricId))
+            .ToListAsync(cancellationToken);
+
+        var latestCheckinByMetric = allCheckins
+            .GroupBy(c => c.MissionMetricId)
+            .ToDictionary(g => g.Key, g => g.OrderBy(c => c.CheckinDate).Last());
+
+        var reduceMetricIds = metrics
+            .Where(m => m.Type == MetricType.Quantitative && m.QuantitativeType == QuantitativeMetricType.Reduce)
+            .Select(m => m.Id)
+            .ToHashSet();
+
+        var firstCheckins = allCheckins
+            .Where(c => reduceMetricIds.Contains(c.MissionMetricId))
+            .GroupBy(c => c.MissionMetricId)
+            .ToDictionary(g => g.Key, g => g.OrderBy(c => c.CheckinDate).First());
+
+        var oneWeekAgo = DateTime.UtcNow.AddDays(-7);
+        var results = new List<ObjectiveProgressDto>();
+
+        foreach (var objectiveId in objectiveIds)
+        {
+            var objectiveMetrics = metrics.Where(m => m.MissionObjectiveId == objectiveId).ToList();
+            results.Add(CalculateObjectiveProgress(
+                objectiveId, objectiveMetrics, latestCheckinByMetric, firstCheckins, oneWeekAgo));
+        }
+
+        return ServiceResult<List<ObjectiveProgressDto>>.Success(results);
+    }
+
+    private static List<ObjectiveProgressDto> BuildObjectiveProgress(
+        ICollection<MissionMetric> allMetrics,
+        Dictionary<Guid, MetricCheckin> latestCheckinByMetric,
+        Dictionary<Guid, MetricCheckin> firstCheckins,
+        DateTime oneWeekAgo)
+    {
+        var objectiveIds = allMetrics
+            .Where(m => m.MissionObjectiveId.HasValue)
+            .Select(m => m.MissionObjectiveId!.Value)
+            .Distinct()
+            .ToList();
+
+        if (objectiveIds.Count == 0)
+        {
+            return [];
+        }
+
+        return objectiveIds.Select(objectiveId =>
+        {
+            var objectiveMetrics = allMetrics
+                .Where(m => m.MissionObjectiveId == objectiveId)
+                .ToList();
+            return CalculateObjectiveProgress(
+                objectiveId, objectiveMetrics, latestCheckinByMetric, firstCheckins, oneWeekAgo);
+        }).ToList();
+    }
+
+    private static ObjectiveProgressDto CalculateObjectiveProgress(
+        Guid objectiveId,
+        List<MissionMetric> metrics,
+        Dictionary<Guid, MetricCheckin> latestCheckinByMetric,
+        Dictionary<Guid, MetricCheckin> firstCheckins,
+        DateTime oneWeekAgo)
+    {
+        var totalMetrics = metrics.Count;
+        var metricsWithCheckins = 0;
+        var outdatedMetrics = 0;
+        var progressSum = 0m;
+        var confidenceSum = 0m;
+
+        foreach (var metric in metrics)
+        {
+            if (!latestCheckinByMetric.TryGetValue(metric.Id, out var latestCheckin))
+            {
+                outdatedMetrics++;
+                continue;
+            }
+
+            metricsWithCheckins++;
+            confidenceSum += latestCheckin.ConfidenceLevel;
+
+            if (latestCheckin.CheckinDate < oneWeekAgo)
+            {
+                outdatedMetrics++;
+            }
+
+            progressSum += CalculateMetricProgress(metric, latestCheckin, firstCheckins);
+        }
+
+        var overallProgress = totalMetrics > 0 && metricsWithCheckins > 0
+            ? progressSum / totalMetrics
+            : 0m;
+
+        var averageConfidence = metricsWithCheckins > 0
+            ? confidenceSum / metricsWithCheckins
+            : 0m;
+
+        return new ObjectiveProgressDto
+        {
+            ObjectiveId = objectiveId,
+            OverallProgress = Math.Round(overallProgress, 1),
+            AverageConfidence = Math.Round(averageConfidence, 1),
+            TotalMetrics = totalMetrics,
+            MetricsWithCheckins = metricsWithCheckins,
+            OutdatedMetrics = outdatedMetrics
+        };
     }
 
     private static decimal Clamp(decimal value)

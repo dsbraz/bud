@@ -8,6 +8,9 @@ public sealed class MissionMetric : ITenantEntity
     public Guid MissionId { get; set; }
     public Mission Mission { get; set; } = null!;
 
+    public Guid? MissionObjectiveId { get; set; }
+    public MissionObjective? MissionObjective { get; set; }
+
     public string Name { get; set; } = string.Empty;
     public MetricType Type { get; set; }
 
