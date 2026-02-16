@@ -2,7 +2,7 @@
 @inject NavigationManager Navigation
 
 <nav class="sidebar-nav">
-    <NavLink class="nav-item" href="dashboard">
+    <NavLink class="nav-item" href="/dashboard">
         <svg width="20" height="20" fill="currentColor" viewBox="0 0 256 256">
             <path d="M224,115.55V208a16,16,0,0,1-16,16H168a16,16,0,0,1-16-16V168a8,8,0,0,0-8-8H112a8,8,0,0,0-8,8v40a16,16,0,0,1-16,16H48a16,16,0,0,1-16-16V115.55a16,16,0,0,1,5.17-11.78l80-75.48.11-.11a16,16,0,0,1,21.53,0,1.14,1.14,0,0,0,.11.11l80,75.48A16,16,0,0,1,224,115.55Z"/>
         </svg>
@@ -11,7 +11,7 @@
 
     <div class="sidebar-section">
         <div class="sidebar-section-title">Performance e Engajamento</div>
-        <a class="nav-item @GetMissoesActiveClass()" href="missions">
+        <a class="nav-item @GetMissoesActiveClass()" href="/missions">
             <svg width="20" height="20" fill="currentColor" viewBox="0 0 256 256">
                 <path d="M128,24A104,104,0,1,0,232,128,104.11,104.11,0,0,0,128,24Zm0,192a88,88,0,1,1,88-88A88.1,88.1,0,0,1,128,216ZM172.24,99.76a6,6,0,0,1,0,8.48l-48,48a6,6,0,0,1-8.48,0l-24-24a6,6,0,0,1,8.48-8.48L120,143.51l43.76-43.75A6,6,0,0,1,172.24,99.76Z"/>
             </svg>
@@ -29,7 +29,7 @@
     {
         <div class="sidebar-section">
             <div class="sidebar-section-title">Administração</div>
-            <a class="nav-item @GetOrganizationsActiveClass()" href="organizations">
+            <a class="nav-item @GetOrganizationsActiveClass()" href="/organizations">
                 <svg width="20" height="20" fill="currentColor" viewBox="0 0 256 256">
                     <path d="M224,48H32A16,16,0,0,0,16,64V192a16,16,0,0,0,16,16H224a16,16,0,0,0,16-16V64A16,16,0,0,0,224,48Zm0,16V88H32V64Zm0,128H32V104H224v88Z"/>
                 </svg>
@@ -40,18 +40,39 @@
 
     <div class="sidebar-section">
         <div class="sidebar-section-title">Empresa</div>
-        <a class="nav-item @GetPessoasActiveClass()" href="collaborators">
+        <a class="nav-item @GetPessoasActiveClass()" @onclick="TogglePessoasSubmenu" @onclick:preventDefault>
             <svg width="20" height="20" fill="currentColor" viewBox="0 0 256 256">
                 <path d="M117.25,157.92a60,60,0,1,0-66.5,0A95.83,95.83,0,0,0,3.53,195.63a8,8,0,1,0,13.4,8.74,80,80,0,0,1,134.14,0,8,8,0,0,0,13.4-8.74A95.83,95.83,0,0,0,117.25,157.92ZM40,108a44,44,0,1,1,44,44A44.05,44.05,0,0,1,40,108Zm210.14,98.7a8,8,0,0,1-11.07-2.33A79.83,79.83,0,0,0,172,168a8,8,0,0,1,0-16,44,44,0,1,0-16.34-84.87,8,8,0,1,1-5.94-14.85,60,60,0,0,1,55.53,105.64,95.83,95.83,0,0,1,47.22,37.71A8,8,0,0,1,250.14,206.7Z"/>
             </svg>
             Pessoas
+            <svg class="nav-chevron @(_pessoasExpanded ? "expanded" : "")" width="16" height="16" fill="currentColor" viewBox="0 0 256 256">
+                <path d="M181.66,133.66l-80,80a8,8,0,0,1-11.32-11.32L164.69,128,90.34,53.66a8,8,0,0,1,11.32-11.32l80,80A8,8,0,0,1,181.66,133.66Z"/>
+            </svg>
         </a>
-        <a class="nav-item @GetConfigActiveClass()" href="workspaces">
+        @if (_pessoasExpanded)
+        {
+            <div class="nav-submenu">
+                <a class="nav-subitem @GetSubitemActiveClass("/collaborators")" href="/collaborators">Colaboradores</a>
+                <a class="nav-subitem @GetSubitemActiveClass("/workspaces")" href="/workspaces">Espaços de trabalho</a>
+                <a class="nav-subitem @GetSubitemActiveClass("/teams")" href="/teams">Equipes</a>
+            </div>
+        }
+        <a class="nav-item @GetConfigActiveClass()" @onclick="ToggleConfigSubmenu" @onclick:preventDefault>
             <svg width="20" height="20" fill="currentColor" viewBox="0 0 256 256">
                 <path d="M128,80a48,48,0,1,0,48,48A48.05,48.05,0,0,0,128,80Zm0,80a32,32,0,1,1,32-32A32,32,0,0,1,128,160Zm88-29.84q.06-2.16,0-4.32l14.92-18.64a8,8,0,0,0,1.48-7.06,107.6,107.6,0,0,0-10.88-26.25,8,8,0,0,0-6-3.93l-23.72-2.64q-1.48-1.56-3-3L186,40.54a8,8,0,0,0-3.94-6,107.29,107.29,0,0,0-26.25-10.86,8,8,0,0,0-7.06,1.48L130.16,40Q128,40,125.84,40L107.2,25.11a8,8,0,0,0-7.06-1.48A107.6,107.6,0,0,0,73.89,34.51a8,8,0,0,0-3.93,6L67.32,64.27q-1.56,1.49-3,3L40.54,70a8,8,0,0,0-6,3.94,107.71,107.71,0,0,0-10.87,26.25,8,8,0,0,0,1.49,7.06L40,125.84Q40,128,40,130.16L25.11,148.8a8,8,0,0,0-1.48,7.06,107.6,107.6,0,0,0,10.88,26.25,8,8,0,0,0,6,3.93l23.72,2.64q1.49,1.56,3,3L70,215.46a8,8,0,0,0,3.94,6,107.71,107.71,0,0,0,26.25,10.87,8,8,0,0,0,7.06-1.49L125.84,216q2.16.06,4.32,0l18.64,14.92a8,8,0,0,0,7.06,1.48,107.21,107.21,0,0,0,26.25-10.88,8,8,0,0,0,3.93-6l2.64-23.72q1.56-1.48,3-3L215.46,186a8,8,0,0,0,6-3.94,107.71,107.71,0,0,0,10.87-26.25,8,8,0,0,0-1.49-7.06Zm-16.1-6.5a73.93,73.93,0,0,1,0,8.68,8,8,0,0,0,1.74,5.48l14.19,17.73a91.57,91.57,0,0,1-6.23,15L187,173.11a8,8,0,0,0-5.1,2.64,74.11,74.11,0,0,1-6.14,6.14,8,8,0,0,0-2.64,5.1l-2.51,22.58a91.32,91.32,0,0,1-15,6.23l-17.74-14.19a8,8,0,0,0-5-1.75h-.48a73.93,73.93,0,0,1-8.68,0,8,8,0,0,0-5.48,1.74L100.45,215.8a91.57,91.57,0,0,1-15-6.23L82.89,187a8,8,0,0,0-2.64-5.1,74.11,74.11,0,0,1-6.14-6.14,8,8,0,0,0-5.1-2.64L46.43,170.6a91.32,91.32,0,0,1-6.23-15l14.19-17.74a8,8,0,0,0,1.74-5.48,73.93,73.93,0,0,1,0-8.68,8,8,0,0,0-1.74-5.48L40.2,100.45a91.57,91.57,0,0,1,6.23-15L69,82.89a8,8,0,0,0,5.1-2.64,74.11,74.11,0,0,1,6.14-6.14A8,8,0,0,0,82.89,69L85.4,46.43a91.32,91.32,0,0,1,15-6.23l17.74,14.19a8,8,0,0,0,5.48,1.74,73.93,73.93,0,0,1,8.68,0,8,8,0,0,0,5.48-1.74L155.55,40.2a91.57,91.57,0,0,1,15,6.23L173.11,69a8,8,0,0,0,2.64,5.1,74.11,74.11,0,0,1,6.14,6.14,8,8,0,0,0,5.1,2.64l22.58,2.51a91.32,91.32,0,0,1,6.23,15l-14.19,17.74A8,8,0,0,0,199.87,123.66Z"/>
             </svg>
             Configurações
+            <svg class="nav-chevron @(_configExpanded ? "expanded" : "")" width="16" height="16" fill="currentColor" viewBox="0 0 256 256">
+                <path d="M181.66,133.66l-80,80a8,8,0,0,1-11.32-11.32L164.69,128,90.34,53.66a8,8,0,0,1,11.32-11.32l80,80A8,8,0,0,1,181.66,133.66Z"/>
+            </svg>
         </a>
+        @if (_configExpanded)
+        {
+            <div class="nav-submenu">
+                <a class="nav-subitem @GetSubitemActiveClass("/mission-templates")" href="/mission-templates">Modelos</a>
+                <a class="nav-subitem @GetSubitemActiveClass("/objective-dimensions")" href="/objective-dimensions">Dimensões</a>
+            </div>
+        }
         <a class="nav-item" href="#">
             <svg width="20" height="20" fill="currentColor" viewBox="0 0 256 256">
                 <path d="M128,24A104,104,0,1,0,232,128,104.11,104.11,0,0,0,128,24Zm0,192a88,88,0,1,1,88-88A88.1,88.1,0,0,1,128,216ZM80,108A12,12,0,1,1,92,96,12,12,0,0,1,80,108Zm96,0a12,12,0,1,1-12-12A12,12,0,0,1,176,108Zm-1.07,48c-10.29,17.79-27.4,28-46.93,28s-36.63-10.2-46.92-28a8,8,0,1,1,13.84-8c7.47,12.91,19.21,20,33.08,20s25.61-7.1,33.07-20a8,8,0,0,1,13.86,8Z"/>
@@ -65,6 +86,12 @@
     [Inject]
     private Services.AuthState AuthState { get; set; } = default!;
 
+    private bool _pessoasExpanded = true;
+    private bool _configExpanded = true;
+
+    private static readonly string[] PessoasRoutes = ["/collaborators", "/workspaces", "/teams"];
+    private static readonly string[] ConfigRoutes = ["/mission-templates", "/objective-dimensions"];
+
     private string GetOrganizationsActiveClass()
     {
         var uri = Navigation.Uri;
@@ -76,7 +103,14 @@
     private string GetPessoasActiveClass()
     {
         var uri = Navigation.Uri;
-        return uri.Contains("/collaborators", StringComparison.OrdinalIgnoreCase)
+        return PessoasRoutes.Any(route => uri.Contains(route, StringComparison.OrdinalIgnoreCase))
+            ? "active"
+            : "";
+    }
+
+    private string GetSubitemActiveClass(string route)
+    {
+        return Navigation.Uri.Contains(route, StringComparison.OrdinalIgnoreCase)
             ? "active"
             : "";
     }
@@ -84,8 +118,7 @@
     private string GetConfigActiveClass()
     {
         var uri = Navigation.Uri;
-        var configRoutes = new[] { "/workspaces", "/teams", "/mission-templates" };
-        return configRoutes.Any(route => uri.Contains(route, StringComparison.OrdinalIgnoreCase))
+        return ConfigRoutes.Any(route => uri.Contains(route, StringComparison.OrdinalIgnoreCase))
             ? "active"
             : "";
     }
@@ -93,19 +126,42 @@
     private string GetMissoesActiveClass()
     {
         var uri = Navigation.Uri;
-        var missoesRoutes = new[] { "/missions", "/mission-metrics" };
+        var missoesRoutes = new[] { "/missions" };
         return missoesRoutes.Any(route => uri.Contains(route, StringComparison.OrdinalIgnoreCase))
             ? "active"
             : "";
     }
 
+    private void TogglePessoasSubmenu()
+    {
+        _pessoasExpanded = !_pessoasExpanded;
+    }
+
+    private void ToggleConfigSubmenu()
+    {
+        _configExpanded = !_configExpanded;
+    }
+
     protected override void OnInitialized()
     {
-        Navigation.LocationChanged += (s, e) => StateHasChanged();
+        Navigation.LocationChanged += OnLocationChanged;
+    }
+
+    private void OnLocationChanged(object? sender, Microsoft.AspNetCore.Components.Routing.LocationChangedEventArgs e)
+    {
+        if (PessoasRoutes.Any(route => e.Location.Contains(route, StringComparison.OrdinalIgnoreCase)))
+        {
+            _pessoasExpanded = true;
+        }
+        if (ConfigRoutes.Any(route => e.Location.Contains(route, StringComparison.OrdinalIgnoreCase)))
+        {
+            _configExpanded = true;
+        }
+        StateHasChanged();
     }
 
     public void Dispose()
     {
-        Navigation.LocationChanged -= (s, e) => StateHasChanged();
+        Navigation.LocationChanged -= OnLocationChanged;
     }
 }
