@@ -20,15 +20,18 @@ public sealed class MissionObjectiveConfiguration : IEntityTypeConfiguration<Mis
             .OnDelete(DeleteBehavior.Restrict);
 
         builder.HasIndex(o => o.OrganizationId);
-
-        builder.HasMany(o => o.SubObjectives)
-            .WithOne(o => o.ParentObjective)
-            .HasForeignKey(o => o.ParentObjectiveId)
-            .OnDelete(DeleteBehavior.Restrict);
+        builder.HasIndex(o => o.MissionId);
 
         builder.HasMany(o => o.Metrics)
             .WithOne(m => m.MissionObjective)
             .HasForeignKey(m => m.MissionObjectiveId)
             .OnDelete(DeleteBehavior.Cascade);
+
+        builder.HasOne(o => o.ObjectiveDimension)
+            .WithMany()
+            .HasForeignKey(o => o.ObjectiveDimensionId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        builder.HasIndex(o => o.ObjectiveDimensionId);
     }
 }

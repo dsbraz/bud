@@ -13,11 +13,10 @@ public sealed class MissionObjectiveQueryUseCase(
 
     public Task<ServiceResult<PagedResult<MissionObjective>>> GetByMissionAsync(
         Guid missionId,
-        Guid? parentObjectiveId,
         int page,
         int pageSize,
         CancellationToken cancellationToken = default)
-        => objectiveService.GetByMissionAsync(missionId, parentObjectiveId, page, pageSize, cancellationToken);
+        => objectiveService.GetByMissionAsync(missionId, page, pageSize, cancellationToken);
 
     public Task<ServiceResult<List<ObjectiveProgressDto>>> GetProgressAsync(
         List<Guid> objectiveIds,

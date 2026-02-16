@@ -83,6 +83,14 @@ public sealed class WorkspaceService(
             return ServiceResult.NotFound("Workspace não encontrado.");
         }
 
+        var hasMissions = await dbContext.Missions.AnyAsync(m => m.WorkspaceId == id, cancellationToken);
+        if (hasMissions)
+        {
+            return ServiceResult.Failure(
+                "Não é possível excluir o workspace porque existem missões associadas a ele.",
+                ServiceErrorType.Conflict);
+        }
+
         dbContext.Workspaces.Remove(workspace);
         await dbContext.SaveChangesAsync(cancellationToken);
 

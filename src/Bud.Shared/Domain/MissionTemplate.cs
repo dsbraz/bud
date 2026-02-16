@@ -13,6 +13,7 @@ public sealed class MissionTemplate : ITenantEntity, IAggregateRoot
     public bool IsDefault { get; set; }
     public bool IsActive { get; set; } = true;
 
+    public ICollection<MissionTemplateObjective> Objectives { get; set; } = new List<MissionTemplateObjective>();
     public ICollection<MissionTemplateMetric> Metrics { get; set; } = new List<MissionTemplateMetric>();
 
     public static MissionTemplate Create(
@@ -55,22 +56,54 @@ public sealed class MissionTemplate : ITenantEntity, IAggregateRoot
     public void SetActive(bool isActive) => IsActive = isActive;
 
     public void ReplaceMetrics(IEnumerable<MissionTemplateMetricDraft> metricDrafts)
+        => ReplaceObjectivesAndMetrics([], metricDrafts);
+
+    public void ReplaceObjectivesAndMetrics(
+        IEnumerable<MissionTemplateObjectiveDraft> objectiveDrafts,
+        IEnumerable<MissionTemplateMetricDraft> metricDrafts)
     {
+        ArgumentNullException.ThrowIfNull(objectiveDrafts);
         ArgumentNullException.ThrowIfNull(metricDrafts);
 
-        Metrics = metricDrafts
-            .Select(metric => MissionTemplateMetric.Create(
-                Guid.NewGuid(),
+        var objectiveList = objectiveDrafts
+            .Select(objective => MissionTemplateObjective.Create(
+                objective.Id ?? Guid.NewGuid(),
                 OrganizationId,
                 Id,
-                metric.Name,
-                metric.Type,
-                metric.OrderIndex,
-                metric.QuantitativeType,
-                metric.MinValue,
-                metric.MaxValue,
-                metric.Unit,
-                metric.TargetText))
+                objective.Name,
+                objective.Description,
+                objective.OrderIndex,
+                objective.ObjectiveDimensionId))
+            .ToList();
+
+        var objectiveIds = objectiveList
+            .Select(objective => objective.Id)
+            .ToHashSet();
+
+        Objectives = objectiveList;
+
+        Metrics = metricDrafts
+            .Select(metric =>
+            {
+                if (metric.MissionTemplateObjectiveId.HasValue && !objectiveIds.Contains(metric.MissionTemplateObjectiveId.Value))
+                {
+                    throw new DomainInvariantException("A métrica referencia um objetivo de template inexistente.");
+                }
+
+                return MissionTemplateMetric.Create(
+                    Guid.NewGuid(),
+                    OrganizationId,
+                    Id,
+                    metric.Name,
+                    metric.Type,
+                    metric.OrderIndex,
+                    metric.MissionTemplateObjectiveId,
+                    metric.QuantitativeType,
+                    metric.MinValue,
+                    metric.MaxValue,
+                    metric.Unit,
+                    metric.TargetText);
+            })
             .ToList();
     }
 }

@@ -21,21 +21,19 @@ public sealed class MissionObjectiveService(ApplicationDbContext dbContext) : IM
                 return ServiceResult<MissionObjective>.NotFound("Missão não encontrada.");
             }
 
-            if (request.ParentObjectiveId.HasValue)
+            if (request.ObjectiveDimensionId.HasValue)
             {
-                var parent = await dbContext.MissionObjectives
+                var dimensionBelongsToMissionOrganization = await dbContext.ObjectiveDimensions
                     .AsNoTracking()
-                    .FirstOrDefaultAsync(o => o.Id == request.ParentObjectiveId.Value, cancellationToken);
+                    .AnyAsync(
+                        d => d.Id == request.ObjectiveDimensionId.Value && d.OrganizationId == mission.OrganizationId,
+                        cancellationToken);
 
-                if (parent is null)
-                {
-                    return ServiceResult<MissionObjective>.NotFound("Objetivo pai não encontrado.");
-                }
-
-                if (parent.MissionId != request.MissionId)
+                if (!dimensionBelongsToMissionOrganization)
                 {
                     return ServiceResult<MissionObjective>.Failure(
-                        "Objetivo pai deve pertencer à mesma missão.", ServiceErrorType.Validation);
+                        "Dimensão do objetivo não encontrada para esta organização.",
+                        ServiceErrorType.Validation);
                 }
             }
 
@@ -44,9 +42,8 @@ public sealed class MissionObjectiveService(ApplicationDbContext dbContext) : IM
                 mission.OrganizationId,
                 request.MissionId,
                 request.Name,
-                request.Description);
-
-            objective.SetParent(request.ParentObjectiveId);
+                request.Description,
+                request.ObjectiveDimensionId);
 
             dbContext.MissionObjectives.Add(objective);
             await dbContext.SaveChangesAsync(cancellationToken);
@@ -71,7 +68,23 @@ public sealed class MissionObjectiveService(ApplicationDbContext dbContext) : IM
 
         try
         {
-            objective.UpdateDetails(request.Name, request.Description);
+            if (request.ObjectiveDimensionId.HasValue)
+            {
+                var dimensionBelongsToObjectiveOrganization = await dbContext.ObjectiveDimensions
+                    .AsNoTracking()
+                    .AnyAsync(
+                        d => d.Id == request.ObjectiveDimensionId.Value && d.OrganizationId == objective.OrganizationId,
+                        cancellationToken);
+
+                if (!dimensionBelongsToObjectiveOrganization)
+                {
+                    return ServiceResult<MissionObjective>.Failure(
+                        "Dimensão do objetivo não encontrada para esta organização.",
+                        ServiceErrorType.Validation);
+                }
+            }
+
+            objective.UpdateDetails(request.Name, request.Description, request.ObjectiveDimensionId);
             await dbContext.SaveChangesAsync(cancellationToken);
 
             return ServiceResult<MissionObjective>.Success(objective);
@@ -89,16 +102,6 @@ public sealed class MissionObjectiveService(ApplicationDbContext dbContext) : IM
         if (objective is null)
         {
             return ServiceResult.NotFound("Objetivo não encontrado.");
-        }
-
-        var hasChildren = await dbContext.MissionObjectives
-            .AnyAsync(o => o.ParentObjectiveId == id, cancellationToken);
-
-        if (hasChildren)
-        {
-            return ServiceResult.Failure(
-                "Não é possível excluir um objetivo que possui sub-objetivos. Remova os sub-objetivos primeiro.",
-                ServiceErrorType.Validation);
         }
 
         dbContext.MissionObjectives.Remove(objective);
@@ -120,18 +123,13 @@ public sealed class MissionObjectiveService(ApplicationDbContext dbContext) : IM
     }
 
     public async Task<ServiceResult<PagedResult<MissionObjective>>> GetByMissionAsync(
-        Guid missionId, Guid? parentObjectiveId, int page, int pageSize, CancellationToken cancellationToken = default)
+        Guid missionId, int page, int pageSize, CancellationToken cancellationToken = default)
     {
         (page, pageSize) = PaginationNormalizer.Normalize(page, pageSize);
 
         var query = dbContext.MissionObjectives
             .AsNoTracking()
             .Where(o => o.MissionId == missionId);
-
-        // Filter by parent: null = top-level objectives only
-        query = parentObjectiveId.HasValue
-            ? query.Where(o => o.ParentObjectiveId == parentObjectiveId.Value)
-            : query.Where(o => o.ParentObjectiveId == null);
 
         var total = await query.CountAsync(cancellationToken);
         var items = await query

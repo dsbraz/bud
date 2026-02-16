@@ -11,6 +11,8 @@ public sealed class WorkspaceConfiguration : IEntityTypeConfiguration<Workspace>
         builder.Property(w => w.Name)
             .HasMaxLength(200);
 
+        builder.HasIndex(w => w.OrganizationId);
+
         builder.HasMany(w => w.Teams)
             .WithOne(t => t.Workspace)
             .HasForeignKey(t => t.WorkspaceId)

@@ -17,6 +17,7 @@ public sealed class CreateMissionObjectiveValidator : AbstractValidator<CreateMi
         RuleFor(x => x.Description)
             .MaximumLength(1000).WithMessage("Descrição deve ter no máximo 1000 caracteres.")
             .When(x => !string.IsNullOrEmpty(x.Description));
+
     }
 }
 
@@ -31,5 +32,6 @@ public sealed class UpdateMissionObjectiveValidator : AbstractValidator<UpdateMi
         RuleFor(x => x.Description)
             .MaximumLength(1000).WithMessage("Descrição deve ter no máximo 1000 caracteres.")
             .When(x => !string.IsNullOrEmpty(x.Description));
+
     }
 }

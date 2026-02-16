@@ -59,6 +59,8 @@ public sealed class CreateMissionTemplateRequest
     public string? MissionNamePattern { get; set; }
     /// <summary>Padrão de descrição para missões criadas a partir deste template.</summary>
     public string? MissionDescriptionPattern { get; set; }
+    /// <summary>Objetivos do template.</summary>
+    public List<MissionTemplateObjectiveDto> Objectives { get; set; } = [];
     /// <summary>Métricas do template.</summary>
     public List<MissionTemplateMetricDto> Metrics { get; set; } = [];
 }
@@ -71,8 +73,14 @@ public sealed class CreateMissionObjectiveRequest
     public string Name { get; set; } = string.Empty;
     /// <summary>Descrição opcional do objetivo.</summary>
     public string? Description { get; set; }
-    /// <summary>Identificador do objetivo pai (null = objetivo de primeiro nível).</summary>
-    public Guid? ParentObjectiveId { get; set; }
+    /// <summary>Identificador opcional da dimensão do objetivo.</summary>
+    public Guid? ObjectiveDimensionId { get; set; }
+}
+
+public sealed class CreateObjectiveDimensionRequest
+{
+    /// <summary>Nome da dimensão do objetivo.</summary>
+    public string Name { get; set; } = string.Empty;
 }
 
 public sealed class CreateMissionMetricRequest

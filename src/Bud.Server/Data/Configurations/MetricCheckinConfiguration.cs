@@ -25,5 +25,8 @@ public sealed class MetricCheckinConfiguration : IEntityTypeConfiguration<Metric
             .WithMany()
             .HasForeignKey(mc => mc.CollaboratorId)
             .OnDelete(DeleteBehavior.Restrict);
+
+        builder.HasIndex(mc => mc.MissionMetricId);
+        builder.HasIndex(mc => mc.CollaboratorId);
     }
 }

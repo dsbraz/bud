@@ -218,10 +218,6 @@ public sealed class MissionsController(
     /// <summary>
     /// Lista objetivos associados a uma missão.
     /// </summary>
-    /// <remarks>
-    /// Quando parentObjectiveId não é informado, retorna apenas objetivos de nível superior (sem pai).
-    /// Quando informado, retorna os sub-objetivos do objetivo pai especificado.
-    /// </remarks>
     /// <response code="200">Objetivos retornados com sucesso.</response>
     /// <response code="400">Parâmetros de paginação inválidos.</response>
     [HttpGet("{id:guid}/objectives")]
@@ -229,7 +225,6 @@ public sealed class MissionsController(
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
     public async Task<ActionResult<PagedResult<MissionObjective>>> GetObjectives(
         Guid id,
-        [FromQuery] Guid? parentObjectiveId,
         [FromQuery] int page = 1,
         [FromQuery] int pageSize = 10,
         CancellationToken cancellationToken = default)
@@ -240,7 +235,7 @@ public sealed class MissionsController(
             return paginationValidation;
         }
 
-        var result = await missionObjectiveQueryUseCase.GetByMissionAsync(id, parentObjectiveId, page, pageSize, cancellationToken);
+        var result = await missionObjectiveQueryUseCase.GetByMissionAsync(id, page, pageSize, cancellationToken);
         return FromResultOk(result);
     }
 }

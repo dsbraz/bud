@@ -19,6 +19,13 @@ public sealed class MissionTemplateMetricConfiguration : IEntityTypeConfiguratio
             .HasForeignKey(mtm => mtm.OrganizationId)
             .OnDelete(DeleteBehavior.Restrict);
 
+        builder.HasOne(mtm => mtm.MissionTemplateObjective)
+            .WithMany(mto => mto.Metrics)
+            .HasForeignKey(mtm => mtm.MissionTemplateObjectiveId)
+            .OnDelete(DeleteBehavior.SetNull);
+
         builder.HasIndex(mtm => mtm.OrganizationId);
+        builder.HasIndex(mtm => mtm.MissionTemplateId);
+        builder.HasIndex(mtm => mtm.MissionTemplateObjectiveId);
     }
 }

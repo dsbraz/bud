@@ -6,6 +6,7 @@ using Bud.Server.Application.MissionMetrics;
 using Bud.Server.Application.MissionObjectives;
 using Bud.Server.Application.Missions;
 using Bud.Server.Application.MissionTemplates;
+using Bud.Server.Application.ObjectiveDimensions;
 using Bud.Server.Application.Notifications;
 using Bud.Server.Application.Organizations;
 using Bud.Server.Application.Teams;
@@ -63,6 +64,10 @@ public static class BudApplicationCompositionExtensions
         services.AddScoped<IMissionTemplateService, MissionTemplateService>();
         services.AddScoped<IMissionTemplateCommandUseCase, MissionTemplateCommandUseCase>();
         services.AddScoped<IMissionTemplateQueryUseCase, MissionTemplateQueryUseCase>();
+
+        services.AddScoped<IObjectiveDimensionService, ObjectiveDimensionService>();
+        services.AddScoped<IObjectiveDimensionCommandUseCase, ObjectiveDimensionCommandUseCase>();
+        services.AddScoped<IObjectiveDimensionQueryUseCase, ObjectiveDimensionQueryUseCase>();
 
         services.AddScoped<IDashboardService, DashboardService>();
         services.AddScoped<IDashboardQueryUseCase, DashboardQueryUseCase>();

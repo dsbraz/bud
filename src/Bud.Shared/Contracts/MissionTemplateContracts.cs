@@ -4,6 +4,8 @@ namespace Bud.Shared.Contracts;
 
 public sealed class MissionTemplateMetricDto
 {
+    /// <summary>Identificador opcional do objetivo do template ao qual a métrica pertence.</summary>
+    public Guid? MissionTemplateObjectiveId { get; set; }
     /// <summary>Nome da métrica do template.</summary>
     public string Name { get; set; } = string.Empty;
     /// <summary>Tipo da métrica (quantitativa ou qualitativa).</summary>
@@ -24,4 +26,18 @@ public sealed class MissionTemplateMetricDto
     // Qualitative metric fields
     /// <summary>Texto-alvo para métricas qualitativas.</summary>
     public string? TargetText { get; set; }
+}
+
+public sealed class MissionTemplateObjectiveDto
+{
+    /// <summary>Identificador opcional do objetivo no template.</summary>
+    public Guid? Id { get; set; }
+    /// <summary>Nome do objetivo do template.</summary>
+    public string Name { get; set; } = string.Empty;
+    /// <summary>Descrição opcional do objetivo do template.</summary>
+    public string? Description { get; set; }
+    /// <summary>Índice de ordenação do objetivo no template.</summary>
+    public int OrderIndex { get; set; }
+    /// <summary>Identificador opcional da dimensão do objetivo.</summary>
+    public Guid? ObjectiveDimensionId { get; set; }
 }

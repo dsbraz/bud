@@ -9,7 +9,6 @@ public interface IMissionObjectiveQueryUseCase
 
     Task<ServiceResult<PagedResult<MissionObjective>>> GetByMissionAsync(
         Guid missionId,
-        Guid? parentObjectiveId,
         int page,
         int pageSize,
         CancellationToken cancellationToken = default);

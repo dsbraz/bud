@@ -9,5 +9,5 @@ public interface IMissionObjectiveService
     Task<ServiceResult<MissionObjective>> UpdateAsync(Guid id, UpdateMissionObjectiveRequest request, CancellationToken cancellationToken = default);
     Task<ServiceResult> DeleteAsync(Guid id, CancellationToken cancellationToken = default);
     Task<ServiceResult<MissionObjective>> GetByIdAsync(Guid id, CancellationToken cancellationToken = default);
-    Task<ServiceResult<PagedResult<MissionObjective>>> GetByMissionAsync(Guid missionId, Guid? parentObjectiveId, int page, int pageSize, CancellationToken cancellationToken = default);
+    Task<ServiceResult<PagedResult<MissionObjective>>> GetByMissionAsync(Guid missionId, int page, int pageSize, CancellationToken cancellationToken = default);
 }

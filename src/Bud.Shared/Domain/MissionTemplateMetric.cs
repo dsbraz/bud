@@ -7,6 +7,8 @@ public sealed class MissionTemplateMetric : ITenantEntity
     public Organization Organization { get; set; } = null!;
     public Guid MissionTemplateId { get; set; }
     public MissionTemplate MissionTemplate { get; set; } = null!;
+    public Guid? MissionTemplateObjectiveId { get; set; }
+    public MissionTemplateObjective? MissionTemplateObjective { get; set; }
 
     public string Name { get; set; } = string.Empty;
     public MetricType Type { get; set; }
@@ -28,6 +30,7 @@ public sealed class MissionTemplateMetric : ITenantEntity
         string name,
         MetricType type,
         int orderIndex,
+        Guid? missionTemplateObjectiveId,
         QuantitativeMetricType? quantitativeType,
         decimal? minValue,
         decimal? maxValue,
@@ -49,6 +52,7 @@ public sealed class MissionTemplateMetric : ITenantEntity
             Id = id,
             OrganizationId = organizationId,
             MissionTemplateId = missionTemplateId,
+            MissionTemplateObjectiveId = missionTemplateObjectiveId,
             Name = name.Trim(),
             Type = type,
             OrderIndex = orderIndex

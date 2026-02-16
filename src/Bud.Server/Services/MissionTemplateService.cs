@@ -20,15 +20,23 @@ public sealed class MissionTemplateService(ApplicationDbContext dbContext) : IMi
                 request.MissionNamePattern,
                 request.MissionDescriptionPattern);
 
-            template.ReplaceMetrics(request.Metrics.Select(m => new MissionTemplateMetricDraft(
-                m.Name,
-                m.Type,
-                m.OrderIndex,
-                m.QuantitativeType,
-                m.MinValue,
-                m.MaxValue,
-                m.Unit,
-                m.TargetText)));
+            template.ReplaceObjectivesAndMetrics(
+                request.Objectives.Select(o => new MissionTemplateObjectiveDraft(
+                    o.Id,
+                    o.Name,
+                    o.Description,
+                    o.OrderIndex,
+                    o.ObjectiveDimensionId)),
+                request.Metrics.Select(m => new MissionTemplateMetricDraft(
+                    m.Name,
+                    m.Type,
+                    m.OrderIndex,
+                    m.MissionTemplateObjectiveId,
+                    m.QuantitativeType,
+                    m.MinValue,
+                    m.MaxValue,
+                    m.Unit,
+                    m.TargetText)));
 
             dbContext.MissionTemplates.Add(template);
             await dbContext.SaveChangesAsync(cancellationToken);
@@ -44,6 +52,7 @@ public sealed class MissionTemplateService(ApplicationDbContext dbContext) : IMi
     public async Task<ServiceResult<MissionTemplate>> UpdateAsync(Guid id, UpdateMissionTemplateRequest request, CancellationToken cancellationToken = default)
     {
         var template = await dbContext.MissionTemplates
+            .Include(t => t.Objectives)
             .Include(t => t.Metrics)
             .FirstOrDefaultAsync(t => t.Id == id, cancellationToken);
 
@@ -62,22 +71,35 @@ public sealed class MissionTemplateService(ApplicationDbContext dbContext) : IMi
             template.SetActive(request.IsActive);
 
             var previousMetrics = template.Metrics.ToList();
-            template.ReplaceMetrics(request.Metrics.Select(m => new MissionTemplateMetricDraft(
-                m.Name,
-                m.Type,
-                m.OrderIndex,
-                m.QuantitativeType,
-                m.MinValue,
-                m.MaxValue,
-                m.Unit,
-                m.TargetText)));
+            var previousObjectives = template.Objectives.ToList();
+
+            template.ReplaceObjectivesAndMetrics(
+                request.Objectives.Select(o => new MissionTemplateObjectiveDraft(
+                    o.Id,
+                    o.Name,
+                    o.Description,
+                    o.OrderIndex,
+                    o.ObjectiveDimensionId)),
+                request.Metrics.Select(m => new MissionTemplateMetricDraft(
+                    m.Name,
+                    m.Type,
+                    m.OrderIndex,
+                    m.MissionTemplateObjectiveId,
+                    m.QuantitativeType,
+                    m.MinValue,
+                    m.MaxValue,
+                    m.Unit,
+                    m.TargetText)));
 
             dbContext.MissionTemplateMetrics.RemoveRange(previousMetrics);
+            dbContext.MissionTemplateObjectives.RemoveRange(previousObjectives);
+            dbContext.MissionTemplateObjectives.AddRange(template.Objectives);
             dbContext.MissionTemplateMetrics.AddRange(template.Metrics);
             await dbContext.SaveChangesAsync(cancellationToken);
 
-        // Reload to include new metrics in result
+            // Reload to include new metrics/objectives in result
             template = await dbContext.MissionTemplates
+                .Include(t => t.Objectives.OrderBy(o => o.OrderIndex))
                 .Include(t => t.Metrics.OrderBy(m => m.OrderIndex))
                 .FirstAsync(t => t.Id == id, cancellationToken);
 
@@ -108,6 +130,7 @@ public sealed class MissionTemplateService(ApplicationDbContext dbContext) : IMi
     {
         var template = await dbContext.MissionTemplates
             .AsNoTracking()
+            .Include(t => t.Objectives.OrderBy(o => o.OrderIndex))
             .Include(t => t.Metrics.OrderBy(m => m.OrderIndex))
             .FirstOrDefaultAsync(t => t.Id == id, cancellationToken);
 
@@ -126,6 +149,7 @@ public sealed class MissionTemplateService(ApplicationDbContext dbContext) : IMi
 
         var query = dbContext.MissionTemplates
             .AsNoTracking()
+            .Include(t => t.Objectives.OrderBy(o => o.OrderIndex))
             .Include(t => t.Metrics.OrderBy(m => m.OrderIndex));
 
         IQueryable<MissionTemplate> filteredQuery = query;

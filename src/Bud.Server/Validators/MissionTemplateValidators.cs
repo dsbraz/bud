@@ -24,8 +24,26 @@ public sealed class CreateMissionTemplateValidator : AbstractValidator<CreateMis
             .MaximumLength(1000).WithMessage("Padrão de descrição deve ter no máximo 1000 caracteres.")
             .When(x => !string.IsNullOrEmpty(x.MissionDescriptionPattern));
 
+        RuleForEach(x => x.Objectives)
+            .SetValidator(new MissionTemplateObjectiveDtoValidator());
+
         RuleForEach(x => x.Metrics)
             .SetValidator(new MissionTemplateMetricDtoValidator());
+
+        RuleFor(x => x)
+            .Must(HaveValidObjectiveReferences)
+            .WithMessage("Uma ou mais métricas referenciam objetivos inexistentes no template.");
+    }
+
+    private static bool HaveValidObjectiveReferences(CreateMissionTemplateRequest request)
+    {
+        var objectiveIds = request.Objectives
+            .Where(o => o.Id.HasValue)
+            .Select(o => o.Id!.Value)
+            .ToHashSet();
+
+        return request.Metrics.All(metric =>
+            metric.MissionTemplateObjectiveId is null || objectiveIds.Contains(metric.MissionTemplateObjectiveId.Value));
     }
 }
 
@@ -49,8 +67,43 @@ public sealed class UpdateMissionTemplateValidator : AbstractValidator<UpdateMis
             .MaximumLength(1000).WithMessage("Padrão de descrição deve ter no máximo 1000 caracteres.")
             .When(x => !string.IsNullOrEmpty(x.MissionDescriptionPattern));
 
+        RuleForEach(x => x.Objectives)
+            .SetValidator(new MissionTemplateObjectiveDtoValidator());
+
         RuleForEach(x => x.Metrics)
             .SetValidator(new MissionTemplateMetricDtoValidator());
+
+        RuleFor(x => x)
+            .Must(HaveValidObjectiveReferences)
+            .WithMessage("Uma ou mais métricas referenciam objetivos inexistentes no template.");
+    }
+
+    private static bool HaveValidObjectiveReferences(UpdateMissionTemplateRequest request)
+    {
+        var objectiveIds = request.Objectives
+            .Where(o => o.Id.HasValue)
+            .Select(o => o.Id!.Value)
+            .ToHashSet();
+
+        return request.Metrics.All(metric =>
+            metric.MissionTemplateObjectiveId is null || objectiveIds.Contains(metric.MissionTemplateObjectiveId.Value));
+    }
+}
+
+public sealed class MissionTemplateObjectiveDtoValidator : AbstractValidator<MissionTemplateObjectiveDto>
+{
+    public MissionTemplateObjectiveDtoValidator()
+    {
+        RuleFor(x => x.Name)
+            .NotEmpty().WithMessage("Nome é obrigatório.")
+            .MaximumLength(200).WithMessage("Nome deve ter no máximo 200 caracteres.");
+
+        RuleFor(x => x.Description)
+            .MaximumLength(1000).WithMessage("Descrição deve ter no máximo 1000 caracteres.")
+            .When(x => !string.IsNullOrEmpty(x.Description));
+
+        RuleFor(x => x.OrderIndex)
+            .GreaterThanOrEqualTo(0).WithMessage("Índice de ordenação deve ser maior ou igual a 0.");
     }
 }
 

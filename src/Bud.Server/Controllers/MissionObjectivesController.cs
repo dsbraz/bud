@@ -23,11 +23,11 @@ public sealed class MissionObjectivesController(
     /// </summary>
     /// <remarks>
     /// Exemplo de payload:
-    /// { "missionId": "GUID", "name": "Objetivo estratégico", "description": "Descrição opcional", "parentObjectiveId": null }
+    /// { "missionId": "GUID", "name": "Objetivo estratégico", "description": "Descrição opcional", "objectiveDimensionId": "GUID" }
     /// </remarks>
     /// <response code="201">Objetivo criado com sucesso.</response>
     /// <response code="400">Payload inválido ou erro de validação.</response>
-    /// <response code="404">Missão ou objetivo pai não encontrado.</response>
+    /// <response code="404">Missão não encontrada.</response>
     /// <response code="403">Sem permissão para criar objetivo.</response>
     [HttpPost]
     [Consumes("application/json")]
@@ -77,12 +77,10 @@ public sealed class MissionObjectivesController(
     /// </summary>
     /// <response code="204">Objetivo removido com sucesso.</response>
     /// <response code="404">Objetivo não encontrado.</response>
-    /// <response code="400">Objetivo possui sub-objetivos e não pode ser excluído.</response>
     /// <response code="403">Sem permissão para excluir objetivo.</response>
     [HttpDelete("{id:guid}")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
-    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status403Forbidden)]
     public async Task<IActionResult> Delete(Guid id, CancellationToken cancellationToken)
     {
@@ -107,10 +105,6 @@ public sealed class MissionObjectivesController(
     /// <summary>
     /// Lista objetivos de uma missão com paginação.
     /// </summary>
-    /// <remarks>
-    /// Quando parentObjectiveId não é informado, retorna apenas objetivos de nível superior (sem pai).
-    /// Quando informado, retorna os sub-objetivos do objetivo pai especificado.
-    /// </remarks>
     /// <response code="200">Lista paginada retornada com sucesso.</response>
     /// <response code="400">Parâmetros inválidos.</response>
     [HttpGet]
@@ -118,7 +112,6 @@ public sealed class MissionObjectivesController(
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
     public async Task<ActionResult<PagedResult<MissionObjective>>> GetAll(
         [FromQuery] Guid missionId,
-        [FromQuery] Guid? parentObjectiveId,
         [FromQuery] int page = 1,
         [FromQuery] int pageSize = 10,
         CancellationToken cancellationToken = default)
@@ -129,7 +122,7 @@ public sealed class MissionObjectivesController(
             return paginationValidation;
         }
 
-        var result = await missionObjectiveQueryUseCase.GetByMissionAsync(missionId, parentObjectiveId, page, pageSize, cancellationToken);
+        var result = await missionObjectiveQueryUseCase.GetByMissionAsync(missionId, page, pageSize, cancellationToken);
         return FromResultOk(result);
     }
 

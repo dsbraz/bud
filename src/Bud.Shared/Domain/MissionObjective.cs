@@ -10,11 +10,8 @@ public sealed class MissionObjective : ITenantEntity
 
     public string Name { get; set; } = string.Empty;
     public string? Description { get; set; }
-
-    // Hierarchy — self-referencing for sub-objectives
-    public Guid? ParentObjectiveId { get; set; }
-    public MissionObjective? ParentObjective { get; set; }
-    public ICollection<MissionObjective> SubObjectives { get; set; } = new List<MissionObjective>();
+    public Guid? ObjectiveDimensionId { get; set; }
+    public ObjectiveDimension? ObjectiveDimension { get; set; }
 
     public ICollection<MissionMetric> Metrics { get; set; } = new List<MissionMetric>();
 
@@ -23,7 +20,8 @@ public sealed class MissionObjective : ITenantEntity
         Guid organizationId,
         Guid missionId,
         string name,
-        string? description)
+        string? description,
+        Guid? objectiveDimensionId = null)
     {
         if (organizationId == Guid.Empty)
         {
@@ -42,11 +40,11 @@ public sealed class MissionObjective : ITenantEntity
             MissionId = missionId
         };
 
-        objective.UpdateDetails(name, description);
+        objective.UpdateDetails(name, description, objectiveDimensionId);
         return objective;
     }
 
-    public void UpdateDetails(string name, string? description)
+    public void UpdateDetails(string name, string? description, Guid? objectiveDimensionId = null)
     {
         if (!EntityName.TryCreate(name, out var entityName))
         {
@@ -56,10 +54,6 @@ public sealed class MissionObjective : ITenantEntity
 
         Name = entityName.Value;
         Description = string.IsNullOrWhiteSpace(description) ? null : description.Trim();
-    }
-
-    public void SetParent(Guid? parentObjectiveId)
-    {
-        ParentObjectiveId = parentObjectiveId;
+        ObjectiveDimensionId = objectiveDimensionId;
     }
 }

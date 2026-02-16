@@ -23,14 +23,18 @@ public sealed class MissionTemplateConfiguration : IEntityTypeConfiguration<Miss
         builder.HasOne(mt => mt.Organization)
             .WithMany()
             .HasForeignKey(mt => mt.OrganizationId)
-            .OnDelete(DeleteBehavior.Cascade)
-            .IsRequired();
+            .OnDelete(DeleteBehavior.Restrict);
 
         builder.HasIndex(mt => mt.OrganizationId);
 
         builder.HasMany(mt => mt.Metrics)
             .WithOne(mtm => mtm.MissionTemplate)
             .HasForeignKey(mtm => mtm.MissionTemplateId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        builder.HasMany(mt => mt.Objectives)
+            .WithOne(mto => mto.MissionTemplate)
+            .HasForeignKey(mto => mto.MissionTemplateId)
             .OnDelete(DeleteBehavior.Cascade);
     }
 }

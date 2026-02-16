@@ -58,6 +58,8 @@ public sealed class UpdateMissionTemplateRequest
     public string? MissionDescriptionPattern { get; set; }
     /// <summary>Indica se o template está ativo.</summary>
     public bool IsActive { get; set; } = true;
+    /// <summary>Objetivos do template.</summary>
+    public List<MissionTemplateObjectiveDto> Objectives { get; set; } = [];
     /// <summary>Métricas do template.</summary>
     public List<MissionTemplateMetricDto> Metrics { get; set; } = [];
 }
@@ -68,6 +70,14 @@ public sealed class UpdateMissionObjectiveRequest
     public string Name { get; set; } = string.Empty;
     /// <summary>Descrição opcional do objetivo.</summary>
     public string? Description { get; set; }
+    /// <summary>Identificador opcional da dimensão do objetivo.</summary>
+    public Guid? ObjectiveDimensionId { get; set; }
+}
+
+public sealed class UpdateObjectiveDimensionRequest
+{
+    /// <summary>Nome da dimensão do objetivo.</summary>
+    public string Name { get; set; } = string.Empty;
 }
 
 public sealed class UpdateMissionMetricRequest

@@ -188,6 +188,15 @@ public sealed class CollaboratorService(
             );
         }
 
+        // Validação 3: Verificar se tem missões associadas
+        var hasMissions = await dbContext.Missions.AnyAsync(m => m.CollaboratorId == id, cancellationToken);
+        if (hasMissions)
+        {
+            return ServiceResult.Failure(
+                "Não é possível excluir o colaborador porque existem missões associadas a ele.",
+                ServiceErrorType.Conflict);
+        }
+
         dbContext.Collaborators.Remove(collaborator);
         await dbContext.SaveChangesAsync(cancellationToken);
 

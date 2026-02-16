@@ -150,6 +150,14 @@ public sealed class TeamService(ApplicationDbContext dbContext) : ITeamService
             return ServiceResult.Failure("Não é possível excluir um time com sub-times. Exclua os sub-times primeiro.", ServiceErrorType.Conflict);
         }
 
+        var hasMissions = await dbContext.Missions.AnyAsync(m => m.TeamId == id, cancellationToken);
+        if (hasMissions)
+        {
+            return ServiceResult.Failure(
+                "Não é possível excluir o time porque existem missões associadas a ele.",
+                ServiceErrorType.Conflict);
+        }
+
         dbContext.Teams.Remove(team);
         await dbContext.SaveChangesAsync(cancellationToken);
 
