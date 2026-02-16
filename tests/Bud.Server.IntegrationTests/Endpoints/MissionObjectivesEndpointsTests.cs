@@ -88,18 +88,36 @@ public class MissionObjectivesEndpointsTests : IClassFixture<CustomWebApplicatio
         return (await missionResponse.Content.ReadFromJsonAsync<Mission>())!;
     }
 
+    private async Task<ObjectiveDimension> CreateTestObjectiveDimension(Guid organizationId)
+    {
+        _client.DefaultRequestHeaders.Remove("X-Tenant-Id");
+        _client.DefaultRequestHeaders.Add("X-Tenant-Id", organizationId.ToString());
+
+        var response = await _client.PostAsJsonAsync("/api/objective-dimensions", new CreateObjectiveDimensionRequest
+        {
+            Name = $"Dimensão {Guid.NewGuid():N}"
+        });
+
+        response.EnsureSuccessStatusCode();
+        var created = (await response.Content.ReadFromJsonAsync<ObjectiveDimension>())!;
+        _client.DefaultRequestHeaders.Remove("X-Tenant-Id");
+        return created;
+    }
+
     #region Create Tests
 
     [Fact]
     public async Task Create_WithValidData_ReturnsCreated()
     {
         var mission = await CreateTestMission();
+        var dimension = await CreateTestObjectiveDimension(mission.OrganizationId);
 
         var request = new CreateMissionObjectiveRequest
         {
             MissionId = mission.Id,
             Name = "Objetivo Estratégico",
-            Description = "Descrição do objetivo"
+            Description = "Descrição do objetivo",
+            ObjectiveDimensionId = dimension.Id
         };
 
         var response = await _client.PostAsJsonAsync("/api/mission-objectives", request);
@@ -109,31 +127,9 @@ public class MissionObjectivesEndpointsTests : IClassFixture<CustomWebApplicatio
         objective.Should().NotBeNull();
         objective!.Name.Should().Be("Objetivo Estratégico");
         objective.Description.Should().Be("Descrição do objetivo");
+        objective.ObjectiveDimensionId.Should().Be(dimension.Id);
         objective.MissionId.Should().Be(mission.Id);
         objective.OrganizationId.Should().Be(mission.OrganizationId);
-        objective.ParentObjectiveId.Should().BeNull();
-    }
-
-    [Fact]
-    public async Task Create_WithParentObjective_ReturnsCreated()
-    {
-        var mission = await CreateTestMission();
-
-        var parentResponse = await _client.PostAsJsonAsync("/api/mission-objectives",
-            new CreateMissionObjectiveRequest { MissionId = mission.Id, Name = "Pai" });
-        var parent = await parentResponse.Content.ReadFromJsonAsync<MissionObjective>();
-
-        var childResponse = await _client.PostAsJsonAsync("/api/mission-objectives",
-            new CreateMissionObjectiveRequest
-            {
-                MissionId = mission.Id,
-                Name = "Filho",
-                ParentObjectiveId = parent!.Id
-            });
-
-        childResponse.StatusCode.Should().Be(HttpStatusCode.Created);
-        var child = await childResponse.Content.ReadFromJsonAsync<MissionObjective>();
-        child!.ParentObjectiveId.Should().Be(parent.Id);
     }
 
     [Fact]
@@ -148,44 +144,6 @@ public class MissionObjectivesEndpointsTests : IClassFixture<CustomWebApplicatio
         var response = await _client.PostAsJsonAsync("/api/mission-objectives", request);
 
         response.StatusCode.Should().Be(HttpStatusCode.NotFound);
-    }
-
-    [Fact]
-    public async Task Create_WithInvalidParent_ReturnsNotFound()
-    {
-        var mission = await CreateTestMission();
-
-        var request = new CreateMissionObjectiveRequest
-        {
-            MissionId = mission.Id,
-            Name = "Objetivo",
-            ParentObjectiveId = Guid.NewGuid()
-        };
-
-        var response = await _client.PostAsJsonAsync("/api/mission-objectives", request);
-
-        response.StatusCode.Should().Be(HttpStatusCode.NotFound);
-    }
-
-    [Fact]
-    public async Task Create_WithParentFromDifferentMission_ReturnsBadRequest()
-    {
-        var mission1 = await CreateTestMission();
-        var mission2 = await CreateTestMission();
-
-        var parentResponse = await _client.PostAsJsonAsync("/api/mission-objectives",
-            new CreateMissionObjectiveRequest { MissionId = mission1.Id, Name = "Pai Missão 1" });
-        var parent = await parentResponse.Content.ReadFromJsonAsync<MissionObjective>();
-
-        var response = await _client.PostAsJsonAsync("/api/mission-objectives",
-            new CreateMissionObjectiveRequest
-            {
-                MissionId = mission2.Id,
-                Name = "Filho Missão 2",
-                ParentObjectiveId = parent!.Id
-            });
-
-        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
     }
 
     [Fact]
@@ -212,6 +170,7 @@ public class MissionObjectivesEndpointsTests : IClassFixture<CustomWebApplicatio
     public async Task Update_WithValidData_ReturnsOk()
     {
         var mission = await CreateTestMission();
+        var dimension = await CreateTestObjectiveDimension(mission.OrganizationId);
 
         var createResponse = await _client.PostAsJsonAsync("/api/mission-objectives",
             new CreateMissionObjectiveRequest { MissionId = mission.Id, Name = "Original" });
@@ -220,7 +179,8 @@ public class MissionObjectivesEndpointsTests : IClassFixture<CustomWebApplicatio
         var updateRequest = new UpdateMissionObjectiveRequest
         {
             Name = "Atualizado",
-            Description = "Nova descrição"
+            Description = "Nova descrição",
+            ObjectiveDimensionId = dimension.Id
         };
 
         var response = await _client.PutAsJsonAsync($"/api/mission-objectives/{created!.Id}", updateRequest);
@@ -229,6 +189,7 @@ public class MissionObjectivesEndpointsTests : IClassFixture<CustomWebApplicatio
         var updated = await response.Content.ReadFromJsonAsync<MissionObjective>();
         updated!.Name.Should().Be("Atualizado");
         updated.Description.Should().Be("Nova descrição");
+        updated.ObjectiveDimensionId.Should().Be(dimension.Id);
     }
 
     [Fact]
@@ -256,28 +217,6 @@ public class MissionObjectivesEndpointsTests : IClassFixture<CustomWebApplicatio
         var response = await _client.DeleteAsync($"/api/mission-objectives/{created!.Id}");
 
         response.StatusCode.Should().Be(HttpStatusCode.NoContent);
-    }
-
-    [Fact]
-    public async Task Delete_WithChildren_ReturnsBadRequest()
-    {
-        var mission = await CreateTestMission();
-
-        var parentResponse = await _client.PostAsJsonAsync("/api/mission-objectives",
-            new CreateMissionObjectiveRequest { MissionId = mission.Id, Name = "Pai" });
-        var parent = await parentResponse.Content.ReadFromJsonAsync<MissionObjective>();
-
-        await _client.PostAsJsonAsync("/api/mission-objectives",
-            new CreateMissionObjectiveRequest
-            {
-                MissionId = mission.Id,
-                Name = "Filho",
-                ParentObjectiveId = parent!.Id
-            });
-
-        var response = await _client.DeleteAsync($"/api/mission-objectives/{parent.Id}");
-
-        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
     }
 
     [Fact]
@@ -321,53 +260,21 @@ public class MissionObjectivesEndpointsTests : IClassFixture<CustomWebApplicatio
     #region GetAll Tests
 
     [Fact]
-    public async Task GetAll_ReturnsTopLevelOnly()
+    public async Task GetAll_ReturnsAllObjectivesFromMission()
     {
         var mission = await CreateTestMission();
 
-        var parentResponse = await _client.PostAsJsonAsync("/api/mission-objectives",
-            new CreateMissionObjectiveRequest { MissionId = mission.Id, Name = "Pai" });
-        var parent = await parentResponse.Content.ReadFromJsonAsync<MissionObjective>();
+        await _client.PostAsJsonAsync("/api/mission-objectives",
+            new CreateMissionObjectiveRequest { MissionId = mission.Id, Name = "Objetivo A" });
 
         await _client.PostAsJsonAsync("/api/mission-objectives",
-            new CreateMissionObjectiveRequest
-            {
-                MissionId = mission.Id,
-                Name = "Filho",
-                ParentObjectiveId = parent!.Id
-            });
+            new CreateMissionObjectiveRequest { MissionId = mission.Id, Name = "Objetivo B" });
 
         var response = await _client.GetAsync($"/api/mission-objectives?missionId={mission.Id}");
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         var result = await response.Content.ReadFromJsonAsync<PagedResult<MissionObjective>>();
-        result!.Items.Should().HaveCount(1);
-        result.Items[0].Name.Should().Be("Pai");
-    }
-
-    [Fact]
-    public async Task GetAll_WithParentFilter_ReturnsChildren()
-    {
-        var mission = await CreateTestMission();
-
-        var parentResponse = await _client.PostAsJsonAsync("/api/mission-objectives",
-            new CreateMissionObjectiveRequest { MissionId = mission.Id, Name = "Pai" });
-        var parent = await parentResponse.Content.ReadFromJsonAsync<MissionObjective>();
-
-        await _client.PostAsJsonAsync("/api/mission-objectives",
-            new CreateMissionObjectiveRequest
-            {
-                MissionId = mission.Id,
-                Name = "Filho",
-                ParentObjectiveId = parent!.Id
-            });
-
-        var response = await _client.GetAsync($"/api/mission-objectives?missionId={mission.Id}&parentObjectiveId={parent.Id}");
-
-        response.StatusCode.Should().Be(HttpStatusCode.OK);
-        var result = await response.Content.ReadFromJsonAsync<PagedResult<MissionObjective>>();
-        result!.Items.Should().HaveCount(1);
-        result.Items[0].Name.Should().Be("Filho");
+        result!.Items.Should().HaveCount(2);
     }
 
     [Fact]

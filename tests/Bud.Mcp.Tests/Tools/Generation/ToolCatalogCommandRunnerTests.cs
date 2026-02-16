@@ -225,8 +225,7 @@ public sealed class ToolCatalogCommandRunnerTests
             "properties": {
               "missionId": { "type": "string", "format": "uuid" },
               "name": { "type": "string" },
-              "description": { "type": ["null", "string"] },
-              "parentObjectiveId": { "type": ["null", "string"], "format": "uuid" }
+              "description": { "type": ["null", "string"] }
             }
           },
           "UpdateMissionObjectiveRequest": {

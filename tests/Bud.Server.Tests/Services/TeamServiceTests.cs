@@ -640,6 +640,46 @@ public class TeamServiceTests
     #region DeleteAsync Tests
 
     [Fact]
+    public async Task DeleteTeam_WithAssociatedMissions_ReturnsConflict()
+    {
+        // Arrange
+        using var context = CreateInMemoryContext();
+        var service = new TeamService(context);
+        var (org, workspace, leader) = await CreateTestHierarchy(context);
+
+        var team = new Team
+        {
+            Id = Guid.NewGuid(),
+            Name = "Test Team",
+            OrganizationId = org.Id,
+            WorkspaceId = workspace.Id,
+            LeaderId = leader.Id
+        };
+        context.Teams.Add(team);
+
+        var mission = new Mission
+        {
+            Id = Guid.NewGuid(),
+            Name = "Team Mission",
+            OrganizationId = org.Id,
+            TeamId = team.Id,
+            StartDate = DateTime.UtcNow,
+            EndDate = DateTime.UtcNow.AddDays(30),
+            Status = MissionStatus.Active
+        };
+        context.Missions.Add(mission);
+        await context.SaveChangesAsync();
+
+        // Act
+        var result = await service.DeleteAsync(team.Id);
+
+        // Assert
+        result.IsSuccess.Should().BeFalse();
+        result.ErrorType.Should().Be(ServiceErrorType.Conflict);
+        result.Error.Should().Be("Não é possível excluir o time porque existem missões associadas a ele.");
+    }
+
+    [Fact]
     public async Task DeleteTeam_WithSubTeams_ReturnsConflict()
     {
         // Arrange

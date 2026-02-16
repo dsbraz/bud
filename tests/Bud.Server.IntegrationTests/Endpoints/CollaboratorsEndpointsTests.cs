@@ -98,6 +98,44 @@ public class CollaboratorsEndpointsTests : IClassFixture<CustomWebApplicationFac
     }
 
     [Fact]
+    public async Task Delete_WithAssociatedMissions_ReturnsConflict()
+    {
+        // Arrange
+        var leaderId = await GetOrCreateAdminLeader();
+        var orgResponse = await _adminClient.PostAsJsonAsync("/api/organizations",
+            new CreateOrganizationRequest
+            {
+                Name = $"test-{Guid.NewGuid():N}.com",
+                OwnerId = leaderId
+            });
+        var org = (await orgResponse.Content.ReadFromJsonAsync<Organization>())!;
+
+        var collaborator = await CreateCollaborator(org.Id);
+
+        // Create mission scoped to collaborator via DbContext
+        using var scope = _factory.Services.CreateScope();
+        var dbContext = scope.ServiceProvider.GetRequiredService<Bud.Server.Data.ApplicationDbContext>();
+        var mission = new Mission
+        {
+            Id = Guid.NewGuid(),
+            Name = "Missão Colaborador",
+            OrganizationId = org.Id,
+            CollaboratorId = collaborator.Id,
+            StartDate = DateTime.UtcNow,
+            EndDate = DateTime.UtcNow.AddDays(30),
+            Status = MissionStatus.Active
+        };
+        dbContext.Missions.Add(mission);
+        await dbContext.SaveChangesAsync();
+
+        // Act
+        var response = await _adminClient.DeleteAsync($"/api/collaborators/{collaborator.Id}");
+
+        // Assert
+        response.StatusCode.Should().Be(HttpStatusCode.Conflict);
+    }
+
+    [Fact]
     public async Task Delete_AsNonOwner_ReturnsForbidden()
     {
         var leaderId = await GetOrCreateAdminLeader();

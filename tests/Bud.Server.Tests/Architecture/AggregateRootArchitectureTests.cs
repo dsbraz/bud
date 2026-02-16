@@ -37,6 +37,7 @@ public sealed class AggregateRootArchitectureTests
         {
             typeof(MissionMetric),
             typeof(MetricCheckin),
+            typeof(MissionTemplateObjective),
             typeof(MissionTemplateMetric),
             typeof(CollaboratorTeam),
             typeof(Notification),

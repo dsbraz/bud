@@ -281,6 +281,38 @@ public class WorkspacesEndpointsTests : IClassFixture<CustomWebApplicationFactor
     #region Delete Tests
 
     [Fact]
+    public async Task Delete_WithAssociatedMissions_ReturnsConflict()
+    {
+        // Arrange
+        var org = await CreateTestOrganization();
+        var wsResponse = await _adminClient.PostAsJsonAsync("/api/workspaces",
+            new CreateWorkspaceRequest { Name = "WS with Mission", OrganizationId = org.Id });
+        var workspace = (await wsResponse.Content.ReadFromJsonAsync<Workspace>())!;
+
+        // Create mission scoped to workspace via DbContext
+        using var scope = _factory.Services.CreateScope();
+        var dbContext = scope.ServiceProvider.GetRequiredService<Bud.Server.Data.ApplicationDbContext>();
+        var mission = new Mission
+        {
+            Id = Guid.NewGuid(),
+            Name = "Missão WS",
+            OrganizationId = org.Id,
+            WorkspaceId = workspace.Id,
+            StartDate = DateTime.UtcNow,
+            EndDate = DateTime.UtcNow.AddDays(30),
+            Status = MissionStatus.Active
+        };
+        dbContext.Missions.Add(mission);
+        await dbContext.SaveChangesAsync();
+
+        // Act
+        var response = await _adminClient.DeleteAsync($"/api/workspaces/{workspace.Id}");
+
+        // Assert
+        response.StatusCode.Should().Be(HttpStatusCode.Conflict);
+    }
+
+    [Fact]
     public async Task Delete_ExistingWorkspace_ReturnsNoContent()
     {
         // Arrange

@@ -103,6 +103,50 @@ public class MissionTemplatesEndpointsTests : IClassFixture<CustomWebApplication
     }
 
     [Fact]
+    public async Task Create_WithObjectivesAndObjectiveMetric_ReturnsCreatedWithObjectiveLink()
+    {
+        // Arrange
+        var objectiveId = Guid.NewGuid();
+        var request = new CreateMissionTemplateRequest
+        {
+            Name = "Template com objetivos",
+            Objectives =
+            [
+                new MissionTemplateObjectiveDto
+                {
+                    Id = objectiveId,
+                    Name = "Objetivo estratégico",
+                    OrderIndex = 0
+                }
+            ],
+            Metrics =
+            [
+                new MissionTemplateMetricDto
+                {
+                    Name = "Métrica vinculada",
+                    Type = MetricType.Quantitative,
+                    OrderIndex = 0,
+                    MissionTemplateObjectiveId = objectiveId,
+                    QuantitativeType = QuantitativeMetricType.Achieve,
+                    MaxValue = 100,
+                    Unit = MetricUnit.Percentage
+                }
+            ]
+        };
+
+        // Act
+        var response = await _client.PostAsJsonAsync("/api/mission-templates", request);
+
+        // Assert
+        response.StatusCode.Should().Be(HttpStatusCode.Created);
+        var template = await response.Content.ReadFromJsonAsync<MissionTemplate>();
+        template.Should().NotBeNull();
+        template!.Objectives.Should().ContainSingle();
+        template.Metrics.Should().ContainSingle();
+        template.Metrics.First().MissionTemplateObjectiveId.Should().Be(template.Objectives.First().Id);
+    }
+
+    [Fact]
     public async Task Create_WithEmptyName_ReturnsBadRequest()
     {
         // Arrange

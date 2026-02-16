@@ -379,6 +379,39 @@ public class TeamsEndpointsTests : IClassFixture<CustomWebApplicationFactory>
     #region Delete Tests
 
     [Fact]
+    public async Task Delete_WithAssociatedMissions_ReturnsConflict()
+    {
+        // Arrange
+        var (org, workspace, leaderId) = await CreateTestHierarchy();
+
+        var teamResponse = await _client.PostAsJsonAsync("/api/teams",
+            new CreateTeamRequest { Name = "Team with Mission", WorkspaceId = workspace.Id, LeaderId = leaderId });
+        var team = (await teamResponse.Content.ReadFromJsonAsync<Team>())!;
+
+        // Create mission scoped to team via DbContext
+        using var scope = _factory.Services.CreateScope();
+        var dbContext = scope.ServiceProvider.GetRequiredService<Bud.Server.Data.ApplicationDbContext>();
+        var mission = new Mission
+        {
+            Id = Guid.NewGuid(),
+            Name = "Missão Team",
+            OrganizationId = org.Id,
+            TeamId = team.Id,
+            StartDate = DateTime.UtcNow,
+            EndDate = DateTime.UtcNow.AddDays(30),
+            Status = MissionStatus.Active
+        };
+        dbContext.Missions.Add(mission);
+        await dbContext.SaveChangesAsync();
+
+        // Act
+        var response = await _client.DeleteAsync($"/api/teams/{team.Id}");
+
+        // Assert
+        response.StatusCode.Should().Be(HttpStatusCode.Conflict);
+    }
+
+    [Fact]
     public async Task Delete_WithSubTeams_ReturnsConflict()
     {
         // Arrange

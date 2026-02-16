@@ -334,6 +334,42 @@ public sealed class CreateMissionTemplateValidatorTests
             e.PropertyName.Contains("Name") &&
             e.ErrorMessage.Contains("Nome é obrigatório"));
     }
+
+    [Fact]
+    public async Task Validate_MetricReferencingUnknownObjective_Fails()
+    {
+        // Arrange
+        var request = new CreateMissionTemplateRequest
+        {
+            Name = "Template",
+            Objectives =
+            [
+                new MissionTemplateObjectiveDto
+                {
+                    Id = Guid.NewGuid(),
+                    Name = "Objetivo 1",
+                    OrderIndex = 0
+                }
+            ],
+            Metrics =
+            [
+                new MissionTemplateMetricDto
+                {
+                    Name = "Métrica 1",
+                    Type = MetricType.Qualitative,
+                    OrderIndex = 0,
+                    MissionTemplateObjectiveId = Guid.NewGuid()
+                }
+            ]
+        };
+
+        // Act
+        var result = await _validator.ValidateAsync(request);
+
+        // Assert
+        result.IsValid.Should().BeFalse();
+        result.Errors.Should().Contain(e => e.ErrorMessage.Contains("objetivos inexistentes"));
+    }
 }
 
 #endregion
@@ -599,6 +635,43 @@ public sealed class UpdateMissionTemplateValidatorTests
         result.Errors.Should().Contain(e =>
             e.PropertyName.Contains("Name") &&
             e.ErrorMessage.Contains("Nome é obrigatório"));
+    }
+
+    [Fact]
+    public async Task Validate_MetricReferencingUnknownObjective_Fails()
+    {
+        // Arrange
+        var request = new UpdateMissionTemplateRequest
+        {
+            Name = "Template",
+            IsActive = true,
+            Objectives =
+            [
+                new MissionTemplateObjectiveDto
+                {
+                    Id = Guid.NewGuid(),
+                    Name = "Objetivo 1",
+                    OrderIndex = 0
+                }
+            ],
+            Metrics =
+            [
+                new MissionTemplateMetricDto
+                {
+                    Name = "Métrica 1",
+                    Type = MetricType.Qualitative,
+                    OrderIndex = 0,
+                    MissionTemplateObjectiveId = Guid.NewGuid()
+                }
+            ]
+        };
+
+        // Act
+        var result = await _validator.ValidateAsync(request);
+
+        // Assert
+        result.IsValid.Should().BeFalse();
+        result.Errors.Should().Contain(e => e.ErrorMessage.Contains("objetivos inexistentes"));
     }
 }
 

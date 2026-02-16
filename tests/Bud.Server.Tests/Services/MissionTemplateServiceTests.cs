@@ -202,6 +202,53 @@ public sealed class MissionTemplateServiceTests
         result.Error.Should().Be("Tipo quantitativo é obrigatório para métricas quantitativas.");
     }
 
+    [Fact]
+    public async Task CreateAsync_WithObjectivesAndObjectiveMetrics_ShouldPersistObjectiveLinks()
+    {
+        // Arrange
+        using var context = CreateInMemoryContext();
+        _ = await CreateTestOrganization(context);
+        var service = new MissionTemplateService(context);
+        var objectiveId = Guid.NewGuid();
+
+        var request = new CreateMissionTemplateRequest
+        {
+            Name = "Template com objetivos",
+            Objectives =
+            [
+                new MissionTemplateObjectiveDto
+                {
+                    Id = objectiveId,
+                    Name = "Objetivo A",
+                    Description = "Descrição do objetivo",
+                    OrderIndex = 0
+                }
+            ],
+            Metrics =
+            [
+                new MissionTemplateMetricDto
+                {
+                    Name = "Métrica vinculada",
+                    Type = MetricType.Quantitative,
+                    OrderIndex = 0,
+                    MissionTemplateObjectiveId = objectiveId,
+                    QuantitativeType = QuantitativeMetricType.Achieve,
+                    MaxValue = 100,
+                    Unit = MetricUnit.Percentage
+                }
+            ]
+        };
+
+        // Act
+        var result = await service.CreateAsync(request);
+
+        // Assert
+        result.IsSuccess.Should().BeTrue();
+        result.Value!.Objectives.Should().ContainSingle();
+        result.Value.Metrics.Should().ContainSingle();
+        result.Value.Metrics.Single().MissionTemplateObjectiveId.Should().Be(result.Value.Objectives.Single().Id);
+    }
+
     #endregion
 
     #region UpdateAsync Tests

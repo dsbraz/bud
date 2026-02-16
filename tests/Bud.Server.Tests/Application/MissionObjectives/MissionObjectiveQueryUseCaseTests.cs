@@ -36,16 +36,16 @@ public sealed class MissionObjectiveQueryUseCaseTests
         var objectiveService = new Mock<IMissionObjectiveService>();
         var progressService = new Mock<IMissionProgressService>();
         objectiveService
-            .Setup(s => s.GetByMissionAsync(missionId, null, 1, 10, It.IsAny<CancellationToken>()))
+            .Setup(s => s.GetByMissionAsync(missionId, 1, 10, It.IsAny<CancellationToken>()))
             .ReturnsAsync(ServiceResult<PagedResult<MissionObjective>>.Success(
                 new PagedResult<MissionObjective> { Items = [], Total = 0, Page = 1, PageSize = 10 }));
 
         var useCase = new MissionObjectiveQueryUseCase(objectiveService.Object, progressService.Object);
 
-        var result = await useCase.GetByMissionAsync(missionId, null, 1, 10);
+        var result = await useCase.GetByMissionAsync(missionId, 1, 10);
 
         result.IsSuccess.Should().BeTrue();
-        objectiveService.Verify(s => s.GetByMissionAsync(missionId, null, 1, 10, It.IsAny<CancellationToken>()), Times.Once);
+        objectiveService.Verify(s => s.GetByMissionAsync(missionId, 1, 10, It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact]

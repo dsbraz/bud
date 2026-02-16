@@ -1362,6 +1362,46 @@ public class CollaboratorServiceTests
     }
 
     [Fact]
+    public async Task DeleteAsync_WhenCollaboratorHasAssociatedMissions_ReturnsConflict()
+    {
+        // Arrange
+        using var context = CreateInMemoryContext();
+        var (org, _, _) = await CreateTestHierarchy(context);
+
+        var collaborator = new Collaborator
+        {
+            Id = Guid.NewGuid(),
+            FullName = "Regular User",
+            Email = "user-with-mission@example.com",
+            OrganizationId = org.Id
+        };
+        context.Collaborators.Add(collaborator);
+
+        var mission = new Mission
+        {
+            Id = Guid.NewGuid(),
+            Name = "Collaborator Mission",
+            OrganizationId = org.Id,
+            CollaboratorId = collaborator.Id,
+            StartDate = DateTime.UtcNow,
+            EndDate = DateTime.UtcNow.AddDays(30),
+            Status = MissionStatus.Active
+        };
+        context.Missions.Add(mission);
+        await context.SaveChangesAsync();
+
+        var service = new CollaboratorService(context, _tenantProvider);
+
+        // Act
+        var result = await service.DeleteAsync(collaborator.Id);
+
+        // Assert
+        result.IsSuccess.Should().BeFalse();
+        result.ErrorType.Should().Be(ServiceErrorType.Conflict);
+        result.Error.Should().Be("Não é possível excluir o colaborador porque existem missões associadas a ele.");
+    }
+
+    [Fact]
     public async Task DeleteAsync_WithValidCollaborator_Succeeds()
     {
         // Arrange

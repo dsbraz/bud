@@ -201,6 +201,7 @@ public sealed class AggregateInvariantsTests
             MetricType.Quantitative,
             0,
             null,
+            null,
             0m,
             100m,
             MetricUnit.Percentage,
@@ -226,6 +227,7 @@ public sealed class AggregateInvariantsTests
                 "Qualidade",
                 MetricType.Qualitative,
                 0,
+                null,
                 null,
                 null,
                 null,
@@ -319,25 +321,14 @@ public sealed class AggregateInvariantsTests
     }
 
     [Fact]
-    public void MissionObjective_SetParent_SetsParentObjectiveId()
+    public void MissionObjective_UpdateDetails_SetsObjectiveDimensionId()
     {
         var objective = MissionObjective.Create(Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid(), "Objetivo", null);
-        var parentId = Guid.NewGuid();
+        var dimensionId = Guid.NewGuid();
 
-        objective.SetParent(parentId);
+        objective.UpdateDetails("Objetivo", null, dimensionId);
 
-        objective.ParentObjectiveId.Should().Be(parentId);
-    }
-
-    [Fact]
-    public void MissionObjective_SetParent_WithNull_ClearsParent()
-    {
-        var objective = MissionObjective.Create(Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid(), "Objetivo", null);
-        objective.SetParent(Guid.NewGuid());
-
-        objective.SetParent(null);
-
-        objective.ParentObjectiveId.Should().BeNull();
+        objective.ObjectiveDimensionId.Should().Be(dimensionId);
     }
 
     [Fact]

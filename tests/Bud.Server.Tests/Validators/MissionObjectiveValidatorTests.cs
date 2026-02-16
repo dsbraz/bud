@@ -110,20 +110,6 @@ public sealed class CreateMissionObjectiveValidatorTests
         result.IsValid.Should().BeTrue();
     }
 
-    [Fact]
-    public async Task Validate_WithParentObjectiveId_Passes()
-    {
-        var request = new CreateMissionObjectiveRequest
-        {
-            MissionId = Guid.NewGuid(),
-            Name = "Sub-objetivo",
-            ParentObjectiveId = Guid.NewGuid()
-        };
-
-        var result = await _validator.ValidateAsync(request);
-
-        result.IsValid.Should().BeTrue();
-    }
 }
 
 public sealed class UpdateMissionObjectiveValidatorTests
@@ -193,4 +179,5 @@ public sealed class UpdateMissionObjectiveValidatorTests
             e.PropertyName == "Description" &&
             e.ErrorMessage.Contains("1000"));
     }
+
 }

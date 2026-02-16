@@ -24,7 +24,6 @@ public sealed class MissionObjectiveServiceTests
 
     private static async Task<Mission> CreateTestMission(ApplicationDbContext context)
     {
-        var orgId = Guid.NewGuid();
         var organization = Organization.Create(Guid.NewGuid(), "Test Org", Guid.NewGuid());
         context.Organizations.Add(organization);
 
@@ -35,6 +34,14 @@ public sealed class MissionObjectiveServiceTests
 
         await context.SaveChangesAsync();
         return mission;
+    }
+
+    private static async Task<ObjectiveDimension> CreateTestObjectiveDimension(ApplicationDbContext context, Guid organizationId, string name = "Clientes")
+    {
+        var dimension = ObjectiveDimension.Create(Guid.NewGuid(), organizationId, name);
+        context.ObjectiveDimensions.Add(dimension);
+        await context.SaveChangesAsync();
+        return dimension;
     }
 
     [Fact]
@@ -59,7 +66,28 @@ public sealed class MissionObjectiveServiceTests
         result.Value.Description.Should().Be("Descrição do objetivo");
         result.Value.OrganizationId.Should().Be(mission.OrganizationId);
         result.Value.MissionId.Should().Be(mission.Id);
-        result.Value.ParentObjectiveId.Should().BeNull();
+    }
+
+    [Fact]
+    public async Task CreateObjective_WithObjectiveDimensionId_PersistsValue()
+    {
+        using var context = CreateInMemoryContext();
+        var service = new MissionObjectiveService(context);
+        var mission = await CreateTestMission(context);
+        var dimension = await CreateTestObjectiveDimension(context, mission.OrganizationId);
+
+        var request = new CreateMissionObjectiveRequest
+        {
+            MissionId = mission.Id,
+            Name = "Objetivo 1",
+            ObjectiveDimensionId = dimension.Id
+        };
+
+        var result = await service.CreateAsync(request);
+
+        result.IsSuccess.Should().BeTrue();
+        result.Value.Should().NotBeNull();
+        result.Value!.ObjectiveDimensionId.Should().Be(dimension.Id);
     }
 
     [Fact]
@@ -79,75 +107,6 @@ public sealed class MissionObjectiveServiceTests
         result.IsSuccess.Should().BeFalse();
         result.ErrorType.Should().Be(ServiceErrorType.NotFound);
         result.Error.Should().Contain("Missão não encontrada");
-    }
-
-    [Fact]
-    public async Task CreateObjective_WithValidParent_CreatesSubObjective()
-    {
-        using var context = CreateInMemoryContext();
-        var service = new MissionObjectiveService(context);
-        var mission = await CreateTestMission(context);
-
-        var parentResult = await service.CreateAsync(new CreateMissionObjectiveRequest
-        {
-            MissionId = mission.Id,
-            Name = "Objetivo Pai"
-        });
-
-        var childResult = await service.CreateAsync(new CreateMissionObjectiveRequest
-        {
-            MissionId = mission.Id,
-            Name = "Sub-objetivo",
-            ParentObjectiveId = parentResult.Value!.Id
-        });
-
-        childResult.IsSuccess.Should().BeTrue();
-        childResult.Value!.ParentObjectiveId.Should().Be(parentResult.Value!.Id);
-    }
-
-    [Fact]
-    public async Task CreateObjective_WithInvalidParent_ReturnsNotFound()
-    {
-        using var context = CreateInMemoryContext();
-        var service = new MissionObjectiveService(context);
-        var mission = await CreateTestMission(context);
-
-        var result = await service.CreateAsync(new CreateMissionObjectiveRequest
-        {
-            MissionId = mission.Id,
-            Name = "Sub-objetivo",
-            ParentObjectiveId = Guid.NewGuid()
-        });
-
-        result.IsSuccess.Should().BeFalse();
-        result.ErrorType.Should().Be(ServiceErrorType.NotFound);
-        result.Error.Should().Contain("Objetivo pai não encontrado");
-    }
-
-    [Fact]
-    public async Task CreateObjective_WithParentFromDifferentMission_ReturnsValidationError()
-    {
-        using var context = CreateInMemoryContext();
-        var service = new MissionObjectiveService(context);
-        var mission1 = await CreateTestMission(context);
-        var mission2 = await CreateTestMission(context);
-
-        var parentResult = await service.CreateAsync(new CreateMissionObjectiveRequest
-        {
-            MissionId = mission1.Id,
-            Name = "Objetivo Missão 1"
-        });
-
-        var result = await service.CreateAsync(new CreateMissionObjectiveRequest
-        {
-            MissionId = mission2.Id,
-            Name = "Objetivo Missão 2",
-            ParentObjectiveId = parentResult.Value!.Id
-        });
-
-        result.IsSuccess.Should().BeFalse();
-        result.ErrorType.Should().Be(ServiceErrorType.Validation);
-        result.Error.Should().Contain("mesma missão");
     }
 
     [Fact]
@@ -175,6 +134,56 @@ public sealed class MissionObjectiveServiceTests
     }
 
     [Fact]
+    public async Task UpdateObjective_WithObjectiveDimensionId_UpdatesValue()
+    {
+        using var context = CreateInMemoryContext();
+        var service = new MissionObjectiveService(context);
+        var mission = await CreateTestMission(context);
+        var dimension1 = await CreateTestObjectiveDimension(context, mission.OrganizationId, "Financeiro");
+        var dimension2 = await CreateTestObjectiveDimension(context, mission.OrganizationId, "Clientes");
+
+        var createResult = await service.CreateAsync(new CreateMissionObjectiveRequest
+        {
+            MissionId = mission.Id,
+            Name = "Nome Original",
+            ObjectiveDimensionId = dimension1.Id
+        });
+
+        var result = await service.UpdateAsync(createResult.Value!.Id, new UpdateMissionObjectiveRequest
+        {
+            Name = "Nome Atualizado",
+            ObjectiveDimensionId = dimension2.Id
+        });
+
+        result.IsSuccess.Should().BeTrue();
+        result.Value!.ObjectiveDimensionId.Should().Be(dimension2.Id);
+    }
+
+    [Fact]
+    public async Task CreateObjective_WithObjectiveDimensionFromAnotherOrganization_ReturnsValidationError()
+    {
+        using var context = CreateInMemoryContext();
+        var service = new MissionObjectiveService(context);
+        var mission = await CreateTestMission(context);
+
+        var otherOrganization = Organization.Create(Guid.NewGuid(), "Outra Org", Guid.NewGuid());
+        context.Organizations.Add(otherOrganization);
+        await context.SaveChangesAsync();
+        var otherDimension = await CreateTestObjectiveDimension(context, otherOrganization.Id);
+
+        var result = await service.CreateAsync(new CreateMissionObjectiveRequest
+        {
+            MissionId = mission.Id,
+            Name = "Objetivo",
+            ObjectiveDimensionId = otherDimension.Id
+        });
+
+        result.IsSuccess.Should().BeFalse();
+        result.ErrorType.Should().Be(ServiceErrorType.Validation);
+        result.Error.Should().Contain("Dimensão do objetivo");
+    }
+
+    [Fact]
     public async Task UpdateObjective_WithInvalidId_ReturnsNotFound()
     {
         using var context = CreateInMemoryContext();
@@ -190,7 +199,7 @@ public sealed class MissionObjectiveServiceTests
     }
 
     [Fact]
-    public async Task DeleteObjective_WithNoChildren_DeletesSuccessfully()
+    public async Task DeleteObjective_DeletesSuccessfully()
     {
         using var context = CreateInMemoryContext();
         var service = new MissionObjectiveService(context);
@@ -205,33 +214,6 @@ public sealed class MissionObjectiveServiceTests
         var result = await service.DeleteAsync(createResult.Value!.Id);
 
         result.IsSuccess.Should().BeTrue();
-    }
-
-    [Fact]
-    public async Task DeleteObjective_WithChildren_ReturnsValidationError()
-    {
-        using var context = CreateInMemoryContext();
-        var service = new MissionObjectiveService(context);
-        var mission = await CreateTestMission(context);
-
-        var parentResult = await service.CreateAsync(new CreateMissionObjectiveRequest
-        {
-            MissionId = mission.Id,
-            Name = "Pai"
-        });
-
-        await service.CreateAsync(new CreateMissionObjectiveRequest
-        {
-            MissionId = mission.Id,
-            Name = "Filho",
-            ParentObjectiveId = parentResult.Value!.Id
-        });
-
-        var result = await service.DeleteAsync(parentResult.Value!.Id);
-
-        result.IsSuccess.Should().BeFalse();
-        result.ErrorType.Should().Be(ServiceErrorType.Validation);
-        result.Error.Should().Contain("sub-objetivos");
     }
 
     [Fact]
@@ -266,56 +248,35 @@ public sealed class MissionObjectiveServiceTests
     }
 
     [Fact]
-    public async Task GetByMissionAsync_ReturnsTopLevelOnly_WhenNoParent()
+    public async Task GetByMissionAsync_ReturnsAllObjectivesFromMission()
     {
         using var context = CreateInMemoryContext();
         var service = new MissionObjectiveService(context);
         var mission = await CreateTestMission(context);
+        var otherMission = await CreateTestMission(context);
 
-        var parentResult = await service.CreateAsync(new CreateMissionObjectiveRequest
+        await service.CreateAsync(new CreateMissionObjectiveRequest
         {
             MissionId = mission.Id,
-            Name = "Pai"
+            Name = "Objetivo A"
         });
 
         await service.CreateAsync(new CreateMissionObjectiveRequest
         {
             MissionId = mission.Id,
-            Name = "Filho",
-            ParentObjectiveId = parentResult.Value!.Id
-        });
-
-        var result = await service.GetByMissionAsync(mission.Id, null, 1, 10);
-
-        result.IsSuccess.Should().BeTrue();
-        result.Value!.Items.Should().HaveCount(1);
-        result.Value.Items[0].Name.Should().Be("Pai");
-    }
-
-    [Fact]
-    public async Task GetByMissionAsync_ReturnsChildren_WhenParentSpecified()
-    {
-        using var context = CreateInMemoryContext();
-        var service = new MissionObjectiveService(context);
-        var mission = await CreateTestMission(context);
-
-        var parentResult = await service.CreateAsync(new CreateMissionObjectiveRequest
-        {
-            MissionId = mission.Id,
-            Name = "Pai"
+            Name = "Objetivo B"
         });
 
         await service.CreateAsync(new CreateMissionObjectiveRequest
         {
-            MissionId = mission.Id,
-            Name = "Filho",
-            ParentObjectiveId = parentResult.Value!.Id
+            MissionId = otherMission.Id,
+            Name = "Objetivo Outra Missão"
         });
 
-        var result = await service.GetByMissionAsync(mission.Id, parentResult.Value!.Id, 1, 10);
+        var result = await service.GetByMissionAsync(mission.Id, 1, 10);
 
         result.IsSuccess.Should().BeTrue();
-        result.Value!.Items.Should().HaveCount(1);
-        result.Value.Items[0].Name.Should().Be("Filho");
+        result.Value!.Items.Should().HaveCount(2);
+        result.Value.Items.Select(i => i.Name).Should().BeEquivalentTo(["Objetivo A", "Objetivo B"]);
     }
 }

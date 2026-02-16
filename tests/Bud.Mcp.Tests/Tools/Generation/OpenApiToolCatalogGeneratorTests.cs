@@ -134,7 +134,6 @@ public sealed class OpenApiToolCatalogGeneratorTests
           "post": { "requestBody": { "content": { "application/json": { "schema": { "$ref": "#/components/schemas/CreateMissionObjectiveRequest" } } } } },
           "get": { "parameters": [
             { "name": "missionId", "in": "query", "schema": { "type": "string", "format": "uuid" } },
-            { "name": "parentObjectiveId", "in": "query", "schema": { "type": "string", "format": "uuid" } },
             { "name": "page", "in": "query", "schema": { "type": "integer", "default": 1 } },
             { "name": "pageSize", "in": "query", "schema": { "type": "integer", "default": 10 } }
           ] }
@@ -216,8 +215,7 @@ public sealed class OpenApiToolCatalogGeneratorTests
             "properties": {
               "missionId": { "type": "string", "format": "uuid" },
               "name": { "type": "string" },
-              "description": { "type": ["null", "string"] },
-              "parentObjectiveId": { "type": ["null", "string"], "format": "uuid" }
+              "description": { "type": ["null", "string"] }
             }
           },
           "UpdateMissionObjectiveRequest": {
@@ -344,8 +342,7 @@ public sealed class OpenApiToolCatalogGeneratorTests
             "properties": {
               "missionId": { "type": "string", "format": "uuid" },
               "name": { "type": "string" },
-              "description": { "type": ["null", "string"] },
-              "parentObjectiveId": { "type": ["null", "string"], "format": "uuid" }
+              "description": { "type": ["null", "string"] }
             }
           },
           "UpdateMissionObjectiveRequest": {

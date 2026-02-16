@@ -429,6 +429,38 @@ public class WorkspaceServiceTests
     #region DeleteAsync Tests
 
     [Fact]
+    public async Task DeleteAsync_WithAssociatedMissions_ReturnsConflict()
+    {
+        // Arrange
+        _tenantProvider.IsGlobalAdmin = true;
+        using var context = CreateInMemoryContext();
+        var (org, ws1, _, _, _) = await CreateTestHierarchy(context);
+
+        var mission = new Mission
+        {
+            Id = Guid.NewGuid(),
+            Name = "Test Mission",
+            OrganizationId = org.Id,
+            WorkspaceId = ws1.Id,
+            StartDate = DateTime.UtcNow,
+            EndDate = DateTime.UtcNow.AddDays(30),
+            Status = MissionStatus.Active
+        };
+        context.Missions.Add(mission);
+        await context.SaveChangesAsync();
+
+        var service = new WorkspaceService(context);
+
+        // Act
+        var result = await service.DeleteAsync(ws1.Id);
+
+        // Assert
+        result.IsSuccess.Should().BeFalse();
+        result.ErrorType.Should().Be(ServiceErrorType.Conflict);
+        result.Error.Should().Be("Não é possível excluir o workspace porque existem missões associadas a ele.");
+    }
+
+    [Fact]
     public async Task DeleteAsync_ReturnsSuccess()
     {
         // Arrange
