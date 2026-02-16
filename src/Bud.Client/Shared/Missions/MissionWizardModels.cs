@@ -20,7 +20,8 @@ public sealed record TempObjective(
     string TempId,
     string Name,
     string? Description,
-    Guid? OriginalId = null);
+    Guid? OriginalId = null,
+    Guid? ObjectiveDimensionId = null);
 
 public sealed record MissionWizardModel
 {

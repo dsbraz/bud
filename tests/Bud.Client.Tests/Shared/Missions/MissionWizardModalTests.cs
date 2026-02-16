@@ -11,6 +11,32 @@ namespace Bud.Client.Tests.Shared.Missions;
 public sealed class MissionWizardModalTests : TestContext
 {
     [Fact]
+    public async Task HandleSave_WhenMetricFormIsEmpty_ShouldNotShowMetricValidationError()
+    {
+        var toastService = new ToastService();
+        ToastMessage? capturedToast = null;
+        toastService.OnToastAdded += toast => capturedToast = toast;
+        Services.AddSingleton(toastService);
+
+        MissionWizardResult? savedResult = null;
+        var cut = RenderComponent<MissionWizardModal>(parameters => parameters
+            .Add(p => p.IsOpen, true)
+            .Add(p => p.OrganizationName, "Org")
+            .Add(p => p.GetScopeOptions, _ => Enumerable.Empty<ScopeOption>())
+            .Add(p => p.OnSave, result => savedResult = result));
+
+        var instance = cut.Instance;
+        SetField(instance, "name", "Missão teste");
+        SetField(instance, "scopeTypeValue", "Organization");
+        SetField(instance, "scopeId", Guid.NewGuid().ToString());
+
+        await InvokePrivateTask(instance, "HandleSave");
+
+        savedResult.Should().NotBeNull();
+        capturedToast.Should().BeNull();
+    }
+
+    [Fact]
     public void AddMetricFromForm_ShouldAppendMetricToList()
     {
         var toastService = new ToastService();
@@ -73,5 +99,17 @@ public sealed class MissionWizardModalTests : TestContext
     {
         var method = instance.GetType().GetMethod(methodName, System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)!;
         method.Invoke(instance, args);
+    }
+
+    private static void SetField<T>(object instance, string name, T value)
+        => instance.GetType().GetField(name, System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)!.SetValue(instance, value);
+
+    private static async Task InvokePrivateTask(object instance, string methodName, params object[] args)
+    {
+        var method = instance.GetType().GetMethod(methodName, System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)!;
+        if (method.Invoke(instance, args) is Task task)
+        {
+            await task;
+        }
     }
 }

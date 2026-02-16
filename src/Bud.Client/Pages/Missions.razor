@@ -6,22 +6,20 @@
 @inject UiOperationService UiOps
 @implements IDisposable
 
-<MissionsMenu />
-
 <ManagementPageHeader
     Kicker="Missões"
-    Title="@(showMyMissions ? "Minhas missões" : "Todas as missões")"
+    Title="@(_showMyMissions ? "Minhas missões" : "Todas as missões")"
     PrimaryActionText="Criar missão"
     OnPrimaryAction="OpenCreateModal" />
 
-<MissionsFilterBar ShowMyMissions="showMyMissions"
-                   ViewMode="viewMode"
-                   FilterActiveOnly="filterActiveOnly"
-                   FilterStartDate="filterStartDate"
-                   FilterEndDate="filterEndDate"
-                   FilterScopeTypeValue="filterScopeTypeValue"
-                   FilterScopeId="filterScopeId"
-                   Search="search"
+<MissionsFilterBar ShowMyMissions="_showMyMissions"
+                   ViewMode="@_viewMode"
+                   FilterActiveOnly="_filterActiveOnly"
+                   FilterStartDate="_filterStartDate"
+                   FilterEndDate="_filterEndDate"
+                   FilterScopeTypeValue="@_filterScopeTypeValue"
+                   FilterScopeId="@_filterScopeId"
+                   Search="@_search"
                    GetScopeOptions="GetScopeOptions"
                    OnSetMyMissions="SetMissionViewMode"
                    OnToggleViewMode="HandleToggleViewMode"
@@ -40,13 +38,13 @@
 </SummaryCards>
 
 @* Lista de Missões em Cards *@
-@if (missions is null)
+@if (_missions is null)
 {
     <div class="missions-loading">
         <p class="muted">Carregando...</p>
     </div>
 }
-else if (missions.Items.Count == 0)
+else if (_missions.Items.Count == 0)
 {
     <div class="missions-empty">
         <div class="missions-empty-icon">📋</div>
@@ -55,18 +53,19 @@ else if (missions.Items.Count == 0)
 }
 else
 {
-    <div class="@(viewMode == "list" ? "missions-list" : "missions-grid")">
-        @foreach (var mission in missions.Items)
+    <div class="@(_viewMode == "list" ? "missions-list" : "missions-grid")">
+        @foreach (var mission in _missions.Items)
         {
             <MissionCard Mission="mission"
-                         Progress="@(missionProgress.GetValueOrDefault(mission.Id))"
-                         IsExpanded="@(expandedMissions.Contains(mission.Id))"
-                         IsDeleting="@(deletingMissionId == mission.Id)"
-                         Metrics="@(missionMetricsCache.GetValueOrDefault(mission.Id))"
-                         Objectives="@(missionObjectivesCache.GetValueOrDefault(mission.Id))"
-                         MetricProgressCache="metricProgressCache"
-                         ObjectiveProgressCache="objectiveProgressCache"
-                         ExpandedObjectives="expandedObjectives"
+                         Progress="@(_missionProgress.GetValueOrDefault(mission.Id))"
+                         IsExpanded="@(_expandedMissions.Contains(mission.Id))"
+                         IsDeleting="@(_deletingMissionId == mission.Id)"
+                         Metrics="@(_missionMetricsCache.GetValueOrDefault(mission.Id))"
+                         Objectives="@(_missionObjectivesCache.GetValueOrDefault(mission.Id))"
+                         ObjectiveDimensions="_objectiveDimensions"
+                         MetricProgressCache="_metricProgressCache"
+                         ObjectiveProgressCache="_objectiveProgressCache"
+                         ExpandedObjectives="_expandedObjectives"
                          OnToggleExpand="async () => await ToggleExpand(mission.Id)"
                          OnEdit="async () => await OpenEditWizard(mission)"
                          OnDeleteClick="() => HandleDeleteClick(mission.Id)"
@@ -75,35 +74,34 @@ else
                          OnHistoryClick="m => OpenCheckinHistoryModal(mission, m)" />
         }
     </div>
-    <p class="muted" style="margin-top: var(--spacing-4);">Total: @missions.Total</p>
+    <p class="muted" style="margin-top: var(--spacing-4);">Total: @_missions.Total</p>
 }
 
-<MissionTemplatePicker IsOpen="isTemplatePickerOpen"
-                       Templates="availableTemplates"
-                       OnClose="() => isTemplatePickerOpen = false"
+<MissionTemplatePicker IsOpen="_isTemplatePickerOpen"
+                       Templates="_availableTemplates"
+                       OnClose="() => _isTemplatePickerOpen = false"
                        OnCreateFromScratch="OpenCreateModalFromScratch"
                        OnSelectTemplate="OpenCreateModalFromTemplate" />
 
-<MissionWizardModal IsOpen="isWizardOpen"
-                    IsEditMode="isEditMode"
+<MissionWizardModal IsOpen="_isWizardOpen"
+                    IsEditMode="_isEditMode"
                     OrganizationName="@GetSelectedOrganizationName()"
-                    InitialModel="wizardInitialModel"
+                    InitialModel="_wizardInitialModel"
+                    ObjectiveDimensions="_objectiveDimensions"
                     GetScopeOptions="GetScopeOptions"
                     OnClose="CloseWizard"
                     OnSave="HandleWizardSave"
                     OnSaveDraft="HandleWizardSaveDraft" />
 
 
-<MissionCheckinModal IsOpen="@(isCheckinModalOpen && selectedCheckinMetric != null)"
-                     Metric="selectedCheckinMetric"
+<MissionCheckinModal IsOpen="@(_isCheckinModalOpen && _selectedCheckinMetric != null)"
+                     Metric="_selectedCheckinMetric"
                      OnClose="CloseCheckinModal"
                      OnSubmit="HandleCheckinSubmit" />
 
-<MissionCheckinHistoryModal IsOpen="@(isCheckinHistoryModalOpen && historyMetric != null)"
-                            Metric="historyMetric"
-                            Checkins="metricCheckins"
-                            IsLoading="isLoadingCheckins"
+<MissionCheckinHistoryModal IsOpen="@(_isCheckinHistoryModalOpen && _historyMetric != null)"
+                            Metric="_historyMetric"
+                            Checkins="_metricCheckins"
+                            IsLoading="_isLoadingCheckins"
                             OnClose="CloseCheckinHistoryModal"
                             OnNewCheckin="OpenCheckinFromHistory" />
-
-

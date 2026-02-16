@@ -1,0 +1,89 @@
+@page "/objective-dimensions"
+
+<ManagementPageHeader
+    Kicker="Configurações"
+    Title="Dimensões do objetivo"
+    Subtitle="Gerencie as dimensões usadas nos objetivos das missões."
+    PrimaryActionText="Nova dimensão"
+    OnPrimaryAction="OpenCreateModal" />
+
+<div class="workspaces-filter-bar">
+    <div class="workspaces-filter-left">
+        <button class="filter-chip @(showFilterPanel ? "active" : "")" @onclick="ToggleFilterPanel">
+            Filtrar
+        </button>
+        @if (HasActiveFilters())
+        {
+            <button class="filter-chip" @onclick="ClearFilters">Limpar filtro</button>
+        }
+    </div>
+</div>
+
+@if (showFilterPanel)
+{
+    <div class="workspaces-filter-panel">
+        <div class="filter-panel-row">
+            <div class="filter-panel-field">
+                <label>Busca</label>
+                <InputText class="input" @bind-Value="search" @onkeyup="OnSearchKeyUp" placeholder="Buscar dimensões..." />
+            </div>
+        </div>
+    </div>
+}
+
+<div class="workspaces-table-container">
+    <PagedTableSection
+        IsLoading="@(dimensions is null)"
+        IsEmpty="@(dimensions is not null && dimensions.Items.Count == 0)"
+        Total="@(dimensions?.Total ?? 0)"
+        EmptyText="Nenhuma dimensão encontrada.">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Nome</th>
+                    <th style="width: 120px; text-align: center;">Ações</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var dimension in dimensions!.Items)
+                {
+                    var isDeleting = deletingDimensionId == dimension.Id;
+                    <tr>
+                        <td>@dimension.Name</td>
+                        <td style="text-align: center;">
+                            <CrudRowActions
+                                StopPropagation="true"
+                                EditTitle="Editar dimensão"
+                                OnEdit="@(() => OpenEditModal(dimension))"
+                                IsDeleteConfirming="@isDeleting"
+                                DeleteTitle="Excluir dimensão"
+                                OnDelete="@(() => HandleDeleteClick(dimension.Id))" />
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </PagedTableSection>
+</div>
+
+@if (isModalOpen)
+{
+    <Modal Title="@(isEditing ? "Editar dimensão" : "Criar dimensão")" OnClose="CloseModal">
+        <ChildContent>
+            <div class="form-row">
+                <label>Nome</label>
+                <input type="text" class="input" @bind="formName" maxlength="100" placeholder="Ex: Clientes, Processos, Pessoas..." />
+            </div>
+        </ChildContent>
+        <Footer>
+            <div class="modal-footer-actions">
+                <div class="modal-footer-secondary">
+                    <button class="button tertiary" type="button" @onclick="CloseModal">Cancelar</button>
+                </div>
+                <div class="modal-footer-primary">
+                    <button class="button primary" type="button" @onclick="SaveDimension">@(isEditing ? "Salvar alterações" : "Criar")</button>
+                </div>
+            </div>
+        </Footer>
+    </Modal>
+}

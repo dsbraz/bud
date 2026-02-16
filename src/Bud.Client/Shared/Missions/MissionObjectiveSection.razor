@@ -7,6 +7,10 @@
         </svg>
         <div class="objective-header-info">
             <div class="objective-name">@Objective.Name</div>
+            @if (!string.IsNullOrWhiteSpace(ObjectiveDimensionName))
+            {
+                <div class="objective-description">Dimensão: @ObjectiveDimensionName</div>
+            }
             @if (!string.IsNullOrWhiteSpace(Objective.Description))
             {
                 <div class="objective-description">@Objective.Description</div>
@@ -42,6 +46,7 @@
 @code {
     [Parameter, EditorRequired] public Mission Mission { get; set; } = default!;
     [Parameter, EditorRequired] public MissionObjective Objective { get; set; } = default!;
+    [Parameter] public List<ObjectiveDimension> ObjectiveDimensions { get; set; } = [];
     [Parameter] public ObjectiveProgressDto? ObjectiveProgress { get; set; }
     [Parameter] public MissionProgressDto? MissionProgress { get; set; }
     [Parameter] public List<MissionMetric> ObjectiveMetrics { get; set; } = [];
@@ -53,6 +58,9 @@
 
     private int ProgressPercent => (int)(ObjectiveProgress?.OverallProgress ?? 0);
     private decimal ExpectedProgress => MissionProgress?.ExpectedProgress ?? 0m;
+    private string? ObjectiveDimensionName => Objective.ObjectiveDimensionId.HasValue
+        ? ObjectiveDimensions.FirstOrDefault(d => d.Id == Objective.ObjectiveDimensionId.Value)?.Name
+        : null;
 
     private string GetProgressStatusClass()
     {

@@ -12,6 +12,7 @@ public partial class MissionWizardModal
     [Parameter] public bool IsEditMode { get; set; }
     [Parameter] public string OrganizationName { get; set; } = "Organização";
     [Parameter] public MissionWizardModel? InitialModel { get; set; }
+    [Parameter] public List<ObjectiveDimension> ObjectiveDimensions { get; set; } = [];
     [Parameter] public Func<string?, IEnumerable<ScopeOption>> GetScopeOptions { get; set; } = _ => [];
     [Parameter] public EventCallback OnClose { get; set; }
     [Parameter] public EventCallback<MissionWizardResult> OnSave { get; set; }
@@ -42,9 +43,11 @@ public partial class MissionWizardModal
     private List<TempObjective> tempObjectives = [];
     private string tempObjectiveName = "";
     private string? tempObjectiveDescription;
+    private string? tempObjectiveDimensionId;
     private int? editingTempObjectiveIndex;
     private string editingObjectiveName = "";
     private string? editingObjectiveDescription;
+    private string? editingObjectiveDimensionId;
     private string? addingMetricToObjectiveTempId;
     private bool showObjectiveForm;
 
@@ -83,9 +86,11 @@ public partial class MissionWizardModal
         editingTempMetricIndex = null;
         tempObjectiveName = "";
         tempObjectiveDescription = null;
+        tempObjectiveDimensionId = null;
         editingTempObjectiveIndex = null;
         editingObjectiveName = "";
         editingObjectiveDescription = null;
+        editingObjectiveDimensionId = null;
         addingMetricToObjectiveTempId = null;
         showObjectiveForm = false;
         deletedMetricIds = [];
@@ -163,6 +168,11 @@ public partial class MissionWizardModal
 
     private void FlushPendingMetric()
     {
+        if (IsMetricFormEmpty(newMetricModel))
+        {
+            return;
+        }
+
         if (TryBuildTempMetric(newMetricModel, null, null, out var metric))
         {
             tempMetrics.Add(metric);
@@ -274,6 +284,17 @@ public partial class MissionWizardModal
             : model.TargetText ?? "";
     }
 
+    private static bool IsMetricFormEmpty(MetricFormFields.MetricFormModel model)
+    {
+        return string.IsNullOrWhiteSpace(model.Name)
+            && string.IsNullOrWhiteSpace(model.TypeValue)
+            && string.IsNullOrWhiteSpace(model.QuantitativeTypeValue)
+            && string.IsNullOrWhiteSpace(model.UnitValue)
+            && model.MinValue is null
+            && model.MaxValue is null
+            && string.IsNullOrWhiteSpace(model.TargetText);
+    }
+
     private void ResetAddMetricToObjectiveState()
     {
         addingMetricToObjectiveTempId = null;
@@ -303,10 +324,12 @@ public partial class MissionWizardModal
         tempObjectives.Add(new TempObjective(
             TempId: Guid.NewGuid().ToString(),
             Name: tempObjectiveName.Trim(),
-            Description: string.IsNullOrWhiteSpace(tempObjectiveDescription) ? null : tempObjectiveDescription.Trim()));
+            Description: string.IsNullOrWhiteSpace(tempObjectiveDescription) ? null : tempObjectiveDescription.Trim(),
+            ObjectiveDimensionId: ParseOptionalGuid(tempObjectiveDimensionId)));
 
         tempObjectiveName = "";
         tempObjectiveDescription = null;
+        tempObjectiveDimensionId = null;
         showObjectiveForm = false;
     }
 
@@ -314,6 +337,7 @@ public partial class MissionWizardModal
     {
         tempObjectiveName = "";
         tempObjectiveDescription = null;
+        tempObjectiveDimensionId = null;
         showObjectiveForm = false;
     }
 
@@ -323,6 +347,7 @@ public partial class MissionWizardModal
         editingTempObjectiveIndex = index;
         editingObjectiveName = obj.Name;
         editingObjectiveDescription = obj.Description;
+        editingObjectiveDimensionId = obj.ObjectiveDimensionId?.ToString();
     }
 
     private void CancelEditTempObjective()
@@ -330,6 +355,7 @@ public partial class MissionWizardModal
         editingTempObjectiveIndex = null;
         editingObjectiveName = "";
         editingObjectiveDescription = null;
+        editingObjectiveDimensionId = null;
     }
 
     private void SaveEditTempObjective()
@@ -341,7 +367,8 @@ public partial class MissionWizardModal
             TempId: existing.TempId,
             Name: editingObjectiveName.Trim(),
             Description: string.IsNullOrWhiteSpace(editingObjectiveDescription) ? null : editingObjectiveDescription.Trim(),
-            OriginalId: existing.OriginalId);
+            OriginalId: existing.OriginalId,
+            ObjectiveDimensionId: ParseOptionalGuid(editingObjectiveDimensionId));
 
         CancelEditTempObjective();
     }
@@ -439,5 +466,10 @@ public partial class MissionWizardModal
             "Reduce" => $"Reduzir para {maxValue} {unitLabel}",
             _ => ""
         };
+    }
+
+    private static Guid? ParseOptionalGuid(string? value)
+    {
+        return Guid.TryParse(value, out var parsed) ? parsed : (Guid?)null;
     }
 }

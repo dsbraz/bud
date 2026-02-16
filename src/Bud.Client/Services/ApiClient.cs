@@ -440,7 +440,7 @@ public sealed class ApiClient
     }
 
     // MissionObjective methods
-    public async Task<PagedResult<MissionObjective>?> GetMissionObjectivesAsync(Guid missionId, Guid? parentObjectiveId = null, int page = 1, int pageSize = 100)
+    public async Task<PagedResult<MissionObjective>?> GetMissionObjectivesAsync(Guid missionId, int page = 1, int pageSize = 100)
     {
         (page, pageSize) = NormalizePagination(page, pageSize);
 
@@ -450,11 +450,6 @@ public sealed class ApiClient
             $"page={page}",
             $"pageSize={pageSize}"
         };
-
-        if (parentObjectiveId.HasValue)
-        {
-            queryParams.Add($"parentObjectiveId={parentObjectiveId.Value}");
-        }
 
         var url = $"api/mission-objectives?{string.Join("&", queryParams)}";
         return await GetSafeAsync<PagedResult<MissionObjective>>(url);
@@ -645,6 +640,62 @@ public sealed class ApiClient
     public async Task DeleteMissionTemplateAsync(Guid id)
     {
         var response = await _http.DeleteAsync($"api/mission-templates/{id}");
+
+        if (!response.IsSuccessStatusCode)
+        {
+            var errorMessage = await ExtractErrorMessageAsync(response);
+            throw new HttpRequestException(errorMessage);
+        }
+    }
+
+    // ObjectiveDimension methods
+    public async Task<PagedResult<ObjectiveDimension>?> GetObjectiveDimensionsAsync(string? search, int page = 1, int pageSize = 10)
+    {
+        (page, pageSize) = NormalizePagination(page, pageSize);
+
+        var queryParams = new List<string>();
+
+        if (!string.IsNullOrEmpty(search))
+        {
+            queryParams.Add($"search={Uri.EscapeDataString(search)}");
+        }
+
+        queryParams.Add($"page={page}");
+        queryParams.Add($"pageSize={pageSize}");
+
+        var url = $"api/objective-dimensions?{string.Join("&", queryParams)}";
+        return await GetSafeAsync<PagedResult<ObjectiveDimension>>(url);
+    }
+
+    public async Task<ObjectiveDimension?> CreateObjectiveDimensionAsync(CreateObjectiveDimensionRequest request)
+    {
+        var response = await _http.PostAsJsonAsync("api/objective-dimensions", request);
+
+        if (!response.IsSuccessStatusCode)
+        {
+            var errorMessage = await ExtractErrorMessageAsync(response);
+            throw new HttpRequestException(errorMessage);
+        }
+
+        return await response.Content.ReadFromJsonAsync<ObjectiveDimension>();
+    }
+
+    public async Task<ObjectiveDimension?> UpdateObjectiveDimensionAsync(Guid id, UpdateObjectiveDimensionRequest request)
+    {
+        var response = await _http.PutAsJsonAsync($"api/objective-dimensions/{id}", request);
+
+        if (!response.IsSuccessStatusCode)
+        {
+            var errorMessage = await ExtractErrorMessageAsync(response);
+            throw new HttpRequestException(errorMessage);
+        }
+
+        return await response.Content.ReadFromJsonAsync<ObjectiveDimension>();
+    }
+
+    public async Task DeleteObjectiveDimensionAsync(Guid id)
+    {
+        var response = await _http.DeleteAsync($"api/objective-dimensions/{id}");
 
         if (!response.IsSuccessStatusCode)
         {

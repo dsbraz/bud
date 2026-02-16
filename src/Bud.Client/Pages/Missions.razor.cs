@@ -10,56 +10,57 @@ namespace Bud.Client.Pages;
 public partial class Missions
 {
     // Data
-    private PagedResult<Mission>? missions;
-    private Dictionary<Guid, MissionProgressDto> missionProgress = new();
-    private List<Organization> organizations = new();
-    private List<Workspace> workspaces = new();
-    private List<Team> teams = new();
-    private List<Collaborator> collaborators = new();
+    private PagedResult<Mission>? _missions;
+    private Dictionary<Guid, MissionProgressDto> _missionProgress = new();
+    private List<Organization> _organizations = new();
+    private List<Workspace> _workspaces = new();
+    private List<Team> _teams = new();
+    private List<Collaborator> _collaborators = new();
+    private List<ObjectiveDimension> _objectiveDimensions = new();
 
     // Filter state
-    private string? filterScopeTypeValue;
-    private string? filterScopeId;
-    private string? search;
-    private string viewMode = "list";
-    private bool showMyMissions = true;
-    private bool filterActiveOnly = true;
-    private DateTime? filterStartDate;
-    private DateTime? filterEndDate;
+    private string? _filterScopeTypeValue;
+    private string? _filterScopeId;
+    private string? _search;
+    private string _viewMode = "list";
+    private bool _showMyMissions = true;
+    private bool _filterActiveOnly = true;
+    private DateTime? _filterStartDate;
+    private DateTime? _filterEndDate;
 
     // Card expansion state
-    private HashSet<Guid> expandedMissions = new();
-    private Dictionary<Guid, List<MissionMetric>> missionMetricsCache = new();
-    private Dictionary<Guid, MetricProgressDto> metricProgressCache = new();
-    private Dictionary<Guid, List<MissionObjective>> missionObjectivesCache = new();
-    private Dictionary<Guid, ObjectiveProgressDto> objectiveProgressCache = new();
-    private HashSet<Guid> expandedObjectives = new();
+    private HashSet<Guid> _expandedMissions = new();
+    private Dictionary<Guid, List<MissionMetric>> _missionMetricsCache = new();
+    private Dictionary<Guid, MetricProgressDto> _metricProgressCache = new();
+    private Dictionary<Guid, List<MissionObjective>> _missionObjectivesCache = new();
+    private Dictionary<Guid, ObjectiveProgressDto> _objectiveProgressCache = new();
+    private HashSet<Guid> _expandedObjectives = new();
 
     // Wizard state
-    private bool isWizardOpen;
-    private bool isEditMode;
-    private Guid? editingMissionId;
-    private MissionWizardModel? wizardInitialModel;
+    private bool _isWizardOpen;
+    private bool _isEditMode;
+    private Guid? _editingMissionId;
+    private MissionWizardModel? _wizardInitialModel;
 
     // Template picker state
-    private bool isTemplatePickerOpen;
-    private List<MissionTemplate> availableTemplates = new();
+    private bool _isTemplatePickerOpen;
+    private List<MissionTemplate> _availableTemplates = new();
 
     // Checkin modal state
-    private bool isCheckinModalOpen;
-    private Mission? checkinMission;
-    private MissionMetric? selectedCheckinMetric;
+    private bool _isCheckinModalOpen;
+    private Mission? _checkinMission;
+    private MissionMetric? _selectedCheckinMetric;
 
     // Checkin history modal state
-    private bool isCheckinHistoryModalOpen;
-    private MissionMetric? historyMetric;
-    private Mission? historyMission;
-    private List<MetricCheckin> metricCheckins = new();
-    private bool isLoadingCheckins;
+    private bool _isCheckinHistoryModalOpen;
+    private MissionMetric? _historyMetric;
+    private Mission? _historyMission;
+    private List<MetricCheckin> _metricCheckins = new();
+    private bool _isLoadingCheckins;
 
     // Delete confirmation state
-    private Guid? deletingMissionId;
-    private System.Threading.Timer? deleteConfirmTimer;
+    private Guid? _deletingMissionId;
+    private System.Threading.Timer? _deleteConfirmTimer;
 
     protected override async Task OnInitializedAsync()
     {
@@ -90,8 +91,8 @@ public partial class Missions
         {
             await InvokeAsync(async () =>
             {
-                filterScopeTypeValue = null;
-                filterScopeId = null;
+                _filterScopeTypeValue = null;
+                _filterScopeId = null;
                 await LoadReferenceData();
                 await LoadMissions();
                 StateHasChanged();
@@ -107,7 +108,7 @@ public partial class Missions
     public void Dispose()
     {
         OrgContext.OnOrganizationChanged -= HandleOrganizationChanged;
-        deleteConfirmTimer?.Dispose();
+        _deleteConfirmTimer?.Dispose();
         GC.SuppressFinalize(this);
     }
 
@@ -117,31 +118,34 @@ public partial class Missions
         var orgId = OrgContext.SelectedOrganizationId;
 
         var orgsResult = await Api.GetOrganizationsAsync(null, 1, 100);
-        organizations = orgsResult?.Items.ToList() ?? new List<Organization>();
+        _organizations = orgsResult?.Items.ToList() ?? new List<Organization>();
 
         var workspacesResult = await Api.GetWorkspacesAsync(orgId, null, 1, 100);
-        workspaces = workspacesResult?.Items.ToList() ?? new List<Workspace>();
+        _workspaces = workspacesResult?.Items.ToList() ?? new List<Workspace>();
 
         var teamsResult = await Api.GetTeamsAsync(null, null, null, 1, 100);
-        teams = teamsResult?.Items.ToList() ?? new List<Team>();
+        _teams = teamsResult?.Items.ToList() ?? new List<Team>();
 
         var collaboratorsResult = await Api.GetCollaboratorsAsync(null, null, 1, 100);
-        collaborators = collaboratorsResult?.Items.ToList() ?? new List<Collaborator>();
+        _collaborators = collaboratorsResult?.Items.ToList() ?? new List<Collaborator>();
+
+        var objectiveDimensionsResult = await Api.GetObjectiveDimensionsAsync(null, 1, 100);
+        _objectiveDimensions = objectiveDimensionsResult?.Items.ToList() ?? new List<ObjectiveDimension>();
     }
 
     private async Task SetMissionViewMode(bool myMissions)
     {
-        if (showMyMissions == myMissions)
+        if (_showMyMissions == myMissions)
         {
             return;
         }
 
-        showMyMissions = myMissions;
+        _showMyMissions = myMissions;
 
-        if (showMyMissions)
+        if (_showMyMissions)
         {
-            filterScopeTypeValue = null;
-            filterScopeId = null;
+            _filterScopeTypeValue = null;
+            _filterScopeId = null;
         }
 
         await LoadMissions();
@@ -151,50 +155,50 @@ public partial class Missions
     {
         PagedResult<Mission> result;
 
-        if (showMyMissions)
+        if (_showMyMissions)
         {
             var collaboratorId = AuthState.Session?.CollaboratorId;
             if (collaboratorId.HasValue)
             {
-                result = await Api.GetMyMissionsAsync(collaboratorId.Value, search, 1, 100) ?? new PagedResult<Mission>();
+                result = await Api.GetMyMissionsAsync(collaboratorId.Value, _search, 1, 100) ?? new PagedResult<Mission>();
             }
             else
             {
-                // Global admin without CollaboratorId — fallback to all missions
-                result = await Api.GetMissionsAsync(null, null, search, 1, 100) ?? new PagedResult<Mission>();
+                // Global admin without CollaboratorId — fallback to all _missions
+                result = await Api.GetMissionsAsync(null, null, _search, 1, 100) ?? new PagedResult<Mission>();
             }
         }
         else
         {
-            var scopeType = ParseScopeType(filterScopeTypeValue);
-            var scopeId = Guid.TryParse(filterScopeId, out var parsedScopeId)
+            var scopeType = ParseScopeType(_filterScopeTypeValue);
+            var scopeId = Guid.TryParse(_filterScopeId, out var parsedScopeId)
                 ? parsedScopeId
                 : (Guid?)null;
 
-            result = await Api.GetMissionsAsync(scopeType, scopeId, search, 1, 100) ?? new PagedResult<Mission>();
+            result = await Api.GetMissionsAsync(scopeType, scopeId, _search, 1, 100) ?? new PagedResult<Mission>();
         }
 
         // Apply client-side filters
         var filteredItems = result.Items.AsEnumerable();
 
         // Filter by active status
-        if (filterActiveOnly)
+        if (_filterActiveOnly)
         {
             filteredItems = filteredItems.Where(m => m.Status == MissionStatus.Active);
         }
 
         // Filter by date range
-        if (filterStartDate.HasValue)
+        if (_filterStartDate.HasValue)
         {
-            filteredItems = filteredItems.Where(m => m.EndDate >= filterStartDate.Value);
+            filteredItems = filteredItems.Where(m => m.EndDate >= _filterStartDate.Value);
         }
-        if (filterEndDate.HasValue)
+        if (_filterEndDate.HasValue)
         {
-            filteredItems = filteredItems.Where(m => m.StartDate <= filterEndDate.Value);
+            filteredItems = filteredItems.Where(m => m.StartDate <= _filterEndDate.Value);
         }
 
         var filteredList = filteredItems.ToList();
-        missions = new PagedResult<Mission>
+        _missions = new PagedResult<Mission>
         {
             Items = filteredList,
             Total = filteredList.Count,
@@ -207,28 +211,28 @@ public partial class Missions
 
     private async Task LoadProgress()
     {
-        if (missions is null || missions.Items.Count == 0)
+        if (_missions is null || _missions.Items.Count == 0)
         {
-            missionProgress = new();
+            _missionProgress = new();
             return;
         }
 
         try
         {
-            var ids = missions.Items.Select(m => m.Id).ToList();
+            var ids = _missions.Items.Select(m => m.Id).ToList();
             var progressList = await Api.GetMissionProgressAsync(ids);
-            missionProgress = progressList?.ToDictionary(p => p.MissionId) ?? new();
+            _missionProgress = progressList?.ToDictionary(p => p.MissionId) ?? new();
         }
         catch (Exception ex)
         {
             Console.Error.WriteLine($"Erro ao carregar progresso das missões: {ex.Message}");
-            missionProgress = new();
+            _missionProgress = new();
         }
     }
 
     private async Task LoadMetricProgress(Guid missionId)
     {
-        if (!missionMetricsCache.TryGetValue(missionId, out var metrics) || metrics.Count == 0)
+        if (!_missionMetricsCache.TryGetValue(missionId, out var metrics) || metrics.Count == 0)
             return;
 
         try
@@ -239,7 +243,7 @@ public partial class Missions
             {
                 foreach (var progress in progressList)
                 {
-                    metricProgressCache[progress.MetricId] = progress;
+                    _metricProgressCache[progress.MetricId] = progress;
                 }
             }
         }
@@ -253,49 +257,49 @@ public partial class Missions
 
     private void HandleToggleViewMode()
     {
-        viewMode = viewMode == "list" ? "grid" : "list";
+        _viewMode = _viewMode == "list" ? "grid" : "list";
     }
 
     private async Task HandleToggleActiveFilter()
     {
-        filterActiveOnly = !filterActiveOnly;
+        _filterActiveOnly = !_filterActiveOnly;
         await LoadMissions();
     }
 
     private async Task HandleDateFilterApplied((DateTime?, DateTime?) dates)
     {
-        filterStartDate = dates.Item1;
-        filterEndDate = dates.Item2;
+        _filterStartDate = dates.Item1;
+        _filterEndDate = dates.Item2;
         await LoadMissions();
     }
 
     private async Task HandleFilterScopeTypeChanged(string? value)
     {
-        filterScopeTypeValue = value;
-        filterScopeId = null;
+        _filterScopeTypeValue = value;
+        _filterScopeId = null;
         await LoadMissions();
     }
 
     private async Task HandleFilterScopeIdChanged(string? value)
     {
-        filterScopeId = value;
+        _filterScopeId = value;
         await LoadMissions();
     }
 
     private async Task HandleSearchSubmit(string? value)
     {
-        search = value;
+        _search = value;
         await LoadMissions();
     }
 
     private async Task HandleClearFilters()
     {
-        filterScopeTypeValue = null;
-        filterScopeId = null;
-        search = null;
-        filterActiveOnly = true;
-        filterStartDate = null;
-        filterEndDate = null;
+        _filterScopeTypeValue = null;
+        _filterScopeId = null;
+        _search = null;
+        _filterActiveOnly = true;
+        _filterStartDate = null;
+        _filterEndDate = null;
         await LoadMissions();
     }
 
@@ -305,50 +309,65 @@ public partial class Missions
         try
         {
             var result = await Api.GetMissionTemplatesAsync(null, 1, 50);
-            availableTemplates = result?.Items
+            _availableTemplates = result?.Items
                 .Where(t => t.IsActive)
                 .ToList() ?? new();
         }
         catch
         {
-            availableTemplates = new();
+            _availableTemplates = new();
         }
 
-        isTemplatePickerOpen = true;
+        _isTemplatePickerOpen = true;
     }
 
     private void OpenCreateModalFromScratch()
     {
-        isTemplatePickerOpen = false;
-        wizardInitialModel = new MissionWizardModel
+        _isTemplatePickerOpen = false;
+        _wizardInitialModel = new MissionWizardModel
         {
             StartDate = DateTime.Today,
             EndDate = DateTime.Today.AddDays(7)
         };
-        isEditMode = false;
-        editingMissionId = null;
-        isWizardOpen = true;
+        _isEditMode = false;
+        _editingMissionId = null;
+        _isWizardOpen = true;
     }
 
     private void OpenCreateModalFromTemplate(MissionTemplate template)
     {
-        isTemplatePickerOpen = false;
-        wizardInitialModel = new MissionWizardModel
+        _isTemplatePickerOpen = false;
+        var objectiveIdToTempId = template.Objectives
+            .ToDictionary(o => o.Id, _ => Guid.NewGuid().ToString());
+
+        _wizardInitialModel = new MissionWizardModel
         {
             Name = template.MissionNamePattern,
             Description = template.MissionDescriptionPattern,
             StartDate = DateTime.Today,
             EndDate = DateTime.Today.AddDays(90),
+            Objectives = template.Objectives
+                .OrderBy(o => o.OrderIndex)
+                .Select(o => new TempObjective(
+                    objectiveIdToTempId[o.Id],
+                    o.Name,
+                    o.Description,
+                    null,
+                    o.ObjectiveDimensionId))
+                .ToList(),
             Metrics = template.Metrics
                 .OrderBy(m => m.OrderIndex)
                 .Select(m => new TempMetric(
                     null, m.Name, m.Type.ToString(), GetTemplateMetricDetails(m),
-                    m.QuantitativeType?.ToString(), m.MinValue, m.MaxValue, m.TargetText, m.Unit?.ToString()))
+                    m.QuantitativeType?.ToString(), m.MinValue, m.MaxValue, m.TargetText, m.Unit?.ToString(),
+                    m.MissionTemplateObjectiveId.HasValue && objectiveIdToTempId.TryGetValue(m.MissionTemplateObjectiveId.Value, out var objectiveTempId)
+                        ? objectiveTempId
+                        : null))
                 .ToList()
         };
-        isEditMode = false;
-        editingMissionId = null;
-        isWizardOpen = true;
+        _isEditMode = false;
+        _editingMissionId = null;
+        _isWizardOpen = true;
     }
 
     private static string GetTemplateMetricDetails(MissionTemplateMetric metric)
@@ -370,33 +389,33 @@ public partial class Missions
 
     private void CloseWizard()
     {
-        isWizardOpen = false;
-        isEditMode = false;
-        editingMissionId = null;
-        wizardInitialModel = null;
+        _isWizardOpen = false;
+        _isEditMode = false;
+        _editingMissionId = null;
+        _wizardInitialModel = null;
     }
 
     private string GetSelectedOrganizationName()
     {
         if (OrgContext.SelectedOrganizationId.HasValue)
         {
-            var selectedOrganization = organizations.FirstOrDefault(o => o.Id == OrgContext.SelectedOrganizationId.Value);
+            var selectedOrganization = _organizations.FirstOrDefault(o => o.Id == OrgContext.SelectedOrganizationId.Value);
             if (selectedOrganization is not null)
             {
                 return selectedOrganization.Name;
             }
         }
 
-        return organizations.FirstOrDefault()?.Name ?? "Organização";
+        return _organizations.FirstOrDefault()?.Name ?? "Organização";
     }
 
     // ---- Wizard Handlers ----
 
     private async Task HandleWizardSave(MissionWizardResult result)
     {
-        if (isEditMode && editingMissionId.HasValue)
+        if (_isEditMode && _editingMissionId.HasValue)
         {
-            await UpdateMissionFromResult(editingMissionId.Value, result);
+            await UpdateMissionFromResult(_editingMissionId.Value, result);
         }
         else
         {
@@ -475,7 +494,8 @@ public partial class Missions
                 {
                     MissionId = missionId,
                     Name = tempObj.Name,
-                    Description = tempObj.Description
+                    Description = tempObj.Description,
+                    ObjectiveDimensionId = tempObj.ObjectiveDimensionId
                 });
                 if (created is not null)
                 {
@@ -540,10 +560,10 @@ public partial class Missions
 
         return scopeType switch
         {
-            MissionScopeType.Organization => organizations.Select(o => new ScopeOption(o.Id.ToString(), o.Name)),
-            MissionScopeType.Workspace => workspaces.Select(w => new ScopeOption(w.Id.ToString(), w.Name)),
-            MissionScopeType.Team => teams.Select(t => new ScopeOption(t.Id.ToString(), t.Name)),
-            MissionScopeType.Collaborator => collaborators.Select(c => new ScopeOption(c.Id.ToString(), c.FullName)),
+            MissionScopeType.Organization => _organizations.Select(o => new ScopeOption(o.Id.ToString(), o.Name)),
+            MissionScopeType.Workspace => _workspaces.Select(w => new ScopeOption(w.Id.ToString(), w.Name)),
+            MissionScopeType.Team => _teams.Select(t => new ScopeOption(t.Id.ToString(), t.Name)),
+            MissionScopeType.Collaborator => _collaborators.Select(c => new ScopeOption(c.Id.ToString(), c.FullName)),
             _ => Enumerable.Empty<ScopeOption>()
         };
     }
@@ -558,9 +578,9 @@ public partial class Missions
 
     private async Task ToggleExpand(Guid missionId)
     {
-        if (expandedMissions.Contains(missionId))
+        if (_expandedMissions.Contains(missionId))
         {
-            expandedMissions.Remove(missionId);
+            _expandedMissions.Remove(missionId);
             return;
         }
 
@@ -569,8 +589,8 @@ public partial class Missions
 
     private async Task ExpandMissionAsync(Guid missionId)
     {
-        expandedMissions.Add(missionId);
-        if (missionMetricsCache.ContainsKey(missionId))
+        _expandedMissions.Add(missionId);
+        if (_missionMetricsCache.ContainsKey(missionId))
         {
             return;
         }
@@ -589,8 +609,8 @@ public partial class Missions
         var metrics = metricsTask.Result?.Items.ToList() ?? [];
         var objectives = objectivesTask.Result?.Items.ToList() ?? [];
 
-        missionMetricsCache[missionId] = metrics;
-        missionObjectivesCache[missionId] = objectives;
+        _missionMetricsCache[missionId] = metrics;
+        _missionObjectivesCache[missionId] = objectives;
 
         return (metrics, objectives);
     }
@@ -615,7 +635,7 @@ public partial class Missions
         {
             foreach (var progress in progressList)
             {
-                objectiveProgressCache[progress.ObjectiveId] = progress;
+                _objectiveProgressCache[progress.ObjectiveId] = progress;
             }
         }
     }
@@ -627,7 +647,7 @@ public partial class Missions
         {
             foreach (var progress in progressList)
             {
-                metricProgressCache[progress.MetricId] = progress;
+                _metricProgressCache[progress.MetricId] = progress;
             }
         }
     }
@@ -636,50 +656,50 @@ public partial class Missions
 
     private async Task OpenCheckinHistoryModal(Mission mission, MissionMetric metric)
     {
-        historyMission = mission;
-        historyMetric = metric;
-        isCheckinHistoryModalOpen = true;
-        isLoadingCheckins = true;
-        metricCheckins = new List<MetricCheckin>();
+        _historyMission = mission;
+        _historyMetric = metric;
+        _isCheckinHistoryModalOpen = true;
+        _isLoadingCheckins = true;
+        _metricCheckins = new List<MetricCheckin>();
         StateHasChanged();
 
         try
         {
             var result = await Api.GetMetricCheckinsAsync(metric.Id, null, 1, 50);
-            metricCheckins = result?.Items.OrderByDescending(c => c.CheckinDate).ToList() ?? new List<MetricCheckin>();
+            _metricCheckins = result?.Items.OrderByDescending(c => c.CheckinDate).ToList() ?? new List<MetricCheckin>();
         }
         catch (Exception ex)
         {
             Console.Error.WriteLine($"Erro ao carregar histórico de check-ins da métrica {metric.Id}: {ex.Message}");
-            metricCheckins = new List<MetricCheckin>();
+            _metricCheckins = new List<MetricCheckin>();
             ToastService.ShowError("Erro ao carregar histórico", "Não foi possível carregar o histórico de check-ins desta métrica.");
         }
         finally
         {
-            isLoadingCheckins = false;
+            _isLoadingCheckins = false;
             StateHasChanged();
         }
     }
 
     private void CloseCheckinHistoryModal()
     {
-        isCheckinHistoryModalOpen = false;
-        historyMetric = null;
-        historyMission = null;
-        metricCheckins = new List<MetricCheckin>();
+        _isCheckinHistoryModalOpen = false;
+        _historyMetric = null;
+        _historyMission = null;
+        _metricCheckins = new List<MetricCheckin>();
     }
 
     private void OpenCheckinFromHistory()
     {
         // Capture values before closing the history modal
-        var mission = historyMission;
-        var metric = historyMetric;
+        var mission = _historyMission;
+        var metric = _historyMetric;
 
         // Close history modal first
-        isCheckinHistoryModalOpen = false;
-        historyMetric = null;
-        historyMission = null;
-        metricCheckins = new List<MetricCheckin>();
+        _isCheckinHistoryModalOpen = false;
+        _historyMetric = null;
+        _historyMission = null;
+        _metricCheckins = new List<MetricCheckin>();
 
         // Now open checkin modal with captured values
         if (mission != null && metric != null)
@@ -692,44 +712,44 @@ public partial class Missions
 
     private int GetOverallProgressDisplay()
     {
-        if (missions is null || !missionProgress.Any()) return 0;
-        var activeProgress = missionProgress.Values.Where(p => p.TotalMetrics > 0).ToList();
+        if (_missions is null || !_missionProgress.Any()) return 0;
+        var activeProgress = _missionProgress.Values.Where(p => p.TotalMetrics > 0).ToList();
         if (!activeProgress.Any()) return 0;
         return (int)activeProgress.Average(p => p.OverallProgress);
     }
 
     private int GetExpectedProgressDisplay()
     {
-        if (missions is null || !missionProgress.Any()) return 0;
-        var activeProgress = missionProgress.Values.Where(p => p.ExpectedProgress > 0).ToList();
+        if (_missions is null || !_missionProgress.Any()) return 0;
+        var activeProgress = _missionProgress.Values.Where(p => p.ExpectedProgress > 0).ToList();
         if (!activeProgress.Any()) return 0;
         return (int)activeProgress.Average(p => p.ExpectedProgress);
     }
 
     private int GetActiveMissionsCount()
     {
-        return missions?.Items.Count(m => m.Status == MissionStatus.Active) ?? 0;
+        return _missions?.Items.Count(m => m.Status == MissionStatus.Active) ?? 0;
     }
 
     private int GetOutdatedMetricsCount()
     {
-        return missionProgress.Values.Sum(p => p.OutdatedMetrics);
+        return _missionProgress.Values.Sum(p => p.OutdatedMetrics);
     }
 
     // ---- Checkin Modal Methods ----
 
     private void OpenCheckinModalForMetric(Mission mission, MissionMetric metric)
     {
-        checkinMission = mission;
-        selectedCheckinMetric = metric;
-        isCheckinModalOpen = true;
+        _checkinMission = mission;
+        _selectedCheckinMetric = metric;
+        _isCheckinModalOpen = true;
     }
 
     private void CloseCheckinModal()
     {
-        isCheckinModalOpen = false;
-        checkinMission = null;
-        selectedCheckinMetric = null;
+        _isCheckinModalOpen = false;
+        _checkinMission = null;
+        _selectedCheckinMetric = null;
     }
 
     private async Task HandleCheckinSubmit(CreateMetricCheckinRequest request)
@@ -745,7 +765,7 @@ public partial class Missions
             {
                 await Api.CreateMetricCheckinAsync(request);
                 ToastService.ShowSuccess("Check-in criado", "O check-in foi registrado com sucesso.");
-                var missionId = checkinMission?.Id;
+                var missionId = _checkinMission?.Id;
                 CloseCheckinModal();
                 await LoadProgress();
                 if (missionId.HasValue)
@@ -772,8 +792,8 @@ public partial class Missions
 
     private async Task OpenEditWizard(Mission mission)
     {
-        isEditMode = true;
-        editingMissionId = mission.Id;
+        _isEditMode = true;
+        _editingMissionId = mission.Id;
 
         var (scopeType, scopeId) = GetMissionScope(mission);
 
@@ -790,7 +810,8 @@ public partial class Missions
             TempId: Guid.NewGuid().ToString(),
             Name: o.Name,
             Description: o.Description,
-            OriginalId: o.Id
+            OriginalId: o.Id,
+            ObjectiveDimensionId: o.ObjectiveDimensionId
         )).ToList();
 
         // Build a map from original objective ID to TempId
@@ -819,7 +840,7 @@ public partial class Missions
                 ObjectiveTempId: objTempId);
         }).ToList();
 
-        wizardInitialModel = new MissionWizardModel
+        _wizardInitialModel = new MissionWizardModel
         {
             Name = mission.Name,
             Description = mission.Description,
@@ -832,7 +853,7 @@ public partial class Missions
             Objectives = tempObjs
         };
 
-        isWizardOpen = true;
+        _isWizardOpen = true;
     }
 
     private async Task UpdateMissionFromResult(Guid missionId, MissionWizardResult result)
@@ -904,7 +925,8 @@ public partial class Missions
                 await Api.UpdateMissionObjectiveAsync(objective.OriginalId.Value, new UpdateMissionObjectiveRequest
                 {
                     Name = objective.Name,
-                    Description = objective.Description
+                    Description = objective.Description,
+                    ObjectiveDimensionId = objective.ObjectiveDimensionId
                 });
             }
             catch (Exception ex)
@@ -922,7 +944,8 @@ public partial class Missions
                 {
                     MissionId = missionId,
                     Name = objective.Name,
-                    Description = objective.Description
+                    Description = objective.Description,
+                    ObjectiveDimensionId = objective.ObjectiveDimensionId
                 });
 
                 if (created is not null)
@@ -1004,11 +1027,11 @@ public partial class Missions
 
     private async Task RefreshMissionCachesAsync(Guid missionId)
     {
-        missionMetricsCache.Remove(missionId);
-        missionObjectivesCache.Remove(missionId);
+        _missionMetricsCache.Remove(missionId);
+        _missionObjectivesCache.Remove(missionId);
         await LoadMissions();
 
-        if (!expandedMissions.Contains(missionId))
+        if (!_expandedMissions.Contains(missionId))
         {
             return;
         }
@@ -1027,7 +1050,7 @@ public partial class Missions
 
     private async Task HandleDeleteClick(Guid missionId)
     {
-        if (deletingMissionId == missionId)
+        if (_deletingMissionId == missionId)
         {
             await DeleteMission(missionId);
         }
@@ -1138,12 +1161,12 @@ public partial class Missions
 
     private void ArmMissionDeleteConfirmation(Guid missionId)
     {
-        deletingMissionId = missionId;
-        deleteConfirmTimer?.Dispose();
-        deleteConfirmTimer = new System.Threading.Timer(
+        _deletingMissionId = missionId;
+        _deleteConfirmTimer?.Dispose();
+        _deleteConfirmTimer = new System.Threading.Timer(
             _ => InvokeAsync(() =>
             {
-                deletingMissionId = null;
+                _deletingMissionId = null;
                 StateHasChanged();
             }),
             null,
@@ -1153,9 +1176,9 @@ public partial class Missions
 
     private void ClearMissionDeleteConfirmation()
     {
-        deletingMissionId = null;
-        deleteConfirmTimer?.Dispose();
-        deleteConfirmTimer = null;
+        _deletingMissionId = null;
+        _deleteConfirmTimer?.Dispose();
+        _deleteConfirmTimer = null;
     }
 
 
@@ -1163,9 +1186,9 @@ public partial class Missions
 
     private void ToggleObjectiveExpand(Guid objectiveId)
     {
-        if (!expandedObjectives.Add(objectiveId))
+        if (!_expandedObjectives.Add(objectiveId))
         {
-            expandedObjectives.Remove(objectiveId);
+            _expandedObjectives.Remove(objectiveId);
         }
     }
 

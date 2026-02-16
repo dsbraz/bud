@@ -199,6 +199,16 @@
                                     <label>Descrição (opcional)</label>
                                     <textarea class="input" @bind="tempObjectiveDescription" placeholder="Breve descrição do objetivo" maxlength="1000" rows="2"></textarea>
                                 </div>
+                                <div class="form-row">
+                                    <label>Dimensão (opcional)</label>
+                                    <select class="input" @bind="tempObjectiveDimensionId">
+                                        <option value="">Sem dimensão</option>
+                                        @foreach (var dimension in ObjectiveDimensions.OrderBy(d => d.Name))
+                                        {
+                                            <option value="@dimension.Id">@dimension.Name</option>
+                                        }
+                                    </select>
+                                </div>
                                 <div class="form-actions" style="margin-top: var(--spacing-3);">
                                     <button type="button" class="button tertiary" @onclick="CancelAddObjective">Cancelar</button>
                                     <button type="button" class="button primary" @onclick="AddTempObjective">Salvar objetivo</button>
@@ -232,6 +242,16 @@
                                                 <label>Descrição</label>
                                                 <textarea class="input" @bind="editingObjectiveDescription" maxlength="1000" rows="2"></textarea>
                                             </div>
+                                            <div class="form-row">
+                                                <label>Dimensão (opcional)</label>
+                                                <select class="input" @bind="editingObjectiveDimensionId">
+                                                    <option value="">Sem dimensão</option>
+                                                    @foreach (var dimension in ObjectiveDimensions.OrderBy(d => d.Name))
+                                                    {
+                                                        <option value="@dimension.Id">@dimension.Name</option>
+                                                    }
+                                                </select>
+                                            </div>
                                             <div class="form-actions" style="margin-top: var(--spacing-3);">
                                                 <button type="button" class="button tertiary" @onclick="CancelEditTempObjective">Cancelar</button>
                                                 <button type="button" class="button primary" @onclick="SaveEditTempObjective">Salvar</button>
@@ -254,6 +274,16 @@
                                                     @if (!string.IsNullOrWhiteSpace(obj.Description))
                                                     {
                                                         <div class="metric-details">@obj.Description</div>
+                                                    }
+                                                    @if (obj.ObjectiveDimensionId.HasValue)
+                                                    {
+                                                        var dimensionName = ObjectiveDimensions
+                                                            .FirstOrDefault(d => d.Id == obj.ObjectiveDimensionId.Value)
+                                                            ?.Name;
+                                                        if (!string.IsNullOrWhiteSpace(dimensionName))
+                                                        {
+                                                            <div class="metric-details">Dimensão: @dimensionName</div>
+                                                        }
                                                     }
                                                 </div>
                                                 <CrudRowActions
@@ -356,4 +386,3 @@
         </Footer>
     </Modal>
 }
-

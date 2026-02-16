@@ -18,17 +18,17 @@ public sealed class MissionsPageTests : TestContext
         var cut = RenderMissionsPage();
         var instance = cut.Instance;
 
-        SetField(instance, "filterActiveOnly", false);
-        SetField(instance, "filterScopeTypeValue", "Team");
-        SetField(instance, "filterScopeId", Guid.NewGuid().ToString());
-        SetField(instance, "search", "abc");
+        SetField(instance, "_filterActiveOnly", false);
+        SetField(instance, "_filterScopeTypeValue", "Team");
+        SetField(instance, "_filterScopeId", Guid.NewGuid().ToString());
+        SetField(instance, "_search", "abc");
 
         await InvokePrivateTask(instance, "HandleClearFilters");
 
-        GetField<bool>(instance, "filterActiveOnly").Should().BeTrue();
-        GetField<string?>(instance, "filterScopeTypeValue").Should().BeNull();
-        GetField<string?>(instance, "filterScopeId").Should().BeNull();
-        GetField<string?>(instance, "search").Should().BeNull();
+        GetField<bool>(instance, "_filterActiveOnly").Should().BeTrue();
+        GetField<string?>(instance, "_filterScopeTypeValue").Should().BeNull();
+        GetField<string?>(instance, "_filterScopeId").Should().BeNull();
+        GetField<string?>(instance, "_search").Should().BeNull();
     }
 
     [Fact]
@@ -38,6 +38,22 @@ public sealed class MissionsPageTests : TestContext
 
         cut.Markup.Should().Contain("Miss");
         cut.Markup.Should().Contain("Criar miss");
+    }
+
+    [Fact]
+    public void Render_ShouldNotShowMissionsTopMenu()
+    {
+        var cut = RenderMissionsPage();
+
+        cut.Markup.Should().NotContain("management-menu");
+    }
+
+    [Fact]
+    public void Render_InitialState_ShouldNotShowClearFilterChip()
+    {
+        var cut = RenderMissionsPage();
+
+        cut.Markup.Should().NotContain("Limpar filtro");
     }
 
     private IRenderedComponent<Missions> RenderMissionsPage()
@@ -65,7 +81,8 @@ public sealed class MissionsPageTests : TestContext
             if (path.StartsWith("/api/workspaces", StringComparison.Ordinal) ||
                 path.StartsWith("/api/teams", StringComparison.Ordinal) ||
                 path.StartsWith("/api/collaborators", StringComparison.Ordinal) ||
-                path.StartsWith("/api/mission-templates", StringComparison.Ordinal))
+                path.StartsWith("/api/mission-templates", StringComparison.Ordinal) ||
+                path.StartsWith("/api/objective-dimensions", StringComparison.Ordinal))
             {
                 return Json("""{"items":[],"total":0,"page":1,"pageSize":100}""");
             }
