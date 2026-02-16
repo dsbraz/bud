@@ -791,11 +791,20 @@ Referência completa com exemplos interativos disponível em `/swagger` (ambient
 ### Mission Objectives (CRUD)
 
 - `POST /api/mission-objectives`
-- `GET /api/mission-objectives` — listagem paginada (filtro por `missionId` e `parentObjectiveId`)
+- `GET /api/mission-objectives` — listagem paginada (filtro por `missionId`)
 - `GET /api/mission-objectives/{id}`
 - `PUT /api/mission-objectives/{id}`
 - `DELETE /api/mission-objectives/{id}`
 - `GET /api/mission-objectives/progress`
+- Campo opcional nos payloads de criação/atualização: `objectiveDimensionId` (GUID de `/api/objective-dimensions`).
+
+### Objective Dimensions (CRUD)
+
+- `POST /api/objective-dimensions`
+- `GET /api/objective-dimensions` — listagem paginada
+- `GET /api/objective-dimensions/{id}`
+- `PUT /api/objective-dimensions/{id}`
+- `DELETE /api/objective-dimensions/{id}`
 
 ### Mission Metrics (CRUD)
 
@@ -821,6 +830,8 @@ Referência completa com exemplos interativos disponível em `/swagger` (ambient
 - `GET /api/mission-templates/{id}`
 - `PUT /api/mission-templates/{id}`
 - `DELETE /api/mission-templates/{id}`
+- Modelos padrão semeados para a organização bootstrap (`getbud.co`): `BSC`, `Mapa Estratégico`, `Planejamento Estratégico Anual`, `OKR` e `PDI` (todos com objetivos e métricas vinculadas).
+- Payloads de criação/atualização também aceitam `objectives` (objetivos do template) e `metrics[].missionTemplateObjectiveId` para vincular métricas a objetivos.
 
 ### Notifications
 

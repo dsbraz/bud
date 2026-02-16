@@ -422,13 +422,6 @@
               "null",
               "string"
             ]
-          },
-          "parentObjectiveId": {
-            "type": [
-              "null",
-              "string"
-            ],
-            "format": "uuid"
           }
         },
         "additionalProperties": false,
@@ -463,10 +456,6 @@
         "additionalProperties": false,
         "properties": {
           "missionId": {
-            "type": "string",
-            "format": "uuid"
-          },
-          "parentObjectiveId": {
             "type": "string",
             "format": "uuid"
           },

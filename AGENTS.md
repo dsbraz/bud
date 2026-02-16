@@ -120,7 +120,7 @@ Bud is an ASP.NET Core 10 application with a Blazor WebAssembly frontend, using 
 ## Project Structure
 
 - **Bud.Server** (`src/Bud.Server`): ASP.NET Core API hosting both the API endpoints and the Blazor WebAssembly app
-  - `Controllers/`: REST endpoints for auth, organizations, workspaces, teams, collaborators, missions, mission-objectives, mission-metrics, metric-checkins, mission-templates, dashboard, notifications
+  - `Controllers/`: REST endpoints for auth, organizations, workspaces, teams, collaborators, missions, mission-objectives, mission-metrics, metric-checkins, mission-templates, objective-dimensions, dashboard, notifications
   - `Application/`: use cases organized by domain (Auth, Collaborators, Dashboard, MetricCheckins, MissionMetrics, MissionObjectives, MissionTemplates, Missions, Notifications, Organizations, Teams, Workspaces)
   - `Authorization/`: policy-based authorization (requirements, handlers, `IApplicationAuthorizationGateway`)
   - `Domain/`: specifications (`Domain/Specifications/`), value objects, and domain-specific contracts
@@ -235,6 +235,7 @@ Organization
 
 Mission (can be scoped to Organization, Workspace, Team, or Collaborator)
   ├── MissionObjective(s) (hierarchical via ParentObjectiveId)
+  │   ├── ObjectiveDimension (optional classification via ObjectiveDimensionId)
   │   └── MissionMetric(s) (metrics linked to objectives)
   │       └── MetricCheckin(s)
   └── MissionMetric(s) (direct metrics, MissionObjectiveId = null)
@@ -252,7 +253,9 @@ CollaboratorAccessLog (tenant-scoped, audit trail)
 - SubTeams have `DeleteBehavior.Restrict` on ParentTeam to prevent orphaned hierarchies
 - MissionObjective → SubObjectives = `Restrict` (must delete children first, same pattern as SubTeams)
 - Mission → MissionObjective = `Cascade`; MissionObjective → MissionMetric = `Cascade`
-- All other Mission relationships cascade delete
+- Mission → Organization/Workspace/Team/Collaborator = `Restrict` (services validate and return Conflict before deletion)
+- MissionTemplate → Organization = `Restrict`; MissionTemplate → Metrics/Objectives = `Cascade`
+- ObjectiveDimension uses `Restrict` on both MissionObjective and MissionTemplateObjective (services validate before deletion)
 
 ### Multi-Tenancy
 
