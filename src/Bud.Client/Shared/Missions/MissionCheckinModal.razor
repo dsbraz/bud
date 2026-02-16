@@ -1,0 +1,77 @@
+@using Bud.Client.Services
+
+@if (IsOpen && Metric != null)
+{
+    <Modal Title="Novo check-in" Breadcrumb="@Metric.Name" Size="md" OnClose="() => OnClose.InvokeAsync()">
+        <ChildContent>
+            <div class="metrics-form-container">
+                @if (Metric.Type == MetricType.Quantitative)
+                {
+                    <div class="form-row">
+                        <label>Valor atual @MissionMetricDisplayHelper.GetCheckinTargetHint(Metric)</label>
+                        <InputNumber class="input" @bind-Value="checkinRequest.Value" placeholder="Ex: 42" />
+                    </div>
+                }
+                else
+                {
+                    <div class="form-row">
+                        <label>Texto de progresso</label>
+                        <InputText class="input" @bind-Value="checkinRequest.Text" placeholder="Descreva o progresso atual" />
+                    </div>
+                }
+
+                <div class="form-row">
+                    <label>Nível de confiança</label>
+                    <div class="confidence-selector">
+                        @for (int i = 1; i <= 5; i++)
+                        {
+                            var level = i;
+                            <button type="button"
+                                    class="confidence-btn @(checkinRequest.ConfidenceLevel >= level ? "active" : "")"
+                                    @onclick="() => checkinRequest.ConfidenceLevel = level">
+                                @level
+                            </button>
+                        }
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <label>Nota (opcional)</label>
+                    <InputText class="input" @bind-Value="checkinRequest.Note" placeholder="Contexto adicional sobre o progresso" />
+                </div>
+            </div>
+
+            <div class="form-actions" style="margin-top: var(--spacing-6);">
+                <button class="button tertiary" type="button" @onclick="() => OnClose.InvokeAsync()">Cancelar</button>
+                <button class="button primary" @onclick="HandleSubmit">Criar check-in</button>
+            </div>
+        </ChildContent>
+    </Modal>
+}
+
+@code {
+    [Parameter] public bool IsOpen { get; set; }
+    [Parameter] public MissionMetric? Metric { get; set; }
+    [Parameter] public EventCallback OnClose { get; set; }
+    [Parameter] public EventCallback<CreateMetricCheckinRequest> OnSubmit { get; set; }
+
+    private CreateMetricCheckinRequest checkinRequest = new() { ConfidenceLevel = 3 };
+    private MissionMetric? previousMetric;
+
+    protected override void OnParametersSet()
+    {
+        if (Metric != previousMetric)
+        {
+            previousMetric = Metric;
+            checkinRequest = new CreateMetricCheckinRequest { ConfidenceLevel = 3 };
+        }
+    }
+
+    private async Task HandleSubmit()
+    {
+        if (Metric is null) return;
+        checkinRequest.MissionMetricId = Metric.Id;
+        checkinRequest.CheckinDate = DateTime.UtcNow;
+        await OnSubmit.InvokeAsync(checkinRequest);
+    }
+}

@@ -1,0 +1,88 @@
+@using Bud.Client.Services
+
+<div class="metric-row clickable @(IsMetricOutdated ? "outdated" : "")" @onclick="() => OnHistoryClick.InvokeAsync(Metric)">
+    <button class="metric-checkin-btn" @onclick="() => OnCheckinClick.InvokeAsync(Metric)" @onclick:stopPropagation="true" title="Novo check-in">
+        <svg width="18" height="18" viewBox="0 0 32 32" fill="none">
+            <path d="M16 6V26M6 16H26" stroke="currentColor" stroke-width="3" stroke-linecap="round"/>
+        </svg>
+    </button>
+    <div class="metric-row-title">
+        <div class="metric-row-name">@Metric.Name</div>
+    </div>
+    <div class="metric-row-period">
+        <div class="metric-period-label">@GetQuarterLabel()</div>
+        <div class="metric-period-dates">@Mission.StartDate.ToString("dd/MM/yyyy") à @Mission.EndDate.ToString("dd/MM/yyyy")</div>
+    </div>
+    <div class="metric-row-progress">
+        <div class="metric-progress-target">@MissionMetricDisplayHelper.GetTargetLabel(Metric)</div>
+        <div class="metric-progress-bar">
+            <div class="metric-progress-fill @MetricStatusClass" style="width: @(MetricProgressPercent)%"></div>
+        </div>
+        <div class="metric-progress-footer">
+            <span class="metric-progress-status">@MetricStatusLabel</span>
+            <span class="metric-progress-value">@(MetricProgressPercent)%</span>
+        </div>
+    </div>
+    <div class="metric-row-avatar" title="@LastCheckinAuthorName">
+        @if (HasLastCheckinAuthor)
+        {
+            <span class="metric-row-avatar-initials">@GetInitials(LastCheckinAuthorName)</span>
+        }
+        else
+        {
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+                <path d="M12 12C14.21 12 16 10.21 16 8C16 5.79 14.21 4 12 4C9.79 4 8 5.79 8 8C8 10.21 9.79 12 12 12ZM12 14C9.33 14 4 15.34 4 18V20H20V18C20 15.34 14.67 14 12 14Z" fill="currentColor"/>
+            </svg>
+        }
+    </div>
+</div>
+
+@code {
+    [Parameter, EditorRequired] public Mission Mission { get; set; } = default!;
+    [Parameter, EditorRequired] public MissionMetric Metric { get; set; } = default!;
+    [Parameter] public MissionProgressDto? MissionProgress { get; set; }
+    [Parameter] public MetricProgressDto? MetricProgress { get; set; }
+    [Parameter] public EventCallback<MissionMetric> OnCheckinClick { get; set; }
+    [Parameter] public EventCallback<MissionMetric> OnHistoryClick { get; set; }
+
+    private int MetricProgressPercent => (int)(MetricProgress?.Progress ?? 0);
+    private decimal ExpectedProgress => MissionProgress?.ExpectedProgress ?? 0m;
+    private bool IsMetricOutdated => MetricProgress?.IsOutdated ?? true;
+
+    private string MetricStatusClass => GetMetricStatusClass(MetricProgressPercent, ExpectedProgress);
+    private string MetricStatusLabel => GetMetricStatusLabel(MetricProgressPercent, ExpectedProgress, Metric);
+
+    private bool HasLastCheckinAuthor => MetricProgress?.LastCheckinCollaboratorName is not null;
+    private string LastCheckinAuthorName => MetricProgress?.LastCheckinCollaboratorName ?? "Último check-in";
+
+    private string GetQuarterLabel()
+    {
+        var quarter = (Mission.StartDate.Month - 1) / 3 + 1;
+        return $"Q{quarter} {Mission.StartDate.Year}";
+    }
+
+    private static string GetMetricStatusClass(int progress, decimal expectedProgress)
+    {
+        if (expectedProgress <= 0) return "on-track";
+        if (progress >= (int)expectedProgress) return "on-track";
+        if (progress >= (int)(expectedProgress * 0.7m)) return "at-risk";
+        return "off-track";
+    }
+
+    private static string GetMetricStatusLabel(int progress, decimal expectedProgress, MissionMetric metric)
+    {
+        if (metric.Type == MetricType.Qualitative) return "Qualitativo";
+        if (expectedProgress <= 0) return "Dentro do previsto";
+        if (progress >= (int)expectedProgress) return "Dentro do previsto";
+        if (progress >= (int)(expectedProgress * 0.7m)) return "Atenção";
+        return "Em risco";
+    }
+
+    private static string GetInitials(string fullName)
+    {
+        var parts = fullName.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+        if (parts.Length == 0) return "?";
+        if (parts.Length == 1) return parts[0][..1].ToUpperInvariant();
+        return $"{parts[0][..1]}{parts[^1][..1]}".ToUpperInvariant();
+    }
+}

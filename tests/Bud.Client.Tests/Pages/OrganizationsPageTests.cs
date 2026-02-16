@@ -2,6 +2,8 @@ using System.Net;
 using System.Text;
 using Bud.Client.Pages;
 using Bud.Client.Services;
+using Bud.Shared.Contracts;
+using Bud.Shared.Domain;
 using Bunit;
 using FluentAssertions;
 using Microsoft.Extensions.DependencyInjection;
@@ -13,7 +15,46 @@ namespace Bud.Client.Tests.Pages;
 public sealed class OrganizationsPageTests : TestContext
 {
     [Fact]
+    public void IsProtectedOrganization_WhenEditingGetbudCo_ShouldReturnTrue()
+    {
+        var cut = RenderOrganizationsPage();
+        var instance = cut.Instance;
+
+        var organizationId = Guid.NewGuid();
+        SetField(instance, "organizations", new PagedResult<Organization>
+        {
+            Items = new List<Organization>
+            {
+                new()
+                {
+                    Id = organizationId,
+                    Name = "getbud.co"
+                }
+            },
+            Total = 1,
+            Page = 1,
+            PageSize = 20
+        });
+        SetField<Guid?>(instance, "editingOrganizationId", organizationId);
+
+        var result = InvokePrivateBool(instance, "IsProtectedOrganization");
+
+        result.Should().BeTrue();
+    }
+
+    [Fact]
     public void Render_WithGlobalAdminSession_ShouldShowPageHeader()
+    {
+        var cut = RenderOrganizationsPage();
+
+        cut.WaitForAssertion(() =>
+        {
+            cut.Markup.Should().Contain("Organizações");
+            cut.Markup.Should().Contain("Nova organização");
+        });
+    }
+
+    private IRenderedComponent<Organizations> RenderOrganizationsPage()
     {
         var authSessionJson = """
             {
@@ -44,13 +85,16 @@ public sealed class OrganizationsPageTests : TestContext
         Services.AddSingleton(new ApiClient(new HttpClient(handler) { BaseAddress = new Uri("http://localhost") }, toastService));
         Services.AddSingleton(new UiOperationService(toastService));
 
-        var cut = RenderComponent<Organizations>();
+        return RenderComponent<Organizations>();
+    }
 
-        cut.WaitForAssertion(() =>
-        {
-            cut.Markup.Should().Contain("Organizações");
-            cut.Markup.Should().Contain("Nova organização");
-        });
+    private static void SetField<T>(object instance, string name, T value)
+        => instance.GetType().GetField(name, System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)!.SetValue(instance, value);
+
+    private static bool InvokePrivateBool(object instance, string methodName, params object[] args)
+    {
+        var method = instance.GetType().GetMethod(methodName, System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)!;
+        return (bool)method.Invoke(instance, args)!;
     }
 
     private static HttpResponseMessage Json(string json)

@@ -18,6 +18,11 @@ public interface IApplicationEntityLookup
         bool includeMission = false,
         CancellationToken cancellationToken = default);
 
+    Task<MissionObjective?> GetMissionObjectiveAsync(
+        Guid objectiveId,
+        bool ignoreQueryFilters = false,
+        CancellationToken cancellationToken = default);
+
     Task<MetricCheckin?> GetMetricCheckinAsync(
         Guid metricCheckinId,
         bool ignoreQueryFilters = false,

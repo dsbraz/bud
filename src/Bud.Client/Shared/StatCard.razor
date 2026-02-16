@@ -1,4 +1,4 @@
-<div class="summary-card" style="align-items: center; text-align: center;">
+<div class="summary-card @(ShowProgress ? "" : "summary-card-centered")">
     <div class="summary-card-value">@Value</div>
     <div class="summary-card-label">@Label</div>
     @if (ShowProgress)
@@ -6,6 +6,10 @@
         <div class="summary-card-progress">
             <div class="summary-progress-bar">
                 <div class="summary-progress-fill" style="width: @Progress%"></div>
+                @if (ExpectedProgress > 0)
+                {
+                    <div class="summary-progress-expected" style="left: @ExpectedProgress%"></div>
+                }
             </div>
         </div>
     }
@@ -16,4 +20,5 @@
     [Parameter, EditorRequired] public string Label { get; set; } = string.Empty;
     [Parameter] public bool ShowProgress { get; set; }
     [Parameter] public int Progress { get; set; }
+    [Parameter] public int ExpectedProgress { get; set; }
 }

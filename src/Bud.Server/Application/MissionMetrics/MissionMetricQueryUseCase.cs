@@ -13,11 +13,12 @@ public sealed class MissionMetricQueryUseCase(
 
     public Task<ServiceResult<PagedResult<MissionMetric>>> GetAllAsync(
         Guid? missionId,
+        Guid? objectiveId,
         string? search,
         int page,
         int pageSize,
         CancellationToken cancellationToken = default)
-        => metricService.GetAllAsync(missionId, search, page, pageSize, cancellationToken);
+        => metricService.GetAllAsync(missionId, objectiveId, search, page, pageSize, cancellationToken);
 
     public Task<ServiceResult<List<MetricProgressDto>>> GetProgressAsync(
         List<Guid> metricIds,

@@ -16,6 +16,10 @@ public static class ToolCatalogContractValidator
         ["mission_delete"] = ["id"],
         ["mission_metric_get"] = ["id"],
         ["mission_metric_delete"] = ["id"],
+        ["mission_objective_create"] = ["missionId", "name"],
+        ["mission_objective_update"] = ["id", "payload"],
+        ["mission_objective_get"] = ["id"],
+        ["mission_objective_delete"] = ["id"],
         ["metric_checkin_get"] = ["id"],
         ["metric_checkin_delete"] = ["id"]
     };

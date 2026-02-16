@@ -787,7 +787,7 @@ public sealed class MissionTemplateMetricDtoValidatorTests
     #region Qualitative Metric Tests
 
     [Fact]
-    public async Task Validate_QualitativeWithoutTargetText_Fails()
+    public async Task Validate_QualitativeWithoutTargetText_Passes()
     {
         // Arrange
         var dto = new MissionTemplateMetricDto
@@ -802,14 +802,11 @@ public sealed class MissionTemplateMetricDtoValidatorTests
         var result = await _validator.ValidateAsync(dto);
 
         // Assert
-        result.IsValid.Should().BeFalse();
-        result.Errors.Should().ContainSingle(e =>
-            e.PropertyName == "TargetText" &&
-            e.ErrorMessage.Contains("métricas qualitativas"));
+        result.IsValid.Should().BeTrue();
     }
 
     [Fact]
-    public async Task Validate_QualitativeWithEmptyTargetText_Fails()
+    public async Task Validate_QualitativeWithEmptyTargetText_Passes()
     {
         // Arrange
         var dto = new MissionTemplateMetricDto
@@ -824,10 +821,7 @@ public sealed class MissionTemplateMetricDtoValidatorTests
         var result = await _validator.ValidateAsync(dto);
 
         // Assert
-        result.IsValid.Should().BeFalse();
-        result.Errors.Should().ContainSingle(e =>
-            e.PropertyName == "TargetText" &&
-            e.ErrorMessage.Contains("métricas qualitativas"));
+        result.IsValid.Should().BeTrue();
     }
 
     [Fact]

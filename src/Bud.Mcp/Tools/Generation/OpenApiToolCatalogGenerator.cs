@@ -35,6 +35,12 @@ public sealed class OpenApiToolCatalogGenerator
         new("mission_metric_update", "Atualiza uma métrica de missão.", "put", "/api/mission-metrics/{id}", ToolSchemaKind.Update),
         new("mission_metric_delete", "Remove uma métrica de missão.", "delete", "/api/mission-metrics/{id}", ToolSchemaKind.Delete),
 
+        new("mission_objective_create", "Cria um objetivo de missão.", "post", "/api/mission-objectives", ToolSchemaKind.Create),
+        new("mission_objective_get", "Busca um objetivo por ID.", "get", "/api/mission-objectives/{id}", ToolSchemaKind.GetById),
+        new("mission_objective_list", "Lista objetivos de uma missão.", "get", "/api/mission-objectives", ToolSchemaKind.List),
+        new("mission_objective_update", "Atualiza um objetivo de missão.", "put", "/api/mission-objectives/{id}", ToolSchemaKind.Update),
+        new("mission_objective_delete", "Remove um objetivo de missão.", "delete", "/api/mission-objectives/{id}", ToolSchemaKind.Delete),
+
         new("metric_checkin_create", "Cria um check-in de métrica.", "post", "/api/metric-checkins", ToolSchemaKind.Create),
         new("metric_checkin_get", "Busca um check-in por ID.", "get", "/api/metric-checkins/{id}", ToolSchemaKind.GetById),
         new("metric_checkin_list", "Lista check-ins com filtros.", "get", "/api/metric-checkins", ToolSchemaKind.List),
@@ -184,7 +190,58 @@ public sealed class OpenApiToolCatalogGenerator
             throw new InvalidOperationException("OpenAPI sem schema application/json para requestBody.");
         }
 
-        return ResolveSchema(root, bodySchema);
+        var resolved = ResolveSchema(root, bodySchema);
+        resolved["additionalProperties"] ??= false;
+        InferRequiredFromNonNullableProperties(resolved);
+        return resolved;
+    }
+
+    private static void InferRequiredFromNonNullableProperties(JsonObject schema)
+    {
+        if (schema["required"] is not null || schema["properties"] is not JsonObject properties)
+        {
+            return;
+        }
+
+        var required = new JsonArray();
+        foreach (var (name, value) in properties)
+        {
+            if (value is not JsonObject propertySchema || IsNullableProperty(propertySchema))
+            {
+                continue;
+            }
+
+            required.Add(name);
+        }
+
+        if (required.Count > 0)
+        {
+            schema["required"] = required;
+        }
+    }
+
+    private static bool IsNullableProperty(JsonObject schema)
+    {
+        if (schema["type"] is JsonArray typeArray)
+        {
+            return typeArray.Any(t => string.Equals(t?.GetValue<string>(), "null", StringComparison.Ordinal));
+        }
+
+        if (schema["oneOf"] is JsonArray oneOf)
+        {
+            return oneOf.Any(v =>
+                v is JsonObject obj &&
+                string.Equals(obj["type"]?.GetValue<string>(), "null", StringComparison.Ordinal));
+        }
+
+        if (schema["anyOf"] is JsonArray anyOf)
+        {
+            return anyOf.Any(v =>
+                v is JsonObject obj &&
+                string.Equals(obj["type"]?.GetValue<string>(), "null", StringComparison.Ordinal));
+        }
+
+        return false;
     }
 
     private static JsonObject ResolveRequestBody(JsonObject root, JsonObject requestBody)

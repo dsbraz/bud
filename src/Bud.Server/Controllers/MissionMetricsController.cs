@@ -134,6 +134,7 @@ public sealed class MissionMetricsController(
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
     public async Task<ActionResult<PagedResult<MissionMetric>>> GetAll(
         [FromQuery] Guid? missionId,
+        [FromQuery] Guid? objectiveId,
         [FromQuery] string? search,
         [FromQuery] int page = 1,
         [FromQuery] int pageSize = 10,
@@ -151,7 +152,7 @@ public sealed class MissionMetricsController(
             return paginationValidation;
         }
 
-        var result = await missionMetricQueryUseCase.GetAllAsync(missionId, searchValidation.Value, page, pageSize, cancellationToken);
+        var result = await missionMetricQueryUseCase.GetAllAsync(missionId, objectiveId, searchValidation.Value, page, pageSize, cancellationToken);
         return FromResultOk(result);
     }
 }

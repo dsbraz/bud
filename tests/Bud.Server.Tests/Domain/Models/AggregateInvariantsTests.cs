@@ -239,6 +239,108 @@ public sealed class AggregateInvariantsTests
     }
 
     [Fact]
+    public void MissionObjective_Create_WithEmptyOrganization_ShouldThrow()
+    {
+        var act = () => MissionObjective.Create(Guid.NewGuid(), Guid.Empty, Guid.NewGuid(), "Objetivo", null);
+
+        act.Should().Throw<DomainInvariantException>();
+    }
+
+    [Fact]
+    public void MissionObjective_Create_WithEmptyMission_ShouldThrow()
+    {
+        var act = () => MissionObjective.Create(Guid.NewGuid(), Guid.NewGuid(), Guid.Empty, "Objetivo", null);
+
+        act.Should().Throw<DomainInvariantException>();
+    }
+
+    [Fact]
+    public void MissionObjective_Create_WithEmptyName_ShouldThrow()
+    {
+        var act = () => MissionObjective.Create(Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid(), "  ", null);
+
+        act.Should().Throw<DomainInvariantException>();
+    }
+
+    [Fact]
+    public void MissionObjective_Create_WithNameLongerThan200_ShouldThrow()
+    {
+        var longName = new string('A', 201);
+        var act = () => MissionObjective.Create(Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid(), longName, null);
+
+        act.Should().Throw<DomainInvariantException>();
+    }
+
+    [Fact]
+    public void MissionObjective_Create_WithValidData_ShouldSucceed()
+    {
+        var id = Guid.NewGuid();
+        var orgId = Guid.NewGuid();
+        var missionId = Guid.NewGuid();
+
+        var objective = MissionObjective.Create(id, orgId, missionId, "Objetivo", "Descrição");
+
+        objective.Id.Should().Be(id);
+        objective.OrganizationId.Should().Be(orgId);
+        objective.MissionId.Should().Be(missionId);
+        objective.Name.Should().Be("Objetivo");
+        objective.Description.Should().Be("Descrição");
+    }
+
+    [Fact]
+    public void MissionObjective_UpdateDetails_WithEmptyName_ShouldThrow()
+    {
+        var objective = MissionObjective.Create(Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid(), "Objetivo", null);
+
+        var act = () => objective.UpdateDetails("", null);
+
+        act.Should().Throw<DomainInvariantException>();
+    }
+
+    [Fact]
+    public void MissionObjective_UpdateDetails_TrimsDescription()
+    {
+        var objective = MissionObjective.Create(Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid(), "Objetivo", null);
+
+        objective.UpdateDetails("Novo Nome", "  Descrição  ");
+
+        objective.Name.Should().Be("Novo Nome");
+        objective.Description.Should().Be("Descrição");
+    }
+
+    [Fact]
+    public void MissionObjective_UpdateDetails_NullsEmptyDescription()
+    {
+        var objective = MissionObjective.Create(Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid(), "Objetivo", "Desc");
+
+        objective.UpdateDetails("Nome", "   ");
+
+        objective.Description.Should().BeNull();
+    }
+
+    [Fact]
+    public void MissionObjective_SetParent_SetsParentObjectiveId()
+    {
+        var objective = MissionObjective.Create(Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid(), "Objetivo", null);
+        var parentId = Guid.NewGuid();
+
+        objective.SetParent(parentId);
+
+        objective.ParentObjectiveId.Should().Be(parentId);
+    }
+
+    [Fact]
+    public void MissionObjective_SetParent_WithNull_ClearsParent()
+    {
+        var objective = MissionObjective.Create(Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid(), "Objetivo", null);
+        objective.SetParent(Guid.NewGuid());
+
+        objective.SetParent(null);
+
+        objective.ParentObjectiveId.Should().BeNull();
+    }
+
+    [Fact]
     public void Notification_Create_WithEmptyTitle_ShouldThrow()
     {
         var act = () => Notification.Create(

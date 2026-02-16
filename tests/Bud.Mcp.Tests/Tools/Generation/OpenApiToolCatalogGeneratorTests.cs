@@ -7,6 +7,7 @@ public sealed class OpenApiToolCatalogGeneratorTests
 {
     private static readonly string[] MissionCreateRequiredFields = ["name", "startDate", "endDate", "status", "scopeType", "scopeId"];
     private static readonly string[] MissionUpdateRequiredFields = ["id", "payload"];
+    private static readonly string[] ObjectiveCreateRequiredFields = ["missionId", "name"];
 
     [Fact]
     public void BuildCatalogJson_GeneratesMissionCreateSchemaWithRequiredFields()
@@ -34,6 +35,35 @@ public sealed class OpenApiToolCatalogGeneratorTests
         var required = schema["required"]!.AsArray().Select(n => n!.GetValue<string>());
         required.Should().Contain(MissionUpdateRequiredFields);
         schema["properties"]!["payload"]!["type"]!.GetValue<string>().Should().Be("object");
+    }
+
+    [Fact]
+    public void BuildCatalogJson_GeneratesObjectiveCreateSchemaWithRequiredFields()
+    {
+        var json = OpenApiToolCatalogGenerator.BuildCatalogJson(SampleOpenApi);
+        var root = JsonNode.Parse(json)!.AsObject();
+        var tools = root["tools"]!.AsArray();
+        var objectiveCreate = tools.Single(tool => tool!["name"]!.GetValue<string>() == "mission_objective_create")!.AsObject();
+
+        var schema = objectiveCreate["inputSchema"]!.AsObject();
+        schema["type"]!.GetValue<string>().Should().Be("object");
+        var required = schema["required"]!.AsArray().Select(n => n!.GetValue<string>());
+        required.Should().Contain(ObjectiveCreateRequiredFields);
+    }
+
+    [Fact]
+    public void BuildCatalogJson_InfersRequiredFromNonNullableProperties_WhenOpenApiOmitsRequired()
+    {
+        var json = OpenApiToolCatalogGenerator.BuildCatalogJson(SampleOpenApiWithoutRequired);
+        var root = JsonNode.Parse(json)!.AsObject();
+        var tools = root["tools"]!.AsArray();
+        var missionCreate = tools.Single(tool => tool!["name"]!.GetValue<string>() == "mission_create")!.AsObject();
+
+        var schema = missionCreate["inputSchema"]!.AsObject();
+        var required = schema["required"]!.AsArray().Select(n => n!.GetValue<string>()).ToList();
+        required.Should().Contain("name");
+        required.Should().Contain("startDate");
+        required.Should().NotContain("description");
     }
 
     private const string SampleOpenApi = """
@@ -100,6 +130,20 @@ public sealed class OpenApiToolCatalogGeneratorTests
           "post": { "requestBody": { "content": { "application/json": { "schema": { "$ref": "#/components/schemas/CreateMetricCheckinRequest" } } } } },
           "get": { "parameters": [] }
         },
+        "/api/mission-objectives": {
+          "post": { "requestBody": { "content": { "application/json": { "schema": { "$ref": "#/components/schemas/CreateMissionObjectiveRequest" } } } } },
+          "get": { "parameters": [
+            { "name": "missionId", "in": "query", "schema": { "type": "string", "format": "uuid" } },
+            { "name": "parentObjectiveId", "in": "query", "schema": { "type": "string", "format": "uuid" } },
+            { "name": "page", "in": "query", "schema": { "type": "integer", "default": 1 } },
+            { "name": "pageSize", "in": "query", "schema": { "type": "integer", "default": 10 } }
+          ] }
+        },
+        "/api/mission-objectives/{id}": {
+          "get": { "parameters": [ { "name": "id", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } } ] },
+          "put": { "parameters": [ { "name": "id", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } } ], "requestBody": { "content": { "application/json": { "schema": { "$ref": "#/components/schemas/UpdateMissionObjectiveRequest" } } } } },
+          "delete": { "parameters": [ { "name": "id", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } } ] }
+        },
         "/api/metric-checkins/{id}": {
           "get": { "parameters": [ { "name": "id", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } } ] },
           "put": { "parameters": [ { "name": "id", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } } ], "requestBody": { "content": { "application/json": { "schema": { "$ref": "#/components/schemas/UpdateMetricCheckinRequest" } } } } },
@@ -164,6 +208,151 @@ public sealed class OpenApiToolCatalogGeneratorTests
             "properties": {
               "checkinDate": { "type": "string", "format": "date-time" },
               "confidenceLevel": { "type": "integer", "format": "int32" }
+            }
+          },
+          "CreateMissionObjectiveRequest": {
+            "type": "object",
+            "required": ["missionId", "name"],
+            "properties": {
+              "missionId": { "type": "string", "format": "uuid" },
+              "name": { "type": "string" },
+              "description": { "type": ["null", "string"] },
+              "parentObjectiveId": { "type": ["null", "string"], "format": "uuid" }
+            }
+          },
+          "UpdateMissionObjectiveRequest": {
+            "type": "object",
+            "required": ["name"],
+            "properties": {
+              "name": { "type": "string" },
+              "description": { "type": ["null", "string"] }
+            }
+          }
+        }
+      }
+    }
+    """;
+
+    private const string SampleOpenApiWithoutRequired = """
+    {
+      "openapi": "3.0.1",
+      "paths": {
+        "/api/missions": {
+          "post": {
+            "requestBody": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/CreateMissionRequest"
+                  }
+                }
+              }
+            }
+          },
+          "get": { "parameters": [] }
+        },
+        "/api/missions/{id}": {
+          "get": { "parameters": [ { "name": "id", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } } ] },
+          "put": { "parameters": [ { "name": "id", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } } ], "requestBody": { "content": { "application/json": { "schema": { "$ref": "#/components/schemas/UpdateMissionRequest" } } } } },
+          "delete": { "parameters": [ { "name": "id", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } } ] }
+        },
+        "/api/mission-metrics": {
+          "post": { "requestBody": { "content": { "application/json": { "schema": { "$ref": "#/components/schemas/CreateMissionMetricRequest" } } } } },
+          "get": { "parameters": [] }
+        },
+        "/api/mission-metrics/{id}": {
+          "get": { "parameters": [ { "name": "id", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } } ] },
+          "put": { "parameters": [ { "name": "id", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } } ], "requestBody": { "content": { "application/json": { "schema": { "$ref": "#/components/schemas/UpdateMissionMetricRequest" } } } } },
+          "delete": { "parameters": [ { "name": "id", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } } ] }
+        },
+        "/api/mission-objectives": {
+          "post": { "requestBody": { "content": { "application/json": { "schema": { "$ref": "#/components/schemas/CreateMissionObjectiveRequest" } } } } },
+          "get": { "parameters": [] }
+        },
+        "/api/mission-objectives/{id}": {
+          "get": { "parameters": [ { "name": "id", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } } ] },
+          "put": { "parameters": [ { "name": "id", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } } ], "requestBody": { "content": { "application/json": { "schema": { "$ref": "#/components/schemas/UpdateMissionObjectiveRequest" } } } } },
+          "delete": { "parameters": [ { "name": "id", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } } ] }
+        },
+        "/api/metric-checkins": {
+          "post": { "requestBody": { "content": { "application/json": { "schema": { "$ref": "#/components/schemas/CreateMetricCheckinRequest" } } } } },
+          "get": { "parameters": [] }
+        },
+        "/api/metric-checkins/{id}": {
+          "get": { "parameters": [ { "name": "id", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } } ] },
+          "put": { "parameters": [ { "name": "id", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } } ], "requestBody": { "content": { "application/json": { "schema": { "$ref": "#/components/schemas/UpdateMetricCheckinRequest" } } } } },
+          "delete": { "parameters": [ { "name": "id", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } } ] }
+        }
+      },
+      "components": {
+        "schemas": {
+          "CreateMissionRequest": {
+            "type": "object",
+            "properties": {
+              "name": { "type": "string" },
+              "description": { "type": ["null", "string"] },
+              "startDate": { "type": "string", "format": "date-time" },
+              "endDate": { "type": "string", "format": "date-time" },
+              "status": { "type": "integer", "format": "int32" },
+              "scopeType": { "type": "integer", "format": "int32" },
+              "scopeId": { "type": "string", "format": "uuid" }
+            }
+          },
+          "UpdateMissionRequest": {
+            "type": "object",
+            "properties": {
+              "name": { "type": "string" },
+              "startDate": { "type": "string", "format": "date-time" },
+              "endDate": { "type": "string", "format": "date-time" },
+              "status": { "type": "integer", "format": "int32" },
+              "scopeType": { "type": "integer", "format": "int32" },
+              "scopeId": { "type": "string", "format": "uuid" }
+            }
+          },
+          "CreateMissionMetricRequest": {
+            "type": "object",
+            "properties": {
+              "missionId": { "type": "string", "format": "uuid" },
+              "name": { "type": "string" },
+              "type": { "type": "integer", "format": "int32" }
+            }
+          },
+          "UpdateMissionMetricRequest": {
+            "type": "object",
+            "properties": {
+              "name": { "type": "string" },
+              "type": { "type": "integer", "format": "int32" }
+            }
+          },
+          "CreateMetricCheckinRequest": {
+            "type": "object",
+            "properties": {
+              "missionMetricId": { "type": "string", "format": "uuid" },
+              "checkinDate": { "type": "string", "format": "date-time" },
+              "confidenceLevel": { "type": "integer", "format": "int32" }
+            }
+          },
+          "UpdateMetricCheckinRequest": {
+            "type": "object",
+            "properties": {
+              "checkinDate": { "type": "string", "format": "date-time" },
+              "confidenceLevel": { "type": "integer", "format": "int32" }
+            }
+          },
+          "CreateMissionObjectiveRequest": {
+            "type": "object",
+            "properties": {
+              "missionId": { "type": "string", "format": "uuid" },
+              "name": { "type": "string" },
+              "description": { "type": ["null", "string"] },
+              "parentObjectiveId": { "type": ["null", "string"], "format": "uuid" }
+            }
+          },
+          "UpdateMissionObjectiveRequest": {
+            "type": "object",
+            "properties": {
+              "name": { "type": "string" },
+              "description": { "type": ["null", "string"] }
             }
           }
         }

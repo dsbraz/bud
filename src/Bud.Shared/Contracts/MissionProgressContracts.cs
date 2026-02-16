@@ -12,6 +12,21 @@ public sealed class MissionProgressDto
     /// Metrics with no check-ins or last check-in older than 7 days.
     /// </summary>
     public int OutdatedMetrics { get; set; }
+
+    /// <summary>
+    /// Progress breakdown per objective within this mission.
+    /// </summary>
+    public List<ObjectiveProgressDto> ObjectiveProgress { get; set; } = [];
+}
+
+public sealed class ObjectiveProgressDto
+{
+    public Guid ObjectiveId { get; set; }
+    public decimal OverallProgress { get; set; }
+    public decimal AverageConfidence { get; set; }
+    public int TotalMetrics { get; set; }
+    public int MetricsWithCheckins { get; set; }
+    public int OutdatedMetrics { get; set; }
 }
 
 public sealed class MetricProgressDto

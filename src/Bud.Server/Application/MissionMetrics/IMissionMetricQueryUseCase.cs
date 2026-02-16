@@ -9,6 +9,7 @@ public interface IMissionMetricQueryUseCase
 
     Task<ServiceResult<PagedResult<MissionMetric>>> GetAllAsync(
         Guid? missionId,
+        Guid? objectiveId,
         string? search,
         int page,
         int pageSize,

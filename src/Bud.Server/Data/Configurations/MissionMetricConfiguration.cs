@@ -21,6 +21,8 @@ public sealed class MissionMetricConfiguration : IEntityTypeConfiguration<Missio
 
         builder.HasIndex(mm => mm.OrganizationId);
 
+        builder.HasIndex(mm => mm.MissionObjectiveId);
+
         builder.HasMany(mm => mm.Checkins)
             .WithOne(mc => mc.MissionMetric)
             .HasForeignKey(mc => mc.MissionMetricId)

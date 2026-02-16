@@ -9,5 +9,5 @@ public interface IMissionMetricService
     Task<ServiceResult<MissionMetric>> UpdateAsync(Guid id, UpdateMissionMetricRequest request, CancellationToken cancellationToken = default);
     Task<ServiceResult> DeleteAsync(Guid id, CancellationToken cancellationToken = default);
     Task<ServiceResult<MissionMetric>> GetByIdAsync(Guid id, CancellationToken cancellationToken = default);
-    Task<ServiceResult<PagedResult<MissionMetric>>> GetAllAsync(Guid? missionId, string? search, int page, int pageSize, CancellationToken cancellationToken = default);
+    Task<ServiceResult<PagedResult<MissionMetric>>> GetAllAsync(Guid? missionId, Guid? objectiveId, string? search, int page, int pageSize, CancellationToken cancellationToken = default);
 }

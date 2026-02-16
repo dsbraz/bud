@@ -285,7 +285,7 @@ public class MissionMetricServiceTests
         await context.SaveChangesAsync();
 
         // Act
-        var result = await service.GetAllAsync(mission.Id, "alpha", 1, 10);
+        var result = await service.GetAllAsync(mission.Id, null, "alpha", 1, 10);
 
         // Assert
         result.IsSuccess.Should().BeTrue();

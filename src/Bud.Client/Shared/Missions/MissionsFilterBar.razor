@@ -1,0 +1,247 @@
+@* Barra de Filtros Compacta *@
+<div class="missions-filter-bar">
+    <div class="missions-filter-left">
+        <div class="filter-chip-group">
+            <button class="filter-chip @(ShowMyMissions ? "active" : "")" @onclick="() => OnSetMyMissions.InvokeAsync(true)">
+                <span>Minhas missões</span>
+            </button>
+            <button class="filter-chip @(!ShowMyMissions ? "active" : "")" @onclick="() => OnSetMyMissions.InvokeAsync(false)">
+                <span>Todas as missões</span>
+            </button>
+        </div>
+        @if (!ShowMyMissions)
+        {
+            <button class="filter-chip @(showFilterPanel ? "active" : "")" @onclick="ToggleFilterPanel">
+                <svg width="16" height="16" viewBox="0 0 32 32" fill="none">
+                    <path d="M28 6H4L14 17.6V26L18 28V17.6L28 6Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+                <span>Filtrar</span>
+            </button>
+        }
+        <div class="filter-chip-wrapper">
+            <button class="filter-chip @(FilterStartDate.HasValue || FilterEndDate.HasValue ? "active" : "")" @onclick="ToggleDatePicker">
+                <svg width="16" height="16" viewBox="0 0 32 32" fill="none">
+                    <path d="M26 4H6C4.89543 4 4 4.89543 4 6V26C4 27.1046 4.89543 28 6 28H26C27.1046 28 28 27.1046 28 26V6C28 4.89543 27.1046 4 26 4Z" stroke="currentColor" stroke-width="2"/>
+                    <path d="M22 2V6M10 2V6M4 12H28" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                </svg>
+                <span>@GetDateRangeLabel()</span>
+            </button>
+            @if (showDatePicker)
+            {
+                <div class="filter-dropdown">
+                    <div class="filter-dropdown-row">
+                        <label>Data inicial</label>
+                        <input type="date" class="input" value="@localStartDate?.ToString("yyyy-MM-dd")" @onchange="OnStartDateChanged" />
+                    </div>
+                    <div class="filter-dropdown-row">
+                        <label>Data final</label>
+                        <input type="date" class="input" value="@localEndDate?.ToString("yyyy-MM-dd")" @onchange="OnEndDateChanged" />
+                    </div>
+                    <button class="button small" @onclick="ApplyDateFilter">Aplicar</button>
+                </div>
+            }
+        </div>
+        <button class="filter-chip @(FilterActiveOnly ? "active" : "")" @onclick="() => OnToggleActiveFilter.InvokeAsync()">
+            <svg width="16" height="16" viewBox="0 0 32 32" fill="none">
+                <path d="M16 28C22.6274 28 28 22.6274 28 16C28 9.37258 22.6274 4 16 4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                <path d="M16 10V16L20 20" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                <path d="M4 16H8M6 12L8 16L6 20" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+            <span>@GetStatusFilterLabel()</span>
+        </button>
+        @if (HasActiveFilters())
+        {
+            <button class="filter-chip-clear" @onclick="HandleClearFilters">
+                <svg width="16" height="16" viewBox="0 0 32 32" fill="none">
+                    <path d="M26 16L22 12M22 12L18 8M22 12L26 8M22 12L18 16" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                    <path d="M6 8L10 28H14L12 18L6 8Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+                <span>Limpar filtro</span>
+            </button>
+        }
+    </div>
+    <button class="filter-chip" @onclick="() => OnToggleViewMode.InvokeAsync()">
+        @if (ViewMode == "list")
+        {
+            <svg width="16" height="16" viewBox="0 0 32 32" fill="none">
+                <path d="M4 8H28M4 16H28M4 24H28" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+            </svg>
+            <span>Lista</span>
+        }
+        else
+        {
+            <svg width="16" height="16" viewBox="0 0 32 32" fill="none">
+                <rect x="4" y="6" width="8" height="8" rx="1" stroke="currentColor" stroke-width="2"/>
+                <rect x="4" y="18" width="8" height="8" rx="1" stroke="currentColor" stroke-width="2"/>
+                <rect x="20" y="6" width="8" height="8" rx="1" stroke="currentColor" stroke-width="2"/>
+                <rect x="20" y="18" width="8" height="8" rx="1" stroke="currentColor" stroke-width="2"/>
+            </svg>
+            <span>Grade</span>
+        }
+    </button>
+</div>
+
+@* Painel de Filtros Expandido *@
+@if (showFilterPanel && !ShowMyMissions)
+{
+    <div class="missions-filter-panel">
+        <div class="filter-panel-row">
+            <div class="filter-panel-field">
+                <label>Escopo</label>
+                <select class="input" value="@FilterScopeTypeValue" @onchange="HandleScopeTypeChanged">
+                    <option value="">Todos</option>
+                    @foreach (var scopeType in Enum.GetValues<MissionScopeType>())
+                    {
+                        <option value="@scopeType">@GetScopeLabel(scopeType)</option>
+                    }
+                </select>
+            </div>
+            <div class="filter-panel-field">
+                <label>Referência</label>
+                <select class="input" value="@FilterScopeId" @onchange="HandleScopeIdChanged">
+                    <option value="">Todas</option>
+                    @foreach (var option in GetScopeOptions(FilterScopeTypeValue))
+                    {
+                        <option value="@option.Id">@option.Name</option>
+                    }
+                </select>
+            </div>
+            <div class="filter-panel-field">
+                <label>Busca</label>
+                <InputText class="input" @bind-Value="localSearch" @onkeyup="HandleSearchKeyUp" placeholder="Buscar missões..." />
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter] public bool ShowMyMissions { get; set; }
+    [Parameter] public string ViewMode { get; set; } = "list";
+    [Parameter] public bool FilterActiveOnly { get; set; }
+    [Parameter] public DateTime? FilterStartDate { get; set; }
+    [Parameter] public DateTime? FilterEndDate { get; set; }
+    [Parameter] public string? FilterScopeTypeValue { get; set; }
+    [Parameter] public string? FilterScopeId { get; set; }
+    [Parameter] public string? Search { get; set; }
+    [Parameter] public Func<string?, IEnumerable<ScopeOption>> GetScopeOptions { get; set; } = _ => [];
+
+    [Parameter] public EventCallback<bool> OnSetMyMissions { get; set; }
+    [Parameter] public EventCallback OnToggleViewMode { get; set; }
+    [Parameter] public EventCallback OnToggleActiveFilter { get; set; }
+    [Parameter] public EventCallback<(DateTime?, DateTime?)> OnDateFilterApplied { get; set; }
+    [Parameter] public EventCallback<string?> OnScopeTypeChanged { get; set; }
+    [Parameter] public EventCallback<string?> OnScopeIdChanged { get; set; }
+    [Parameter] public EventCallback<string?> OnSearchSubmit { get; set; }
+    [Parameter] public EventCallback OnClearFilters { get; set; }
+
+    private bool showFilterPanel;
+    private bool showDatePicker;
+    private string? localSearch;
+    private DateTime? localStartDate;
+    private DateTime? localEndDate;
+    private string? previousSearch;
+    private DateTime? previousStartDate;
+    private DateTime? previousEndDate;
+
+    protected override void OnParametersSet()
+    {
+        if (ShowMyMissions)
+        {
+            showFilterPanel = false;
+        }
+
+        if (Search != previousSearch)
+        {
+            localSearch = Search;
+            previousSearch = Search;
+        }
+        if (FilterStartDate != previousStartDate)
+        {
+            localStartDate = FilterStartDate;
+            previousStartDate = FilterStartDate;
+        }
+        if (FilterEndDate != previousEndDate)
+        {
+            localEndDate = FilterEndDate;
+            previousEndDate = FilterEndDate;
+        }
+    }
+
+    private void ToggleFilterPanel() => showFilterPanel = !showFilterPanel;
+    private void ToggleDatePicker() => showDatePicker = !showDatePicker;
+
+    private void OnStartDateChanged(ChangeEventArgs e)
+    {
+        localStartDate = DateTime.TryParse(e.Value?.ToString(), out var d) ? d : null;
+    }
+
+    private void OnEndDateChanged(ChangeEventArgs e)
+    {
+        localEndDate = DateTime.TryParse(e.Value?.ToString(), out var d) ? d : null;
+    }
+
+    private async Task ApplyDateFilter()
+    {
+        showDatePicker = false;
+        await OnDateFilterApplied.InvokeAsync((localStartDate, localEndDate));
+    }
+
+    private async Task HandleScopeTypeChanged(ChangeEventArgs e)
+    {
+        var value = string.IsNullOrEmpty(e.Value?.ToString()) ? null : e.Value?.ToString();
+        await OnScopeTypeChanged.InvokeAsync(value);
+    }
+
+    private async Task HandleScopeIdChanged(ChangeEventArgs e)
+    {
+        var value = string.IsNullOrEmpty(e.Value?.ToString()) ? null : e.Value?.ToString();
+        await OnScopeIdChanged.InvokeAsync(value);
+    }
+
+    private async Task HandleSearchKeyUp(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter")
+        {
+            await OnSearchSubmit.InvokeAsync(localSearch);
+        }
+    }
+
+    private async Task HandleClearFilters()
+    {
+        showFilterPanel = false;
+        showDatePicker = false;
+        localSearch = null;
+        localStartDate = null;
+        localEndDate = null;
+        await OnClearFilters.InvokeAsync();
+    }
+
+    private string GetDateRangeLabel()
+    {
+        if (FilterStartDate.HasValue && FilterEndDate.HasValue)
+            return $"{FilterStartDate:dd/MM} - {FilterEndDate:dd/MM/yyyy}";
+        if (FilterStartDate.HasValue)
+            return $"A partir de {FilterStartDate:dd/MM/yyyy}";
+        if (FilterEndDate.HasValue)
+            return $"Até {FilterEndDate:dd/MM/yyyy}";
+        return "Selecionar período";
+    }
+
+    private string GetStatusFilterLabel() =>
+        FilterActiveOnly ? "Status ativo" : "Todos os status";
+
+    private bool HasActiveFilters() =>
+        (!ShowMyMissions && !string.IsNullOrEmpty(FilterScopeTypeValue))
+        || !string.IsNullOrEmpty(Search)
+        || FilterStartDate.HasValue
+        || FilterEndDate.HasValue;
+
+    private static string GetScopeLabel(MissionScopeType scopeType) => scopeType switch
+    {
+        MissionScopeType.Organization => "Organização",
+        MissionScopeType.Workspace => "Espaço de trabalho",
+        MissionScopeType.Team => "Equipe",
+        MissionScopeType.Collaborator => "Colaborador",
+        _ => scopeType.ToString()
+    };
+}
