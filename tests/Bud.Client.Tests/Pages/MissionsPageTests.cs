@@ -2,8 +2,6 @@ using System.Net;
 using System.Text;
 using Bud.Client.Pages;
 using Bud.Client.Services;
-using Bud.Shared.Contracts;
-using Bud.Shared.Domain;
 using Bunit;
 using FluentAssertions;
 using Microsoft.Extensions.DependencyInjection;
@@ -12,56 +10,45 @@ using Xunit;
 
 namespace Bud.Client.Tests.Pages;
 
-public sealed class OrganizationsPageTests : TestContext
+public sealed class MissionsPageTests : TestContext
 {
     [Fact]
-    public void IsProtectedOrganization_WhenEditingGetbudCo_ShouldReturnTrue()
+    public async Task HandleClearFilters_ShouldRestoreActiveOnlyDefaultTrue()
     {
-        var cut = RenderOrganizationsPage();
+        var cut = RenderMissionsPage();
         var instance = cut.Instance;
 
-        var organizationId = Guid.NewGuid();
-        SetField(instance, "organizations", new PagedResult<Organization>
-        {
-            Items = new List<Organization>
-            {
-                new()
-                {
-                    Id = organizationId,
-                    Name = "getbud.co"
-                }
-            },
-            Total = 1,
-            Page = 1,
-            PageSize = 20
-        });
-        SetField<Guid?>(instance, "editingOrganizationId", organizationId);
+        SetField(instance, "filterActiveOnly", false);
+        SetField(instance, "filterScopeTypeValue", "Team");
+        SetField(instance, "filterScopeId", Guid.NewGuid().ToString());
+        SetField(instance, "search", "abc");
 
-        var result = InvokePrivateBool(instance, "IsProtectedOrganization");
+        await InvokePrivateTask(instance, "HandleClearFilters");
 
-        result.Should().BeTrue();
+        GetField<bool>(instance, "filterActiveOnly").Should().BeTrue();
+        GetField<string?>(instance, "filterScopeTypeValue").Should().BeNull();
+        GetField<string?>(instance, "filterScopeId").Should().BeNull();
+        GetField<string?>(instance, "search").Should().BeNull();
     }
 
     [Fact]
-    public void Render_WithGlobalAdminSession_ShouldShowPageHeader()
+    public void Render_ShouldShowPageHeader()
     {
-        var cut = RenderOrganizationsPage();
+        var cut = RenderMissionsPage();
 
-        cut.WaitForAssertion(() =>
-        {
-            cut.Markup.Should().Contain("Organizações");
-            cut.Markup.Should().Contain("Nova organização");
-        });
+        cut.Markup.Should().Contain("Miss");
+        cut.Markup.Should().Contain("Criar miss");
     }
 
-    private IRenderedComponent<Organizations> RenderOrganizationsPage()
+    private IRenderedComponent<Missions> RenderMissionsPage()
     {
         var authSessionJson = """
             {
               "Token":"token",
-              "Email":"admin@getbud.co",
-              "DisplayName":"Administrador Global",
-              "IsGlobalAdmin":true
+              "Email":"user@getbud.co",
+              "DisplayName":"Usuário",
+              "IsGlobalAdmin":false,
+              "CollaboratorId":"11111111-1111-1111-1111-111111111111"
             }
             """;
 
@@ -69,12 +56,31 @@ public sealed class OrganizationsPageTests : TestContext
         var handler = new RouteHandler(request =>
         {
             var path = request.RequestUri!.PathAndQuery;
+
             if (path.StartsWith("/api/organizations", StringComparison.Ordinal))
             {
-                return Json("""{"items":[],"total":0,"page":1,"pageSize":20}""");
+                return Json("""{"items":[{"id":"aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa","name":"Org"}],"total":1,"page":1,"pageSize":100}""");
             }
 
-            return Json("""[]""");
+            if (path.StartsWith("/api/workspaces", StringComparison.Ordinal) ||
+                path.StartsWith("/api/teams", StringComparison.Ordinal) ||
+                path.StartsWith("/api/collaborators", StringComparison.Ordinal) ||
+                path.StartsWith("/api/mission-templates", StringComparison.Ordinal))
+            {
+                return Json("""{"items":[],"total":0,"page":1,"pageSize":100}""");
+            }
+
+            if (path.StartsWith("/api/missions/my", StringComparison.Ordinal) || path.StartsWith("/api/missions", StringComparison.Ordinal))
+            {
+                return Json("""{"items":[],"total":0,"page":1,"pageSize":100}""");
+            }
+
+            if (path.StartsWith("/api/missions/progress", StringComparison.Ordinal))
+            {
+                return Json("[]");
+            }
+
+            return Json("[]");
         });
 
         var toastService = new ToastService();
@@ -85,16 +91,23 @@ public sealed class OrganizationsPageTests : TestContext
         Services.AddSingleton(new ApiClient(new HttpClient(handler) { BaseAddress = new Uri("http://localhost") }, toastService));
         Services.AddSingleton(new UiOperationService(toastService));
 
-        return RenderComponent<Organizations>();
+        return RenderComponent<Missions>();
     }
+
+    private static T GetField<T>(object instance, string name)
+        => (T)instance.GetType().GetField(name, System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)!.GetValue(instance)!;
 
     private static void SetField<T>(object instance, string name, T value)
         => instance.GetType().GetField(name, System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)!.SetValue(instance, value);
 
-    private static bool InvokePrivateBool(object instance, string methodName, params object[] args)
+    private static async Task InvokePrivateTask(object instance, string methodName)
     {
         var method = instance.GetType().GetMethod(methodName, System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)!;
-        return (bool)method.Invoke(instance, args)!;
+        var result = method.Invoke(instance, Array.Empty<object>());
+        if (result is Task task)
+        {
+            await task;
+        }
     }
 
     private static HttpResponseMessage Json(string json)
@@ -125,6 +138,11 @@ public sealed class OrganizationsPageTests : TestContext
 
             if (identifier == "localStorage.getItem")
             {
+                if (args is { Length: > 0 } && string.Equals(args[0]?.ToString(), "bud.selected.organization", StringComparison.Ordinal))
+                {
+                    return new ValueTask<TValue>((TValue)(object)"aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa");
+                }
+
                 return new ValueTask<TValue>((TValue)(object)string.Empty);
             }
 

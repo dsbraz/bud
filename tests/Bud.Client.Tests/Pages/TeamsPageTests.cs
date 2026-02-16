@@ -13,7 +13,29 @@ namespace Bud.Client.Tests.Pages;
 public sealed class TeamsPageTests : TestContext
 {
     [Fact]
+    public void HasActiveFilters_WhenSearchIsFilled_ShouldReturnTrue()
+    {
+        var cut = RenderTeamsPage();
+        var instance = cut.Instance;
+
+        SetField<string?>(instance, "search", "produto");
+        SetField<string?>(instance, "selectedWorkspaceId", null);
+
+        var result = InvokePrivateBool(instance, "HasActiveFilters");
+
+        result.Should().BeTrue();
+    }
+
+    [Fact]
     public void Render_ShouldShowPageTitleAndFilterButton()
+    {
+        var cut = RenderTeamsPage();
+
+        cut.Markup.Should().Contain("Equipes");
+        cut.Markup.Should().Contain("Filtrar");
+    }
+
+    private IRenderedComponent<Teams> RenderTeamsPage()
     {
         var jsRuntime = new StubJsRuntime();
         var handler = new RouteHandler(request =>
@@ -34,6 +56,21 @@ public sealed class TeamsPageTests : TestContext
                 return Json("""{"items":[],"total":0,"page":1,"pageSize":100}""");
             }
 
+            if (path.StartsWith("/api/leaders", StringComparison.Ordinal))
+            {
+                return Json("[]");
+            }
+
+            if (path.StartsWith("/api/team-collaborators", StringComparison.Ordinal))
+            {
+                return Json("[]");
+            }
+
+            if (path.StartsWith("/api/collaborator-summaries", StringComparison.Ordinal))
+            {
+                return Json("[]");
+            }
+
             return new HttpResponseMessage(HttpStatusCode.NotFound);
         });
 
@@ -44,10 +81,16 @@ public sealed class TeamsPageTests : TestContext
         Services.AddSingleton(new ApiClient(new HttpClient(handler) { BaseAddress = new Uri("http://localhost") }, toastService));
         Services.AddSingleton(new UiOperationService(toastService));
 
-        var cut = RenderComponent<Teams>();
+        return RenderComponent<Teams>();
+    }
 
-        cut.Markup.Should().Contain("Equipes");
-        cut.Markup.Should().Contain("Filtrar");
+    private static void SetField<T>(object instance, string name, T value)
+        => instance.GetType().GetField(name, System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)!.SetValue(instance, value);
+
+    private static bool InvokePrivateBool(object instance, string methodName, params object[] args)
+    {
+        var method = instance.GetType().GetMethod(methodName, System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)!;
+        return (bool)method.Invoke(instance, args)!;
     }
 
     private static HttpResponseMessage Json(string json)
