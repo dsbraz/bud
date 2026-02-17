@@ -2,7 +2,7 @@
 
 @if (IsOpen)
 {
-    <Modal Title="@(IsEditMode ? "Editar missão" : "Criar missão")" Breadcrumb="@OrganizationName" Size="lg" OnClose="HandleClose">
+    <Modal Title="@GetModalTitle()" Breadcrumb="@(Mode == WizardMode.Mission ? OrganizationName : null)" Size="lg" OnClose="HandleClose">
         <ChildContent>
             @* Wizard Tabs *@
             <div class="wizard-tabs">
@@ -31,81 +31,85 @@
                 </button>
             </div>
 
-            @* Tab 1: Missão *@
+            @* Tab 1: Missão / Modelo *@
             @if (wizardStep == 1)
             {
                 <div>
                     <div class="mission-header">
-                        <input type="text" class="mission-title-input" @bind="name" placeholder="Nome da missão" />
-                        <input type="text" class="mission-subtitle-input" @bind="description" placeholder="Adicionar breve descrição" />
+                        <input type="text" class="mission-title-input" @bind="name" placeholder="@(Mode == WizardMode.Template ? "Nome do template" : "Nome da missão")" />
+                        <input type="text" class="mission-subtitle-input" @bind="description" placeholder="@(Mode == WizardMode.Template ? "Descrição do template" : "Adicionar breve descrição")" />
                     </div>
 
-                    <div class="chips-container">
-                        <div class="chip" @onclick="() => showResponsibleSelector = !showResponsibleSelector">
-                            <span class="chip-icon">👤</span>
-                            <span>@GetResponsibleLabel()</span>
+                    @if (Mode == WizardMode.Mission)
+                    {
+                        <div class="chips-container">
+                            <div class="chip" @onclick="() => showResponsibleSelector = !showResponsibleSelector">
+                                <span class="chip-icon">👤</span>
+                                <span>@GetResponsibleLabel()</span>
+                            </div>
+                            <div class="chip" @onclick="() => showPeriodSelector = !showPeriodSelector">
+                                <span class="chip-icon">📅</span>
+                                <span>@GetPeriodLabel()</span>
+                            </div>
+                            @if (IsEditMode)
+                            {
+                                <div class="chip" @onclick="() => showStatusSelector = !showStatusSelector">
+                                    <span class="chip-icon">📊</span>
+                                    <span>@GetStatusChipLabel()</span>
+                                </div>
+                            }
                         </div>
-                        <div class="chip" @onclick="() => showPeriodSelector = !showPeriodSelector">
-                            <span class="chip-icon">📅</span>
-                            <span>@GetPeriodLabel()</span>
-                        </div>
-                        @if (IsEditMode)
+
+                        @if (IsEditMode && showStatusSelector)
                         {
-                            <div class="chip" @onclick="() => showStatusSelector = !showStatusSelector">
-                                <span class="chip-icon">📊</span>
-                                <span>@GetStatusChipLabel()</span>
+                            <div class="form-row">
+                                <label>Status</label>
+                                <select class="input" @bind="statusValue">
+                                    @foreach (var status in Enum.GetValues<MissionStatus>())
+                                    {
+                                        <option value="@status">@GetStatusLabel(status)</option>
+                                    }
+                                </select>
                             </div>
                         }
-                    </div>
 
-                    @if (IsEditMode && showStatusSelector)
-                    {
-                        <div class="form-row">
-                            <label>Status</label>
-                            <select class="input" @bind="statusValue">
-                                @foreach (var status in Enum.GetValues<MissionStatus>())
-                                {
-                                    <option value="@status">@GetStatusLabel(status)</option>
-                                }
-                            </select>
-                        </div>
+                        @if (showResponsibleSelector)
+                        {
+                            <div class="form-row">
+                                <label>Escopo</label>
+                                <select class="input" value="@scopeTypeValue" @onchange="HandleScopeTypeChanged">
+                                    <option value="">Selecione</option>
+                                    @foreach (var scopeType in Enum.GetValues<MissionScopeType>())
+                                    {
+                                        <option value="@scopeType">@GetScopeLabel(scopeType)</option>
+                                    }
+                                </select>
+                            </div>
+                            <div class="form-row">
+                                <label>Referência</label>
+                                <select class="input" @bind="scopeId">
+                                    <option value="">Selecione</option>
+                                    @foreach (var option in GetScopeOptions(scopeTypeValue))
+                                    {
+                                        <option value="@option.Id">@option.Name</option>
+                                    }
+                                </select>
+                            </div>
+                        }
+
+                        @if (showPeriodSelector)
+                        {
+                            <div class="form-row">
+                                <label>Data de início</label>
+                                <input type="date" class="input" @bind="startDate" @bind:format="yyyy-MM-dd" />
+                            </div>
+                            <div class="form-row">
+                                <label>Data de fim</label>
+                                <input type="date" class="input" @bind="endDate" @bind:format="yyyy-MM-dd" />
+                            </div>
+                        }
                     }
 
-                    @if (showResponsibleSelector)
-                    {
-                        <div class="form-row">
-                            <label>Escopo</label>
-                            <select class="input" value="@scopeTypeValue" @onchange="HandleScopeTypeChanged">
-                                <option value="">Selecione</option>
-                                @foreach (var scopeType in Enum.GetValues<MissionScopeType>())
-                                {
-                                    <option value="@scopeType">@GetScopeLabel(scopeType)</option>
-                                }
-                            </select>
-                        </div>
-                        <div class="form-row">
-                            <label>Referência</label>
-                            <select class="input" @bind="scopeId">
-                                <option value="">Selecione</option>
-                                @foreach (var option in GetScopeOptions(scopeTypeValue))
-                                {
-                                    <option value="@option.Id">@option.Name</option>
-                                }
-                            </select>
-                        </div>
-                    }
-
-                    @if (showPeriodSelector)
-                    {
-                        <div class="form-row">
-                            <label>Data de início</label>
-                            <input type="date" class="input" @bind="startDate" @bind:format="yyyy-MM-dd" />
-                        </div>
-                        <div class="form-row">
-                            <label>Data de fim</label>
-                            <input type="date" class="input" @bind="endDate" @bind:format="yyyy-MM-dd" />
-                        </div>
-                    }
                 </div>
             }
 
@@ -185,7 +189,7 @@
 
                         @if (tempObjectives.Count > 0)
                         {
-                            <p class="wizard-tab-hint">Organize as métricas da missão em objetivos. Cada objetivo pode ter suas próprias métricas.</p>
+                            <p class="wizard-tab-hint">Organize as métricas @(Mode == WizardMode.Template ? "do template" : "da missão") em objetivos. Cada objetivo pode ter suas próprias métricas.</p>
                         }
 
                         @if (showObjectiveForm)
@@ -369,17 +373,18 @@
                     {
                         <button class="button secondary" type="button" @onclick="() => wizardStep++">Próximo</button>
                     }
+                    else if (IsEditMode)
+                    {
+                        <button class="button primary" type="button" @onclick="HandleSave">Salvar alterações</button>
+                    }
+                    else if (Mode == WizardMode.Template)
+                    {
+                        <button class="button primary" type="button" @onclick="HandleSave">Criar</button>
+                    }
                     else
                     {
-                        @if (IsEditMode)
-                        {
-                            <button class="button primary" type="button" @onclick="HandleSave">Salvar alterações</button>
-                        }
-                        else
-                        {
-                            <button class="button secondary" type="button" @onclick="HandleSaveDraft">Salvar rascunho</button>
-                            <button class="button primary" type="button" @onclick="HandleSave">Criar missão</button>
-                        }
+                        <button class="button secondary" type="button" @onclick="HandleSaveDraft">Salvar rascunho</button>
+                        <button class="button primary" type="button" @onclick="HandleSave">Criar missão</button>
                     }
                 </div>
             </div>
