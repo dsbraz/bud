@@ -10,9 +10,10 @@ public partial class MissionWizardModal
 {
     [Parameter] public bool IsOpen { get; set; }
     [Parameter] public bool IsEditMode { get; set; }
+    [Parameter] public WizardMode Mode { get; set; } = WizardMode.Mission;
     [Parameter] public string OrganizationName { get; set; } = "Organização";
     [Parameter] public MissionWizardModel? InitialModel { get; set; }
-    [Parameter] public List<ObjectiveDimension> ObjectiveDimensions { get; set; } = [];
+    [Parameter] public IReadOnlyList<ObjectiveDimension> ObjectiveDimensions { get; set; } = [];
     [Parameter] public Func<string?, IEnumerable<ScopeOption>> GetScopeOptions { get; set; } = _ => [];
     [Parameter] public EventCallback OnClose { get; set; }
     [Parameter] public EventCallback<MissionWizardResult> OnSave { get; set; }
@@ -21,7 +22,7 @@ public partial class MissionWizardModal
     // Wizard step
     private int wizardStep = 1;
 
-    // Mission form fields
+    // Form fields
     private string name = "";
     private string? description;
     private DateTime startDate = DateTime.Today;
@@ -101,7 +102,8 @@ public partial class MissionWizardModal
 
     private async Task HandleSave()
     {
-        var errorTitle = IsEditMode ? "Erro ao salvar" : "Erro ao criar missão";
+        var entity = Mode == WizardMode.Template ? "modelo" : "missão";
+        var errorTitle = IsEditMode ? "Erro ao salvar" : $"Erro ao criar {entity}";
         if (!Validate(errorTitle)) return;
         FlushPendingMetric();
         await OnSave.InvokeAsync(BuildResult());
@@ -118,25 +120,29 @@ public partial class MissionWizardModal
 
     private bool Validate(string errorTitle)
     {
+        var entity = Mode == WizardMode.Template ? "modelo" : "missão";
         if (string.IsNullOrWhiteSpace(name))
         {
-            ToastService.ShowError(errorTitle, "Informe o nome da missão.");
+            ToastService.ShowError(errorTitle, $"Informe o nome do {entity}.");
             return false;
         }
-        if (string.IsNullOrEmpty(scopeTypeValue) || !Enum.TryParse<MissionScopeType>(scopeTypeValue, out _))
+        if (Mode == WizardMode.Mission)
         {
-            ToastService.ShowError(errorTitle, "Selecione o escopo.");
-            return false;
-        }
-        if (string.IsNullOrEmpty(scopeId) || !Guid.TryParse(scopeId, out _))
-        {
-            ToastService.ShowError(errorTitle, "Selecione a referência do escopo.");
-            return false;
-        }
-        if (endDate < startDate)
-        {
-            ToastService.ShowError(errorTitle, "A data de fim precisa ser igual ou maior que a data de início.");
-            return false;
+            if (string.IsNullOrEmpty(scopeTypeValue) || !Enum.TryParse<MissionScopeType>(scopeTypeValue, out _))
+            {
+                ToastService.ShowError(errorTitle, "Selecione o escopo.");
+                return false;
+            }
+            if (string.IsNullOrEmpty(scopeId) || !Guid.TryParse(scopeId, out _))
+            {
+                ToastService.ShowError(errorTitle, "Selecione a referência do escopo.");
+                return false;
+            }
+            if (endDate < startDate)
+            {
+                ToastService.ShowError(errorTitle, "A data de fim precisa ser igual ou maior que a data de início.");
+                return false;
+            }
         }
         return true;
     }
@@ -193,7 +199,7 @@ public partial class MissionWizardModal
     private void RemoveMetric(TempMetric metric)
     {
         tempMetrics.Remove(metric);
-        if (IsEditMode && metric.OriginalId.HasValue)
+        if (Mode == WizardMode.Mission && IsEditMode && metric.OriginalId.HasValue)
         {
             deletedMetricIds.Add(metric.OriginalId.Value);
         }
@@ -379,7 +385,7 @@ public partial class MissionWizardModal
         var removedTempId = obj.TempId;
         tempObjectives.RemoveAt(index);
 
-        if (IsEditMode && obj.OriginalId.HasValue)
+        if (Mode == WizardMode.Mission && IsEditMode && obj.OriginalId.HasValue)
         {
             deletedObjectiveIds.Add(obj.OriginalId.Value);
         }
@@ -387,7 +393,7 @@ public partial class MissionWizardModal
         var metricsToRemove = tempMetrics.Where(m => m.ObjectiveTempId == removedTempId).ToList();
         foreach (var metric in metricsToRemove)
         {
-            if (IsEditMode && metric.OriginalId.HasValue)
+            if (Mode == WizardMode.Mission && IsEditMode && metric.OriginalId.HasValue)
             {
                 deletedMetricIds.Add(metric.OriginalId.Value);
             }
@@ -404,6 +410,12 @@ public partial class MissionWizardModal
     }
 
     // ---- Display Helpers ----
+
+    private string GetModalTitle()
+    {
+        var entity = Mode == WizardMode.Template ? "modelo" : "missão";
+        return IsEditMode ? $"Editar {entity}" : $"Criar {entity}";
+    }
 
     private string GetResponsibleLabel()
     {

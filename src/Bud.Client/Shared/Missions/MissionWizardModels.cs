@@ -2,6 +2,8 @@ using Bud.Shared.Domain;
 
 namespace Bud.Client.Shared.Missions;
 
+public enum WizardMode { Mission, Template }
+
 public sealed record ScopeOption(string Id, string Name);
 
 public sealed record TempMetric(

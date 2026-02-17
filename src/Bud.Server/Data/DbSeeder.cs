@@ -142,8 +142,6 @@ public static class DbSeeder
             Description = "Balanced Scorecard — framework para equilibrar execução estratégica entre finanças, clientes, processos e aprendizado.",
             MissionNamePattern = "BSC — ",
             MissionDescriptionPattern = "Missão estratégica baseada nas perspectivas do Balanced Scorecard.",
-            IsDefault = true,
-            IsActive = true,
             Objectives =
             [
                 new MissionTemplateObjective
@@ -253,8 +251,6 @@ public static class DbSeeder
             Description = "Mapa Estratégico — template para explicitar objetivos estratégicos e relações de causa e efeito.",
             MissionNamePattern = "Mapa Estratégico — ",
             MissionDescriptionPattern = "Missão para construção e acompanhamento do mapa estratégico.",
-            IsDefault = true,
-            IsActive = true,
             Objectives =
             [
                 new MissionTemplateObjective
@@ -354,8 +350,6 @@ public static class DbSeeder
             Description = "Template para consolidar prioridades, entregas e marcos estratégicos de um ciclo anual.",
             MissionNamePattern = "Plano Estratégico Anual — ",
             MissionDescriptionPattern = "Planejamento estratégico anual com marcos e prioridades do ciclo.",
-            IsDefault = true,
-            IsActive = true,
             Objectives =
             [
                 new MissionTemplateObjective
@@ -436,8 +430,6 @@ public static class DbSeeder
             Description = "Objectives and Key Results — framework para definir e acompanhar objetivos com resultados-chave mensuráveis.",
             MissionNamePattern = "OKR — ",
             MissionDescriptionPattern = "Missão seguindo o framework OKR com resultados-chave quantitativos.",
-            IsDefault = true,
-            IsActive = true,
             Objectives =
             [
                 new MissionTemplateObjective
@@ -504,8 +496,6 @@ public static class DbSeeder
             Description = "Plano de Desenvolvimento Individual — framework para acompanhar ações de desenvolvimento pessoal e profissional.",
             MissionNamePattern = "PDI — ",
             MissionDescriptionPattern = "Plano de desenvolvimento individual com ações qualitativas e acompanhamento de progresso.",
-            IsDefault = true,
-            IsActive = true,
             Objectives =
             [
                 new MissionTemplateObjective

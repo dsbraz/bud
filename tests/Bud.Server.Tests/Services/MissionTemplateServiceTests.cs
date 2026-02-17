@@ -40,8 +40,6 @@ public sealed class MissionTemplateServiceTests
             Name = name,
             Description = "Test Description",
             OrganizationId = organizationId,
-            IsDefault = false,
-            IsActive = true,
             Metrics = new List<MissionTemplateMetric>
             {
                 new()
@@ -117,8 +115,6 @@ public sealed class MissionTemplateServiceTests
         result.Value.Description.Should().Be("A description");
         result.Value.MissionNamePattern.Should().Be("Mission {n}");
         result.Value.MissionDescriptionPattern.Should().Be("Description {n}");
-        result.Value.IsDefault.Should().BeFalse();
-        result.Value.IsActive.Should().BeTrue();
         result.Value.Metrics.Should().HaveCount(2);
 
         var savedTemplate = await context.MissionTemplates
@@ -280,7 +276,6 @@ public sealed class MissionTemplateServiceTests
             Description = "Updated Description",
             MissionNamePattern = "Updated Pattern",
             MissionDescriptionPattern = "Updated Desc Pattern",
-            IsActive = false,
             Metrics =
             [
                 new MissionTemplateMetricDto
@@ -306,7 +301,6 @@ public sealed class MissionTemplateServiceTests
         result.Value.Description.Should().Be("Updated Description");
         result.Value.MissionNamePattern.Should().Be("Updated Pattern");
         result.Value.MissionDescriptionPattern.Should().Be("Updated Desc Pattern");
-        result.Value.IsActive.Should().BeFalse();
         result.Value.Metrics.Should().ContainSingle();
         result.Value.Metrics.First().Name.Should().Be("New Metric");
         result.Value.Metrics.First().QuantitativeType.Should().Be(QuantitativeMetricType.KeepAbove);
@@ -337,7 +331,6 @@ public sealed class MissionTemplateServiceTests
         var request = new UpdateMissionTemplateRequest
         {
             Name = "Template With Metrics",
-            IsActive = true,
             Metrics =
             [
                 new MissionTemplateMetricDto
@@ -375,7 +368,6 @@ public sealed class MissionTemplateServiceTests
         var request = new UpdateMissionTemplateRequest
         {
             Name = "Updated Name",
-            IsActive = true,
             Metrics = []
         };
 

@@ -77,8 +77,6 @@ public sealed class DbSeederTests
             Id = Guid.NewGuid(),
             OrganizationId = organization.Id,
             Name = "OKR",
-            IsDefault = true,
-            IsActive = true,
             Metrics =
             [
                 new MissionTemplateMetric

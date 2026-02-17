@@ -56,8 +56,6 @@ public sealed class UpdateMissionTemplateRequest
     public string? MissionNamePattern { get; set; }
     /// <summary>Padrão de descrição para missões criadas a partir deste template.</summary>
     public string? MissionDescriptionPattern { get; set; }
-    /// <summary>Indica se o template está ativo.</summary>
-    public bool IsActive { get; set; } = true;
     /// <summary>Objetivos do template.</summary>
     public List<MissionTemplateObjectiveDto> Objectives { get; set; } = [];
     /// <summary>Métricas do template.</summary>

@@ -10,8 +10,6 @@ public sealed class MissionTemplate : ITenantEntity, IAggregateRoot
     public string? Description { get; set; }
     public string? MissionNamePattern { get; set; }
     public string? MissionDescriptionPattern { get; set; }
-    public bool IsDefault { get; set; }
-    public bool IsActive { get; set; } = true;
 
     public ICollection<MissionTemplateObjective> Objectives { get; set; } = new List<MissionTemplateObjective>();
     public ICollection<MissionTemplateMetric> Metrics { get; set; } = new List<MissionTemplateMetric>();
@@ -28,8 +26,6 @@ public sealed class MissionTemplate : ITenantEntity, IAggregateRoot
         {
             Id = id,
             OrganizationId = organizationId,
-            IsDefault = false,
-            IsActive = true
         };
 
         template.UpdateBasics(name, description, missionNamePattern, missionDescriptionPattern);
@@ -52,8 +48,6 @@ public sealed class MissionTemplate : ITenantEntity, IAggregateRoot
         MissionNamePattern = string.IsNullOrWhiteSpace(missionNamePattern) ? null : missionNamePattern.Trim();
         MissionDescriptionPattern = string.IsNullOrWhiteSpace(missionDescriptionPattern) ? null : missionDescriptionPattern.Trim();
     }
-
-    public void SetActive(bool isActive) => IsActive = isActive;
 
     public void ReplaceMetrics(IEnumerable<MissionTemplateMetricDraft> metricDrafts)
         => ReplaceObjectivesAndMetrics([], metricDrafts);

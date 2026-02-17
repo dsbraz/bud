@@ -144,8 +144,6 @@ public sealed class ObjectiveDimensionServiceTests
             Id = Guid.NewGuid(),
             Name = "Template Teste",
             OrganizationId = organization.Id,
-            IsDefault = false,
-            IsActive = true
         };
         context.MissionTemplates.Add(template);
         await context.SaveChangesAsync();

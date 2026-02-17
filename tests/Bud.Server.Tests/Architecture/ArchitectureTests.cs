@@ -300,7 +300,7 @@ public sealed class ArchitectureTests
             [typeof(Team)] = ["Create", "Rename", "Reparent"],
             [typeof(Collaborator)] = ["Create", "UpdateProfile"],
             [typeof(Mission)] = ["Create", "UpdateDetails", "SetScope"],
-            [typeof(MissionTemplate)] = ["Create", "UpdateBasics", "SetActive"]
+            [typeof(MissionTemplate)] = ["Create", "UpdateBasics"]
         };
 
         foreach (var (type, requiredMethods) in requiredMethodsByType)
