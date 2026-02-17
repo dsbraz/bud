@@ -116,8 +116,6 @@ public class ObjectiveDimensionsEndpointsTests : IClassFixture<CustomWebApplicat
             Id = Guid.NewGuid(),
             Name = $"Template-{Guid.NewGuid():N}",
             OrganizationId = org.Id,
-            IsDefault = false,
-            IsActive = true
         };
         dbContext.MissionTemplates.Add(template);
         await dbContext.SaveChangesAsync();

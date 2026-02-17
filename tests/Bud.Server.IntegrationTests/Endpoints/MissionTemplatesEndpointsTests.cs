@@ -98,7 +98,6 @@ public class MissionTemplatesEndpointsTests : IClassFixture<CustomWebApplication
         template.Description.Should().Be("A valid mission template");
         template.MissionNamePattern.Should().Be("Mission - {name}");
         template.MissionDescriptionPattern.Should().Be("Description for {name}");
-        template.IsActive.Should().BeTrue();
         template.Metrics.Should().HaveCount(2);
     }
 
@@ -239,7 +238,6 @@ public class MissionTemplatesEndpointsTests : IClassFixture<CustomWebApplication
             Description = "Updated description",
             MissionNamePattern = "Updated - {name}",
             MissionDescriptionPattern = "Updated desc for {name}",
-            IsActive = true,
             Metrics = new List<MissionTemplateMetricDto>
             {
                 new()
@@ -266,7 +264,6 @@ public class MissionTemplatesEndpointsTests : IClassFixture<CustomWebApplication
         updated.Description.Should().Be("Updated description");
         updated.MissionNamePattern.Should().Be("Updated - {name}");
         updated.MissionDescriptionPattern.Should().Be("Updated desc for {name}");
-        updated.IsActive.Should().BeTrue();
         updated.Metrics.Should().HaveCount(1);
     }
 

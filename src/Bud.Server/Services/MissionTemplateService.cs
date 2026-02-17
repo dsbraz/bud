@@ -68,8 +68,6 @@ public sealed class MissionTemplateService(ApplicationDbContext dbContext) : IMi
                 request.Description,
                 request.MissionNamePattern,
                 request.MissionDescriptionPattern);
-            template.SetActive(request.IsActive);
-
             var previousMetrics = template.Metrics.ToList();
             var previousObjectives = template.Objectives.ToList();
 

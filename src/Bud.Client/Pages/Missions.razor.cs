@@ -309,9 +309,7 @@ public partial class Missions
         try
         {
             var result = await Api.GetMissionTemplatesAsync(null, 1, 50);
-            _availableTemplates = result?.Items
-                .Where(t => t.IsActive)
-                .ToList() ?? new();
+            _availableTemplates = result?.Items.ToList() ?? new();
         }
         catch
         {

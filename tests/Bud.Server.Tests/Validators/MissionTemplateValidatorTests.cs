@@ -390,7 +390,6 @@ public sealed class UpdateMissionTemplateValidatorTests
             Description = "Descrição atualizada",
             MissionNamePattern = "Missão {0}",
             MissionDescriptionPattern = "Descrição padrão",
-            IsActive = true,
             Metrics = []
         };
 
@@ -409,7 +408,6 @@ public sealed class UpdateMissionTemplateValidatorTests
         var request = new UpdateMissionTemplateRequest
         {
             Name = "Template com Métricas",
-            IsActive = true,
             Metrics =
             [
                 new MissionTemplateMetricDto
@@ -430,23 +428,6 @@ public sealed class UpdateMissionTemplateValidatorTests
         result.Errors.Should().BeEmpty();
     }
 
-    [Fact]
-    public async Task Validate_InactiveTemplate_Passes()
-    {
-        // Arrange
-        var request = new UpdateMissionTemplateRequest
-        {
-            Name = "Template Inativo",
-            IsActive = false
-        };
-
-        // Act
-        var result = await _validator.ValidateAsync(request);
-
-        // Assert
-        result.IsValid.Should().BeTrue();
-    }
-
     [Theory]
     [InlineData("")]
     [InlineData("   ")]
@@ -456,8 +437,7 @@ public sealed class UpdateMissionTemplateValidatorTests
         // Arrange
         var request = new UpdateMissionTemplateRequest
         {
-            Name = name!,
-            IsActive = true
+            Name = name!
         };
 
         // Act
@@ -476,8 +456,7 @@ public sealed class UpdateMissionTemplateValidatorTests
         // Arrange
         var request = new UpdateMissionTemplateRequest
         {
-            Name = new string('A', 201),
-            IsActive = true
+            Name = new string('A', 201)
         };
 
         // Act
@@ -497,8 +476,7 @@ public sealed class UpdateMissionTemplateValidatorTests
         var request = new UpdateMissionTemplateRequest
         {
             Name = "Template",
-            Description = new string('A', 1001),
-            IsActive = true
+            Description = new string('A', 1001)
         };
 
         // Act
@@ -518,8 +496,7 @@ public sealed class UpdateMissionTemplateValidatorTests
         var request = new UpdateMissionTemplateRequest
         {
             Name = "Template",
-            Description = null,
-            IsActive = true
+            Description = null
         };
 
         // Act
@@ -536,8 +513,7 @@ public sealed class UpdateMissionTemplateValidatorTests
         var request = new UpdateMissionTemplateRequest
         {
             Name = "Template",
-            MissionNamePattern = new string('A', 201),
-            IsActive = true
+            MissionNamePattern = new string('A', 201)
         };
 
         // Act
@@ -557,8 +533,7 @@ public sealed class UpdateMissionTemplateValidatorTests
         var request = new UpdateMissionTemplateRequest
         {
             Name = "Template",
-            MissionNamePattern = null,
-            IsActive = true
+            MissionNamePattern = null
         };
 
         // Act
@@ -575,8 +550,7 @@ public sealed class UpdateMissionTemplateValidatorTests
         var request = new UpdateMissionTemplateRequest
         {
             Name = "Template",
-            MissionDescriptionPattern = new string('A', 1001),
-            IsActive = true
+            MissionDescriptionPattern = new string('A', 1001)
         };
 
         // Act
@@ -596,8 +570,7 @@ public sealed class UpdateMissionTemplateValidatorTests
         var request = new UpdateMissionTemplateRequest
         {
             Name = "Template",
-            MissionDescriptionPattern = null,
-            IsActive = true
+            MissionDescriptionPattern = null
         };
 
         // Act
@@ -614,7 +587,6 @@ public sealed class UpdateMissionTemplateValidatorTests
         var request = new UpdateMissionTemplateRequest
         {
             Name = "Template",
-            IsActive = true,
             Metrics =
             [
                 new MissionTemplateMetricDto
@@ -644,7 +616,6 @@ public sealed class UpdateMissionTemplateValidatorTests
         var request = new UpdateMissionTemplateRequest
         {
             Name = "Template",
-            IsActive = true,
             Objectives =
             [
                 new MissionTemplateObjectiveDto
