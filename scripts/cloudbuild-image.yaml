@@ -10,6 +10,6 @@ steps:
       - ${_DOCKERFILE}
       - .
 substitutions:
-  _DOCKERFILE: Dockerfile.gcp
+  _DOCKERFILE: Dockerfile.Production
 images:
   - ${_IMAGE_URI}

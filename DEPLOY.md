@@ -143,7 +143,7 @@ Forcar URL da API no MCP:
 O deploy web executa migracoes EF Core automaticamente via Cloud Run Job.
 
 - A imagem de migracao usa `dotnet-ef migrations bundle` (executavel standalone, sem SDK em runtime)
-- O target `prod-migrate` no `Dockerfile.gcp` gera o bundle
+- O target `prod-migrate` no `Dockerfile.Production` gera o bundle
 - O seed (`DbSeeder`) roda no startup da aplicacao em todos os ambientes (idempotente)
 - `EnsureCreated()` roda apenas em Development (local/Docker Compose)
 
@@ -164,6 +164,36 @@ Se a organizacao GCP tiver policy `iam.allowedPolicyMemberDomains`, o `--allow-u
 3. Va em **Seguranca**
 4. Marque **Permitir invocacoes nao autenticadas**
 5. Repita para cada servico
+
+## CONFIGURACAO (appsettings)
+
+O projeto usa a convencao padrao do ASP.NET Core para configuracao por ambiente:
+
+| Arquivo | Papel |
+|---------|-------|
+| `appsettings.json` | Defaults comuns (logging, AllowedHosts) |
+| `appsettings.Development.json` | Dev local e Docker Compose (connection strings, JWT dev key) |
+| `appsettings.Production.json` | Producao/GCP (GlobalAdminSettings, JWT issuer/audience, logging otimizado) |
+
+Segredos (connection string, JWT key) NUNCA ficam em arquivos de configuracao — sao injetados via:
+- **Docker Compose**: env vars no `docker-compose.yml`
+- **GCP**: Secret Manager (referenciados nos scripts de deploy com `--set-secrets`)
+
+## VARIAVEIS DE AMBIENTE DE SEGURANCA
+
+### Obrigatorias em producao
+
+| Variavel | Descricao |
+|----------|-----------|
+| `Jwt__Key` | Chave secreta para assinatura JWT. **Fail-fast**: a aplicacao nao inicia sem esta variavel em ambientes nao-Development. Minimo 32 caracteres. |
+
+### Recomendadas em producao
+
+| Variavel | Descricao |
+|----------|-----------|
+| `AllowedHosts` | Lista de hosts permitidos, separados por `;` (ex.: `bud.example.com;www.bud.example.com`). Padrao: `*` (aceita qualquer host). Configure para restringir a hosts conhecidos. |
+
+Nota: `Jwt__Key` ja e criado automaticamente pelo bootstrap e injetado via Secret Manager nos scripts de deploy.
 
 ## OUTRAS CONSIDERACOES
 

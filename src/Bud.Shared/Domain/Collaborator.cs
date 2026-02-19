@@ -12,6 +12,7 @@ public sealed class Collaborator : ITenantEntity, IAggregateRoot
     public Team? Team { get; set; }
     public Guid? LeaderId { get; set; }
     public Collaborator? Leader { get; set; }
+    public bool IsGlobalAdmin { get; set; }
     public ICollection<CollaboratorTeam> CollaboratorTeams { get; set; } = new List<CollaboratorTeam>();
 
     public static Collaborator Create(

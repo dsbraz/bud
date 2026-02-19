@@ -14,6 +14,9 @@ public sealed class CollaboratorConfiguration : IEntityTypeConfiguration<Collabo
         builder.Property(c => c.Email)
             .HasMaxLength(320);
 
+        builder.Property(c => c.IsGlobalAdmin)
+            .HasDefaultValue(false);
+
         builder.HasOne(c => c.Organization)
             .WithMany()
             .HasForeignKey(c => c.OrganizationId)

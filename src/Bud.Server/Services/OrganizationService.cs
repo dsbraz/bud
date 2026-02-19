@@ -12,7 +12,6 @@ public sealed class OrganizationService(
     ApplicationDbContext dbContext,
     IOptions<GlobalAdminSettings> globalAdminSettings) : IOrganizationService
 {
-    private readonly string _globalAdminEmail = globalAdminSettings.Value.Email;
     private readonly string _globalAdminOrgName = globalAdminSettings.Value.OrganizationName;
 
     public async Task<ServiceResult<Organization>> CreateAsync(CreateOrganizationRequest request, CancellationToken cancellationToken = default)

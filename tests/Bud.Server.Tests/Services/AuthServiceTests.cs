@@ -14,7 +14,13 @@ namespace Bud.Server.Tests.Services;
 public class AuthServiceTests
 {
     private readonly TestTenantProvider _tenantProvider = new() { IsGlobalAdmin = true };
-    private readonly TestConfiguration _configuration = new();
+
+    private static readonly JwtSettings TestJwtSettings = new()
+    {
+        Key = "test-secret-key-for-unit-tests-minimum-32-characters",
+        Issuer = "bud-test",
+        Audience = "bud-test-api"
+    };
 
     private ApplicationDbContext CreateInMemoryContext()
     {
@@ -23,6 +29,11 @@ public class AuthServiceTests
             .Options;
 
         return new ApplicationDbContext(options, _tenantProvider);
+    }
+
+    private static AuthService CreateService(ApplicationDbContext context)
+    {
+        return new AuthService(context, Options.Create(TestJwtSettings));
     }
 
     #region Global Admin Login Detection Tests
@@ -35,8 +46,21 @@ public class AuthServiceTests
     {
         // Arrange
         using var context = CreateInMemoryContext();
-        var service = new AuthService(context, Options.Create(new GlobalAdminSettings { Email = "admin@getbud.co" }), _configuration);
+        var org = new Organization { Id = Guid.NewGuid(), Name = "Admin Org" };
+        context.Organizations.Add(org);
+        var adminCollaborator = new Collaborator
+        {
+            Id = Guid.NewGuid(),
+            FullName = "Administrador Global",
+            Email = "admin@getbud.co",
+            Role = CollaboratorRole.Leader,
+            OrganizationId = org.Id,
+            IsGlobalAdmin = true
+        };
+        context.Collaborators.Add(adminCollaborator);
+        await context.SaveChangesAsync();
 
+        var service = CreateService(context);
         var request = new AuthLoginRequest { Email = email };
 
         // Act
@@ -54,11 +78,11 @@ public class AuthServiceTests
     [InlineData("admin")]
     [InlineData("admin@company.com")]
     [InlineData("admin@test")]
-    public async Task Login_WithNonGetbudGlobalAdminEmail_ReturnsNotFound(string email)
+    public async Task Login_WithNonExistentEmail_ReturnsNotFound(string email)
     {
         // Arrange
         using var context = CreateInMemoryContext();
-        var service = new AuthService(context, Options.Create(new GlobalAdminSettings { Email = "admin@getbud.co" }), _configuration);
+        var service = CreateService(context);
 
         var request = new AuthLoginRequest { Email = email };
 
@@ -79,9 +103,7 @@ public class AuthServiceTests
     {
         // Arrange
         using var context = CreateInMemoryContext();
-        var service = new AuthService(context, Options.Create(new GlobalAdminSettings { Email = "admin@getbud.co" }), _configuration);
 
-        // Create test hierarchy
         var org = new Organization { Id = Guid.NewGuid(), Name = "Test Org" };
         var workspace = new Workspace
         {
@@ -113,6 +135,7 @@ public class AuthServiceTests
         context.Collaborators.Add(collaborator);
         await context.SaveChangesAsync();
 
+        var service = CreateService(context);
         var request = new AuthLoginRequest { Email = "john.doe@example.com" };
 
         // Act
@@ -134,7 +157,6 @@ public class AuthServiceTests
     {
         // Arrange
         using var context = CreateInMemoryContext();
-        var service = new AuthService(context, Options.Create(new GlobalAdminSettings { Email = "admin@getbud.co" }), _configuration);
 
         var org = new Organization { Id = Guid.NewGuid(), Name = "Test Org" };
         var workspace = new Workspace { Id = Guid.NewGuid(), Name = "Test Workspace", OrganizationId = org.Id };
@@ -155,6 +177,8 @@ public class AuthServiceTests
         context.Collaborators.Add(collaborator);
         await context.SaveChangesAsync();
 
+        var service = CreateService(context);
+
         // Act
         var result = await service.LoginAsync(new AuthLoginRequest { Email = collaborator.Email });
 
@@ -168,11 +192,11 @@ public class AuthServiceTests
     }
 
     [Fact]
-    public async Task Login_WithNonExistentEmail_ReturnsNotFound()
+    public async Task Login_WithNonExistentEmail_ReturnsNotFoundMessage()
     {
         // Arrange
         using var context = CreateInMemoryContext();
-        var service = new AuthService(context, Options.Create(new GlobalAdminSettings { Email = "admin@getbud.co" }), _configuration);
+        var service = CreateService(context);
 
         var request = new AuthLoginRequest { Email = "nonexistent@example.com" };
 
@@ -190,7 +214,7 @@ public class AuthServiceTests
     {
         // Arrange
         using var context = CreateInMemoryContext();
-        var service = new AuthService(context, Options.Create(new GlobalAdminSettings { Email = "admin@getbud.co" }), _configuration);
+        var service = CreateService(context);
 
         var request = new AuthLoginRequest { Email = "" };
 
@@ -208,7 +232,7 @@ public class AuthServiceTests
     {
         // Arrange
         using var context = CreateInMemoryContext();
-        var service = new AuthService(context, Options.Create(new GlobalAdminSettings { Email = "admin@getbud.co" }), _configuration);
+        var service = CreateService(context);
 
         var request = new AuthLoginRequest { Email = "   " };
 
@@ -233,9 +257,7 @@ public class AuthServiceTests
     {
         // Arrange
         using var context = CreateInMemoryContext();
-        var service = new AuthService(context, Options.Create(new GlobalAdminSettings { Email = "admin@getbud.co" }), _configuration);
 
-        // Create test hierarchy
         var org = new Organization { Id = Guid.NewGuid(), Name = "Test Org" };
         var workspace = new Workspace
         {
@@ -255,7 +277,7 @@ public class AuthServiceTests
         {
             Id = Guid.NewGuid(),
             FullName = "Test User",
-            Email = expectedEmail, // Stored in lowercase
+            Email = expectedEmail,
             Role = CollaboratorRole.IndividualContributor,
             OrganizationId = org.Id,
             TeamId = team.Id
@@ -267,6 +289,7 @@ public class AuthServiceTests
         context.Collaborators.Add(collaborator);
         await context.SaveChangesAsync();
 
+        var service = CreateService(context);
         var request = new AuthLoginRequest { Email = inputEmail };
 
         // Act
@@ -289,9 +312,7 @@ public class AuthServiceTests
         // Arrange
         using var context = CreateInMemoryContext();
         var globalAdminEmail = "admin@getbud.co";
-        var service = new AuthService(context, Options.Create(new GlobalAdminSettings { Email = globalAdminEmail }), _configuration);
 
-        // Create a collaborator with the global admin email
         var org = new Organization { Id = Guid.NewGuid(), Name = "Admin Org" };
         var workspace = new Workspace { Id = Guid.NewGuid(), Name = "Admin Workspace", OrganizationId = org.Id };
         var team = new Team { Id = Guid.NewGuid(), Name = "Admin Team", OrganizationId = org.Id, WorkspaceId = workspace.Id, LeaderId = Guid.NewGuid() };
@@ -302,7 +323,8 @@ public class AuthServiceTests
             Email = globalAdminEmail,
             Role = CollaboratorRole.Leader,
             OrganizationId = org.Id,
-            TeamId = team.Id
+            TeamId = team.Id,
+            IsGlobalAdmin = true
         };
 
         context.Organizations.Add(org);
@@ -311,6 +333,7 @@ public class AuthServiceTests
         context.Collaborators.Add(adminCollaborator);
         await context.SaveChangesAsync();
 
+        var service = CreateService(context);
         var request = new AuthLoginRequest { Email = globalAdminEmail };
 
         // Act
@@ -331,7 +354,6 @@ public class AuthServiceTests
         // Arrange
         using var context = CreateInMemoryContext();
         var globalAdminEmail = "admin@getbud.co";
-        var service = new AuthService(context, Options.Create(new GlobalAdminSettings { Email = globalAdminEmail }), _configuration);
 
         var org = new Organization { Id = Guid.NewGuid(), Name = "Admin Org" };
         var workspace = new Workspace { Id = Guid.NewGuid(), Name = "Admin Workspace", OrganizationId = org.Id };
@@ -343,7 +365,8 @@ public class AuthServiceTests
             Email = globalAdminEmail,
             Role = CollaboratorRole.Leader,
             OrganizationId = org.Id,
-            TeamId = team.Id
+            TeamId = team.Id,
+            IsGlobalAdmin = true
         };
 
         context.Organizations.Add(org);
@@ -351,6 +374,8 @@ public class AuthServiceTests
         context.Teams.Add(team);
         context.Collaborators.Add(adminCollaborator);
         await context.SaveChangesAsync();
+
+        var service = CreateService(context);
 
         // Act
         var result = await service.LoginAsync(new AuthLoginRequest { Email = globalAdminEmail });
@@ -365,24 +390,105 @@ public class AuthServiceTests
 
     #endregion
 
+    #region IsGlobalAdmin Database Flag Tests
+
+    [Fact]
+    public async Task Login_WithIsGlobalAdminTrue_ReturnsGlobalAdmin()
+    {
+        // Arrange - collaborator with arbitrary email but IsGlobalAdmin = true
+        using var context = CreateInMemoryContext();
+
+        var org = new Organization { Id = Guid.NewGuid(), Name = "Any Org" };
+        var collaborator = new Collaborator
+        {
+            Id = Guid.NewGuid(),
+            FullName = "Custom Admin",
+            Email = "custom.admin@anycompany.com",
+            Role = CollaboratorRole.Leader,
+            OrganizationId = org.Id,
+            IsGlobalAdmin = true
+        };
+
+        context.Organizations.Add(org);
+        context.Collaborators.Add(collaborator);
+        await context.SaveChangesAsync();
+
+        var service = CreateService(context);
+
+        // Act
+        var result = await service.LoginAsync(new AuthLoginRequest { Email = "custom.admin@anycompany.com" });
+
+        // Assert
+        result.IsSuccess.Should().BeTrue();
+        result.Value!.IsGlobalAdmin.Should().BeTrue();
+        result.Value!.DisplayName.Should().Be("Custom Admin");
+        result.Value!.CollaboratorId.Should().Be(collaborator.Id);
+    }
+
+    [Fact]
+    public async Task Login_WithIsGlobalAdminFalse_AndAdminEmail_ReturnsRegularUser()
+    {
+        // Arrange - collaborator with admin@getbud.co email but IsGlobalAdmin = false
+        // Proves that the email alone no longer grants admin privileges
+        using var context = CreateInMemoryContext();
+
+        var org = new Organization { Id = Guid.NewGuid(), Name = "Test Org" };
+        var collaborator = new Collaborator
+        {
+            Id = Guid.NewGuid(),
+            FullName = "Not Actually Admin",
+            Email = "admin@getbud.co",
+            Role = CollaboratorRole.Leader,
+            OrganizationId = org.Id,
+            IsGlobalAdmin = false
+        };
+
+        context.Organizations.Add(org);
+        context.Collaborators.Add(collaborator);
+        await context.SaveChangesAsync();
+
+        var service = CreateService(context);
+
+        // Act
+        var result = await service.LoginAsync(new AuthLoginRequest { Email = "admin@getbud.co" });
+
+        // Assert
+        result.IsSuccess.Should().BeTrue();
+        result.Value!.IsGlobalAdmin.Should().BeFalse();
+        result.Value!.DisplayName.Should().Be("Not Actually Admin");
+    }
+
+    #endregion
+
     #region GetMyOrganizations Tests
 
     [Fact]
-    public async Task GetMyOrganizations_WithGlobalAdmin_ReturnsAllOrganizations()
+    public async Task GetMyOrganizations_WithIsGlobalAdminCollaborator_ReturnsAllOrganizations()
     {
         // Arrange
         using var context = CreateInMemoryContext();
-        var globalAdminEmail = "admin@getbud.co";
-        var service = new AuthService(context, Options.Create(new GlobalAdminSettings { Email = globalAdminEmail }), _configuration);
 
         var org1 = new Organization { Id = Guid.NewGuid(), Name = "Org 1" };
         var org2 = new Organization { Id = Guid.NewGuid(), Name = "Org 2" };
         var org3 = new Organization { Id = Guid.NewGuid(), Name = "Org 3" };
         context.Organizations.AddRange(org1, org2, org3);
+
+        var adminCollaborator = new Collaborator
+        {
+            Id = Guid.NewGuid(),
+            FullName = "Global Admin",
+            Email = "globaladmin@anycompany.com",
+            Role = CollaboratorRole.Leader,
+            OrganizationId = org1.Id,
+            IsGlobalAdmin = true
+        };
+        context.Collaborators.Add(adminCollaborator);
         await context.SaveChangesAsync();
 
+        var service = CreateService(context);
+
         // Act
-        var result = await service.GetMyOrganizationsAsync(globalAdminEmail);
+        var result = await service.GetMyOrganizationsAsync("globaladmin@anycompany.com");
 
         // Assert
         result.IsSuccess.Should().BeTrue();
@@ -395,22 +501,18 @@ public class AuthServiceTests
     {
         // Arrange
         using var context = CreateInMemoryContext();
-        var service = new AuthService(context, Options.Create(new GlobalAdminSettings { Email = "admin@getbud.co" }), _configuration);
 
         var userEmail = "user@example.com";
 
-        // Create organizations
         var org1 = new Organization { Id = Guid.NewGuid(), Name = "User Org" };
         var org2 = new Organization { Id = Guid.NewGuid(), Name = "Other Org" };
         context.Organizations.AddRange(org1, org2);
 
-        // Create workspace and team for user's org
         var workspace = new Workspace { Id = Guid.NewGuid(), Name = "Workspace", OrganizationId = org1.Id };
         var team = new Team { Id = Guid.NewGuid(), Name = "Team", OrganizationId = org1.Id, WorkspaceId = workspace.Id, LeaderId = Guid.NewGuid() };
         context.Workspaces.Add(workspace);
         context.Teams.Add(team);
 
-        // Create collaborator only in org1
         var collaborator = new Collaborator
         {
             Id = Guid.NewGuid(),
@@ -422,6 +524,8 @@ public class AuthServiceTests
         };
         context.Collaborators.Add(collaborator);
         await context.SaveChangesAsync();
+
+        var service = CreateService(context);
 
         // Act
         var result = await service.GetMyOrganizationsAsync(userEmail);
@@ -438,11 +542,9 @@ public class AuthServiceTests
     {
         // Arrange
         using var context = CreateInMemoryContext();
-        var service = new AuthService(context, Options.Create(new GlobalAdminSettings { Email = "admin@getbud.co" }), _configuration);
 
         var ownerEmail = "owner@example.com";
 
-        // Create org with owner collaborator
         var org = new Organization { Id = Guid.NewGuid(), Name = "Owned Org" };
         context.Organizations.Add(org);
 
@@ -462,9 +564,10 @@ public class AuthServiceTests
         };
         context.Collaborators.Add(ownerCollaborator);
 
-        // Set owner
         org.OwnerId = ownerCollaborator.Id;
         await context.SaveChangesAsync();
+
+        var service = CreateService(context);
 
         // Act
         var result = await service.GetMyOrganizationsAsync(ownerEmail);
@@ -480,7 +583,7 @@ public class AuthServiceTests
     {
         // Arrange
         using var context = CreateInMemoryContext();
-        var service = new AuthService(context, Options.Create(new GlobalAdminSettings { Email = "admin@getbud.co" }), _configuration);
+        var service = CreateService(context);
 
         // Act
         var result = await service.GetMyOrganizationsAsync("");
@@ -496,7 +599,7 @@ public class AuthServiceTests
     {
         // Arrange
         using var context = CreateInMemoryContext();
-        var service = new AuthService(context, Options.Create(new GlobalAdminSettings { Email = "admin@getbud.co" }), _configuration);
+        var service = CreateService(context);
 
         // Act
         var result = await service.GetMyOrganizationsAsync("   ");

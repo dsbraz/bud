@@ -30,7 +30,10 @@ public class CustomWebApplicationFactory : WebApplicationFactory<Program>, IAsyn
         {
             config.AddInMemoryCollection(new Dictionary<string, string?>
             {
-                ["ConnectionStrings:DefaultConnection"] = _connectionString
+                ["ConnectionStrings:DefaultConnection"] = _connectionString,
+                ["Jwt:Key"] = "CHANGE-THIS-KEY-IN-PRODUCTION-USE-AT-LEAST-32-CHARACTERS",
+                ["Jwt:Issuer"] = "bud-api",
+                ["Jwt:Audience"] = "bud-api"
             });
         });
 

@@ -4,6 +4,7 @@ using Bud.Server.Middleware;
 using Bud.Server.Settings;
 using Bud.Server.Validators;
 using FluentValidation;
+using Microsoft.AspNetCore.HttpOverrides;
 
 namespace Bud.Server.DependencyInjection;
 
@@ -33,12 +34,22 @@ public static class BudApiCompositionExtensions
         services.AddProblemDetails();
         services.AddExceptionHandler<GlobalExceptionHandler>();
         services.AddValidatorsFromAssemblyContaining<CreateOrganizationValidator>();
+
+        services.Configure<ForwardedHeadersOptions>(options =>
+        {
+            options.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
+            options.KnownIPNetworks.Clear();
+            options.KnownProxies.Clear();
+        });
+
         return services;
     }
 
     public static IServiceCollection AddBudSettings(this IServiceCollection services, IConfiguration configuration)
     {
         services.Configure<GlobalAdminSettings>(configuration.GetSection("GlobalAdminSettings"));
+        services.Configure<JwtSettings>(configuration.GetSection("Jwt"));
+        services.Configure<RateLimitSettings>(configuration.GetSection("RateLimitSettings"));
         return services;
     }
 }

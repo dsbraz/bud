@@ -6,8 +6,10 @@ using Bud.Shared.Domain;
 using FluentAssertions;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
+using Microsoft.Extensions.Configuration;
 using Xunit;
 
 namespace Bud.Server.Tests.Architecture;
@@ -179,6 +181,7 @@ public sealed class ArchitectureTests
             (Type: typeof(BudApiCompositionExtensions), Method: "AddBudSettings"),
             (Type: typeof(BudSecurityCompositionExtensions), Method: "AddBudAuthentication"),
             (Type: typeof(BudSecurityCompositionExtensions), Method: "AddBudAuthorization"),
+            (Type: typeof(BudSecurityCompositionExtensions), Method: "AddBudRateLimiting"),
             (Type: typeof(BudDataCompositionExtensions), Method: "AddBudDataAccess"),
             (Type: typeof(BudApplicationCompositionExtensions), Method: "AddBudApplication"),
             (Type: typeof(BudCompositionExtensions), Method: "AddBudPlatform")
@@ -326,6 +329,41 @@ public sealed class ArchitectureTests
         {
             AssertSourceContains(repositoryRoot, guardrail.Path, guardrail.Required, guardrail.Forbidden);
         }
+    }
+
+    [Fact]
+    public void Services_ShouldNotDependOnIConfigurationDirectly()
+    {
+        var serviceTypes = ServerAssembly.GetTypes()
+            .Where(t => t.Namespace?.StartsWith("Bud.Server.Services", StringComparison.Ordinal) == true
+                        && t is { IsClass: true, IsAbstract: false })
+            .ToList();
+
+        serviceTypes.Should().NotBeEmpty();
+
+        var invalidServices = serviceTypes
+            .Where(type => type
+                .GetConstructors(BindingFlags.Public | BindingFlags.Instance)
+                .SelectMany(c => c.GetParameters())
+                .Any(p => p.ParameterType == typeof(IConfiguration)))
+            .Select(t => t.FullName)
+            .ToList();
+
+        invalidServices.Should().BeEmpty(
+            "serviços devem usar IOptions<T> para configurações tipadas, não IConfiguration diretamente");
+    }
+
+    [Fact]
+    public void AuthController_LoginAction_MustHaveRateLimitingAttribute()
+    {
+        var loginMethod = typeof(AuthController)
+            .GetMethods(BindingFlags.Public | BindingFlags.Instance)
+            .FirstOrDefault(m => m.Name == "Login");
+
+        loginMethod.Should().NotBeNull("AuthController deve ter um método Login público");
+
+        var hasRateLimiting = loginMethod!.GetCustomAttributes<EnableRateLimitingAttribute>(inherit: true).Any();
+        hasRateLimiting.Should().BeTrue("o método Login deve ter [EnableRateLimiting] para proteção contra brute-force");
     }
 
     private static bool IsServicesContract(ParameterInfo parameter)
