@@ -11,6 +11,7 @@ Opcoes:
   --project-id <id>             PROJECT_ID
   --region <region>             REGION
   --web-api-url <url>           WEB_API_URL (opcional; usado no deploy do MCP)
+  --skip-migration              Pular etapa de migracao (EF migrations)
 USAGE
 }
 
@@ -55,6 +56,7 @@ while [[ $# -gt 0 ]]; do
     --project-id) PROJECT_ID="$2"; shift 2 ;;
     --region) REGION="$2"; shift 2 ;;
     --web-api-url) WEB_API_URL="$2"; shift 2 ;;
+    --skip-migration) SKIP_MIGRATION="true"; shift ;;
     -h|--help) usage; exit 0 ;;
     *) echo "Parametro invalido: $1" >&2; usage; exit 1 ;;
   esac
@@ -68,6 +70,9 @@ fi
 export PROJECT_ID REGION
 if [[ -n "${WEB_API_URL:-}" ]]; then
   export WEB_API_URL
+fi
+if [[ -n "${SKIP_MIGRATION:-}" ]]; then
+  export SKIP_MIGRATION
 fi
 
 echo "==> Etapa 1/2: deploy do Bud.Server (web)"

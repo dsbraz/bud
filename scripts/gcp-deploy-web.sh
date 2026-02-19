@@ -19,6 +19,7 @@ Opcoes:
   --secret-db-connection <n>    SECRET_DB_CONNECTION
   --secret-jwt-key <n>          SECRET_JWT_KEY
   --migration-job-name <nome>   MIGRATION_JOB_NAME
+  --skip-migration              Pular etapa de migracao (EF migrations)
   --image-tag <tag>             IMAGE_TAG
 USAGE
 }
@@ -88,6 +89,7 @@ while [[ $# -gt 0 ]]; do
     --secret-db-connection) SECRET_DB_CONNECTION="$2"; shift 2 ;;
     --secret-jwt-key) SECRET_JWT_KEY="$2"; shift 2 ;;
     --migration-job-name) MIGRATION_JOB_NAME="$2"; shift 2 ;;
+    --skip-migration) SKIP_MIGRATION="true"; shift ;;
     --image-tag) IMAGE_TAG="$2"; shift 2 ;;
     -h|--help) usage; exit 0 ;;
     *) echo "Parametro invalido: $1" >&2; usage; exit 1 ;;
@@ -106,6 +108,7 @@ SERVICE_ACCOUNT="${SERVICE_ACCOUNT:-bud-runner}"
 SECRET_DB_CONNECTION="${SECRET_DB_CONNECTION:-bud-db-connection}"
 SECRET_JWT_KEY="${SECRET_JWT_KEY:-bud-jwt-key}"
 MIGRATION_JOB_NAME="${MIGRATION_JOB_NAME:-${SERVICE_NAME}-migrate}"
+SKIP_MIGRATION="${SKIP_MIGRATION:-false}"
 IMAGE_TAG="${IMAGE_TAG:-$(date +%Y%m%d-%H%M%S)}"
 
 INSTANCE_CONNECTION_NAME="${PROJECT_ID}:${REGION}:${SQL_INSTANCE}"
@@ -128,49 +131,62 @@ if ! secret_has_versions "$SECRET_JWT_KEY"; then
   exit 1
 fi
 
-echo "==> Buildando imagem no Cloud Build (${IMAGE_URI})"
-gcloud builds submit \
-  --project "$PROJECT_ID" \
-  --config "scripts/cloudbuild-image.yaml" \
-  --substitutions "_IMAGE_URI=${IMAGE_URI},_DOCKER_TARGET=prod-web" \
-  .
+MIGRATE_IMAGE_URI="${REGION}-docker.pkg.dev/${PROJECT_ID}/${REPO_NAME}/${SERVICE_NAME}-migrate:${IMAGE_TAG}"
 
-echo "==> Garantindo Cloud Run Job de migracao"
-MIGRATION_COMMAND='dotnet tool install --tool-path /tmp/tools dotnet-ef --version 10.0.2 >/dev/null && /tmp/tools/dotnet-ef database update --project src/Bud.Server'
-
-if job_exists "$MIGRATION_JOB_NAME"; then
-  gcloud run jobs update "$MIGRATION_JOB_NAME" \
+if [[ "$SKIP_MIGRATION" == "true" ]]; then
+  echo "==> Buildando imagem no Cloud Build (${IMAGE_URI})"
+  gcloud builds submit \
     --project "$PROJECT_ID" \
-    --region "$REGION" \
-    --image "$IMAGE_URI" \
-    --service-account "$SERVICE_ACCOUNT_EMAIL" \
-    --set-cloudsql-instances "$INSTANCE_CONNECTION_NAME" \
-    --set-secrets "ConnectionStrings__DefaultConnection=${SECRET_DB_CONNECTION}:latest" \
-    --set-secrets "Jwt__Key=${SECRET_JWT_KEY}:latest" \
-    --set-env-vars "DOTNET_ENVIRONMENT=Production,ASPNETCORE_ENVIRONMENT=Production,Jwt__Issuer=bud-api,Jwt__Audience=bud-api,GlobalAdminSettings__Email=admin@getbud.co,GlobalAdminSettings__OrganizationName=getbud.co" \
-    --command "bash" \
-    --args "-lc,${MIGRATION_COMMAND}" \
-    --max-retries 1
+    --config "scripts/cloudbuild-image.yaml" \
+    --substitutions "_IMAGE_URI=${IMAGE_URI},_DOCKER_TARGET=prod-web" \
+    .
+  echo "==> Migracao pulada (--skip-migration)"
 else
-  gcloud run jobs create "$MIGRATION_JOB_NAME" \
+  echo "==> Buildando imagem de migracao no Cloud Build (${MIGRATE_IMAGE_URI})"
+  gcloud builds submit \
+    --project "$PROJECT_ID" \
+    --config "scripts/cloudbuild-image.yaml" \
+    --substitutions "_IMAGE_URI=${MIGRATE_IMAGE_URI},_DOCKER_TARGET=prod-migrate" \
+    .
+
+  echo "==> Buildando imagem no Cloud Build (${IMAGE_URI})"
+  gcloud builds submit \
+    --project "$PROJECT_ID" \
+    --config "scripts/cloudbuild-image.yaml" \
+    --substitutions "_IMAGE_URI=${IMAGE_URI},_DOCKER_TARGET=prod-web" \
+    .
+
+  echo "==> Garantindo Cloud Run Job de migracao"
+  if job_exists "$MIGRATION_JOB_NAME"; then
+    gcloud run jobs update "$MIGRATION_JOB_NAME" \
+      --project "$PROJECT_ID" \
+      --region "$REGION" \
+      --image "$MIGRATE_IMAGE_URI" \
+      --service-account "$SERVICE_ACCOUNT_EMAIL" \
+      --set-cloudsql-instances "$INSTANCE_CONNECTION_NAME" \
+      --set-secrets "ConnectionStrings__DefaultConnection=${SECRET_DB_CONNECTION}:latest" \
+      --set-secrets "Jwt__Key=${SECRET_JWT_KEY}:latest" \
+      --set-env-vars "DOTNET_ENVIRONMENT=Production,ASPNETCORE_ENVIRONMENT=Production" \
+      --max-retries 1
+  else
+    gcloud run jobs create "$MIGRATION_JOB_NAME" \
+      --project "$PROJECT_ID" \
+      --region "$REGION" \
+      --image "$MIGRATE_IMAGE_URI" \
+      --service-account "$SERVICE_ACCOUNT_EMAIL" \
+      --set-cloudsql-instances "$INSTANCE_CONNECTION_NAME" \
+      --set-secrets "ConnectionStrings__DefaultConnection=${SECRET_DB_CONNECTION}:latest" \
+      --set-secrets "Jwt__Key=${SECRET_JWT_KEY}:latest" \
+      --set-env-vars "DOTNET_ENVIRONMENT=Production,ASPNETCORE_ENVIRONMENT=Production" \
+      --max-retries 1
+  fi
+
+  echo "==> Executando migracao"
+  gcloud run jobs execute "$MIGRATION_JOB_NAME" \
     --project "$PROJECT_ID" \
     --region "$REGION" \
-    --image "$IMAGE_URI" \
-    --service-account "$SERVICE_ACCOUNT_EMAIL" \
-    --set-cloudsql-instances "$INSTANCE_CONNECTION_NAME" \
-    --set-secrets "ConnectionStrings__DefaultConnection=${SECRET_DB_CONNECTION}:latest" \
-    --set-secrets "Jwt__Key=${SECRET_JWT_KEY}:latest" \
-    --set-env-vars "DOTNET_ENVIRONMENT=Production,ASPNETCORE_ENVIRONMENT=Production,Jwt__Issuer=bud-api,Jwt__Audience=bud-api,GlobalAdminSettings__Email=admin@getbud.co,GlobalAdminSettings__OrganizationName=getbud.co" \
-    --command "bash" \
-    --args "-lc,${MIGRATION_COMMAND}" \
-    --max-retries 1
+    --wait
 fi
-
-echo "==> Executando migracao"
-gcloud run jobs execute "$MIGRATION_JOB_NAME" \
-  --project "$PROJECT_ID" \
-  --region "$REGION" \
-  --wait
 
 echo "==> Deployando servico Cloud Run"
 gcloud run deploy "$SERVICE_NAME" \

@@ -454,47 +454,38 @@ Se estiver rodando local com `DOTNET_ENVIRONMENT=Development`, defina:
 
 Scripts disponíveis:
 
-- `scripts/gcp-bootstrap.sh`: prepara infraestrutura base (Artifact Registry, Cloud SQL, service account, secrets).
-- `scripts/gcp-deploy-web.sh`: deploy do `Bud.Server`.
+- `scripts/gcp-bootstrap.sh`: prepara infraestrutura base (APIs, Artifact Registry, Cloud SQL, service account, secrets, permissões do Cloud Build).
+- `scripts/gcp-deploy-web.sh`: deploy do `Bud.Server` (com migração EF Core via Cloud Run Job).
 - `scripts/gcp-deploy-mcp.sh`: deploy do `Bud.Mcp` HTTP.
 - `scripts/gcp-deploy-all.sh`: executa deploy completo (`Bud.Server` + `Bud.Mcp`).
 
 Observação: os scripts de deploy remoto usam **Cloud Build** para gerar imagens no GCP (não dependem de `docker build` local).
 
+Pré-requisitos (primeira vez): projeto GCP criado, billing vinculado, usuário com role Owner. Ver `DEPLOY.md` para detalhes.
+
 Fluxo recomendado:
 
 ```bash
-# .env.gcp (na raiz, ignorado pelo git)
-# PROJECT_ID="bud2-spike"
-# REGION="us-central1"
-# DB_PASS=""   # opcional: se vazio, bootstrap gera automaticamente
-# JWT_KEY=""   # opcional: se vazio, bootstrap gera automaticamente
+cp .env.example .env.gcp   # ajustar PROJECT_ID
 ./scripts/gcp-bootstrap.sh
 ./scripts/gcp-deploy-all.sh
 ```
 
-Sem `.env.gcp`, use parametros:
+Deploy sem migração (quando o schema não mudou):
 
 ```bash
-./scripts/gcp-bootstrap.sh \
-  --project-id "bud2-spike" \
-  --region "us-central1" \
-  --db-pass "senha-forte" \
-  --jwt-key "chave-jwt-com-32-ou-mais-caracteres"
-
-./scripts/gcp-deploy-all.sh \
-  --project-id "bud2-spike" \
-  --region "us-central1"
+./scripts/gcp-deploy-all.sh --skip-migration
 ```
 
-Fluxo manual por etapa:
+Deploy por serviço:
 
 ```bash
 ./scripts/gcp-deploy-web.sh
+./scripts/gcp-deploy-web.sh --skip-migration
 ./scripts/gcp-deploy-mcp.sh
 ```
 
-Para detalhes operacionais e troubleshooting de deploy, consulte `DEPLOY.md`.
+Para detalhes operacionais, pré-requisitos e troubleshooting, consulte `DEPLOY.md`.
 
 ## Onboarding rápido (30 min)
 

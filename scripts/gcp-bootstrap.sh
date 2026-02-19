@@ -337,7 +337,7 @@ else
     --display-name="Bud Cloud Run runtime"
 fi
 
-echo "==> Aplicando papeis na service account"
+echo "==> Aplicando papeis na service account (runtime)"
 gcloud projects add-iam-policy-binding "$PROJECT_ID" \
   --member="serviceAccount:${SERVICE_ACCOUNT_EMAIL}" \
   --role="roles/cloudsql.client" >/dev/null
@@ -345,6 +345,22 @@ gcloud projects add-iam-policy-binding "$PROJECT_ID" \
 gcloud projects add-iam-policy-binding "$PROJECT_ID" \
   --member="serviceAccount:${SERVICE_ACCOUNT_EMAIL}" \
   --role="roles/secretmanager.secretAccessor" >/dev/null
+
+echo "==> Aplicando papeis na service account padrao do Cloud Build"
+PROJECT_NUMBER="$(gcloud projects describe "$PROJECT_ID" --format='value(projectNumber)')"
+CLOUDBUILD_SA="${PROJECT_NUMBER}-compute@developer.gserviceaccount.com"
+
+gcloud projects add-iam-policy-binding "$PROJECT_ID" \
+  --member="serviceAccount:${CLOUDBUILD_SA}" \
+  --role="roles/storage.admin" >/dev/null
+
+gcloud projects add-iam-policy-binding "$PROJECT_ID" \
+  --member="serviceAccount:${CLOUDBUILD_SA}" \
+  --role="roles/artifactregistry.writer" >/dev/null
+
+gcloud projects add-iam-policy-binding "$PROJECT_ID" \
+  --member="serviceAccount:${CLOUDBUILD_SA}" \
+  --role="roles/logging.logWriter" >/dev/null
 
 echo "==> Garantindo Cloud SQL"
 if gcloud sql instances describe "$SQL_INSTANCE" >/dev/null 2>&1; then

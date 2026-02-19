@@ -18,6 +18,7 @@ if (app.Environment.IsDevelopment())
 }
 
 await app.EnsureDevelopmentDatabaseAsync();
+await app.SeedDatabaseAsync();
 
 app.UseExceptionHandler();
 app.UseHttpsRedirection();

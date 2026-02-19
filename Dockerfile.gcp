@@ -14,6 +14,16 @@ RUN dotnet publish src/Bud.Server/Bud.Server.csproj -c Release -o /app/publish
 FROM source AS publish-mcp
 RUN dotnet publish src/Bud.Mcp/Bud.Mcp.csproj -c Release -o /app/publish
 
+FROM source AS build-migrate
+RUN dotnet restore src/Bud.Server/Bud.Server.csproj
+RUN dotnet tool install --tool-path /tools dotnet-ef --version 10.0.2
+RUN /tools/dotnet-ef migrations bundle --project src/Bud.Server -o /app/efbundle --self-contained
+
+FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS prod-migrate
+WORKDIR /app
+COPY --from=build-migrate /app/efbundle .
+ENTRYPOINT ["./efbundle"]
+
 FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS prod-web
 WORKDIR /app
 COPY --from=publish-web /app/publish .

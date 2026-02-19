@@ -37,8 +37,15 @@ public static partial class WebApplicationExtensions
         if (!created)
         {
             LogDatabaseSetupFailedAfterAttempts(logger, maxAttempts);
-            return;
         }
+    }
+
+    public static async Task SeedDatabaseAsync(this WebApplication app)
+    {
+        using var scope = app.Services.CreateScope();
+        var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+        var logger = scope.ServiceProvider.GetRequiredService<ILoggerFactory>()
+            .CreateLogger("DatabaseSetup");
 
         await DbSeeder.SeedAsync(dbContext);
         LogDatabaseSeedCompleted(logger);
