@@ -179,6 +179,22 @@ Segredos (connection string, JWT key) NUNCA ficam em arquivos de configuracao â€
 - **Docker Compose**: env vars no `docker-compose.yml`
 - **GCP**: Secret Manager (referenciados nos scripts de deploy com `--set-secrets`)
 
+## VARIAVEIS DE AMBIENTE DE SEGURANCA
+
+### Obrigatorias em producao
+
+| Variavel | Descricao |
+|----------|-----------|
+| `Jwt__Key` | Chave secreta para assinatura JWT. **Fail-fast**: a aplicacao nao inicia sem esta variavel em ambientes nao-Development. Minimo 32 caracteres. |
+
+### Recomendadas em producao
+
+| Variavel | Descricao |
+|----------|-----------|
+| `AllowedHosts` | Lista de hosts permitidos, separados por `;` (ex.: `bud.example.com;www.bud.example.com`). Padrao: `*` (aceita qualquer host). Configure para restringir a hosts conhecidos. |
+
+Nota: `Jwt__Key` ja e criado automaticamente pelo bootstrap e injetado via Secret Manager nos scripts de deploy.
+
 ## OUTRAS CONSIDERACOES
 
 - `bud-web` e `bud-mcp` rodam em Cloud Run com porta interna `8080`.

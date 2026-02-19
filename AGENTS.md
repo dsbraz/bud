@@ -129,9 +129,9 @@ Bud is an ASP.NET Core 10 application with a Blazor WebAssembly frontend, using 
   - *(No migrations — database is created from model via `EnsureCreated()` during development)*
   - `Services/`: domain/application service implementations and supporting helpers
   - `Validators/`: FluentValidation validators
-  - `Middleware/`: global exception handling and other middleware
+  - `Middleware/`: global exception handling, security headers (`SecurityHeadersMiddleware`), request telemetry, and other middleware
   - `MultiTenancy/`: tenant isolation infrastructure (`ITenantProvider`, `JwtTenantProvider`, `TenantSaveChangesInterceptor`, `TenantRequiredMiddleware`)
-  - `Settings/`: configuration POCOs (`GlobalAdminSettings` — retained for seed and org protection only)
+  - `Settings/`: configuration POCOs (`GlobalAdminSettings` — retained for seed and org protection only, `JwtSettings` — JWT config with fail-fast in non-Development, `RateLimitSettings` — login rate limiting config)
 
 - **Bud.Client** (`src/Bud.Client`): Blazor WebAssembly SPA (compiled to static files served by Bud.Server)
   - `Pages/`: Blazor pages with routing
@@ -534,6 +534,8 @@ Quick reference:
 - Docker: PostgreSQL :5432, API :8080, MCP :8081
 - Configuration files: `appsettings.json` (common defaults), `appsettings.Development.json` (dev/Docker), `appsettings.Production.json` (GCP/production — no secrets)
 - Secrets (connection string, JWT key) come from env vars (Docker Compose) or Secret Manager (GCP)
+- Security: `SecurityHeadersMiddleware` (CSP, X-Frame-Options, etc.), rate limiting policy `"auth-login"` on login endpoint, JWT fail-fast in non-Development
+- Rate limiting: configurable via `RateLimitSettings` section (default: 10 req/60s on login)
 
 ## Key Files to Reference
 
@@ -545,6 +547,7 @@ Quick reference:
 - **Specifications:** [IQuerySpecification.cs](src/Bud.Server/Domain/Specifications/IQuerySpecification.cs), [MissionSearchSpecification.cs](src/Bud.Server/Domain/Specifications/MissionSearchSpecification.cs), [MissionScopeSpecification.cs](src/Bud.Server/Domain/Specifications/MissionScopeSpecification.cs)
 - **Validators:** [OrganizationValidators.cs](src/Bud.Server/Validators/OrganizationValidators.cs)
 - **Error handling:** [GlobalExceptionHandler.cs](src/Bud.Server/Middleware/GlobalExceptionHandler.cs)
+- **Security middleware:** [SecurityHeadersMiddleware.cs](src/Bud.Server/Middleware/SecurityHeadersMiddleware.cs)
 
 ### Authorization & Security
 - **Gateway:** [IApplicationAuthorizationGateway.cs](src/Bud.Server/Authorization/IApplicationAuthorizationGateway.cs), [ApplicationAuthorizationGateway.cs](src/Bud.Server/Authorization/ApplicationAuthorizationGateway.cs)

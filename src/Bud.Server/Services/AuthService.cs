@@ -2,17 +2,21 @@ using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
 using Bud.Server.Data;
+using Bud.Server.Settings;
 using Bud.Shared.Contracts;
 using Bud.Shared.Domain;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 
 namespace Bud.Server.Services;
 
 public sealed class AuthService(
     ApplicationDbContext dbContext,
-    IConfiguration configuration) : IAuthService
+    IOptions<JwtSettings> jwtOptions) : IAuthService
 {
+    private readonly JwtSettings _jwtSettings = jwtOptions.Value;
+
     public async Task<ServiceResult<AuthLoginResponse>> LoginAsync(AuthLoginRequest request, CancellationToken cancellationToken = default)
     {
         var email = request.Email?.Trim();
@@ -93,7 +97,7 @@ public sealed class AuthService(
         }
 
         // Regular users: get organizations from two sources:
-        // 1. Organizations where they are members (via Collaborator → Organization directly)
+        // 1. Organizations where they are members (via Collaborator -> Organization directly)
         // 2. Organizations where they are the Owner
 
         var orgsFromMembership = await dbContext.Collaborators
@@ -139,15 +143,14 @@ public sealed class AuthService(
 
     private string GenerateJwtToken(List<Claim> claims)
     {
-        var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(
-            configuration["Jwt:Key"] ?? "dev-secret-key-change-in-production-minimum-32-characters-required"));
+        var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_jwtSettings.Key));
         var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
 
         var token = new JwtSecurityToken(
-            issuer: configuration["Jwt:Issuer"] ?? "bud-dev",
-            audience: configuration["Jwt:Audience"] ?? "bud-api",
+            issuer: _jwtSettings.Issuer,
+            audience: _jwtSettings.Audience,
             claims: claims,
-            expires: DateTime.UtcNow.AddHours(8),
+            expires: DateTime.UtcNow.AddHours(_jwtSettings.TokenExpirationHours),
             signingCredentials: creds
         );
 

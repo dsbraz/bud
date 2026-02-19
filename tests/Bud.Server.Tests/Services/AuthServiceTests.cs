@@ -1,10 +1,12 @@
 using Bud.Server.Data;
 using Bud.Server.Services;
+using Bud.Server.Settings;
 using Bud.Server.Tests.Helpers;
 using Bud.Shared.Contracts;
 using Bud.Shared.Domain;
 using FluentAssertions;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 using Xunit;
 
 namespace Bud.Server.Tests.Services;
@@ -12,7 +14,13 @@ namespace Bud.Server.Tests.Services;
 public class AuthServiceTests
 {
     private readonly TestTenantProvider _tenantProvider = new() { IsGlobalAdmin = true };
-    private readonly TestConfiguration _configuration = new();
+
+    private static readonly JwtSettings TestJwtSettings = new()
+    {
+        Key = "test-secret-key-for-unit-tests-minimum-32-characters",
+        Issuer = "bud-test",
+        Audience = "bud-test-api"
+    };
 
     private ApplicationDbContext CreateInMemoryContext()
     {
@@ -23,9 +31,9 @@ public class AuthServiceTests
         return new ApplicationDbContext(options, _tenantProvider);
     }
 
-    private AuthService CreateService(ApplicationDbContext context)
+    private static AuthService CreateService(ApplicationDbContext context)
     {
-        return new AuthService(context, _configuration);
+        return new AuthService(context, Options.Create(TestJwtSettings));
     }
 
     #region Global Admin Login Detection Tests

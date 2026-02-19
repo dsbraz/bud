@@ -3,7 +3,7 @@ using Bud.Server.MultiTenancy;
 
 var builder = WebApplication.CreateBuilder(args);
 
-builder.Services.AddBudPlatform(builder.Configuration);
+builder.Services.AddBudPlatform(builder.Configuration, builder.Environment);
 
 var app = builder.Build();
 
@@ -20,7 +20,14 @@ if (app.Environment.IsDevelopment())
 await app.EnsureDevelopmentDatabaseAsync();
 await app.SeedDatabaseAsync();
 
+if (!app.Environment.IsDevelopment())
+{
+    app.UseForwardedHeaders();
+    app.UseHsts();
+}
+
 app.UseExceptionHandler();
+app.UseMiddleware<Bud.Server.Middleware.SecurityHeadersMiddleware>();
 app.UseHttpsRedirection();
 app.UseBlazorFrameworkFiles();
 app.UseStaticFiles();
@@ -28,6 +35,7 @@ app.UseMiddleware<Bud.Server.Middleware.RequestTelemetryMiddleware>();
 
 app.UseAuthentication();
 app.UseAuthorization();
+app.UseRateLimiter();
 app.UseMiddleware<TenantRequiredMiddleware>();
 
 app.MapControllers();
