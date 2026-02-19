@@ -2,22 +2,17 @@ using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
 using Bud.Server.Data;
-using Bud.Server.Settings;
 using Bud.Shared.Contracts;
 using Bud.Shared.Domain;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 
 namespace Bud.Server.Services;
 
 public sealed class AuthService(
     ApplicationDbContext dbContext,
-    IOptions<GlobalAdminSettings> globalAdminSettings,
     IConfiguration configuration) : IAuthService
 {
-    private readonly string _globalAdminEmail = globalAdminSettings.Value.Email;
-
     public async Task<ServiceResult<AuthLoginResponse>> LoginAsync(AuthLoginRequest request, CancellationToken cancellationToken = default)
     {
         var email = request.Email?.Trim();
@@ -28,63 +23,15 @@ public sealed class AuthService(
 
         var normalizedEmail = email.ToLowerInvariant();
 
-        if (IsGlobalAdminLogin(normalizedEmail))
-        {
-            var adminClaims = new List<Claim>
-            {
-                new(ClaimTypes.Email, normalizedEmail),
-                new("email", normalizedEmail),
-                new(ClaimTypes.Role, "GlobalAdmin")
-            };
-
-            var adminCollaborator = await dbContext.Collaborators
-                .AsNoTracking()
-                .IgnoreQueryFilters()
-                .FirstOrDefaultAsync(c => c.Email == normalizedEmail, cancellationToken);
-
-            Guid? adminCollaboratorId = null;
-            Guid? adminOrgId = null;
-            var displayName = "Administrador Global";
-
-            if (adminCollaborator is not null)
-            {
-                adminClaims.Add(new("collaborator_id", adminCollaborator.Id.ToString()));
-                adminClaims.Add(new("organization_id", adminCollaborator.OrganizationId.ToString()));
-                adminClaims.Add(new(ClaimTypes.Name, adminCollaborator.FullName));
-                adminCollaboratorId = adminCollaborator.Id;
-                adminOrgId = adminCollaborator.OrganizationId;
-                displayName = adminCollaborator.FullName;
-            }
-
-            if (adminCollaborator is not null)
-            {
-                await RegisterAccessLogAsync(adminCollaborator.Id, adminCollaborator.OrganizationId, cancellationToken);
-            }
-
-            var adminToken = GenerateJwtToken(adminClaims);
-
-            return ServiceResult<AuthLoginResponse>.Success(new AuthLoginResponse
-            {
-                Token = adminToken,
-                Email = normalizedEmail,
-                DisplayName = displayName,
-                IsGlobalAdmin = true,
-                CollaboratorId = adminCollaboratorId,
-                OrganizationId = adminOrgId
-            });
-        }
-
         var collaborator = await dbContext.Collaborators
             .AsNoTracking()
-            .IgnoreQueryFilters() // During login, we need to bypass tenant filters
+            .IgnoreQueryFilters()
             .FirstOrDefaultAsync(c => c.Email == normalizedEmail, cancellationToken);
 
         if (collaborator is null)
         {
             return ServiceResult<AuthLoginResponse>.NotFound("Usuário não encontrado.");
         }
-
-        await RegisterAccessLogAsync(collaborator.Id, collaborator.OrganizationId, cancellationToken);
 
         var claims = new List<Claim>
         {
@@ -95,6 +42,13 @@ public sealed class AuthService(
             new(ClaimTypes.Name, collaborator.FullName)
         };
 
+        if (collaborator.IsGlobalAdmin)
+        {
+            claims.Add(new(ClaimTypes.Role, "GlobalAdmin"));
+        }
+
+        await RegisterAccessLogAsync(collaborator.Id, collaborator.OrganizationId, cancellationToken);
+
         var token = GenerateJwtToken(claims);
 
         return ServiceResult<AuthLoginResponse>.Success(new AuthLoginResponse
@@ -102,7 +56,7 @@ public sealed class AuthService(
             Token = token,
             Email = collaborator.Email,
             DisplayName = collaborator.FullName,
-            IsGlobalAdmin = false,
+            IsGlobalAdmin = collaborator.IsGlobalAdmin,
             CollaboratorId = collaborator.Id,
             Role = collaborator.Role,
             OrganizationId = collaborator.OrganizationId
@@ -117,12 +71,16 @@ public sealed class AuthService(
             return ServiceResult<List<OrganizationSummaryDto>>.Failure("E-mail é obrigatório.");
         }
 
-        // Global admin can see all organizations
-        if (IsGlobalAdminLogin(normalizedEmail))
+        var collaborator = await dbContext.Collaborators
+            .AsNoTracking()
+            .IgnoreQueryFilters()
+            .FirstOrDefaultAsync(c => c.Email == normalizedEmail, cancellationToken);
+
+        if (collaborator?.IsGlobalAdmin == true)
         {
             var allOrgs = await dbContext.Organizations
                 .AsNoTracking()
-                .IgnoreQueryFilters() // Global admin needs to see all orgs to populate dropdown
+                .IgnoreQueryFilters()
                 .OrderBy(o => o.Name)
                 .Select(o => new OrganizationSummaryDto
                 {
@@ -134,13 +92,13 @@ public sealed class AuthService(
             return ServiceResult<List<OrganizationSummaryDto>>.Success(allOrgs);
         }
 
-        // Regular users: get organizations from three sources:
+        // Regular users: get organizations from two sources:
         // 1. Organizations where they are members (via Collaborator → Organization directly)
         // 2. Organizations where they are the Owner
 
         var orgsFromMembership = await dbContext.Collaborators
             .AsNoTracking()
-            .IgnoreQueryFilters() // Need to bypass filters to discover user's organizations
+            .IgnoreQueryFilters()
             .Where(c => c.Email == normalizedEmail)
             .Include(c => c.Organization)
             .Select(c => new OrganizationSummaryDto
@@ -152,7 +110,7 @@ public sealed class AuthService(
 
         var orgsFromOwnership = await dbContext.Organizations
             .AsNoTracking()
-            .IgnoreQueryFilters() // Need to bypass filters to discover owned organizations
+            .IgnoreQueryFilters()
             .Where(o => o.Owner != null && o.Owner.Email == normalizedEmail)
             .Select(o => new OrganizationSummaryDto
             {
@@ -170,11 +128,6 @@ public sealed class AuthService(
             .ToList();
 
         return ServiceResult<List<OrganizationSummaryDto>>.Success(organizations);
-    }
-
-    private bool IsGlobalAdminLogin(string normalizedEmail)
-    {
-        return string.Equals(normalizedEmail, _globalAdminEmail, StringComparison.OrdinalIgnoreCase);
     }
 
     private async Task RegisterAccessLogAsync(Guid collaboratorId, Guid organizationId, CancellationToken cancellationToken)

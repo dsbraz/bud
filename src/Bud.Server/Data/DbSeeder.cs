@@ -40,9 +40,16 @@ public static class DbSeeder
                 FullName = "Administrador Global",
                 Email = DefaultAdminEmail,
                 Role = CollaboratorRole.Leader,
-                OrganizationId = budOrg.Id
+                OrganizationId = budOrg.Id,
+                IsGlobalAdmin = true
             };
             context.Collaborators.Add(adminLeader);
+            await context.SaveChangesAsync();
+        }
+
+        if (!adminLeader.IsGlobalAdmin)
+        {
+            adminLeader.IsGlobalAdmin = true;
             await context.SaveChangesAsync();
         }
 
