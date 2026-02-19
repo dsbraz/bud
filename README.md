@@ -465,7 +465,7 @@ Fluxo recomendado:
 
 ```bash
 # .env.gcp (na raiz, ignorado pelo git)
-# PROJECT_ID="getbud-co-dev"
+# PROJECT_ID="bud2-spike"
 # REGION="us-central1"
 # DB_PASS=""   # opcional: se vazio, bootstrap gera automaticamente
 # JWT_KEY=""   # opcional: se vazio, bootstrap gera automaticamente
@@ -477,13 +477,13 @@ Sem `.env.gcp`, use parametros:
 
 ```bash
 ./scripts/gcp-bootstrap.sh \
-  --project-id "getbud-co-dev" \
+  --project-id "bud2-spike" \
   --region "us-central1" \
   --db-pass "senha-forte" \
   --jwt-key "chave-jwt-com-32-ou-mais-caracteres"
 
 ./scripts/gcp-deploy-all.sh \
-  --project-id "getbud-co-dev" \
+  --project-id "bud2-spike" \
   --region "us-central1"
 ```
 

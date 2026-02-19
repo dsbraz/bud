@@ -2,7 +2,7 @@
 
 ## INTRODUCAO
 
-Este documento descreve o fluxo recomendado para publicar o ambiente remoto de dev no GCP.
+Este documento descreve o fluxo recomendado para publicar o ambiente GCP.
 
 Fluxo principal (2 comandos):
 
@@ -34,7 +34,7 @@ cp .env.example .env.gcp
 Valores principais:
 
 ```bash
-PROJECT_ID="getbud-co-dev"
+PROJECT_ID="bud2-spike"
 REGION="us-central1"
 DB_PASS=""
 JWT_KEY=""
@@ -96,11 +96,11 @@ Forcar URL da API no MCP:
 
 ```bash
 ./scripts/gcp-bootstrap.sh \
-  --project-id "getbud-co-dev" \
+  --project-id "bud2-spike" \
   --region "us-central1"
 
 ./scripts/gcp-deploy-all.sh \
-  --project-id "getbud-co-dev" \
+  --project-id "bud2-spike" \
   --region "us-central1"
 ```
 
@@ -138,8 +138,8 @@ Antes de considerar o deploy concluido:
 Comandos de validacao:
 
 ```bash
-WEB_URL="$(gcloud run services describe bud-web --region us-central1 --project getbud-co-dev --format='value(status.url)')"
-MCP_URL="$(gcloud run services describe bud-mcp --region us-central1 --project getbud-co-dev --format='value(status.url)')"
+WEB_URL="$(gcloud run services describe bud-web --region us-central1 --project bud2-spike --format='value(status.url)')"
+MCP_URL="$(gcloud run services describe bud-mcp --region us-central1 --project bud2-spike --format='value(status.url)')"
 
 curl -i "${WEB_URL}/health/live"
 curl -i "${WEB_URL}/health/ready"

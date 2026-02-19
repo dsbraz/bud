@@ -261,7 +261,7 @@ while [[ $# -gt 0 ]]; do
   esac
 done
 
-prompt_if_empty PROJECT_ID "PROJECT_ID" "getbud-co-dev"
+prompt_if_empty PROJECT_ID "PROJECT_ID" "bud2-spike"
 prompt_if_empty REGION "REGION" "us-central1"
 
 REPO_NAME="${REPO_NAME:-bud}"
