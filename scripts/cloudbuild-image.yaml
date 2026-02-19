@@ -6,6 +6,10 @@ steps:
       - ${_IMAGE_URI}
       - --target
       - ${_DOCKER_TARGET}
+      - -f
+      - ${_DOCKERFILE}
       - .
+substitutions:
+  _DOCKERFILE: Dockerfile.gcp
 images:
   - ${_IMAGE_URI}

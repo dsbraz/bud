@@ -132,7 +132,7 @@ echo "==> Buildando imagem no Cloud Build (${IMAGE_URI})"
 gcloud builds submit \
   --project "$PROJECT_ID" \
   --config "scripts/cloudbuild-image.yaml" \
-  --substitutions "_IMAGE_URI=${IMAGE_URI},_DOCKER_TARGET=dev-web" \
+  --substitutions "_IMAGE_URI=${IMAGE_URI},_DOCKER_TARGET=prod-web" \
   .
 
 echo "==> Garantindo Cloud Run Job de migracao"

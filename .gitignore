@@ -57,3 +57,5 @@ nunit-*.xml
 
 # Local deployment environment files
 .env.gcp
+
+.DS_Store

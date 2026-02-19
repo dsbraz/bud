@@ -1,0 +1,29 @@
+# syntax=docker/dockerfile:1.7
+
+ARG DOTNET_SDK_VERSION=10.0.102
+
+FROM mcr.microsoft.com/dotnet/sdk:${DOTNET_SDK_VERSION} AS source
+WORKDIR /src
+COPY global.json ./
+COPY Directory.Build.props ./
+COPY src/ ./src/
+
+FROM source AS publish-web
+RUN dotnet publish src/Bud.Server/Bud.Server.csproj -c Release -o /app/publish
+
+FROM source AS publish-mcp
+RUN dotnet publish src/Bud.Mcp/Bud.Mcp.csproj -c Release -o /app/publish
+
+FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS prod-web
+WORKDIR /app
+COPY --from=publish-web /app/publish .
+ENV ASPNETCORE_URLS=http://+:8080
+EXPOSE 8080
+ENTRYPOINT ["dotnet", "Bud.Server.dll"]
+
+FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS prod-mcp
+WORKDIR /app
+COPY --from=publish-mcp /app/publish .
+ENV ASPNETCORE_URLS=http://+:8080
+EXPOSE 8080
+ENTRYPOINT ["dotnet", "Bud.Mcp.dll"]
