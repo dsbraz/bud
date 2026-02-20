@@ -1,4 +1,5 @@
 using Bud.Server.Data;
+using Bud.Server.Domain.ReadModels;
 using Bud.Shared.Contracts;
 using Bud.Shared.Domain;
 using Microsoft.EntityFrameworkCore;
@@ -7,7 +8,7 @@ namespace Bud.Server.Services;
 
 public sealed class DashboardService(ApplicationDbContext dbContext) : IDashboardService
 {
-    public async Task<ServiceResult<MyDashboardResponse>> GetMyDashboardAsync(
+    public async Task<ServiceResult<MyDashboardSnapshot>> GetMyDashboardAsync(
         Guid collaboratorId,
         Guid? teamId = null,
         CancellationToken cancellationToken = default)
@@ -21,7 +22,7 @@ public sealed class DashboardService(ApplicationDbContext dbContext) : IDashboar
 
         if (collaborator is null)
         {
-            return ServiceResult<MyDashboardResponse>.NotFound("Colaborador não encontrado.");
+            return ServiceResult<MyDashboardSnapshot>.NotFound("Colaborador não encontrado.");
         }
 
         Collaborator? leaderSource;
@@ -70,14 +71,14 @@ public sealed class DashboardService(ApplicationDbContext dbContext) : IDashboar
         var teamHealth = await BuildTeamHealthAsync(leaderSource, teamMembers, collaborator.OrganizationId, teamNameOverride, cancellationToken);
         var pendingTasks = await BuildPendingTasksAsync(collaborator, cancellationToken);
 
-        return ServiceResult<MyDashboardResponse>.Success(new MyDashboardResponse
+        return ServiceResult<MyDashboardSnapshot>.Success(new MyDashboardSnapshot
         {
             TeamHealth = teamHealth,
             PendingTasks = pendingTasks
         });
     }
 
-    private async Task<TeamHealthDto> BuildTeamHealthAsync(
+    private async Task<TeamHealthSnapshot> BuildTeamHealthAsync(
         Collaborator? leaderSource,
         List<Collaborator> directReports,
         Guid organizationId,
@@ -90,17 +91,17 @@ public sealed class DashboardService(ApplicationDbContext dbContext) : IDashboar
 
         var weeklyAccess = await CalculateWeeklyAccessAsync(teamMemberIds, organizationId, cancellationToken);
         var missionsUpdated = await CalculateMissionsUpdatedAsync(teamMemberIds, cancellationToken);
-        var formsResponded = new IndicatorDto { Percentage = 0, DeltaPercentage = 0, IsPlaceholder = true };
+        var formsResponded = new IndicatorSnapshot { Percentage = 0, DeltaPercentage = 0, IsPlaceholder = true };
 
         var avgConfidence = await CalculateAverageConfidenceAsync(teamMemberIds, cancellationToken);
         var engagement = CalculateEngagement(weeklyAccess.Percentage, missionsUpdated.Percentage, avgConfidence);
 
-        return new TeamHealthDto
+        return new TeamHealthSnapshot
         {
             Leader = leader,
             TeamMembers = teamMembers,
             Engagement = engagement,
-            Indicators = new TeamIndicatorsDto
+            Indicators = new TeamIndicatorsSnapshot
             {
                 WeeklyAccess = weeklyAccess,
                 MissionsUpdated = missionsUpdated,
@@ -109,14 +110,14 @@ public sealed class DashboardService(ApplicationDbContext dbContext) : IDashboar
         };
     }
 
-    private static DashboardLeaderDto? BuildLeaderDto(Collaborator? leaderSource, string? teamNameOverride = null)
+    private static DashboardLeaderSnapshot? BuildLeaderDto(Collaborator? leaderSource, string? teamNameOverride = null)
     {
         if (leaderSource is null)
         {
             return null;
         }
 
-        return new DashboardLeaderDto
+        return new DashboardLeaderSnapshot
         {
             Id = leaderSource.Id,
             FullName = leaderSource.FullName,
@@ -126,9 +127,9 @@ public sealed class DashboardService(ApplicationDbContext dbContext) : IDashboar
         };
     }
 
-    private static List<DashboardTeamMemberDto> BuildTeamMembers(List<Collaborator> members)
+    private static List<DashboardTeamMemberSnapshot> BuildTeamMembers(List<Collaborator> members)
     {
-        return members.Select(m => new DashboardTeamMemberDto
+        return members.Select(m => new DashboardTeamMemberSnapshot
         {
             Id = m.Id,
             FullName = m.FullName,
@@ -136,14 +137,14 @@ public sealed class DashboardService(ApplicationDbContext dbContext) : IDashboar
         }).ToList();
     }
 
-    private async Task<IndicatorDto> CalculateWeeklyAccessAsync(
+    private async Task<IndicatorSnapshot> CalculateWeeklyAccessAsync(
         List<Guid> teamMemberIds,
         Guid organizationId,
         CancellationToken cancellationToken)
     {
         if (teamMemberIds.Count == 0)
         {
-            return new IndicatorDto { Percentage = 0, DeltaPercentage = 0 };
+            return new IndicatorSnapshot { Percentage = 0, DeltaPercentage = 0 };
         }
 
         var now = DateTime.UtcNow;
@@ -173,20 +174,20 @@ public sealed class DashboardService(ApplicationDbContext dbContext) : IDashboar
         var currentPct = (int)Math.Round(thisWeekCount * 100.0 / total);
         var previousPct = (int)Math.Round(lastWeekCount * 100.0 / total);
 
-        return new IndicatorDto
+        return new IndicatorSnapshot
         {
             Percentage = currentPct,
             DeltaPercentage = currentPct - previousPct
         };
     }
 
-    private async Task<IndicatorDto> CalculateMissionsUpdatedAsync(
+    private async Task<IndicatorSnapshot> CalculateMissionsUpdatedAsync(
         List<Guid> teamMemberIds,
         CancellationToken cancellationToken)
     {
         if (teamMemberIds.Count == 0)
         {
-            return new IndicatorDto { Percentage = 0, DeltaPercentage = 0 };
+            return new IndicatorSnapshot { Percentage = 0, DeltaPercentage = 0 };
         }
 
         var now = DateTime.UtcNow;
@@ -205,7 +206,7 @@ public sealed class DashboardService(ApplicationDbContext dbContext) : IDashboar
 
         if (activeMissionIds.Count == 0)
         {
-            return new IndicatorDto { Percentage = 0, DeltaPercentage = 0 };
+            return new IndicatorSnapshot { Percentage = 0, DeltaPercentage = 0 };
         }
 
         var metricIdsForActiveMissions = await dbContext.MissionMetrics
@@ -216,7 +217,7 @@ public sealed class DashboardService(ApplicationDbContext dbContext) : IDashboar
 
         if (metricIdsForActiveMissions.Count == 0)
         {
-            return new IndicatorDto { Percentage = 0, DeltaPercentage = 0 };
+            return new IndicatorSnapshot { Percentage = 0, DeltaPercentage = 0 };
         }
 
         // Missions with at least one checkin this week
@@ -241,7 +242,7 @@ public sealed class DashboardService(ApplicationDbContext dbContext) : IDashboar
         var currentPct = (int)Math.Round(thisWeekUpdated * 100.0 / totalActive);
         var previousPct = (int)Math.Round(lastWeekUpdated * 100.0 / totalActive);
 
-        return new IndicatorDto
+        return new IndicatorSnapshot
         {
             Percentage = currentPct,
             DeltaPercentage = currentPct - previousPct
@@ -275,7 +276,7 @@ public sealed class DashboardService(ApplicationDbContext dbContext) : IDashboar
         return (int)Math.Round((avg / 5.0) * 100);
     }
 
-    private static EngagementScoreDto CalculateEngagement(int weeklyAccessPct, int missionsUpdatedPct, int confidencePct)
+    private static EngagementScoreSnapshot CalculateEngagement(int weeklyAccessPct, int missionsUpdatedPct, int confidencePct)
     {
         var score = (int)Math.Round(weeklyAccessPct * 0.30 + missionsUpdatedPct * 0.40 + confidencePct * 0.30);
         score = Math.Clamp(score, 0, 100);
@@ -289,7 +290,7 @@ public sealed class DashboardService(ApplicationDbContext dbContext) : IDashboar
             _ => "Atenção: o engajamento está baixo. Considere alinhar prioridades com o time."
         };
 
-        return new EngagementScoreDto
+        return new EngagementScoreSnapshot
         {
             Score = score,
             Level = level,
@@ -297,7 +298,7 @@ public sealed class DashboardService(ApplicationDbContext dbContext) : IDashboar
         };
     }
 
-    private async Task<List<PendingTaskDto>> BuildPendingTasksAsync(
+    private async Task<List<PendingTaskSnapshot>> BuildPendingTasksAsync(
         Collaborator collaborator,
         CancellationToken cancellationToken)
     {
@@ -311,7 +312,7 @@ public sealed class DashboardService(ApplicationDbContext dbContext) : IDashboar
             .Where(m => m.Status == MissionStatus.Active && m.CollaboratorId == collaborator.Id)
             .ToListAsync(cancellationToken);
 
-        var tasks = new List<PendingTaskDto>();
+        var tasks = new List<PendingTaskSnapshot>();
 
         foreach (var mission in myMissions)
         {
@@ -321,7 +322,7 @@ public sealed class DashboardService(ApplicationDbContext dbContext) : IDashboar
 
             if (needsCheckin)
             {
-                tasks.Add(new PendingTaskDto
+                tasks.Add(new PendingTaskSnapshot
                 {
                     ReferenceId = mission.Id,
                     TaskType = "mission_checkin",

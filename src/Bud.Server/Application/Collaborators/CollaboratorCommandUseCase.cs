@@ -1,7 +1,6 @@
 using System.Security.Claims;
 using Bud.Server.Services;
 using Bud.Server.Authorization;
-using Bud.Server.Data;
 using Bud.Server.MultiTenancy;
 using Bud.Shared.Contracts;
 using Bud.Shared.Domain;
@@ -12,7 +11,7 @@ public sealed class CollaboratorCommandUseCase(
     ICollaboratorService collaboratorService,
     IApplicationAuthorizationGateway authorizationGateway,
     ITenantProvider tenantProvider,
-    IApplicationEntityLookup entityLookup) : ICollaboratorCommandUseCase
+    IEntityLookupService entityLookup) : ICollaboratorCommandUseCase
 {
     public async Task<ServiceResult<Collaborator>> CreateAsync(
         ClaimsPrincipal user,

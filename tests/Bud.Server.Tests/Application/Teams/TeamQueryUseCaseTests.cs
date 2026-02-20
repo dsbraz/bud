@@ -1,5 +1,6 @@
 using Bud.Server.Services;
 using Bud.Server.Application.Teams;
+using Bud.Server.Domain.ReadModels;
 using Bud.Shared.Contracts;
 using Bud.Shared.Domain;
 using FluentAssertions;
@@ -38,7 +39,7 @@ public sealed class TeamQueryUseCaseTests
         var teamService = new Mock<ITeamService>();
         teamService
             .Setup(s => s.GetCollaboratorSummariesAsync(teamId, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(ServiceResult<List<CollaboratorSummaryDto>>.Success([]));
+            .ReturnsAsync(ServiceResult<List<CollaboratorSummary>>.Success([]));
 
         var useCase = new TeamQueryUseCase(teamService.Object);
 
@@ -58,7 +59,7 @@ public sealed class TeamQueryUseCaseTests
         var teamService = new Mock<ITeamService>();
         teamService
             .Setup(s => s.GetAvailableCollaboratorsAsync(teamId, "ana", It.IsAny<CancellationToken>()))
-            .ReturnsAsync(ServiceResult<List<CollaboratorSummaryDto>>.Success([]));
+            .ReturnsAsync(ServiceResult<List<CollaboratorSummary>>.Success([]));
 
         var useCase = new TeamQueryUseCase(teamService.Object);
 

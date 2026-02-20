@@ -1,4 +1,4 @@
-using Bud.Server.Services;
+using Bud.Server.Domain.Querying;
 using Bud.Shared.Domain;
 using Microsoft.EntityFrameworkCore;
 
@@ -8,7 +8,7 @@ public sealed class WorkspaceSearchSpecification(string? search, bool isNpgsql) 
 {
     public IQueryable<Workspace> Apply(IQueryable<Workspace> query)
     {
-        return SearchQueryHelper.ApplyCaseInsensitiveSearch(
+        return QuerySearchHelper.ApplyCaseInsensitiveSearch(
             query,
             search,
             isNpgsql,

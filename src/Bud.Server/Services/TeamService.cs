@@ -1,4 +1,5 @@
 using Bud.Server.Data;
+using Bud.Server.Domain.ReadModels;
 using Bud.Server.Domain.Specifications;
 using Bud.Shared.Contracts;
 using Bud.Shared.Domain;
@@ -299,7 +300,7 @@ public sealed class TeamService(ApplicationDbContext dbContext) : ITeamService
         return ServiceResult<PagedResult<Collaborator>>.Success(result);
     }
 
-    public async Task<ServiceResult<List<CollaboratorSummaryDto>>> GetCollaboratorSummariesAsync(Guid teamId, CancellationToken cancellationToken = default)
+    public async Task<ServiceResult<List<CollaboratorSummary>>> GetCollaboratorSummariesAsync(Guid teamId, CancellationToken cancellationToken = default)
     {
         var team = await dbContext.Teams
             .AsNoTracking()
@@ -307,14 +308,14 @@ public sealed class TeamService(ApplicationDbContext dbContext) : ITeamService
 
         if (team is null)
         {
-            return ServiceResult<List<CollaboratorSummaryDto>>.NotFound("Time não encontrado.");
+            return ServiceResult<List<CollaboratorSummary>>.NotFound("Time não encontrado.");
         }
 
         var collaborators = await dbContext.CollaboratorTeams
             .AsNoTracking()
             .Where(ct => ct.TeamId == teamId)
             .Include(ct => ct.Collaborator)
-            .Select(ct => new CollaboratorSummaryDto
+            .Select(ct => new CollaboratorSummary
             {
                 Id = ct.Collaborator.Id,
                 FullName = ct.Collaborator.FullName,
@@ -324,7 +325,7 @@ public sealed class TeamService(ApplicationDbContext dbContext) : ITeamService
             .OrderBy(c => c.FullName)
             .ToListAsync(cancellationToken);
 
-        return ServiceResult<List<CollaboratorSummaryDto>>.Success(collaborators);
+        return ServiceResult<List<CollaboratorSummary>>.Success(collaborators);
     }
 
     public async Task<ServiceResult> UpdateCollaboratorsAsync(Guid teamId, UpdateTeamCollaboratorsRequest request, CancellationToken cancellationToken = default)
@@ -375,7 +376,7 @@ public sealed class TeamService(ApplicationDbContext dbContext) : ITeamService
         return ServiceResult.Success();
     }
 
-    public async Task<ServiceResult<List<CollaboratorSummaryDto>>> GetAvailableCollaboratorsAsync(Guid teamId, string? search = null, CancellationToken cancellationToken = default)
+    public async Task<ServiceResult<List<CollaboratorSummary>>> GetAvailableCollaboratorsAsync(Guid teamId, string? search = null, CancellationToken cancellationToken = default)
     {
         var team = await dbContext.Teams
             .AsNoTracking()
@@ -383,7 +384,7 @@ public sealed class TeamService(ApplicationDbContext dbContext) : ITeamService
 
         if (team is null)
         {
-            return ServiceResult<List<CollaboratorSummaryDto>>.NotFound("Time não encontrado.");
+            return ServiceResult<List<CollaboratorSummary>>.NotFound("Time não encontrado.");
         }
 
         var currentCollaboratorIds = await dbContext.CollaboratorTeams
@@ -402,7 +403,7 @@ public sealed class TeamService(ApplicationDbContext dbContext) : ITeamService
         }
 
         var collaborators = await query
-            .Select(c => new CollaboratorSummaryDto
+            .Select(c => new CollaboratorSummary
             {
                 Id = c.Id,
                 FullName = c.FullName,
@@ -413,7 +414,7 @@ public sealed class TeamService(ApplicationDbContext dbContext) : ITeamService
             .Take(50)
             .ToListAsync(cancellationToken);
 
-        return ServiceResult<List<CollaboratorSummaryDto>>.Success(collaborators);
+        return ServiceResult<List<CollaboratorSummary>>.Success(collaborators);
     }
 
 }

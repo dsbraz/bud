@@ -1,3 +1,4 @@
+using Bud.Server.Domain.ReadModels;
 using Bud.Shared.Contracts;
 using Bud.Shared.Domain;
 
@@ -15,7 +16,7 @@ public interface INotificationService
         string? relatedEntityType,
         CancellationToken cancellationToken = default);
 
-    Task<ServiceResult<PagedResult<NotificationDto>>> GetByRecipientAsync(
+    Task<ServiceResult<PagedResult<NotificationSummary>>> GetByRecipientAsync(
         Guid recipientId,
         int page,
         int pageSize,

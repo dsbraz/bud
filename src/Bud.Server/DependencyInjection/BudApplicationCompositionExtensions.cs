@@ -23,6 +23,7 @@ public static class BudApplicationCompositionExtensions
     {
         services.AddScoped<IApplicationAuthorizationGateway, ApplicationAuthorizationGateway>();
         services.AddScoped<IApplicationEntityLookup, ApplicationEntityLookup>();
+        services.AddScoped<IEntityLookupService, EntityLookupService>();
 
         services.AddScoped<IOrganizationService, OrganizationService>();
         services.AddScoped<IOrganizationCommandUseCase, OrganizationCommandUseCase>();

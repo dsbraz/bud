@@ -1,5 +1,6 @@
 using Bud.Server.Services;
 using Bud.Server.Application.MissionObjectives;
+using Bud.Server.Domain.ReadModels;
 using Bud.Shared.Contracts;
 using Bud.Shared.Domain;
 using FluentAssertions;
@@ -56,7 +57,7 @@ public sealed class MissionObjectiveQueryUseCaseTests
         var progressService = new Mock<IMissionProgressService>();
         progressService
             .Setup(s => s.GetObjectiveProgressAsync(ids, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(ServiceResult<List<ObjectiveProgressDto>>.Success([]));
+            .ReturnsAsync(ServiceResult<List<ObjectiveProgressSnapshot>>.Success([]));
 
         var useCase = new MissionObjectiveQueryUseCase(objectiveService.Object, progressService.Object);
 

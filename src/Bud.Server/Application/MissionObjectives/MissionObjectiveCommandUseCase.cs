@@ -1,6 +1,5 @@
 using System.Security.Claims;
 using Bud.Server.Authorization;
-using Bud.Server.Data;
 using Bud.Server.Services;
 using Bud.Shared.Contracts;
 using Bud.Shared.Domain;
@@ -10,7 +9,7 @@ namespace Bud.Server.Application.MissionObjectives;
 public sealed class MissionObjectiveCommandUseCase(
     IMissionObjectiveService objectiveService,
     IApplicationAuthorizationGateway authorizationGateway,
-    IApplicationEntityLookup entityLookup) : IMissionObjectiveCommandUseCase
+    IEntityLookupService entityLookup) : IMissionObjectiveCommandUseCase
 {
     public async Task<ServiceResult<MissionObjective>> CreateAsync(
         ClaimsPrincipal user,

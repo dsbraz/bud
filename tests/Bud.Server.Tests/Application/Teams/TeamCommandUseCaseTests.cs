@@ -1,7 +1,7 @@
 using System.Security.Claims;
 using Bud.Server.Services;
 using Bud.Server.Authorization;
-using Bud.Server.Data;
+using Bud.Server.Services;
 using Bud.Server.Application.Teams;
 using Bud.Shared.Contracts;
 using Bud.Shared.Domain;
@@ -20,7 +20,7 @@ public sealed class TeamCommandUseCaseTests
     {
         var teamService = new Mock<ITeamService>(MockBehavior.Strict);
         var authorizationGateway = new Mock<IApplicationAuthorizationGateway>(MockBehavior.Strict);
-        var entityLookup = new Mock<IApplicationEntityLookup>();
+        var entityLookup = new Mock<IEntityLookupService>();
         entityLookup
             .Setup(l => l.GetWorkspaceAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync((Workspace?)null);
@@ -54,7 +54,7 @@ public sealed class TeamCommandUseCaseTests
             .Setup(g => g.CanWriteOrganizationAsync(User, team.OrganizationId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(false);
 
-        var entityLookup = new Mock<IApplicationEntityLookup>();
+        var entityLookup = new Mock<IEntityLookupService>();
         entityLookup
             .Setup(l => l.GetTeamAsync(team.Id, It.IsAny<CancellationToken>()))
             .ReturnsAsync(team);
@@ -92,7 +92,7 @@ public sealed class TeamCommandUseCaseTests
             .Setup(g => g.IsOrganizationOwnerAsync(User, team.OrganizationId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(true);
 
-        var entityLookup = new Mock<IApplicationEntityLookup>();
+        var entityLookup = new Mock<IEntityLookupService>();
         entityLookup
             .Setup(l => l.GetTeamAsync(team.Id, It.IsAny<CancellationToken>()))
             .ReturnsAsync(team);

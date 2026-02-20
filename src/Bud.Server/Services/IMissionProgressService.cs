@@ -1,10 +1,10 @@
-using Bud.Shared.Contracts;
+using Bud.Server.Domain.ReadModels;
 
 namespace Bud.Server.Services;
 
 public interface IMissionProgressService
 {
-    Task<ServiceResult<List<MissionProgressDto>>> GetProgressAsync(List<Guid> missionIds, CancellationToken cancellationToken = default);
-    Task<ServiceResult<List<MetricProgressDto>>> GetMetricProgressAsync(List<Guid> metricIds, CancellationToken cancellationToken = default);
-    Task<ServiceResult<List<ObjectiveProgressDto>>> GetObjectiveProgressAsync(List<Guid> objectiveIds, CancellationToken cancellationToken = default);
+    Task<ServiceResult<List<MissionProgressSnapshot>>> GetProgressAsync(List<Guid> missionIds, CancellationToken cancellationToken = default);
+    Task<ServiceResult<List<MetricProgressSnapshot>>> GetMetricProgressAsync(List<Guid> metricIds, CancellationToken cancellationToken = default);
+    Task<ServiceResult<List<ObjectiveProgressSnapshot>>> GetObjectiveProgressAsync(List<Guid> objectiveIds, CancellationToken cancellationToken = default);
 }

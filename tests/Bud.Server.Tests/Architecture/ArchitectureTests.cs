@@ -81,6 +81,26 @@ public sealed class ArchitectureTests
     }
 
     [Fact]
+    public void ApplicationLayer_ShouldNotDependOnDataNamespaceInConstructors()
+    {
+        var applicationTypes = ServerAssembly.GetTypes()
+            .Where(t => t.Namespace?.StartsWith("Bud.Server.Application", StringComparison.Ordinal) == true)
+            .ToList();
+
+        applicationTypes.Should().NotBeEmpty();
+
+        var invalidTypes = applicationTypes
+            .Where(type => type
+                .GetConstructors(BindingFlags.Public | BindingFlags.Instance | BindingFlags.NonPublic)
+                .SelectMany(c => c.GetParameters())
+                .Any(p => p.ParameterType.Namespace?.StartsWith("Bud.Server.Data", StringComparison.Ordinal) == true))
+            .Select(t => t.FullName)
+            .ToList();
+
+        invalidTypes.Should().BeEmpty("camada Application não deve depender da camada Data");
+    }
+
+    [Fact]
     public void ApplicationLayer_ShouldNotDependOnAspNetAuthorizationInConstructors()
     {
         var applicationTypes = ServerAssembly.GetTypes()
@@ -118,6 +138,24 @@ public sealed class ArchitectureTests
             .ToList();
 
         invalidTypes.Should().BeEmpty("camada Services não deve depender de Controllers");
+    }
+
+    [Fact]
+    public void DomainLayer_ShouldNotDependOnServicesNamespace()
+    {
+        var repositoryRoot = FindRepositoryRoot();
+        var domainFiles = Directory
+            .EnumerateFiles(Path.Combine(repositoryRoot, "src", "Bud.Server", "Domain"), "*.cs", SearchOption.AllDirectories)
+            .ToList();
+
+        domainFiles.Should().NotBeEmpty();
+
+        var invalidFiles = domainFiles
+            .Where(path => File.ReadAllText(path).Contains("using Bud.Server.Services;", StringComparison.Ordinal))
+            .Select(path => Path.GetRelativePath(repositoryRoot, path))
+            .ToList();
+
+        invalidFiles.Should().BeEmpty("camada Domain não deve depender de Services");
     }
 
     [Fact]
@@ -354,6 +392,26 @@ public sealed class ArchitectureTests
     }
 
     [Fact]
+    public void Services_ShouldNotExposeSharedContractPayloadsInReturnTypes()
+    {
+        var serviceInterfaces = ServerAssembly.GetTypes()
+            .Where(t => t.IsInterface && t.Namespace?.StartsWith("Bud.Server.Services", StringComparison.Ordinal) == true)
+            .ToList();
+
+        serviceInterfaces.Should().NotBeEmpty();
+
+        var invalidMethods = serviceInterfaces
+            .SelectMany(type => type.GetMethods(BindingFlags.Public | BindingFlags.Instance)
+                .Select(method => new { type, method }))
+            .Where(x => ContainsSharedContractPayload(x.method.ReturnType))
+            .Select(x => $"{x.type.FullName}.{x.method.Name}")
+            .ToList();
+
+        invalidMethods.Should().BeEmpty(
+            "camada Services não deve expor DTOs/Responses de Bud.Shared.Contracts em tipos de retorno");
+    }
+
+    [Fact]
     public void AuthController_LoginAction_MustHaveRateLimitingAttribute()
     {
         var loginMethod = typeof(AuthController)
@@ -380,6 +438,32 @@ public sealed class ArchitectureTests
 
     private static bool UsesServicesNamespace(Type type)
         => type.Namespace?.StartsWith("Bud.Server.Services", StringComparison.Ordinal) == true;
+
+    private static bool ContainsSharedContractPayload(Type type)
+    {
+        if (type.Namespace == "Bud.Shared.Contracts")
+        {
+            if (type.Name == "PagedResult`1")
+            {
+                return false;
+            }
+
+            return type.Name.EndsWith("Dto", StringComparison.Ordinal)
+                || type.Name.EndsWith("Response", StringComparison.Ordinal);
+        }
+
+        if (type.IsGenericType)
+        {
+            return type.GetGenericArguments().Any(ContainsSharedContractPayload);
+        }
+
+        if (type.IsArray)
+        {
+            return ContainsSharedContractPayload(type.GetElementType()!);
+        }
+
+        return false;
+    }
 
     private static string FindRepositoryRoot()
     {

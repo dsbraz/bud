@@ -1,4 +1,5 @@
 using Bud.Server.Data;
+using Bud.Server.Domain.ReadModels;
 using Bud.Server.Domain.Specifications;
 using Bud.Server.Domain.ValueObjects;
 using Bud.Server.MultiTenancy;
@@ -248,7 +249,7 @@ public sealed class CollaboratorService(
         return ServiceResult<PagedResult<Collaborator>>.Success(result);
     }
 
-    public async Task<ServiceResult<List<LeaderCollaboratorResponse>>> GetLeadersAsync(Guid? organizationId = null, CancellationToken cancellationToken = default)
+    public async Task<ServiceResult<List<LeaderCollaborator>>> GetLeadersAsync(Guid? organizationId = null, CancellationToken cancellationToken = default)
     {
         var query = dbContext.Collaborators
             .Include(c => c.Organization)
@@ -264,7 +265,7 @@ public sealed class CollaboratorService(
 
         var leaders = await query
             .OrderBy(c => c.FullName)
-            .Select(c => new LeaderCollaboratorResponse
+            .Select(c => new LeaderCollaborator
             {
                 Id = c.Id,
                 FullName = c.FullName,
@@ -275,20 +276,20 @@ public sealed class CollaboratorService(
             })
             .ToListAsync(cancellationToken);
 
-        return ServiceResult<List<LeaderCollaboratorResponse>>.Success(leaders);
+        return ServiceResult<List<LeaderCollaborator>>.Success(leaders);
     }
 
-    public async Task<ServiceResult<List<CollaboratorHierarchyNodeDto>>> GetSubordinatesAsync(Guid collaboratorId, int maxDepth = 5, CancellationToken cancellationToken = default)
+    public async Task<ServiceResult<List<CollaboratorHierarchyNode>>> GetSubordinatesAsync(Guid collaboratorId, int maxDepth = 5, CancellationToken cancellationToken = default)
     {
         if (!await CollaboratorExistsAsync(collaboratorId, cancellationToken))
         {
-            return ServiceResult<List<CollaboratorHierarchyNodeDto>>.NotFound("Colaborador não encontrado.");
+            return ServiceResult<List<CollaboratorHierarchyNode>>.NotFound("Colaborador não encontrado.");
         }
 
         var childrenByLeader = await LoadChildrenByLeaderAsync(cancellationToken);
         var tree = BuildSubordinateTree(childrenByLeader, collaboratorId, currentDepth: 0, maxDepth);
 
-        return ServiceResult<List<CollaboratorHierarchyNodeDto>>.Success(tree);
+        return ServiceResult<List<CollaboratorHierarchyNode>>.Success(tree);
     }
 
     private async Task<bool> CollaboratorExistsAsync(Guid collaboratorId, CancellationToken cancellationToken)
@@ -310,7 +311,7 @@ public sealed class CollaboratorService(
             .ToDictionary(g => g.Key, g => g.OrderBy(c => c.FullName).ToList());
     }
 
-    private static List<CollaboratorHierarchyNodeDto> BuildSubordinateTree(
+    private static List<CollaboratorHierarchyNode> BuildSubordinateTree(
         Dictionary<Guid, List<Collaborator>> childrenByLeader,
         Guid parentId,
         int currentDepth,
@@ -321,7 +322,7 @@ public sealed class CollaboratorService(
             return [];
         }
 
-        return children.Select(c => new CollaboratorHierarchyNodeDto
+        return children.Select(c => new CollaboratorHierarchyNode
         {
             Id = c.Id,
             FullName = c.FullName,
@@ -347,7 +348,7 @@ public sealed class CollaboratorService(
         return $"{parts[0][..1]}{parts[^1][..1]}".ToUpperInvariant();
     }
 
-    public async Task<ServiceResult<List<TeamSummaryDto>>> GetTeamsAsync(Guid collaboratorId, CancellationToken cancellationToken = default)
+    public async Task<ServiceResult<List<TeamSummary>>> GetTeamsAsync(Guid collaboratorId, CancellationToken cancellationToken = default)
     {
         var collaborator = await dbContext.Collaborators
             .AsNoTracking()
@@ -355,7 +356,7 @@ public sealed class CollaboratorService(
 
         if (collaborator is null)
         {
-            return ServiceResult<List<TeamSummaryDto>>.NotFound("Colaborador não encontrado.");
+            return ServiceResult<List<TeamSummary>>.NotFound("Colaborador não encontrado.");
         }
 
         var teams = await dbContext.CollaboratorTeams
@@ -363,7 +364,7 @@ public sealed class CollaboratorService(
             .Where(ct => ct.CollaboratorId == collaboratorId)
             .Include(ct => ct.Team)
                 .ThenInclude(t => t.Workspace)
-            .Select(ct => new TeamSummaryDto
+            .Select(ct => new TeamSummary
             {
                 Id = ct.Team.Id,
                 Name = ct.Team.Name,
@@ -372,7 +373,7 @@ public sealed class CollaboratorService(
             .OrderBy(t => t.Name)
             .ToListAsync(cancellationToken);
 
-        return ServiceResult<List<TeamSummaryDto>>.Success(teams);
+        return ServiceResult<List<TeamSummary>>.Success(teams);
     }
 
     public async Task<ServiceResult> UpdateTeamsAsync(Guid collaboratorId, UpdateCollaboratorTeamsRequest request, CancellationToken cancellationToken = default)
@@ -418,7 +419,7 @@ public sealed class CollaboratorService(
         return ServiceResult.Success();
     }
 
-    public async Task<ServiceResult<List<CollaboratorSummaryDto>>> GetSummariesAsync(string? search = null, CancellationToken cancellationToken = default)
+    public async Task<ServiceResult<List<CollaboratorSummary>>> GetSummariesAsync(string? search = null, CancellationToken cancellationToken = default)
     {
         var query = dbContext.Collaborators.AsNoTracking();
 
@@ -428,7 +429,7 @@ public sealed class CollaboratorService(
         }
 
         var collaborators = await query
-            .Select(c => new CollaboratorSummaryDto
+            .Select(c => new CollaboratorSummary
             {
                 Id = c.Id,
                 FullName = c.FullName,
@@ -439,10 +440,10 @@ public sealed class CollaboratorService(
             .Take(50)
             .ToListAsync(cancellationToken);
 
-        return ServiceResult<List<CollaboratorSummaryDto>>.Success(collaborators);
+        return ServiceResult<List<CollaboratorSummary>>.Success(collaborators);
     }
 
-    public async Task<ServiceResult<List<TeamSummaryDto>>> GetAvailableTeamsAsync(Guid collaboratorId, string? search = null, CancellationToken cancellationToken = default)
+    public async Task<ServiceResult<List<TeamSummary>>> GetAvailableTeamsAsync(Guid collaboratorId, string? search = null, CancellationToken cancellationToken = default)
     {
         var collaborator = await dbContext.Collaborators
             .AsNoTracking()
@@ -450,7 +451,7 @@ public sealed class CollaboratorService(
 
         if (collaborator is null)
         {
-            return ServiceResult<List<TeamSummaryDto>>.NotFound("Colaborador não encontrado.");
+            return ServiceResult<List<TeamSummary>>.NotFound("Colaborador não encontrado.");
         }
 
         var currentTeamIds = await dbContext.CollaboratorTeams
@@ -470,7 +471,7 @@ public sealed class CollaboratorService(
         }
 
         var teams = await query
-            .Select(t => new TeamSummaryDto
+            .Select(t => new TeamSummary
             {
                 Id = t.Id,
                 Name = t.Name,
@@ -480,7 +481,7 @@ public sealed class CollaboratorService(
             .Take(50)
             .ToListAsync(cancellationToken);
 
-        return ServiceResult<List<TeamSummaryDto>>.Success(teams);
+        return ServiceResult<List<TeamSummary>>.Success(teams);
     }
 
 }

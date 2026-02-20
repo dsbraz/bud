@@ -1,7 +1,6 @@
 using System.Security.Claims;
 using Bud.Server.Services;
 using Bud.Server.Authorization;
-using Bud.Server.Data;
 using Bud.Server.MultiTenancy;
 using Bud.Shared.Contracts;
 using Bud.Shared.Domain;
@@ -12,7 +11,7 @@ public sealed class MetricCheckinCommandUseCase(
     IMetricCheckinService checkinService,
     IApplicationAuthorizationGateway authorizationGateway,
     ITenantProvider tenantProvider,
-    IApplicationEntityLookup entityLookup,
+    IEntityLookupService entityLookup,
     INotificationOrchestrator notificationOrchestrator) : IMetricCheckinCommandUseCase
 {
     public async Task<ServiceResult<MetricCheckin>> CreateAsync(

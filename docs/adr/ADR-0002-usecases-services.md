@@ -16,6 +16,10 @@ Adotar estrutura em camadas:
 - UseCases dependem de interfaces de serviço em `Services/` (`I*Service`)
 - `Services/` contém interfaces e implementações com regras de negócio e persistência
 - `ServiceResult` padroniza retorno funcional das operações
+- `Application` não depende diretamente de tipos em `Data/` (ex.: `ApplicationDbContext` ou lookups da camada `Data`)
+- `Domain` não depende de `Services/`
+- `Services` não retornam DTOs HTTP de `Bud.Shared.Contracts`; retornam entidades de domínio ou read models de domínio
+- Mapeamento para contratos HTTP (`Bud.Shared.Contracts`) ocorre na camada `Application`
 
 ## Consequências
 
@@ -23,6 +27,7 @@ Adotar estrutura em camadas:
 - Maior testabilidade (mock de interfaces em UseCases)
 - Menor acoplamento entre API e implementação
 - Exige disciplina para evitar dependências cruzadas
+- Requer mapeamento explícito entre read models de domínio e DTOs de contrato na camada `Application`
 
 ## Alternativas consideradas
 
