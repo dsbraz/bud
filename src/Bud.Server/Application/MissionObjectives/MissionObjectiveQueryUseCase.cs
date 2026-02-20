@@ -1,4 +1,5 @@
 using Bud.Server.Services;
+using Bud.Server.Application.Common;
 using Bud.Shared.Contracts;
 using Bud.Shared.Domain;
 
@@ -18,8 +19,17 @@ public sealed class MissionObjectiveQueryUseCase(
         CancellationToken cancellationToken = default)
         => objectiveService.GetByMissionAsync(missionId, page, pageSize, cancellationToken);
 
-    public Task<ServiceResult<List<ObjectiveProgressDto>>> GetProgressAsync(
+    public async Task<ServiceResult<List<ObjectiveProgressDto>>> GetProgressAsync(
         List<Guid> objectiveIds,
         CancellationToken cancellationToken = default)
-        => missionProgressService.GetObjectiveProgressAsync(objectiveIds, cancellationToken);
+    {
+        var result = await missionProgressService.GetObjectiveProgressAsync(objectiveIds, cancellationToken);
+        if (!result.IsSuccess)
+        {
+            return ServiceResult<List<ObjectiveProgressDto>>.Failure(result.Error ?? "Falha ao calcular progresso dos objetivos.", result.ErrorType);
+        }
+
+        return ServiceResult<List<ObjectiveProgressDto>>.Success(
+            result.Value!.Select(p => p.ToContract()).ToList());
+    }
 }

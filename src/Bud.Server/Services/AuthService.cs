@@ -2,6 +2,7 @@ using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
 using Bud.Server.Data;
+using Bud.Server.Domain.ReadModels;
 using Bud.Server.Settings;
 using Bud.Shared.Contracts;
 using Bud.Shared.Domain;
@@ -17,12 +18,12 @@ public sealed class AuthService(
 {
     private readonly JwtSettings _jwtSettings = jwtOptions.Value;
 
-    public async Task<ServiceResult<AuthLoginResponse>> LoginAsync(AuthLoginRequest request, CancellationToken cancellationToken = default)
+    public async Task<ServiceResult<AuthLoginResult>> LoginAsync(AuthLoginRequest request, CancellationToken cancellationToken = default)
     {
         var email = request.Email?.Trim();
         if (string.IsNullOrWhiteSpace(email))
         {
-            return ServiceResult<AuthLoginResponse>.Failure("Informe o e-mail.");
+            return ServiceResult<AuthLoginResult>.Failure("Informe o e-mail.");
         }
 
         var normalizedEmail = email.ToLowerInvariant();
@@ -34,7 +35,7 @@ public sealed class AuthService(
 
         if (collaborator is null)
         {
-            return ServiceResult<AuthLoginResponse>.NotFound("Usuário não encontrado.");
+            return ServiceResult<AuthLoginResult>.NotFound("Usuário não encontrado.");
         }
 
         var claims = new List<Claim>
@@ -55,7 +56,7 @@ public sealed class AuthService(
 
         var token = GenerateJwtToken(claims);
 
-        return ServiceResult<AuthLoginResponse>.Success(new AuthLoginResponse
+        return ServiceResult<AuthLoginResult>.Success(new AuthLoginResult
         {
             Token = token,
             Email = collaborator.Email,
@@ -67,12 +68,12 @@ public sealed class AuthService(
         });
     }
 
-    public async Task<ServiceResult<List<OrganizationSummaryDto>>> GetMyOrganizationsAsync(string email, CancellationToken cancellationToken = default)
+    public async Task<ServiceResult<List<OrganizationSummary>>> GetMyOrganizationsAsync(string email, CancellationToken cancellationToken = default)
     {
         var normalizedEmail = email?.Trim().ToLowerInvariant();
         if (string.IsNullOrWhiteSpace(normalizedEmail))
         {
-            return ServiceResult<List<OrganizationSummaryDto>>.Failure("E-mail é obrigatório.");
+            return ServiceResult<List<OrganizationSummary>>.Failure("E-mail é obrigatório.");
         }
 
         var collaborator = await dbContext.Collaborators
@@ -86,14 +87,14 @@ public sealed class AuthService(
                 .AsNoTracking()
                 .IgnoreQueryFilters()
                 .OrderBy(o => o.Name)
-                .Select(o => new OrganizationSummaryDto
+                .Select(o => new OrganizationSummary
                 {
                     Id = o.Id,
                     Name = o.Name
                 })
                 .ToListAsync(cancellationToken);
 
-            return ServiceResult<List<OrganizationSummaryDto>>.Success(allOrgs);
+            return ServiceResult<List<OrganizationSummary>>.Success(allOrgs);
         }
 
         // Regular users: get organizations from two sources:
@@ -105,7 +106,7 @@ public sealed class AuthService(
             .IgnoreQueryFilters()
             .Where(c => c.Email == normalizedEmail)
             .Include(c => c.Organization)
-            .Select(c => new OrganizationSummaryDto
+            .Select(c => new OrganizationSummary
             {
                 Id = c.Organization.Id,
                 Name = c.Organization.Name
@@ -116,7 +117,7 @@ public sealed class AuthService(
             .AsNoTracking()
             .IgnoreQueryFilters()
             .Where(o => o.Owner != null && o.Owner.Email == normalizedEmail)
-            .Select(o => new OrganizationSummaryDto
+            .Select(o => new OrganizationSummary
             {
                 Id = o.Id,
                 Name = o.Name
@@ -131,7 +132,7 @@ public sealed class AuthService(
             .OrderBy(o => o.Name)
             .ToList();
 
-        return ServiceResult<List<OrganizationSummaryDto>>.Success(organizations);
+        return ServiceResult<List<OrganizationSummary>>.Success(organizations);
     }
 
     private async Task RegisterAccessLogAsync(Guid collaboratorId, Guid organizationId, CancellationToken cancellationToken)

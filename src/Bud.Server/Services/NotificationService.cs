@@ -1,4 +1,5 @@
 using Bud.Server.Data;
+using Bud.Server.Domain.ReadModels;
 using Bud.Shared.Contracts;
 using Bud.Shared.Domain;
 using Microsoft.EntityFrameworkCore;
@@ -47,7 +48,7 @@ public sealed class NotificationService(ApplicationDbContext dbContext) : INotif
         }
     }
 
-    public async Task<ServiceResult<PagedResult<NotificationDto>>> GetByRecipientAsync(
+    public async Task<ServiceResult<PagedResult<NotificationSummary>>> GetByRecipientAsync(
         Guid recipientId,
         int page,
         int pageSize,
@@ -64,7 +65,7 @@ public sealed class NotificationService(ApplicationDbContext dbContext) : INotif
         var items = await query
             .Skip((page - 1) * pageSize)
             .Take(pageSize)
-            .Select(n => new NotificationDto
+            .Select(n => new NotificationSummary
             {
                 Id = n.Id,
                 Title = n.Title,
@@ -78,7 +79,7 @@ public sealed class NotificationService(ApplicationDbContext dbContext) : INotif
             })
             .ToListAsync(cancellationToken);
 
-        return ServiceResult<PagedResult<NotificationDto>>.Success(new PagedResult<NotificationDto>
+        return ServiceResult<PagedResult<NotificationSummary>>.Success(new PagedResult<NotificationSummary>
         {
             Items = items,
             Total = total,

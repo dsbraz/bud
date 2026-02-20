@@ -1,4 +1,5 @@
 using Bud.Server.Data;
+using Bud.Server.Domain.ReadModels;
 using Bud.Shared.Contracts;
 using Bud.Shared.Domain;
 using Microsoft.EntityFrameworkCore;
@@ -7,13 +8,13 @@ namespace Bud.Server.Services;
 
 public sealed class MissionProgressService(ApplicationDbContext dbContext) : IMissionProgressService
 {
-    public async Task<ServiceResult<List<MissionProgressDto>>> GetProgressAsync(
+    public async Task<ServiceResult<List<MissionProgressSnapshot>>> GetProgressAsync(
         List<Guid> missionIds,
         CancellationToken cancellationToken = default)
     {
         if (missionIds.Count == 0)
         {
-            return ServiceResult<List<MissionProgressDto>>.Success([]);
+            return ServiceResult<List<MissionProgressSnapshot>>.Success([]);
         }
 
         var missions = await dbContext.Missions
@@ -52,7 +53,7 @@ public sealed class MissionProgressService(ApplicationDbContext dbContext) : IMi
 
         var now = DateTime.UtcNow;
         var oneWeekAgo = now.AddDays(-7);
-        var results = new List<MissionProgressDto>();
+        var results = new List<MissionProgressSnapshot>();
 
         foreach (var mission in missions)
         {
@@ -98,7 +99,7 @@ public sealed class MissionProgressService(ApplicationDbContext dbContext) : IMi
             var objectiveProgress = BuildObjectiveProgress(
                 mission.Metrics, latestCheckinByMetric, firstCheckins, oneWeekAgo);
 
-            results.Add(new MissionProgressDto
+            results.Add(new MissionProgressSnapshot
             {
                 MissionId = mission.Id,
                 OverallProgress = Math.Round(overallProgress, 1),
@@ -111,16 +112,16 @@ public sealed class MissionProgressService(ApplicationDbContext dbContext) : IMi
             });
         }
 
-        return ServiceResult<List<MissionProgressDto>>.Success(results);
+        return ServiceResult<List<MissionProgressSnapshot>>.Success(results);
     }
 
-    public async Task<ServiceResult<List<MetricProgressDto>>> GetMetricProgressAsync(
+    public async Task<ServiceResult<List<MetricProgressSnapshot>>> GetMetricProgressAsync(
         List<Guid> metricIds,
         CancellationToken cancellationToken = default)
     {
         if (metricIds.Count == 0)
         {
-            return ServiceResult<List<MetricProgressDto>>.Success([]);
+            return ServiceResult<List<MetricProgressSnapshot>>.Success([]);
         }
 
         var metrics = await dbContext.MissionMetrics
@@ -160,13 +161,13 @@ public sealed class MissionProgressService(ApplicationDbContext dbContext) : IMi
 
         var now = DateTime.UtcNow;
         var oneWeekAgo = now.AddDays(-7);
-        var results = new List<MetricProgressDto>();
+        var results = new List<MetricProgressSnapshot>();
 
         foreach (var metric in metrics)
         {
             if (!latestCheckinByMetric.TryGetValue(metric.Id, out var latestCheckin))
             {
-                results.Add(new MetricProgressDto
+                results.Add(new MetricProgressSnapshot
                 {
                     MetricId = metric.Id,
                     Progress = 0m,
@@ -180,7 +181,7 @@ public sealed class MissionProgressService(ApplicationDbContext dbContext) : IMi
             var progress = CalculateMetricProgress(metric, latestCheckin, firstCheckins);
             var isOutdated = latestCheckin.CheckinDate < oneWeekAgo;
 
-            results.Add(new MetricProgressDto
+            results.Add(new MetricProgressSnapshot
             {
                 MetricId = metric.Id,
                 Progress = Math.Round(progress, 1),
@@ -191,7 +192,7 @@ public sealed class MissionProgressService(ApplicationDbContext dbContext) : IMi
             });
         }
 
-        return ServiceResult<List<MetricProgressDto>>.Success(results);
+        return ServiceResult<List<MetricProgressSnapshot>>.Success(results);
     }
 
     public static decimal CalculateMetricProgress(
@@ -329,13 +330,13 @@ public sealed class MissionProgressService(ApplicationDbContext dbContext) : IMi
         return Clamp((decimal)(elapsedDays / totalDays) * 100m);
     }
 
-    public async Task<ServiceResult<List<ObjectiveProgressDto>>> GetObjectiveProgressAsync(
+    public async Task<ServiceResult<List<ObjectiveProgressSnapshot>>> GetObjectiveProgressAsync(
         List<Guid> objectiveIds,
         CancellationToken cancellationToken = default)
     {
         if (objectiveIds.Count == 0)
         {
-            return ServiceResult<List<ObjectiveProgressDto>>.Success([]);
+            return ServiceResult<List<ObjectiveProgressSnapshot>>.Success([]);
         }
 
         var metrics = await dbContext.MissionMetrics
@@ -365,7 +366,7 @@ public sealed class MissionProgressService(ApplicationDbContext dbContext) : IMi
             .ToDictionary(g => g.Key, g => g.OrderBy(c => c.CheckinDate).First());
 
         var oneWeekAgo = DateTime.UtcNow.AddDays(-7);
-        var results = new List<ObjectiveProgressDto>();
+        var results = new List<ObjectiveProgressSnapshot>();
 
         foreach (var objectiveId in objectiveIds)
         {
@@ -374,10 +375,10 @@ public sealed class MissionProgressService(ApplicationDbContext dbContext) : IMi
                 objectiveId, objectiveMetrics, latestCheckinByMetric, firstCheckins, oneWeekAgo));
         }
 
-        return ServiceResult<List<ObjectiveProgressDto>>.Success(results);
+        return ServiceResult<List<ObjectiveProgressSnapshot>>.Success(results);
     }
 
-    private static List<ObjectiveProgressDto> BuildObjectiveProgress(
+    private static List<ObjectiveProgressSnapshot> BuildObjectiveProgress(
         ICollection<MissionMetric> allMetrics,
         Dictionary<Guid, MetricCheckin> latestCheckinByMetric,
         Dictionary<Guid, MetricCheckin> firstCheckins,
@@ -404,7 +405,7 @@ public sealed class MissionProgressService(ApplicationDbContext dbContext) : IMi
         }).ToList();
     }
 
-    private static ObjectiveProgressDto CalculateObjectiveProgress(
+    private static ObjectiveProgressSnapshot CalculateObjectiveProgress(
         Guid objectiveId,
         List<MissionMetric> metrics,
         Dictionary<Guid, MetricCheckin> latestCheckinByMetric,
@@ -444,7 +445,7 @@ public sealed class MissionProgressService(ApplicationDbContext dbContext) : IMi
             ? confidenceSum / metricsWithCheckins
             : 0m;
 
-        return new ObjectiveProgressDto
+        return new ObjectiveProgressSnapshot
         {
             ObjectiveId = objectiveId,
             OverallProgress = Math.Round(overallProgress, 1),

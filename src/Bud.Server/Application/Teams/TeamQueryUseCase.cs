@@ -1,4 +1,5 @@
 using Bud.Server.Services;
+using Bud.Server.Application.Common;
 using Bud.Shared.Contracts;
 using Bud.Shared.Domain;
 
@@ -32,14 +33,30 @@ public sealed class TeamQueryUseCase(ITeamService teamService) : ITeamQueryUseCa
         CancellationToken cancellationToken = default)
         => teamService.GetCollaboratorsAsync(id, page, pageSize, cancellationToken);
 
-    public Task<ServiceResult<List<CollaboratorSummaryDto>>> GetCollaboratorSummariesAsync(
+    public async Task<ServiceResult<List<CollaboratorSummaryDto>>> GetCollaboratorSummariesAsync(
         Guid teamId,
         CancellationToken cancellationToken = default)
-        => teamService.GetCollaboratorSummariesAsync(teamId, cancellationToken);
+    {
+        var result = await teamService.GetCollaboratorSummariesAsync(teamId, cancellationToken);
+        if (!result.IsSuccess)
+        {
+            return ServiceResult<List<CollaboratorSummaryDto>>.Failure(result.Error ?? "Falha ao listar colaboradores do time.", result.ErrorType);
+        }
 
-    public Task<ServiceResult<List<CollaboratorSummaryDto>>> GetAvailableCollaboratorsAsync(
+        return ServiceResult<List<CollaboratorSummaryDto>>.Success(result.Value!.Select(c => c.ToContract()).ToList());
+    }
+
+    public async Task<ServiceResult<List<CollaboratorSummaryDto>>> GetAvailableCollaboratorsAsync(
         Guid teamId,
         string? search,
         CancellationToken cancellationToken = default)
-        => teamService.GetAvailableCollaboratorsAsync(teamId, search, cancellationToken);
+    {
+        var result = await teamService.GetAvailableCollaboratorsAsync(teamId, search, cancellationToken);
+        if (!result.IsSuccess)
+        {
+            return ServiceResult<List<CollaboratorSummaryDto>>.Failure(result.Error ?? "Falha ao listar colaboradores disponíveis.", result.ErrorType);
+        }
+
+        return ServiceResult<List<CollaboratorSummaryDto>>.Success(result.Value!.Select(c => c.ToContract()).ToList());
+    }
 }

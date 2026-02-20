@@ -1,4 +1,5 @@
 using Bud.Server.Services;
+using Bud.Server.Application.Common;
 using Bud.Shared.Contracts;
 using Bud.Shared.Domain;
 
@@ -20,8 +21,17 @@ public sealed class MissionMetricQueryUseCase(
         CancellationToken cancellationToken = default)
         => metricService.GetAllAsync(missionId, objectiveId, search, page, pageSize, cancellationToken);
 
-    public Task<ServiceResult<List<MetricProgressDto>>> GetProgressAsync(
+    public async Task<ServiceResult<List<MetricProgressDto>>> GetProgressAsync(
         List<Guid> metricIds,
         CancellationToken cancellationToken = default)
-        => missionProgressService.GetMetricProgressAsync(metricIds, cancellationToken);
+    {
+        var result = await missionProgressService.GetMetricProgressAsync(metricIds, cancellationToken);
+        if (!result.IsSuccess)
+        {
+            return ServiceResult<List<MetricProgressDto>>.Failure(result.Error ?? "Falha ao calcular progresso das métricas.", result.ErrorType);
+        }
+
+        return ServiceResult<List<MetricProgressDto>>.Success(
+            result.Value!.Select(p => p.ToContract()).ToList());
+    }
 }
