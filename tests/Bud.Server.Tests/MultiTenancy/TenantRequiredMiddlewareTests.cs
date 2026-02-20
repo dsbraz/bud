@@ -1,7 +1,7 @@
 using System.Security.Claims;
 using System.Text.Json;
+using Bud.Server.Authorization;
 using Bud.Server.MultiTenancy;
-using Bud.Server.Services;
 using FluentAssertions;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;

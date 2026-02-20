@@ -1,6 +1,6 @@
 using System.Net;
 using System.Net.Http.Json;
-using Bud.Server.Data;
+using Bud.Server.Infrastructure.Persistence;
 using Bud.Shared.Contracts;
 using Bud.Shared.Domain;
 using FluentAssertions;

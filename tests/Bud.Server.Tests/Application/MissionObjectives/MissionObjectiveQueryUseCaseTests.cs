@@ -1,6 +1,8 @@
-using Bud.Server.Services;
+using Bud.Server.Application.Common;
 using Bud.Server.Application.MissionObjectives;
+using Bud.Server.Application.Ports;
 using Bud.Server.Domain.ReadModels;
+
 using Bud.Shared.Contracts;
 using Bud.Shared.Domain;
 using FluentAssertions;
@@ -11,18 +13,23 @@ namespace Bud.Server.Tests.Application.MissionObjectives;
 
 public sealed class MissionObjectiveQueryUseCaseTests
 {
+    private readonly Mock<IMissionObjectiveRepository> _repo = new();
+    private readonly Mock<IMissionProgressService> _progressService = new();
+
+    private MissionObjectiveQueryUseCase CreateUseCase()
+        => new(_repo.Object, _progressService.Object);
+
     [Fact]
-    public async Task GetByIdAsync_DelegatesToService()
+    public async Task GetByIdAsync_WhenFound_ReturnsObjective()
     {
         var objectiveId = Guid.NewGuid();
-        var objectiveService = new Mock<IMissionObjectiveService>();
-        var progressService = new Mock<IMissionProgressService>();
-        objectiveService
-            .Setup(s => s.GetByIdAsync(objectiveId, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(ServiceResult<MissionObjective>.Success(
-                MissionObjective.Create(objectiveId, Guid.NewGuid(), Guid.NewGuid(), "Obj", null)));
+        var objective = MissionObjective.Create(objectiveId, Guid.NewGuid(), Guid.NewGuid(), "Obj", null);
 
-        var useCase = new MissionObjectiveQueryUseCase(objectiveService.Object, progressService.Object);
+        _repo
+            .Setup(r => r.GetByIdAsync(objectiveId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(objective);
+
+        var useCase = CreateUseCase();
 
         var result = await useCase.GetByIdAsync(objectiveId);
 
@@ -31,39 +38,57 @@ public sealed class MissionObjectiveQueryUseCaseTests
     }
 
     [Fact]
-    public async Task GetByMissionAsync_DelegatesToService()
+    public async Task GetByIdAsync_WhenNotFound_ReturnsNotFound()
+    {
+        _repo
+            .Setup(r => r.GetByIdAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((MissionObjective?)null);
+
+        var useCase = CreateUseCase();
+
+        var result = await useCase.GetByIdAsync(Guid.NewGuid());
+
+        result.IsSuccess.Should().BeFalse();
+        result.ErrorType.Should().Be(ErrorType.NotFound);
+    }
+
+    [Fact]
+    public async Task GetByMissionAsync_ReturnsPagedResult()
     {
         var missionId = Guid.NewGuid();
-        var objectiveService = new Mock<IMissionObjectiveService>();
-        var progressService = new Mock<IMissionProgressService>();
-        objectiveService
-            .Setup(s => s.GetByMissionAsync(missionId, 1, 10, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(ServiceResult<PagedResult<MissionObjective>>.Success(
-                new PagedResult<MissionObjective> { Items = [], Total = 0, Page = 1, PageSize = 10 }));
+        var pagedResult = new PagedResult<MissionObjective>
+        {
+            Items = [],
+            Total = 0,
+            Page = 1,
+            PageSize = 10
+        };
 
-        var useCase = new MissionObjectiveQueryUseCase(objectiveService.Object, progressService.Object);
+        _repo
+            .Setup(r => r.GetByMissionAsync(missionId, 1, 10, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(pagedResult);
+
+        var useCase = CreateUseCase();
 
         var result = await useCase.GetByMissionAsync(missionId, 1, 10);
 
         result.IsSuccess.Should().BeTrue();
-        objectiveService.Verify(s => s.GetByMissionAsync(missionId, 1, 10, It.IsAny<CancellationToken>()), Times.Once);
+        _repo.Verify(r => r.GetByMissionAsync(missionId, 1, 10, It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact]
     public async Task GetProgressAsync_DelegatesToProgressService()
     {
         var ids = new List<Guid> { Guid.NewGuid() };
-        var objectiveService = new Mock<IMissionObjectiveService>();
-        var progressService = new Mock<IMissionProgressService>();
-        progressService
+        _progressService
             .Setup(s => s.GetObjectiveProgressAsync(ids, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(ServiceResult<List<ObjectiveProgressSnapshot>>.Success([]));
+            .ReturnsAsync(Result<List<ObjectiveProgressSnapshot>>.Success([]));
 
-        var useCase = new MissionObjectiveQueryUseCase(objectiveService.Object, progressService.Object);
+        var useCase = CreateUseCase();
 
         var result = await useCase.GetProgressAsync(ids);
 
         result.IsSuccess.Should().BeTrue();
-        progressService.Verify(s => s.GetObjectiveProgressAsync(ids, It.IsAny<CancellationToken>()), Times.Once);
+        _progressService.Verify(s => s.GetObjectiveProgressAsync(ids, It.IsAny<CancellationToken>()), Times.Once);
     }
 }

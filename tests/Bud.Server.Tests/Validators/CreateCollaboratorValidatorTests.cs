@@ -1,4 +1,5 @@
-using Bud.Server.Services;
+using Bud.Server.Application.Ports;
+using Bud.Server.MultiTenancy;
 using Bud.Server.Validators;
 using Bud.Shared.Contracts;
 using FluentAssertions;
@@ -9,19 +10,23 @@ namespace Bud.Server.Tests.Validators;
 
 public sealed class CreateCollaboratorValidatorTests
 {
-    private readonly Mock<ICollaboratorValidationService> _validationService = new();
+    private readonly Mock<ICollaboratorRepository> _collaboratorRepository = new();
+    private readonly Mock<ITenantProvider> _tenantProvider = new();
     private readonly CreateCollaboratorValidator _validator;
 
     public CreateCollaboratorValidatorTests()
     {
-        _validationService
-            .Setup(x => x.IsEmailUniqueAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+        _collaboratorRepository
+            .Setup(x => x.IsEmailUniqueAsync(It.IsAny<string>(), null, It.IsAny<CancellationToken>()))
             .ReturnsAsync(true);
-        _validationService
-            .Setup(x => x.IsValidLeaderForCreateAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
+        _collaboratorRepository
+            .Setup(x => x.IsValidLeaderAsync(It.IsAny<Guid>(), It.IsAny<Guid?>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(true);
+        _tenantProvider
+            .SetupGet(x => x.TenantId)
+            .Returns(Guid.NewGuid());
 
-        _validator = new CreateCollaboratorValidator(_validationService.Object);
+        _validator = new CreateCollaboratorValidator(_collaboratorRepository.Object, _tenantProvider.Object);
     }
 
     [Fact]
@@ -97,8 +102,8 @@ public sealed class CreateCollaboratorValidatorTests
     [Fact]
     public async Task Validate_WithDuplicateEmail_ShouldFail()
     {
-        _validationService
-            .Setup(x => x.IsEmailUniqueAsync("existing@example.com", It.IsAny<CancellationToken>()))
+        _collaboratorRepository
+            .Setup(x => x.IsEmailUniqueAsync("existing@example.com", null, It.IsAny<CancellationToken>()))
             .ReturnsAsync(false);
 
         var request = new CreateCollaboratorRequest
@@ -116,8 +121,8 @@ public sealed class CreateCollaboratorValidatorTests
     [Fact]
     public async Task Validate_WithNonExistentLeader_ShouldFail()
     {
-        _validationService
-            .Setup(x => x.IsValidLeaderForCreateAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
+        _collaboratorRepository
+            .Setup(x => x.IsValidLeaderAsync(It.IsAny<Guid>(), It.IsAny<Guid?>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(false);
 
         var request = new CreateCollaboratorRequest

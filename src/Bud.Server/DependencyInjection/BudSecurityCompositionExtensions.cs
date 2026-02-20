@@ -97,6 +97,9 @@ public static class BudSecurityCompositionExtensions
         services.AddScoped<IAuthorizationHandler, OrganizationWriteHandler>();
         services.AddScoped<IAuthorizationHandler, MissionScopeAccessHandler>();
 
+        services.AddScoped<ITenantAuthorizationService, TenantAuthorizationService>();
+        services.AddScoped<IOrganizationAuthorizationService, OrganizationAuthorizationService>();
+
         return services;
     }
 

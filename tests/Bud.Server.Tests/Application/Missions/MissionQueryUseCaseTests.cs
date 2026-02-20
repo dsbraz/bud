@@ -1,6 +1,8 @@
-using Bud.Server.Services;
+using Bud.Server.Application.Common;
 using Bud.Server.Application.Missions;
+using Bud.Server.Application.Ports;
 using Bud.Server.Domain.ReadModels;
+
 using Bud.Shared.Contracts;
 using Bud.Shared.Domain;
 using FluentAssertions;
@@ -11,45 +13,82 @@ namespace Bud.Server.Tests.Application.Missions;
 
 public sealed class MissionQueryUseCaseTests
 {
+    private readonly Mock<IMissionRepository> _repo = new();
+    private readonly Mock<IMissionProgressService> _progressService = new();
+
+    private MissionQueryUseCase CreateUseCase()
+        => new(_repo.Object, _progressService.Object);
+
     [Fact]
-    public async Task GetByIdAsync_DelegatesToService()
+    public async Task GetByIdAsync_WithExistingMission_ReturnsSuccess()
     {
-        // Arrange
         var missionId = Guid.NewGuid();
-        var missionService = new Mock<IMissionService>();
-        var progressService = new Mock<IMissionProgressService>();
-        missionService
-            .Setup(s => s.GetByIdAsync(missionId, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(ServiceResult<Mission>.Success(new Mission { Id = missionId, Name = "M", OrganizationId = Guid.NewGuid() }));
+        _repo.Setup(r => r.GetByIdReadOnlyAsync(missionId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new Mission { Id = missionId, Name = "M", OrganizationId = Guid.NewGuid() });
 
-        var useCase = new MissionQueryUseCase(missionService.Object, progressService.Object);
+        var useCase = CreateUseCase();
 
-        // Act
         var result = await useCase.GetByIdAsync(missionId);
 
-        // Assert
         result.IsSuccess.Should().BeTrue();
         result.Value!.Id.Should().Be(missionId);
     }
 
     [Fact]
+    public async Task GetByIdAsync_WithNonExistingId_ReturnsNotFound()
+    {
+        _repo.Setup(r => r.GetByIdReadOnlyAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((Mission?)null);
+
+        var useCase = CreateUseCase();
+
+        var result = await useCase.GetByIdAsync(Guid.NewGuid());
+
+        result.IsSuccess.Should().BeFalse();
+        result.ErrorType.Should().Be(ErrorType.NotFound);
+    }
+
+    [Fact]
     public async Task GetProgressAsync_DelegatesToProgressService()
     {
-        // Arrange
         var ids = new List<Guid> { Guid.NewGuid() };
-        var missionService = new Mock<IMissionService>();
-        var progressService = new Mock<IMissionProgressService>();
-        progressService
+        _progressService
             .Setup(s => s.GetProgressAsync(ids, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(ServiceResult<List<MissionProgressSnapshot>>.Success([]));
+            .ReturnsAsync(Result<List<MissionProgressSnapshot>>.Success([]));
 
-        var useCase = new MissionQueryUseCase(missionService.Object, progressService.Object);
+        var useCase = CreateUseCase();
 
-        // Act
         var result = await useCase.GetProgressAsync(ids);
 
-        // Assert
         result.IsSuccess.Should().BeTrue();
-        progressService.Verify(s => s.GetProgressAsync(ids, It.IsAny<CancellationToken>()), Times.Once);
+        _progressService.Verify(s => s.GetProgressAsync(ids, It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    [Fact]
+    public async Task GetMyMissionsAsync_WithNonExistingCollaborator_ReturnsNotFound()
+    {
+        _repo.Setup(r => r.FindCollaboratorForMyMissionsAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((Collaborator?)null);
+
+        var useCase = CreateUseCase();
+
+        var result = await useCase.GetMyMissionsAsync(Guid.NewGuid(), null, 1, 10);
+
+        result.IsSuccess.Should().BeFalse();
+        result.ErrorType.Should().Be(ErrorType.NotFound);
+    }
+
+    [Fact]
+    public async Task GetMetricsAsync_WhenMissionNotFound_ReturnsNotFound()
+    {
+        _repo.Setup(r => r.ExistsAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(false);
+
+        var useCase = CreateUseCase();
+
+        var result = await useCase.GetMetricsAsync(Guid.NewGuid(), 1, 10);
+
+        result.IsSuccess.Should().BeFalse();
+        result.ErrorType.Should().Be(ErrorType.NotFound);
     }
 }

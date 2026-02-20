@@ -1,8 +1,8 @@
 using System.Security.Claims;
-using Bud.Server.Services;
 using Bud.Server.Application.Collaborators;
+using Bud.Server.Application.Common;
+using Bud.Server.Application.Ports;
 using Bud.Server.Authorization;
-using Bud.Server.Services;
 using Bud.Server.MultiTenancy;
 using Bud.Shared.Contracts;
 using Bud.Shared.Domain;
@@ -15,27 +15,22 @@ namespace Bud.Server.Tests.Application.Collaborators;
 public sealed class CollaboratorCommandUseCaseTests
 {
     private static readonly ClaimsPrincipal User = new(new ClaimsIdentity([new Claim(ClaimTypes.Name, "test")]));
+    private readonly Mock<ICollaboratorRepository> _collabRepo = new();
+    private readonly Mock<IApplicationAuthorizationGateway> _authGateway = new();
+    private readonly Mock<ITenantProvider> _tenantProvider = new();
+
+    private CollaboratorCommandUseCase CreateUseCase()
+        => new(_collabRepo.Object, _authGateway.Object, _tenantProvider.Object);
 
     [Fact]
-    public async Task CreateAsync_WhenTenantSelectedAndUnauthorized_ReturnsForbidden()
+    public async Task CreateAsync_WhenUnauthorized_ReturnsForbidden()
     {
-        var collaboratorService = new Mock<ICollaboratorService>(MockBehavior.Strict);
-        var authorizationGateway = new Mock<IApplicationAuthorizationGateway>();
         var tenantId = Guid.NewGuid();
-        authorizationGateway
-            .Setup(g => g.IsOrganizationOwnerAsync(User, tenantId, It.IsAny<CancellationToken>()))
+        _tenantProvider.SetupGet(t => t.TenantId).Returns(tenantId);
+        _authGateway.Setup(g => g.IsOrganizationOwnerAsync(User, tenantId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(false);
 
-        var tenantProvider = new Mock<ITenantProvider>();
-        tenantProvider.SetupGet(t => t.TenantId).Returns(tenantId);
-        var entityLookup = new Mock<IEntityLookupService>(MockBehavior.Strict);
-
-        var useCase = new CollaboratorCommandUseCase(
-            collaboratorService.Object,
-            authorizationGateway.Object,
-            tenantProvider.Object,
-            entityLookup.Object);
-
+        var useCase = CreateUseCase();
         var request = new CreateCollaboratorRequest
         {
             FullName = "User",
@@ -46,28 +41,16 @@ public sealed class CollaboratorCommandUseCaseTests
         var result = await useCase.CreateAsync(User, request);
 
         result.IsSuccess.Should().BeFalse();
-        result.ErrorType.Should().Be(ServiceErrorType.Forbidden);
-        result.Error.Should().Be("Apenas o proprietário da organização pode criar colaboradores.");
-        collaboratorService.VerifyNoOtherCalls();
+        result.ErrorType.Should().Be(ErrorType.Forbidden);
     }
 
     [Fact]
     public async Task UpdateAsync_WhenCollaboratorNotFound_ReturnsNotFound()
     {
-        var collaboratorService = new Mock<ICollaboratorService>(MockBehavior.Strict);
-        var authorizationGateway = new Mock<IApplicationAuthorizationGateway>(MockBehavior.Strict);
-        var tenantProvider = new Mock<ITenantProvider>(MockBehavior.Strict);
-        var entityLookup = new Mock<IEntityLookupService>();
-        entityLookup
-            .Setup(l => l.GetCollaboratorAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
+        _collabRepo.Setup(r => r.GetByIdAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync((Collaborator?)null);
 
-        var useCase = new CollaboratorCommandUseCase(
-            collaboratorService.Object,
-            authorizationGateway.Object,
-            tenantProvider.Object,
-            entityLookup.Object);
-
+        var useCase = CreateUseCase();
         var request = new UpdateCollaboratorRequest
         {
             FullName = "User",
@@ -78,50 +61,79 @@ public sealed class CollaboratorCommandUseCaseTests
         var result = await useCase.UpdateAsync(User, Guid.NewGuid(), request);
 
         result.IsSuccess.Should().BeFalse();
-        result.ErrorType.Should().Be(ServiceErrorType.NotFound);
-        result.Error.Should().Be("Colaborador não encontrado.");
-        collaboratorService.VerifyNoOtherCalls();
-        authorizationGateway.VerifyNoOtherCalls();
+        result.ErrorType.Should().Be(ErrorType.NotFound);
     }
 
     [Fact]
-    public async Task UpdateTeamsAsync_WhenAuthorized_DelegatesToService()
+    public async Task DeleteAsync_WhenAuthorized_Succeeds()
     {
-        var collaborator = new Collaborator
-        {
-            Id = Guid.NewGuid(),
-            FullName = "User",
-            Email = "user@test.com",
-            OrganizationId = Guid.NewGuid()
-        };
-
-        var request = new UpdateCollaboratorTeamsRequest { TeamIds = [] };
-        var collaboratorService = new Mock<ICollaboratorService>();
-        collaboratorService
-            .Setup(s => s.UpdateTeamsAsync(collaborator.Id, request, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(ServiceResult.Success());
-
-        var authorizationGateway = new Mock<IApplicationAuthorizationGateway>();
-        authorizationGateway
-            .Setup(g => g.IsOrganizationOwnerAsync(User, collaborator.OrganizationId, It.IsAny<CancellationToken>()))
+        var collaborator = new Collaborator { Id = Guid.NewGuid(), FullName = "User", Email = "user@test.com", OrganizationId = Guid.NewGuid() };
+        _collabRepo.Setup(r => r.GetByIdAsync(collaborator.Id, It.IsAny<CancellationToken>())).ReturnsAsync(collaborator);
+        _collabRepo.Setup(r => r.IsOrganizationOwnerAsync(collaborator.Id, It.IsAny<CancellationToken>())).ReturnsAsync(false);
+        _collabRepo.Setup(r => r.HasSubordinatesAsync(collaborator.Id, It.IsAny<CancellationToken>())).ReturnsAsync(false);
+        _collabRepo.Setup(r => r.HasMissionsAsync(collaborator.Id, It.IsAny<CancellationToken>())).ReturnsAsync(false);
+        _authGateway.Setup(g => g.IsOrganizationOwnerAsync(User, collaborator.OrganizationId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(true);
 
-        var tenantProvider = new Mock<ITenantProvider>();
-        var entityLookup = new Mock<IEntityLookupService>();
-        entityLookup
-            .Setup(l => l.GetCollaboratorAsync(collaborator.Id, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(collaborator);
+        var useCase = CreateUseCase();
 
-        var useCase = new CollaboratorCommandUseCase(
-            collaboratorService.Object,
-            authorizationGateway.Object,
-            tenantProvider.Object,
-            entityLookup.Object);
+        var result = await useCase.DeleteAsync(User, collaborator.Id);
+
+        result.IsSuccess.Should().BeTrue();
+        _collabRepo.Verify(r => r.RemoveAsync(collaborator, It.IsAny<CancellationToken>()), Times.Once);
+        _collabRepo.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    [Fact]
+    public async Task DeleteAsync_WhenOrganizationOwner_ReturnsConflict()
+    {
+        var collaborator = new Collaborator { Id = Guid.NewGuid(), FullName = "User", Email = "user@test.com", OrganizationId = Guid.NewGuid() };
+        _collabRepo.Setup(r => r.GetByIdAsync(collaborator.Id, It.IsAny<CancellationToken>())).ReturnsAsync(collaborator);
+        _collabRepo.Setup(r => r.IsOrganizationOwnerAsync(collaborator.Id, It.IsAny<CancellationToken>())).ReturnsAsync(true);
+        _authGateway.Setup(g => g.IsOrganizationOwnerAsync(User, collaborator.OrganizationId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(true);
+
+        var useCase = CreateUseCase();
+
+        var result = await useCase.DeleteAsync(User, collaborator.Id);
+
+        result.IsSuccess.Should().BeFalse();
+        result.ErrorType.Should().Be(ErrorType.Conflict);
+    }
+
+    [Fact]
+    public async Task UpdateTeamsAsync_WhenAuthorized_Succeeds()
+    {
+        var collaborator = new Collaborator { Id = Guid.NewGuid(), FullName = "User", Email = "user@test.com", OrganizationId = Guid.NewGuid() };
+        _collabRepo.Setup(r => r.GetByIdWithCollaboratorTeamsAsync(collaborator.Id, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(collaborator);
+        _authGateway.Setup(g => g.IsOrganizationOwnerAsync(User, collaborator.OrganizationId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(true);
+
+        var useCase = CreateUseCase();
+        var request = new UpdateCollaboratorTeamsRequest { TeamIds = [] };
 
         var result = await useCase.UpdateTeamsAsync(User, collaborator.Id, request);
 
         result.IsSuccess.Should().BeTrue();
-        collaboratorService.Verify(s => s.UpdateTeamsAsync(collaborator.Id, request, It.IsAny<CancellationToken>()), Times.Once);
+        _collabRepo.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
     }
 
+    [Fact]
+    public async Task UpdateTeamsAsync_WhenUnauthorized_ReturnsForbidden()
+    {
+        var collaborator = new Collaborator { Id = Guid.NewGuid(), FullName = "User", Email = "user@test.com", OrganizationId = Guid.NewGuid() };
+        _collabRepo.Setup(r => r.GetByIdWithCollaboratorTeamsAsync(collaborator.Id, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(collaborator);
+        _authGateway.Setup(g => g.IsOrganizationOwnerAsync(User, collaborator.OrganizationId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(false);
+
+        var useCase = CreateUseCase();
+        var request = new UpdateCollaboratorTeamsRequest { TeamIds = [] };
+
+        var result = await useCase.UpdateTeamsAsync(User, collaborator.Id, request);
+
+        result.IsSuccess.Should().BeFalse();
+        result.ErrorType.Should().Be(ErrorType.Forbidden);
+    }
 }

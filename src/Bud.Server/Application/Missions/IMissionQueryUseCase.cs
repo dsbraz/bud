@@ -1,13 +1,14 @@
 using Bud.Shared.Contracts;
 using Bud.Shared.Domain;
+using Bud.Server.Application.Common;
 
 namespace Bud.Server.Application.Missions;
 
 public interface IMissionQueryUseCase
 {
-    Task<ServiceResult<Mission>> GetByIdAsync(Guid id, CancellationToken cancellationToken = default);
+    Task<Result<Mission>> GetByIdAsync(Guid id, CancellationToken cancellationToken = default);
 
-    Task<ServiceResult<PagedResult<Mission>>> GetAllAsync(
+    Task<Result<PagedResult<Mission>>> GetAllAsync(
         MissionScopeType? scopeType,
         Guid? scopeId,
         string? search,
@@ -15,18 +16,18 @@ public interface IMissionQueryUseCase
         int pageSize,
         CancellationToken cancellationToken = default);
 
-    Task<ServiceResult<PagedResult<Mission>>> GetMyMissionsAsync(
+    Task<Result<PagedResult<Mission>>> GetMyMissionsAsync(
         Guid collaboratorId,
         string? search,
         int page,
         int pageSize,
         CancellationToken cancellationToken = default);
 
-    Task<ServiceResult<List<MissionProgressDto>>> GetProgressAsync(
+    Task<Result<List<MissionProgressDto>>> GetProgressAsync(
         List<Guid> missionIds,
         CancellationToken cancellationToken = default);
 
-    Task<ServiceResult<PagedResult<MissionMetric>>> GetMetricsAsync(
+    Task<Result<PagedResult<MissionMetric>>> GetMetricsAsync(
         Guid id,
         int page,
         int pageSize,

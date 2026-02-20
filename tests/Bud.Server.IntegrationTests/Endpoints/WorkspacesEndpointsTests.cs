@@ -25,7 +25,7 @@ public class WorkspacesEndpointsTests : IClassFixture<CustomWebApplicationFactor
     private async Task<Guid> GetOrCreateAdminLeader()
     {
         using var scope = _factory.Services.CreateScope();
-        var dbContext = scope.ServiceProvider.GetRequiredService<Bud.Server.Data.ApplicationDbContext>();
+        var dbContext = scope.ServiceProvider.GetRequiredService<Bud.Server.Infrastructure.Persistence.ApplicationDbContext>();
 
         var existingLeader = await dbContext.Collaborators
             .IgnoreQueryFilters()
@@ -91,7 +91,7 @@ public class WorkspacesEndpointsTests : IClassFixture<CustomWebApplicationFactor
     private async Task<Collaborator> CreateNonOwnerCollaborator(Guid organizationId)
     {
         using var scope = _factory.Services.CreateScope();
-        var dbContext = scope.ServiceProvider.GetRequiredService<Bud.Server.Data.ApplicationDbContext>();
+        var dbContext = scope.ServiceProvider.GetRequiredService<Bud.Server.Infrastructure.Persistence.ApplicationDbContext>();
 
         var collaborator = new Collaborator
         {
@@ -291,7 +291,7 @@ public class WorkspacesEndpointsTests : IClassFixture<CustomWebApplicationFactor
 
         // Create mission scoped to workspace via DbContext
         using var scope = _factory.Services.CreateScope();
-        var dbContext = scope.ServiceProvider.GetRequiredService<Bud.Server.Data.ApplicationDbContext>();
+        var dbContext = scope.ServiceProvider.GetRequiredService<Bud.Server.Infrastructure.Persistence.ApplicationDbContext>();
         var mission = new Mission
         {
             Id = Guid.NewGuid(),

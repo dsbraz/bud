@@ -13,7 +13,7 @@ public static class BudCompositionExtensions
             .AddBudAuthentication(configuration, environment)
             .AddBudAuthorization()
             .AddBudRateLimiting(configuration)
-            .AddBudDataAccess(configuration)
+            .AddBudInfrastructure(configuration)
             .AddBudApplication();
     }
 }

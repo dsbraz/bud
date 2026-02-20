@@ -1,5 +1,6 @@
 using System.Security.Claims;
-using Bud.Server.Services;
+using Bud.Server.Application.Common;
+using Bud.Server.Application.Ports;
 using Bud.Server.Authorization;
 using Bud.Shared.Contracts;
 using Bud.Shared.Domain;
@@ -7,71 +8,134 @@ using Bud.Shared.Domain;
 namespace Bud.Server.Application.MissionMetrics;
 
 public sealed class MissionMetricCommandUseCase(
-    IMissionMetricService metricService,
-    IApplicationAuthorizationGateway authorizationGateway,
-    IEntityLookupService entityLookup) : IMissionMetricCommandUseCase
+    IMissionMetricRepository metricRepository,
+    IApplicationAuthorizationGateway authorizationGateway) : IMissionMetricCommandUseCase
 {
-    public async Task<ServiceResult<MissionMetric>> CreateAsync(
+    public async Task<Result<MissionMetric>> CreateAsync(
         ClaimsPrincipal user,
         CreateMissionMetricRequest request,
         CancellationToken cancellationToken = default)
     {
-        var mission = await entityLookup.GetMissionAsync(request.MissionId, ignoreQueryFilters: true, cancellationToken: cancellationToken);
+        var mission = await metricRepository.GetMissionByIdAsync(request.MissionId, cancellationToken);
 
         if (mission is null)
         {
-            return ServiceResult<MissionMetric>.NotFound("Missão não encontrada.");
+            return Result<MissionMetric>.NotFound("Missão não encontrada.");
         }
 
         var canCreate = await authorizationGateway.CanAccessTenantOrganizationAsync(user, mission.OrganizationId, cancellationToken);
         if (!canCreate)
         {
-            return ServiceResult<MissionMetric>.Forbidden("Você não tem permissão para criar métricas nesta missão.");
+            return Result<MissionMetric>.Forbidden("Você não tem permissão para criar métricas nesta missão.");
         }
 
-        return await metricService.CreateAsync(request, cancellationToken);
+        try
+        {
+            var metric = MissionMetric.Create(
+                Guid.NewGuid(),
+                mission.OrganizationId,
+                request.MissionId,
+                request.Name,
+                request.Type);
+
+            metric.ApplyTarget(request.Type, request.QuantitativeType, request.MinValue, request.MaxValue, request.Unit, request.TargetText);
+
+            if (request.MissionObjectiveId.HasValue)
+            {
+                var objective = await metricRepository.GetObjectiveByIdAsync(request.MissionObjectiveId.Value, cancellationToken);
+
+                if (objective is null)
+                {
+                    return Result<MissionMetric>.NotFound("Objetivo não encontrado.");
+                }
+
+                if (objective.MissionId != request.MissionId)
+                {
+                    return Result<MissionMetric>.Failure(
+                        "Objetivo deve pertencer à mesma missão.", ErrorType.Validation);
+                }
+
+                metric.MissionObjectiveId = request.MissionObjectiveId.Value;
+            }
+
+            await metricRepository.AddAsync(metric, cancellationToken);
+            await metricRepository.SaveChangesAsync(cancellationToken);
+
+            return Result<MissionMetric>.Success(metric);
+        }
+        catch (DomainInvariantException ex)
+        {
+            return Result<MissionMetric>.Failure(ex.Message, ErrorType.Validation);
+        }
     }
 
-    public async Task<ServiceResult<MissionMetric>> UpdateAsync(
+    public async Task<Result<MissionMetric>> UpdateAsync(
         ClaimsPrincipal user,
         Guid id,
         UpdateMissionMetricRequest request,
         CancellationToken cancellationToken = default)
     {
-        var metric = await entityLookup.GetMissionMetricAsync(id, ignoreQueryFilters: true, cancellationToken: cancellationToken);
+        var metricForAuth = await metricRepository.GetByIdAsync(id, cancellationToken);
 
-        if (metric is null)
+        if (metricForAuth is null)
         {
-            return ServiceResult<MissionMetric>.NotFound("Métrica da missão não encontrada.");
+            return Result<MissionMetric>.NotFound("Métrica da missão não encontrada.");
         }
 
-        var canUpdate = await authorizationGateway.CanAccessTenantOrganizationAsync(user, metric.OrganizationId, cancellationToken);
+        var canUpdate = await authorizationGateway.CanAccessTenantOrganizationAsync(user, metricForAuth.OrganizationId, cancellationToken);
         if (!canUpdate)
         {
-            return ServiceResult<MissionMetric>.Forbidden("Você não tem permissão para atualizar métricas nesta missão.");
+            return Result<MissionMetric>.Forbidden("Você não tem permissão para atualizar métricas nesta missão.");
         }
 
-        return await metricService.UpdateAsync(id, request, cancellationToken);
+        var metric = await metricRepository.GetByIdTrackingAsync(id, cancellationToken);
+        if (metric is null)
+        {
+            return Result<MissionMetric>.NotFound("Métrica da missão não encontrada.");
+        }
+
+        try
+        {
+            metric.UpdateDefinition(request.Name, request.Type);
+            metric.ApplyTarget(request.Type, request.QuantitativeType, request.MinValue, request.MaxValue, request.Unit, request.TargetText);
+
+            await metricRepository.SaveChangesAsync(cancellationToken);
+
+            return Result<MissionMetric>.Success(metric);
+        }
+        catch (DomainInvariantException ex)
+        {
+            return Result<MissionMetric>.Failure(ex.Message, ErrorType.Validation);
+        }
     }
 
-    public async Task<ServiceResult> DeleteAsync(
+    public async Task<Result> DeleteAsync(
         ClaimsPrincipal user,
         Guid id,
         CancellationToken cancellationToken = default)
     {
-        var metric = await entityLookup.GetMissionMetricAsync(id, ignoreQueryFilters: true, cancellationToken: cancellationToken);
+        var metricForAuth = await metricRepository.GetByIdAsync(id, cancellationToken);
 
-        if (metric is null)
+        if (metricForAuth is null)
         {
-            return ServiceResult.NotFound("Métrica da missão não encontrada.");
+            return Result.NotFound("Métrica da missão não encontrada.");
         }
 
-        var canDelete = await authorizationGateway.CanAccessTenantOrganizationAsync(user, metric.OrganizationId, cancellationToken);
+        var canDelete = await authorizationGateway.CanAccessTenantOrganizationAsync(user, metricForAuth.OrganizationId, cancellationToken);
         if (!canDelete)
         {
-            return ServiceResult.Forbidden("Você não tem permissão para excluir métricas nesta missão.");
+            return Result.Forbidden("Você não tem permissão para excluir métricas nesta missão.");
         }
 
-        return await metricService.DeleteAsync(id, cancellationToken);
+        var metric = await metricRepository.GetByIdTrackingAsync(id, cancellationToken);
+        if (metric is null)
+        {
+            return Result.NotFound("Métrica da missão não encontrada.");
+        }
+
+        await metricRepository.RemoveAsync(metric, cancellationToken);
+        await metricRepository.SaveChangesAsync(cancellationToken);
+
+        return Result.Success();
     }
 }

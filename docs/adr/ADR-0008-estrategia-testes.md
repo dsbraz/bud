@@ -12,7 +12,7 @@ Era necessário equilibrar velocidade de feedback e confiança end-to-end.
 
 Adotar estratégia híbrida:
 
-- **Unit tests** para UseCases, Services, validações e componentes isolados
+- **Unit tests** para UseCases, Repositories, Domain Services, validações e componentes isolados
 - **Integration tests** com `WebApplicationFactory` + PostgreSQL via Testcontainers
 - TDD como fluxo padrão (`Red -> Green -> Refactor`)
 

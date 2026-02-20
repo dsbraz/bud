@@ -1,13 +1,14 @@
 using Bud.Shared.Contracts;
 using Bud.Shared.Domain;
+using Bud.Server.Application.Common;
 
 namespace Bud.Server.Application.MissionMetrics;
 
 public interface IMissionMetricQueryUseCase
 {
-    Task<ServiceResult<MissionMetric>> GetByIdAsync(Guid id, CancellationToken cancellationToken = default);
+    Task<Result<MissionMetric>> GetByIdAsync(Guid id, CancellationToken cancellationToken = default);
 
-    Task<ServiceResult<PagedResult<MissionMetric>>> GetAllAsync(
+    Task<Result<PagedResult<MissionMetric>>> GetAllAsync(
         Guid? missionId,
         Guid? objectiveId,
         string? search,
@@ -15,7 +16,7 @@ public interface IMissionMetricQueryUseCase
         int pageSize,
         CancellationToken cancellationToken = default);
 
-    Task<ServiceResult<List<MetricProgressDto>>> GetProgressAsync(
+    Task<Result<List<MetricProgressDto>>> GetProgressAsync(
         List<Guid> metricIds,
         CancellationToken cancellationToken = default);
 }

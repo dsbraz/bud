@@ -1,6 +1,6 @@
 using System.Reflection;
 using Bud.Server.Controllers;
-using Bud.Server.Data;
+using Bud.Server.Infrastructure.Persistence;
 using Bud.Server.DependencyInjection;
 using Bud.Shared.Domain;
 using FluentAssertions;
@@ -93,7 +93,7 @@ public sealed class ArchitectureTests
             .Where(type => type
                 .GetConstructors(BindingFlags.Public | BindingFlags.Instance | BindingFlags.NonPublic)
                 .SelectMany(c => c.GetParameters())
-                .Any(p => p.ParameterType.Namespace?.StartsWith("Bud.Server.Data", StringComparison.Ordinal) == true))
+                .Any(p => p.ParameterType.Namespace?.StartsWith("Bud.Server.Infrastructure", StringComparison.Ordinal) == true))
             .Select(t => t.FullName)
             .ToList();
 
@@ -124,7 +124,7 @@ public sealed class ArchitectureTests
     public void ServicesLayer_ShouldNotDependOnControllersNamespace()
     {
         var serviceTypes = ServerAssembly.GetTypes()
-            .Where(t => t.Namespace?.StartsWith("Bud.Server.Services", StringComparison.Ordinal) == true && t.IsClass && !t.IsAbstract)
+            .Where(t => t.Namespace?.StartsWith("Bud.Server.Infrastructure.Services", StringComparison.Ordinal) == true && t.IsClass && !t.IsAbstract)
             .ToList();
 
         serviceTypes.Should().NotBeEmpty();
@@ -205,7 +205,7 @@ public sealed class ArchitectureTests
     {
         typeof(BudApiCompositionExtensions).Should().NotBeNull();
         typeof(BudSecurityCompositionExtensions).Should().NotBeNull();
-        typeof(BudDataCompositionExtensions).Should().NotBeNull();
+        typeof(BudInfrastructureCompositionExtensions).Should().NotBeNull();
         typeof(BudApplicationCompositionExtensions).Should().NotBeNull();
         typeof(BudCompositionExtensions).Should().NotBeNull();
     }
@@ -220,7 +220,7 @@ public sealed class ArchitectureTests
             (Type: typeof(BudSecurityCompositionExtensions), Method: "AddBudAuthentication"),
             (Type: typeof(BudSecurityCompositionExtensions), Method: "AddBudAuthorization"),
             (Type: typeof(BudSecurityCompositionExtensions), Method: "AddBudRateLimiting"),
-            (Type: typeof(BudDataCompositionExtensions), Method: "AddBudDataAccess"),
+            (Type: typeof(BudInfrastructureCompositionExtensions), Method: "AddBudInfrastructure"),
             (Type: typeof(BudApplicationCompositionExtensions), Method: "AddBudApplication"),
             (Type: typeof(BudCompositionExtensions), Method: "AddBudPlatform")
         };
@@ -328,7 +328,7 @@ public sealed class ArchitectureTests
             .ToList();
 
         nonCompliant.Should().BeEmpty(
-            "todos os controllers devem herdar de ApiControllerBase para mapeamento centralizado de ServiceResult");
+            "todos os controllers devem herdar de ApiControllerBase para mapeamento centralizado de Result");
     }
 
     [Fact]
@@ -373,7 +373,7 @@ public sealed class ArchitectureTests
     public void Services_ShouldNotDependOnIConfigurationDirectly()
     {
         var serviceTypes = ServerAssembly.GetTypes()
-            .Where(t => t.Namespace?.StartsWith("Bud.Server.Services", StringComparison.Ordinal) == true
+            .Where(t => t.Namespace?.StartsWith("Bud.Server.Infrastructure.Services", StringComparison.Ordinal) == true
                         && t is { IsClass: true, IsAbstract: false })
             .ToList();
 
@@ -395,7 +395,7 @@ public sealed class ArchitectureTests
     public void Services_ShouldNotExposeSharedContractPayloadsInReturnTypes()
     {
         var serviceInterfaces = ServerAssembly.GetTypes()
-            .Where(t => t.IsInterface && t.Namespace?.StartsWith("Bud.Server.Services", StringComparison.Ordinal) == true)
+            .Where(t => t.IsInterface && t.Namespace?.StartsWith("Bud.Server.Application.Ports", StringComparison.Ordinal) == true)
             .ToList();
 
         serviceInterfaces.Should().NotBeEmpty();

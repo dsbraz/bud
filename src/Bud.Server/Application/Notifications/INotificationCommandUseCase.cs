@@ -1,11 +1,12 @@
+using Bud.Server.Application.Common;
 namespace Bud.Server.Application.Notifications;
 
 public interface INotificationCommandUseCase
 {
-    Task<ServiceResult> MarkAsReadAsync(
+    Task<Result> MarkAsReadAsync(
         Guid notificationId,
         CancellationToken cancellationToken = default);
 
-    Task<ServiceResult> MarkAllAsReadAsync(
+    Task<Result> MarkAllAsReadAsync(
         CancellationToken cancellationToken = default);
 }

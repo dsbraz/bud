@@ -1,13 +1,14 @@
 using Bud.Shared.Contracts;
 using Bud.Shared.Domain;
+using Bud.Server.Application.Common;
 
 namespace Bud.Server.Application.Teams;
 
 public interface ITeamQueryUseCase
 {
-    Task<ServiceResult<Team>> GetByIdAsync(Guid id, CancellationToken cancellationToken = default);
+    Task<Result<Team>> GetByIdAsync(Guid id, CancellationToken cancellationToken = default);
 
-    Task<ServiceResult<PagedResult<Team>>> GetAllAsync(
+    Task<Result<PagedResult<Team>>> GetAllAsync(
         Guid? workspaceId,
         Guid? parentTeamId,
         string? search,
@@ -15,23 +16,23 @@ public interface ITeamQueryUseCase
         int pageSize,
         CancellationToken cancellationToken = default);
 
-    Task<ServiceResult<PagedResult<Team>>> GetSubTeamsAsync(
+    Task<Result<PagedResult<Team>>> GetSubTeamsAsync(
         Guid id,
         int page,
         int pageSize,
         CancellationToken cancellationToken = default);
 
-    Task<ServiceResult<PagedResult<Collaborator>>> GetCollaboratorsAsync(
+    Task<Result<PagedResult<Collaborator>>> GetCollaboratorsAsync(
         Guid id,
         int page,
         int pageSize,
         CancellationToken cancellationToken = default);
 
-    Task<ServiceResult<List<CollaboratorSummaryDto>>> GetCollaboratorSummariesAsync(
+    Task<Result<List<CollaboratorSummaryDto>>> GetCollaboratorSummariesAsync(
         Guid teamId,
         CancellationToken cancellationToken = default);
 
-    Task<ServiceResult<List<CollaboratorSummaryDto>>> GetAvailableCollaboratorsAsync(
+    Task<Result<List<CollaboratorSummaryDto>>> GetAvailableCollaboratorsAsync(
         Guid teamId,
         string? search,
         CancellationToken cancellationToken = default);

@@ -1,6 +1,6 @@
 using Bud.Server.Authorization.Requirements;
 using Bud.Server.Authorization.ResourceScopes;
-using Bud.Server.Data;
+using Bud.Server.Infrastructure.Persistence;
 using Bud.Server.MultiTenancy;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.EntityFrameworkCore;

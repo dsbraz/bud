@@ -16,7 +16,8 @@ Criar notificações diretamente nos use cases de comando que geram eventos rele
 
 Os use cases utilizam:
 - `INotificationRecipientResolver` para resolver destinatários com base no escopo da missão (organização, workspace, time ou colaborador)
-- `INotificationService.CreateForMultipleRecipientsAsync` para criar notificações persistentes
+- `INotificationRepository.CreateForMultipleRecipientsAsync` para persistir notificações
+- A orquestração de criação de notificações (resolução de destinatários + persistência) é coordenada diretamente pelos UseCases
 
 ### Modelo de dados
 

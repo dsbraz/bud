@@ -1,4 +1,4 @@
-using Bud.Server.Data;
+using Bud.Server.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 
 namespace Bud.Server.DependencyInjection;

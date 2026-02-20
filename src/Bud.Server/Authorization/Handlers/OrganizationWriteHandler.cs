@@ -1,6 +1,5 @@
 using Bud.Server.Authorization.Requirements;
 using Bud.Server.Authorization.ResourceScopes;
-using Bud.Server.Services;
 using Microsoft.AspNetCore.Authorization;
 
 namespace Bud.Server.Authorization.Handlers;

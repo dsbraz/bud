@@ -24,7 +24,7 @@ public class MissionMetricsEndpointsTests : IClassFixture<CustomWebApplicationFa
     private async Task<Guid> GetOrCreateAdminLeader()
     {
         using var scope = _factory.Services.CreateScope();
-        var dbContext = scope.ServiceProvider.GetRequiredService<Bud.Server.Data.ApplicationDbContext>();
+        var dbContext = scope.ServiceProvider.GetRequiredService<Bud.Server.Infrastructure.Persistence.ApplicationDbContext>();
 
         var existingLeader = await dbContext.Collaborators
             .IgnoreQueryFilters()
@@ -432,7 +432,7 @@ public class MissionMetricsEndpointsTests : IClassFixture<CustomWebApplicationFa
     }
 
     [Fact]
-    public async Task Create_WithTenantMismatch_ReturnsForbidden()
+    public async Task Create_WithTenantMismatch_ReturnsNotFound()
     {
         // Arrange
         var leaderId = await GetOrCreateAdminLeader();
@@ -479,7 +479,7 @@ public class MissionMetricsEndpointsTests : IClassFixture<CustomWebApplicationFa
         var response = await tenantClient.PostAsJsonAsync("/api/mission-metrics", request);
 
         // Assert
-        response.StatusCode.Should().Be(HttpStatusCode.Forbidden);
+        response.StatusCode.Should().Be(HttpStatusCode.NotFound);
     }
 
     [Fact]
@@ -500,7 +500,7 @@ public class MissionMetricsEndpointsTests : IClassFixture<CustomWebApplicationFa
     private async Task<Collaborator> CreateNonOwnerCollaborator(Guid organizationId)
     {
         using var scope = _factory.Services.CreateScope();
-        var dbContext = scope.ServiceProvider.GetRequiredService<Bud.Server.Data.ApplicationDbContext>();
+        var dbContext = scope.ServiceProvider.GetRequiredService<Bud.Server.Infrastructure.Persistence.ApplicationDbContext>();
 
         var collaborator = new Collaborator
         {

@@ -25,7 +25,7 @@ public class OrganizationsEndpointsTests : IClassFixture<CustomWebApplicationFac
     {
         // Create bootstrap hierarchy similar to DbSeeder
         using var scope = _factory.Services.CreateScope();
-        var dbContext = scope.ServiceProvider.GetRequiredService<Bud.Server.Data.ApplicationDbContext>();
+        var dbContext = scope.ServiceProvider.GetRequiredService<Bud.Server.Infrastructure.Persistence.ApplicationDbContext>();
 
         // Check if admin leader already exists (ignore query filters like DbSeeder does)
         var existingLeader = await dbContext.Collaborators
@@ -340,7 +340,7 @@ public class OrganizationsEndpointsTests : IClassFixture<CustomWebApplicationFac
 
         // Create a non-admin collaborator for testing
         using var scope = _factory.Services.CreateScope();
-        var dbContext = scope.ServiceProvider.GetRequiredService<Bud.Server.Data.ApplicationDbContext>();
+        var dbContext = scope.ServiceProvider.GetRequiredService<Bud.Server.Infrastructure.Persistence.ApplicationDbContext>();
 
         var org = await dbContext.Organizations.IgnoreQueryFilters().FirstAsync();
         var team = await dbContext.Teams.IgnoreQueryFilters().FirstAsync();
@@ -383,7 +383,7 @@ public class OrganizationsEndpointsTests : IClassFixture<CustomWebApplicationFac
 
         // Create a non-admin collaborator
         using var scope = _factory.Services.CreateScope();
-        var dbContext = scope.ServiceProvider.GetRequiredService<Bud.Server.Data.ApplicationDbContext>();
+        var dbContext = scope.ServiceProvider.GetRequiredService<Bud.Server.Infrastructure.Persistence.ApplicationDbContext>();
 
         var org = await dbContext.Organizations.IgnoreQueryFilters().FirstAsync();
         var team = await dbContext.Teams.IgnoreQueryFilters().FirstAsync();
@@ -422,7 +422,7 @@ public class OrganizationsEndpointsTests : IClassFixture<CustomWebApplicationFac
 
         // Create a non-admin collaborator
         using var scope = _factory.Services.CreateScope();
-        var dbContext = scope.ServiceProvider.GetRequiredService<Bud.Server.Data.ApplicationDbContext>();
+        var dbContext = scope.ServiceProvider.GetRequiredService<Bud.Server.Infrastructure.Persistence.ApplicationDbContext>();
 
         var org = await dbContext.Organizations.IgnoreQueryFilters().FirstAsync();
         var team = await dbContext.Teams.IgnoreQueryFilters().FirstAsync();

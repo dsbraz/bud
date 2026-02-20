@@ -1,8 +1,9 @@
 using System.Security.Claims;
-using Bud.Server.Authorization;
-using Bud.Server.Services;
-using Bud.Server.Services;
+using Bud.Server.Application.Common;
 using Bud.Server.Application.Missions;
+using Bud.Server.Application.Ports;
+using Bud.Server.Authorization;
+using Bud.Server.Application.Notifications;
 using Bud.Shared.Contracts;
 using Bud.Shared.Domain;
 using FluentAssertions;
@@ -14,29 +15,22 @@ namespace Bud.Server.Tests.Application.Missions;
 public sealed class MissionCommandUseCaseTests
 {
     private static readonly ClaimsPrincipal User = new(new ClaimsIdentity([new Claim(ClaimTypes.Name, "test")]));
+    private readonly Mock<IMissionRepository> _repo = new();
+    private readonly Mock<IMissionScopeResolver> _scopeResolver = new();
+    private readonly Mock<IApplicationAuthorizationGateway> _authGateway = new();
+    private readonly Mock<INotificationOrchestrator> _notificationOrchestrator = new();
+
+    private MissionCommandUseCase CreateUseCase()
+        => new(_repo.Object, _scopeResolver.Object, _authGateway.Object, _notificationOrchestrator.Object);
 
     [Fact]
     public async Task CreateAsync_WhenScopeResolutionFails_ReturnsNotFound()
     {
-        var missionService = new Mock<IMissionService>(MockBehavior.Strict);
-        var scopeResolver = new Mock<IMissionScopeResolver>();
-        scopeResolver.Setup(s => s.ResolveScopeOrganizationIdAsync(
-                MissionScopeType.Organization,
-                It.IsAny<Guid>(),
-                true,
-                It.IsAny<CancellationToken>()))
-            .ReturnsAsync(ServiceResult<Guid>.NotFound("Organização não encontrada."));
+        _scopeResolver.Setup(s => s.ResolveScopeOrganizationIdAsync(
+                MissionScopeType.Organization, It.IsAny<Guid>(), true, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(Result<Guid>.NotFound("Organização não encontrada."));
 
-        var authorizationGateway = new Mock<IApplicationAuthorizationGateway>(MockBehavior.Strict);
-        var entityLookup = new Mock<IEntityLookupService>(MockBehavior.Strict);
-        var notificationOrchestrator = new Mock<INotificationOrchestrator>();
-        var useCase = new MissionCommandUseCase(
-            missionService.Object,
-            scopeResolver.Object,
-            authorizationGateway.Object,
-            entityLookup.Object,
-            notificationOrchestrator.Object);
-
+        var useCase = CreateUseCase();
         var request = new CreateMissionRequest
         {
             Name = "Missão",
@@ -50,39 +44,22 @@ public sealed class MissionCommandUseCaseTests
         var result = await useCase.CreateAsync(User, request);
 
         result.IsSuccess.Should().BeFalse();
-        result.ErrorType.Should().Be(ServiceErrorType.NotFound);
-        result.Error.Should().Be("Organização não encontrada.");
-        missionService.VerifyNoOtherCalls();
-        authorizationGateway.VerifyNoOtherCalls();
+        result.ErrorType.Should().Be(ErrorType.NotFound);
+        _repo.Verify(r => r.AddAsync(It.IsAny<Mission>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
     [Fact]
     public async Task CreateAsync_WhenUnauthorized_ReturnsForbidden()
     {
         var orgId = Guid.NewGuid();
-        var missionService = new Mock<IMissionService>(MockBehavior.Strict);
-        var scopeResolver = new Mock<IMissionScopeResolver>();
-        scopeResolver.Setup(s => s.ResolveScopeOrganizationIdAsync(
-                MissionScopeType.Organization,
-                It.IsAny<Guid>(),
-                true,
-                It.IsAny<CancellationToken>()))
-            .ReturnsAsync(ServiceResult<Guid>.Success(orgId));
-
-        var authorizationGateway = new Mock<IApplicationAuthorizationGateway>();
-        authorizationGateway
+        _scopeResolver.Setup(s => s.ResolveScopeOrganizationIdAsync(
+                MissionScopeType.Organization, It.IsAny<Guid>(), true, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(Result<Guid>.Success(orgId));
+        _authGateway
             .Setup(g => g.CanAccessTenantOrganizationAsync(User, orgId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(false);
 
-        var entityLookup = new Mock<IEntityLookupService>(MockBehavior.Strict);
-        var notificationOrchestrator = new Mock<INotificationOrchestrator>();
-        var useCase = new MissionCommandUseCase(
-            missionService.Object,
-            scopeResolver.Object,
-            authorizationGateway.Object,
-            entityLookup.Object,
-            notificationOrchestrator.Object);
-
+        var useCase = CreateUseCase();
         var request = new CreateMissionRequest
         {
             Name = "Missão",
@@ -90,58 +67,28 @@ public sealed class MissionCommandUseCaseTests
             EndDate = DateTime.UtcNow.AddDays(1),
             Status = MissionStatus.Planned,
             ScopeType = MissionScopeType.Organization,
-            ScopeId = Guid.NewGuid()
+            ScopeId = orgId
         };
 
         var result = await useCase.CreateAsync(User, request);
 
         result.IsSuccess.Should().BeFalse();
-        result.ErrorType.Should().Be(ServiceErrorType.Forbidden);
-        missionService.VerifyNoOtherCalls();
+        result.ErrorType.Should().Be(ErrorType.Forbidden);
+        _repo.Verify(r => r.AddAsync(It.IsAny<Mission>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
     [Fact]
     public async Task CreateAsync_WhenSuccess_TriggersNotification()
     {
         var orgId = Guid.NewGuid();
-        var missionId = Guid.NewGuid();
-        var mission = new Mission
-        {
-            Id = missionId,
-            Name = "Missão",
-            StartDate = DateTime.UtcNow,
-            EndDate = DateTime.UtcNow.AddDays(1),
-            Status = MissionStatus.Planned,
-            OrganizationId = orgId
-        };
-
-        var missionService = new Mock<IMissionService>();
-        missionService
-            .Setup(s => s.CreateAsync(It.IsAny<CreateMissionRequest>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(ServiceResult<Mission>.Success(mission));
-
-        var scopeResolver = new Mock<IMissionScopeResolver>();
-        scopeResolver.Setup(s => s.ResolveScopeOrganizationIdAsync(
-                MissionScopeType.Organization,
-                It.IsAny<Guid>(),
-                true,
-                It.IsAny<CancellationToken>()))
-            .ReturnsAsync(ServiceResult<Guid>.Success(orgId));
-
-        var authorizationGateway = new Mock<IApplicationAuthorizationGateway>();
-        authorizationGateway
+        _scopeResolver.Setup(s => s.ResolveScopeOrganizationIdAsync(
+                MissionScopeType.Organization, It.IsAny<Guid>(), true, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(Result<Guid>.Success(orgId));
+        _authGateway
             .Setup(g => g.CanAccessTenantOrganizationAsync(User, orgId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(true);
 
-        var entityLookup = new Mock<IEntityLookupService>();
-        var notificationOrchestrator = new Mock<INotificationOrchestrator>();
-        var useCase = new MissionCommandUseCase(
-            missionService.Object,
-            scopeResolver.Object,
-            authorizationGateway.Object,
-            entityLookup.Object,
-            notificationOrchestrator.Object);
-
+        var useCase = CreateUseCase();
         var request = new CreateMissionRequest
         {
             Name = "Missão",
@@ -155,30 +102,20 @@ public sealed class MissionCommandUseCaseTests
         var result = await useCase.CreateAsync(User, request);
 
         result.IsSuccess.Should().BeTrue();
-        notificationOrchestrator.Verify(
-            o => o.NotifyMissionCreatedAsync(missionId, orgId, It.IsAny<CancellationToken>()),
+        _repo.Verify(r => r.AddAsync(It.IsAny<Mission>(), It.IsAny<CancellationToken>()), Times.Once);
+        _repo.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
+        _notificationOrchestrator.Verify(
+            o => o.NotifyMissionCreatedAsync(It.IsAny<Guid>(), orgId, It.IsAny<CancellationToken>()),
             Times.Once);
     }
 
     [Fact]
     public async Task UpdateAsync_WhenMissionNotFound_ReturnsNotFound()
     {
-        var missionService = new Mock<IMissionService>(MockBehavior.Strict);
-        var scopeResolver = new Mock<IMissionScopeResolver>(MockBehavior.Strict);
-        var authorizationGateway = new Mock<IApplicationAuthorizationGateway>(MockBehavior.Strict);
-        var entityLookup = new Mock<IEntityLookupService>();
-        entityLookup
-            .Setup(l => l.GetMissionAsync(It.IsAny<Guid>(), false, It.IsAny<CancellationToken>()))
+        _repo.Setup(r => r.GetByIdAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync((Mission?)null);
 
-        var notificationOrchestrator = new Mock<INotificationOrchestrator>();
-        var useCase = new MissionCommandUseCase(
-            missionService.Object,
-            scopeResolver.Object,
-            authorizationGateway.Object,
-            entityLookup.Object,
-            notificationOrchestrator.Object);
-
+        var useCase = CreateUseCase();
         var request = new UpdateMissionRequest
         {
             Name = "Missão",
@@ -190,9 +127,7 @@ public sealed class MissionCommandUseCaseTests
         var result = await useCase.UpdateAsync(User, Guid.NewGuid(), request);
 
         result.IsSuccess.Should().BeFalse();
-        result.ErrorType.Should().Be(ServiceErrorType.NotFound);
-        authorizationGateway.VerifyNoOtherCalls();
-        missionService.VerifyNoOtherCalls();
+        result.ErrorType.Should().Be(ErrorType.NotFound);
     }
 
     [Fact]
@@ -210,30 +145,13 @@ public sealed class MissionCommandUseCaseTests
             OrganizationId = orgId
         };
 
-        var missionService = new Mock<IMissionService>();
-        missionService
-            .Setup(s => s.UpdateAsync(missionId, It.IsAny<UpdateMissionRequest>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(ServiceResult<Mission>.Success(mission));
-
-        var scopeResolver = new Mock<IMissionScopeResolver>();
-        var authorizationGateway = new Mock<IApplicationAuthorizationGateway>();
-        authorizationGateway
+        _repo.Setup(r => r.GetByIdAsync(missionId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(mission);
+        _authGateway
             .Setup(g => g.CanAccessTenantOrganizationAsync(User, orgId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(true);
 
-        var entityLookup = new Mock<IEntityLookupService>();
-        entityLookup
-            .Setup(l => l.GetMissionAsync(missionId, false, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(mission);
-
-        var notificationOrchestrator = new Mock<INotificationOrchestrator>();
-        var useCase = new MissionCommandUseCase(
-            missionService.Object,
-            scopeResolver.Object,
-            authorizationGateway.Object,
-            entityLookup.Object,
-            notificationOrchestrator.Object);
-
+        var useCase = CreateUseCase();
         var request = new UpdateMissionRequest
         {
             Name = "Missão Atualizada",
@@ -245,7 +163,7 @@ public sealed class MissionCommandUseCaseTests
         var result = await useCase.UpdateAsync(User, missionId, request);
 
         result.IsSuccess.Should().BeTrue();
-        notificationOrchestrator.Verify(
+        _notificationOrchestrator.Verify(
             o => o.NotifyMissionUpdatedAsync(missionId, orgId, It.IsAny<CancellationToken>()),
             Times.Once);
     }
@@ -263,31 +181,19 @@ public sealed class MissionCommandUseCaseTests
             OrganizationId = Guid.NewGuid()
         };
 
-        var missionService = new Mock<IMissionService>(MockBehavior.Strict);
-        var scopeResolver = new Mock<IMissionScopeResolver>(MockBehavior.Strict);
-        var authorizationGateway = new Mock<IApplicationAuthorizationGateway>();
-        authorizationGateway
+        _repo.Setup(r => r.GetByIdAsync(mission.Id, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(mission);
+        _authGateway
             .Setup(g => g.CanAccessTenantOrganizationAsync(User, mission.OrganizationId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(false);
 
-        var entityLookup = new Mock<IEntityLookupService>();
-        entityLookup
-            .Setup(l => l.GetMissionAsync(mission.Id, false, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(mission);
-
-        var notificationOrchestrator = new Mock<INotificationOrchestrator>();
-        var useCase = new MissionCommandUseCase(
-            missionService.Object,
-            scopeResolver.Object,
-            authorizationGateway.Object,
-            entityLookup.Object,
-            notificationOrchestrator.Object);
+        var useCase = CreateUseCase();
 
         var result = await useCase.DeleteAsync(User, mission.Id);
 
         result.IsSuccess.Should().BeFalse();
-        result.ErrorType.Should().Be(ServiceErrorType.Forbidden);
-        missionService.VerifyNoOtherCalls();
+        result.ErrorType.Should().Be(ErrorType.Forbidden);
+        _repo.Verify(r => r.RemoveAsync(It.IsAny<Mission>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
     [Fact]
@@ -305,34 +211,19 @@ public sealed class MissionCommandUseCaseTests
             OrganizationId = orgId
         };
 
-        var missionService = new Mock<IMissionService>();
-        missionService
-            .Setup(s => s.DeleteAsync(missionId, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(ServiceResult.Success());
-
-        var scopeResolver = new Mock<IMissionScopeResolver>();
-        var authorizationGateway = new Mock<IApplicationAuthorizationGateway>();
-        authorizationGateway
+        _repo.Setup(r => r.GetByIdAsync(missionId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(mission);
+        _authGateway
             .Setup(g => g.CanAccessTenantOrganizationAsync(User, orgId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(true);
 
-        var entityLookup = new Mock<IEntityLookupService>();
-        entityLookup
-            .Setup(l => l.GetMissionAsync(missionId, false, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(mission);
-
-        var notificationOrchestrator = new Mock<INotificationOrchestrator>();
-        var useCase = new MissionCommandUseCase(
-            missionService.Object,
-            scopeResolver.Object,
-            authorizationGateway.Object,
-            entityLookup.Object,
-            notificationOrchestrator.Object);
+        var useCase = CreateUseCase();
 
         var result = await useCase.DeleteAsync(User, missionId);
 
         result.IsSuccess.Should().BeTrue();
-        notificationOrchestrator.Verify(
+        _repo.Verify(r => r.RemoveAsync(mission, It.IsAny<CancellationToken>()), Times.Once);
+        _notificationOrchestrator.Verify(
             o => o.NotifyMissionDeletedAsync(missionId, orgId, It.IsAny<CancellationToken>()),
             Times.Once);
     }

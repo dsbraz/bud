@@ -1,4 +1,4 @@
-using Bud.Server.Services;
+using Bud.Server.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Bud.Server.MultiTenancy;
