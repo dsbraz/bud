@@ -1,7 +1,6 @@
 using System.Security.Claims;
 using Bud.Server.Services;
 using Bud.Server.Authorization;
-using Bud.Server.Data;
 using Bud.Shared.Contracts;
 using Bud.Shared.Domain;
 
@@ -10,7 +9,7 @@ namespace Bud.Server.Application.Workspaces;
 public sealed class WorkspaceCommandUseCase(
     IWorkspaceService workspaceService,
     IApplicationAuthorizationGateway authorizationGateway,
-    IApplicationEntityLookup entityLookup) : IWorkspaceCommandUseCase
+    IEntityLookupService entityLookup) : IWorkspaceCommandUseCase
 {
     public async Task<ServiceResult<Workspace>> CreateAsync(
         ClaimsPrincipal user,

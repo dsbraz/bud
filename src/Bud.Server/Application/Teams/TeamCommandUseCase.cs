@@ -1,7 +1,6 @@
 using System.Security.Claims;
 using Bud.Server.Services;
 using Bud.Server.Authorization;
-using Bud.Server.Data;
 using Bud.Shared.Contracts;
 using Bud.Shared.Domain;
 
@@ -10,7 +9,7 @@ namespace Bud.Server.Application.Teams;
 public sealed class TeamCommandUseCase(
     ITeamService teamService,
     IApplicationAuthorizationGateway authorizationGateway,
-    IApplicationEntityLookup entityLookup) : ITeamCommandUseCase
+    IEntityLookupService entityLookup) : ITeamCommandUseCase
 {
     public async Task<ServiceResult<Team>> CreateAsync(
         ClaimsPrincipal user,

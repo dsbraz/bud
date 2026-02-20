@@ -1,7 +1,6 @@
 using System.Security.Claims;
 using Bud.Server.Services;
 using Bud.Server.Authorization;
-using Bud.Server.Data;
 using Bud.Shared.Contracts;
 using Bud.Shared.Domain;
 
@@ -10,7 +9,7 @@ namespace Bud.Server.Application.MissionMetrics;
 public sealed class MissionMetricCommandUseCase(
     IMissionMetricService metricService,
     IApplicationAuthorizationGateway authorizationGateway,
-    IApplicationEntityLookup entityLookup) : IMissionMetricCommandUseCase
+    IEntityLookupService entityLookup) : IMissionMetricCommandUseCase
 {
     public async Task<ServiceResult<MissionMetric>> CreateAsync(
         ClaimsPrincipal user,
