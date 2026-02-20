@@ -1,6 +1,6 @@
 using Bud.Server.Domain.ReadModels;
 
-namespace Bud.Server.Application.Ports;
+namespace Bud.Server.Infrastructure.Repositories;
 
 public interface IDashboardReadRepository
 {

@@ -1,6 +1,6 @@
+using Bud.Server.Infrastructure.Repositories;
 using Bud.Server.Application.Common;
 using Bud.Server.Application.Organizations;
-using Bud.Server.Application.Ports;
 using Bud.Shared.Contracts;
 using Bud.Shared.Domain;
 using FluentAssertions;

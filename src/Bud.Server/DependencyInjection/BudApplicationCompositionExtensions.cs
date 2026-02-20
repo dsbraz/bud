@@ -9,7 +9,6 @@ using Bud.Server.Application.MissionTemplates;
 using Bud.Server.Application.ObjectiveDimensions;
 using Bud.Server.Application.Notifications;
 using Bud.Server.Application.Organizations;
-using Bud.Server.Application.Ports;
 using Bud.Server.Application.Teams;
 using Bud.Server.Application.Workspaces;
 using Bud.Server.Authorization;
@@ -56,7 +55,7 @@ public static class BudApplicationCompositionExtensions
         services.AddScoped<IMetricCheckinCommandUseCase, MetricCheckinCommandUseCase>();
         services.AddScoped<IMetricCheckinQueryUseCase, MetricCheckinQueryUseCase>();
 
-        services.AddScoped<Application.Ports.IAuthService, Infrastructure.Services.AuthService>();
+        services.AddScoped<IAuthService, AuthService>();
         services.AddScoped<IAuthCommandUseCase, AuthCommandUseCase>();
         services.AddScoped<IAuthQueryUseCase, AuthQueryUseCase>();
 

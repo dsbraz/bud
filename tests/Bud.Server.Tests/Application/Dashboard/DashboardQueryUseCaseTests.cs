@@ -1,5 +1,5 @@
+using Bud.Server.Infrastructure.Repositories;
 using Bud.Server.Application.Dashboard;
-using Bud.Server.Application.Ports;
 using Bud.Server.Domain.ReadModels;
 using Bud.Server.MultiTenancy;
 using FluentAssertions;

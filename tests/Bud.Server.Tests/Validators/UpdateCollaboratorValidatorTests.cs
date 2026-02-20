@@ -1,4 +1,4 @@
-using Bud.Server.Application.Ports;
+using Bud.Server.Infrastructure.Repositories;
 using Bud.Server.Validators;
 using Bud.Shared.Contracts;
 using FluentAssertions;

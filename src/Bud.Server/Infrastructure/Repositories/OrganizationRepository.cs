@@ -1,5 +1,4 @@
 using Bud.Server.Application.Common;
-using Bud.Server.Application.Ports;
 using Bud.Server.Domain.Specifications;
 using Bud.Server.Infrastructure.Persistence;
 using Bud.Shared.Contracts;

@@ -26,6 +26,7 @@ A ordem abaixo vai das decisões mais abrangentes para as mais específicas:
 11. `ADR-0011` - Sistema de notificações em use cases
 12. `ADR-0012` - Aggregate roots explícitas, value objects e invariantes de domínio
 13. `ADR-0013` - Hardening de produção (JWT fail-fast, security headers, rate limiting, forwarded headers)
+14. `ADR-0014` - Co-localização de interfaces (ports) com implementações
 
 ## Status possíveis
 

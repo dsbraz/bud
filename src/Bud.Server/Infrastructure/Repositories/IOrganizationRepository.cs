@@ -1,7 +1,7 @@
 using Bud.Shared.Contracts;
 using Bud.Shared.Domain;
 
-namespace Bud.Server.Application.Ports;
+namespace Bud.Server.Infrastructure.Repositories;
 
 public interface IOrganizationRepository
 {

@@ -1,4 +1,4 @@
-using Bud.Server.Application.Ports;
+using Bud.Server.Infrastructure.Repositories;
 using Bud.Server.MultiTenancy;
 using Bud.Server.Validators;
 using Bud.Shared.Contracts;
