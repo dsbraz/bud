@@ -1,4 +1,5 @@
 using Bud.Server.Application.Auth;
+using Bud.Server.Domain.ReadModels;
 using Bud.Server.Services;
 using Bud.Shared.Contracts;
 using FluentAssertions;
@@ -17,7 +18,7 @@ public sealed class AuthQueryUseCaseTests
         var authService = new Mock<IAuthService>();
         authService
             .Setup(s => s.GetMyOrganizationsAsync(email, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(ServiceResult<List<OrganizationSummaryDto>>.Success([]));
+            .ReturnsAsync(ServiceResult<List<OrganizationSummary>>.Success([]));
 
         var useCase = new AuthQueryUseCase(authService.Object);
 

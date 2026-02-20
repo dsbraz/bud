@@ -39,8 +39,8 @@ public sealed class SecurityHeadersEndpointsTests(CustomWebApplicationFactory fa
         var response = await client.GetAsync("/health/live");
 
         // Assert
-        response.Content.Headers.Should().ContainKey("Content-Security-Policy");
-        var csp = response.Content.Headers.GetValues("Content-Security-Policy").First();
+        response.Headers.Should().ContainKey("Content-Security-Policy");
+        var csp = response.Headers.GetValues("Content-Security-Policy").First();
         csp.Should().Contain("'wasm-unsafe-eval'");
         csp.Should().Contain("frame-ancestors 'none'");
     }

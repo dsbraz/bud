@@ -1,5 +1,6 @@
 using Bud.Server.Services;
 using Bud.Server.Application.Collaborators;
+using Bud.Server.Domain.ReadModels;
 using Bud.Shared.Contracts;
 using Bud.Shared.Domain;
 using FluentAssertions;
@@ -38,7 +39,7 @@ public sealed class CollaboratorQueryUseCaseTests
         var collaboratorService = new Mock<ICollaboratorService>();
         collaboratorService
             .Setup(s => s.GetLeadersAsync(organizationId, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(ServiceResult<List<LeaderCollaboratorResponse>>.Success([]));
+            .ReturnsAsync(ServiceResult<List<LeaderCollaborator>>.Success([]));
 
         var useCase = new CollaboratorQueryUseCase(collaboratorService.Object);
 
@@ -58,7 +59,7 @@ public sealed class CollaboratorQueryUseCaseTests
         var collaboratorService = new Mock<ICollaboratorService>();
         collaboratorService
             .Setup(s => s.GetAvailableTeamsAsync(collaboratorId, "produto", It.IsAny<CancellationToken>()))
-            .ReturnsAsync(ServiceResult<List<TeamSummaryDto>>.Success([]));
+            .ReturnsAsync(ServiceResult<List<TeamSummary>>.Success([]));
 
         var useCase = new CollaboratorQueryUseCase(collaboratorService.Object);
 

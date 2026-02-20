@@ -1,6 +1,6 @@
 using System.Security.Claims;
 using Bud.Server.Authorization;
-using Bud.Server.Data;
+using Bud.Server.Services;
 using Bud.Server.Services;
 using Bud.Server.Application.Missions;
 using Bud.Shared.Contracts;
@@ -28,7 +28,7 @@ public sealed class MissionCommandUseCaseTests
             .ReturnsAsync(ServiceResult<Guid>.NotFound("Organização não encontrada."));
 
         var authorizationGateway = new Mock<IApplicationAuthorizationGateway>(MockBehavior.Strict);
-        var entityLookup = new Mock<IApplicationEntityLookup>(MockBehavior.Strict);
+        var entityLookup = new Mock<IEntityLookupService>(MockBehavior.Strict);
         var notificationOrchestrator = new Mock<INotificationOrchestrator>();
         var useCase = new MissionCommandUseCase(
             missionService.Object,
@@ -74,7 +74,7 @@ public sealed class MissionCommandUseCaseTests
             .Setup(g => g.CanAccessTenantOrganizationAsync(User, orgId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(false);
 
-        var entityLookup = new Mock<IApplicationEntityLookup>(MockBehavior.Strict);
+        var entityLookup = new Mock<IEntityLookupService>(MockBehavior.Strict);
         var notificationOrchestrator = new Mock<INotificationOrchestrator>();
         var useCase = new MissionCommandUseCase(
             missionService.Object,
@@ -133,7 +133,7 @@ public sealed class MissionCommandUseCaseTests
             .Setup(g => g.CanAccessTenantOrganizationAsync(User, orgId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(true);
 
-        var entityLookup = new Mock<IApplicationEntityLookup>();
+        var entityLookup = new Mock<IEntityLookupService>();
         var notificationOrchestrator = new Mock<INotificationOrchestrator>();
         var useCase = new MissionCommandUseCase(
             missionService.Object,
@@ -166,7 +166,7 @@ public sealed class MissionCommandUseCaseTests
         var missionService = new Mock<IMissionService>(MockBehavior.Strict);
         var scopeResolver = new Mock<IMissionScopeResolver>(MockBehavior.Strict);
         var authorizationGateway = new Mock<IApplicationAuthorizationGateway>(MockBehavior.Strict);
-        var entityLookup = new Mock<IApplicationEntityLookup>();
+        var entityLookup = new Mock<IEntityLookupService>();
         entityLookup
             .Setup(l => l.GetMissionAsync(It.IsAny<Guid>(), false, It.IsAny<CancellationToken>()))
             .ReturnsAsync((Mission?)null);
@@ -221,7 +221,7 @@ public sealed class MissionCommandUseCaseTests
             .Setup(g => g.CanAccessTenantOrganizationAsync(User, orgId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(true);
 
-        var entityLookup = new Mock<IApplicationEntityLookup>();
+        var entityLookup = new Mock<IEntityLookupService>();
         entityLookup
             .Setup(l => l.GetMissionAsync(missionId, false, It.IsAny<CancellationToken>()))
             .ReturnsAsync(mission);
@@ -270,7 +270,7 @@ public sealed class MissionCommandUseCaseTests
             .Setup(g => g.CanAccessTenantOrganizationAsync(User, mission.OrganizationId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(false);
 
-        var entityLookup = new Mock<IApplicationEntityLookup>();
+        var entityLookup = new Mock<IEntityLookupService>();
         entityLookup
             .Setup(l => l.GetMissionAsync(mission.Id, false, It.IsAny<CancellationToken>()))
             .ReturnsAsync(mission);
@@ -316,7 +316,7 @@ public sealed class MissionCommandUseCaseTests
             .Setup(g => g.CanAccessTenantOrganizationAsync(User, orgId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(true);
 
-        var entityLookup = new Mock<IApplicationEntityLookup>();
+        var entityLookup = new Mock<IEntityLookupService>();
         entityLookup
             .Setup(l => l.GetMissionAsync(missionId, false, It.IsAny<CancellationToken>()))
             .ReturnsAsync(mission);

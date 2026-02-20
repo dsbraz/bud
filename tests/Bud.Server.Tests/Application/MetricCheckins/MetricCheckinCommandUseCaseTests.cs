@@ -1,6 +1,6 @@
 using System.Security.Claims;
 using Bud.Server.Authorization;
-using Bud.Server.Data;
+using Bud.Server.Services;
 using Bud.Server.Services;
 using Bud.Server.Application.MetricCheckins;
 using Bud.Server.MultiTenancy;
@@ -52,7 +52,7 @@ public sealed class MetricCheckinCommandUseCaseTests
         tenantProvider.SetupGet(t => t.IsGlobalAdmin).Returns(false);
         tenantProvider.SetupGet(t => t.CollaboratorId).Returns((Guid?)null);
 
-        var entityLookup = new Mock<IApplicationEntityLookup>();
+        var entityLookup = new Mock<IEntityLookupService>();
         entityLookup
             .Setup(l => l.GetMissionMetricAsync(metric.Id, false, true, It.IsAny<CancellationToken>()))
             .ReturnsAsync(metric);
@@ -131,7 +131,7 @@ public sealed class MetricCheckinCommandUseCaseTests
         tenantProvider.SetupGet(t => t.IsGlobalAdmin).Returns(false);
         tenantProvider.SetupGet(t => t.CollaboratorId).Returns(collaboratorId);
 
-        var entityLookup = new Mock<IApplicationEntityLookup>();
+        var entityLookup = new Mock<IEntityLookupService>();
         entityLookup
             .Setup(l => l.GetMissionMetricAsync(metric.Id, false, true, It.IsAny<CancellationToken>()))
             .ReturnsAsync(metric);
@@ -186,7 +186,7 @@ public sealed class MetricCheckinCommandUseCaseTests
         tenantProvider.SetupGet(t => t.IsGlobalAdmin).Returns(false);
         tenantProvider.SetupGet(t => t.CollaboratorId).Returns(Guid.NewGuid());
 
-        var entityLookup = new Mock<IApplicationEntityLookup>();
+        var entityLookup = new Mock<IEntityLookupService>();
         entityLookup
             .Setup(l => l.GetMetricCheckinAsync(checkin.Id, true, It.IsAny<CancellationToken>()))
             .ReturnsAsync(checkin);
@@ -239,7 +239,7 @@ public sealed class MetricCheckinCommandUseCaseTests
         var tenantProvider = new Mock<ITenantProvider>();
         tenantProvider.SetupGet(t => t.IsGlobalAdmin).Returns(true);
 
-        var entityLookup = new Mock<IApplicationEntityLookup>();
+        var entityLookup = new Mock<IEntityLookupService>();
         entityLookup
             .Setup(l => l.GetMetricCheckinAsync(checkin.Id, true, It.IsAny<CancellationToken>()))
             .ReturnsAsync(checkin);

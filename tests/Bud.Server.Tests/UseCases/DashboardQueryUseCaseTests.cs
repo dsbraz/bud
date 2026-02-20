@@ -1,4 +1,6 @@
 using Bud.Server.Application.Dashboard;
+using Bud.Server.Domain.ReadModels;
+using Bud.Server.Services;
 using Bud.Server.MultiTenancy;
 using Bud.Shared.Contracts;
 using FluentAssertions;
@@ -37,7 +39,7 @@ public sealed class DashboardQueryUseCaseTests
         tenantProvider.SetupGet(x => x.CollaboratorId).Returns(collaboratorId);
         dashboardService
             .Setup(s => s.GetMyDashboardAsync(collaboratorId, null, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(ServiceResult<MyDashboardResponse>.Success(new MyDashboardResponse()));
+            .ReturnsAsync(ServiceResult<MyDashboardSnapshot>.Success(new MyDashboardSnapshot()));
 
         var useCase = new DashboardQueryUseCase(dashboardService.Object, tenantProvider.Object);
         var user = new ClaimsPrincipal(new ClaimsIdentity());
@@ -57,7 +59,7 @@ public sealed class DashboardQueryUseCaseTests
         tenantProvider.SetupGet(x => x.CollaboratorId).Returns(collaboratorId);
         dashboardService
             .Setup(s => s.GetMyDashboardAsync(collaboratorId, null, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(ServiceResult<MyDashboardResponse>.NotFound("Colaborador não encontrado."));
+            .ReturnsAsync(ServiceResult<MyDashboardSnapshot>.NotFound("Colaborador não encontrado."));
 
         var useCase = new DashboardQueryUseCase(dashboardService.Object, tenantProvider.Object);
         var user = new ClaimsPrincipal(new ClaimsIdentity());
@@ -78,7 +80,7 @@ public sealed class DashboardQueryUseCaseTests
         tenantProvider.SetupGet(x => x.CollaboratorId).Returns(collaboratorId);
         dashboardService
             .Setup(s => s.GetMyDashboardAsync(collaboratorId, teamId, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(ServiceResult<MyDashboardResponse>.Success(new MyDashboardResponse()));
+            .ReturnsAsync(ServiceResult<MyDashboardSnapshot>.Success(new MyDashboardSnapshot()));
 
         var useCase = new DashboardQueryUseCase(dashboardService.Object, tenantProvider.Object);
         var user = new ClaimsPrincipal(new ClaimsIdentity());

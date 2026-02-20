@@ -2,7 +2,7 @@ using System.Security.Claims;
 using Bud.Server.Services;
 using Bud.Server.Application.Collaborators;
 using Bud.Server.Authorization;
-using Bud.Server.Data;
+using Bud.Server.Services;
 using Bud.Server.MultiTenancy;
 using Bud.Shared.Contracts;
 using Bud.Shared.Domain;
@@ -28,7 +28,7 @@ public sealed class CollaboratorCommandUseCaseTests
 
         var tenantProvider = new Mock<ITenantProvider>();
         tenantProvider.SetupGet(t => t.TenantId).Returns(tenantId);
-        var entityLookup = new Mock<IApplicationEntityLookup>(MockBehavior.Strict);
+        var entityLookup = new Mock<IEntityLookupService>(MockBehavior.Strict);
 
         var useCase = new CollaboratorCommandUseCase(
             collaboratorService.Object,
@@ -57,7 +57,7 @@ public sealed class CollaboratorCommandUseCaseTests
         var collaboratorService = new Mock<ICollaboratorService>(MockBehavior.Strict);
         var authorizationGateway = new Mock<IApplicationAuthorizationGateway>(MockBehavior.Strict);
         var tenantProvider = new Mock<ITenantProvider>(MockBehavior.Strict);
-        var entityLookup = new Mock<IApplicationEntityLookup>();
+        var entityLookup = new Mock<IEntityLookupService>();
         entityLookup
             .Setup(l => l.GetCollaboratorAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync((Collaborator?)null);
@@ -107,7 +107,7 @@ public sealed class CollaboratorCommandUseCaseTests
             .ReturnsAsync(true);
 
         var tenantProvider = new Mock<ITenantProvider>();
-        var entityLookup = new Mock<IApplicationEntityLookup>();
+        var entityLookup = new Mock<IEntityLookupService>();
         entityLookup
             .Setup(l => l.GetCollaboratorAsync(collaborator.Id, It.IsAny<CancellationToken>()))
             .ReturnsAsync(collaborator);

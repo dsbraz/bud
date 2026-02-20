@@ -1,5 +1,6 @@
 using Bud.Server.Services;
 using Bud.Server.Application.Notifications;
+using Bud.Server.Domain.ReadModels;
 using Bud.Server.MultiTenancy;
 using Bud.Shared.Contracts;
 using FluentAssertions;
@@ -36,7 +37,7 @@ public sealed class NotificationQueryUseCaseTests
         tenantProvider.SetupGet(x => x.CollaboratorId).Returns(collaboratorId);
         service
             .Setup(s => s.GetByRecipientAsync(collaboratorId, 1, 10, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(ServiceResult<PagedResult<NotificationDto>>.Success(new PagedResult<NotificationDto>()));
+            .ReturnsAsync(ServiceResult<PagedResult<NotificationSummary>>.Success(new PagedResult<NotificationSummary>()));
 
         var useCase = new NotificationQueryUseCase(service.Object, tenantProvider.Object);
 

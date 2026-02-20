@@ -33,6 +33,7 @@ app.UseBlazorFrameworkFiles();
 app.UseStaticFiles();
 app.UseMiddleware<Bud.Server.Middleware.RequestTelemetryMiddleware>();
 
+app.UseRouting();
 app.UseAuthentication();
 app.UseAuthorization();
 app.UseRateLimiter();

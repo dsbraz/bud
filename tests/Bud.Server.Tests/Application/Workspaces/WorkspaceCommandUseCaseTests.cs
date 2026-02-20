@@ -1,7 +1,7 @@
 using System.Security.Claims;
 using Bud.Server.Services;
 using Bud.Server.Authorization;
-using Bud.Server.Data;
+using Bud.Server.Services;
 using Bud.Server.Application.Workspaces;
 using Bud.Shared.Contracts;
 using Bud.Shared.Domain;
@@ -24,7 +24,7 @@ public sealed class WorkspaceCommandUseCaseTests
             .Setup(g => g.IsOrganizationOwnerAsync(User, Guid.Parse("11111111-1111-1111-1111-111111111111"), It.IsAny<CancellationToken>()))
             .ReturnsAsync(false);
 
-        var entityLookup = new Mock<IApplicationEntityLookup>(MockBehavior.Strict);
+        var entityLookup = new Mock<IEntityLookupService>(MockBehavior.Strict);
         var useCase = new WorkspaceCommandUseCase(workspaceService.Object, authorizationGateway.Object, entityLookup.Object);
         var request = new CreateWorkspaceRequest
         {
@@ -45,7 +45,7 @@ public sealed class WorkspaceCommandUseCaseTests
     {
         var workspaceService = new Mock<IWorkspaceService>(MockBehavior.Strict);
         var authorizationGateway = new Mock<IApplicationAuthorizationGateway>(MockBehavior.Strict);
-        var entityLookup = new Mock<IApplicationEntityLookup>();
+        var entityLookup = new Mock<IEntityLookupService>();
         entityLookup
             .Setup(l => l.GetWorkspaceAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync((Workspace?)null);
@@ -82,7 +82,7 @@ public sealed class WorkspaceCommandUseCaseTests
             .Setup(g => g.CanWriteOrganizationAsync(User, workspace.OrganizationId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(true);
 
-        var entityLookup = new Mock<IApplicationEntityLookup>();
+        var entityLookup = new Mock<IEntityLookupService>();
         entityLookup
             .Setup(l => l.GetWorkspaceAsync(workspace.Id, It.IsAny<CancellationToken>()))
             .ReturnsAsync(workspace);
