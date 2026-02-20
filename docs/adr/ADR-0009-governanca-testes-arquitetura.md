@@ -11,11 +11,14 @@ Mesmo com boa arquitetura inicial, regressões acontecem quando novas features i
 
 Manter testes de arquitetura automatizados em `tests/Bud.Server.Tests/Architecture` para impor regras como:
 
-### Fronteiras entre camadas (originais)
+### Fronteiras entre camadas
 
 - Controllers não dependem diretamente de `ApplicationDbContext`
 - UseCases não dependem de contratos legados de `Services`
 - Camada `Application` não expõe tipos da camada `Services`
+- Camada `Application` não depende da camada `Data`
+- Camada `Domain` não depende da camada `Services`
+- Camada `Services` não expõe DTOs/Responses de `Bud.Shared.Contracts` em tipos de retorno
 
 ### Segurança e tenant isolation
 

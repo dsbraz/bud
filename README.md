@@ -44,12 +44,14 @@ O Bud segue uma arquitetura em camadas com separação explícita de responsabil
   Validações dependentes de dados devem passar por abstrações/serviços de aplicação, não por acesso direto de validator ao `DbContext`.
 - **UseCases** centralizam o fluxo da aplicação e retornam `ServiceResult`/`ServiceResult<T>`.
 - **Services** contêm as interfaces (contratos) e suas implementações com regras de negócio e acesso a dados.
+  Services retornam entidades de domínio/read models de domínio; o mapeamento para `Bud.Shared.Contracts` ocorre na camada `Application`.
 - **DependencyInjection** modulariza bootstrap (`BudApi`, `BudSecurity`, `BudData`, `BudApplication`).
 
 ### Padrões arquiteturais adotados
 
 - **UseCases + Services**
   Controllers delegam para UseCases, que dependem de interfaces de serviço em `Services/`.
+  `Application` não depende diretamente de `Data` e `Domain` não depende de `Services`.
   Referências: `docs/adr/ADR-0002-usecases-services.md`.
 - **Policy-based Authorization (Requirement/Handler)**
   Regras de autorização centralizadas em policies e handlers, reduzindo condicionais espalhadas.

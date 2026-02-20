@@ -40,6 +40,12 @@ This file provides guidance to coding agents when working with code in this repo
 - Preserve architectural boundaries:
   - Controllers -> UseCases
   - UseCases -> Services (via interfaces in `Services/`)
+  - UseCases requiring entity lookup MUST depend on `IEntityLookupService` (Services layer), never `Data/*`
+  - Domain MUST NOT reference `Bud.Server.Services`
+  - Services MUST NOT return HTTP DTO payloads from `Bud.Shared.Contracts`
+  - Application (`UseCases`) MUST NOT depend directly on `Data/`
+  - Domain MUST NOT depend on `Services/`
+  - Services MUST return domain entities/read models; mapping to `Bud.Shared.Contracts` happens in `Application/`
 - Respect the established design patterns in this file (specification, policy-based auth).
 - Apply TDD workflow (`Red -> Green -> Refactor`) for features, fixes, and behavior changes.
 - Update tests together with production code changes.
@@ -309,6 +315,7 @@ public sealed class ServiceResult<T>
 **Rules for agents:**
 - MUST keep use case contracts in `Application/*` depending on interfaces from `Services/`.
 - MUST keep controllers depending on `UseCases` (not directly on `Services`).
+- MUST keep `Application/*` free of direct dependencies on `Data/*` types.
 - MUST map `result.ErrorType` to HTTP status codes consistently:
   - `NotFound` → 404
   - `Validation` → 400
