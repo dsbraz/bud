@@ -1,23 +1,22 @@
-using Bud.Server.Services;
+using Bud.Server.Application.Notifications;
+using Bud.Server.Application.Ports;
 using Bud.Shared.Domain;
 using FluentAssertions;
 using Moq;
 using Xunit;
 
-namespace Bud.Server.Tests.Services;
+namespace Bud.Server.Tests.Application.Notifications;
 
 public class NotificationOrchestratorTests
 {
-    private readonly Mock<INotificationService> _notificationServiceMock;
-    private readonly Mock<INotificationRecipientResolver> _recipientResolverMock;
+    private readonly Mock<INotificationRepository> _repoMock = new();
+    private readonly Mock<INotificationRecipientResolver> _recipientResolverMock = new();
     private readonly NotificationOrchestrator _orchestrator;
 
     public NotificationOrchestratorTests()
     {
-        _notificationServiceMock = new Mock<INotificationService>();
-        _recipientResolverMock = new Mock<INotificationRecipientResolver>();
         _orchestrator = new NotificationOrchestrator(
-            _notificationServiceMock.Object,
+            _repoMock.Object,
             _recipientResolverMock.Object);
     }
 
@@ -33,33 +32,18 @@ public class NotificationOrchestratorTests
             .Setup(r => r.ResolveMissionRecipientsAsync(missionId, organizationId, null, It.IsAny<CancellationToken>()))
             .ReturnsAsync(recipients);
 
-        _notificationServiceMock
-            .Setup(s => s.CreateForMultipleRecipientsAsync(
-                recipients,
-                organizationId,
-                It.IsAny<string>(),
-                It.IsAny<string>(),
-                NotificationType.MissionCreated,
-                missionId,
-                "Mission",
-                It.IsAny<CancellationToken>()))
-            .ReturnsAsync(ServiceResult.Success());
-
         // Act
         await _orchestrator.NotifyMissionCreatedAsync(missionId, organizationId);
 
         // Assert
-        _notificationServiceMock.Verify(
-            s => s.CreateForMultipleRecipientsAsync(
-                recipients,
-                organizationId,
-                "Nova missão criada",
-                "Uma nova missão foi criada na sua organização.",
-                NotificationType.MissionCreated,
-                missionId,
-                "Mission",
+        _repoMock.Verify(
+            r => r.AddRangeAsync(
+                It.Is<IEnumerable<Notification>>(n =>
+                    n.Count() == 2 &&
+                    n.All(x => x.Type == NotificationType.MissionCreated && x.Title == "Nova missão criada")),
                 It.IsAny<CancellationToken>()),
             Times.Once);
+        _repoMock.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact]
@@ -77,17 +61,10 @@ public class NotificationOrchestratorTests
         await _orchestrator.NotifyMissionCreatedAsync(missionId, organizationId);
 
         // Assert
-        _notificationServiceMock.Verify(
-            s => s.CreateForMultipleRecipientsAsync(
-                It.IsAny<IEnumerable<Guid>>(),
-                It.IsAny<Guid>(),
-                It.IsAny<string>(),
-                It.IsAny<string>(),
-                It.IsAny<NotificationType>(),
-                It.IsAny<Guid?>(),
-                It.IsAny<string?>(),
-                It.IsAny<CancellationToken>()),
+        _repoMock.Verify(
+            r => r.AddRangeAsync(It.IsAny<IEnumerable<Notification>>(), It.IsAny<CancellationToken>()),
             Times.Never);
+        _repoMock.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
     }
 
     [Fact]
@@ -102,33 +79,18 @@ public class NotificationOrchestratorTests
             .Setup(r => r.ResolveMissionRecipientsAsync(missionId, organizationId, null, It.IsAny<CancellationToken>()))
             .ReturnsAsync(recipients);
 
-        _notificationServiceMock
-            .Setup(s => s.CreateForMultipleRecipientsAsync(
-                It.IsAny<IEnumerable<Guid>>(),
-                It.IsAny<Guid>(),
-                It.IsAny<string>(),
-                It.IsAny<string>(),
-                It.IsAny<NotificationType>(),
-                It.IsAny<Guid?>(),
-                It.IsAny<string?>(),
-                It.IsAny<CancellationToken>()))
-            .ReturnsAsync(ServiceResult.Success());
-
         // Act
         await _orchestrator.NotifyMissionUpdatedAsync(missionId, organizationId);
 
         // Assert
-        _notificationServiceMock.Verify(
-            s => s.CreateForMultipleRecipientsAsync(
-                recipients,
-                organizationId,
-                "Missão atualizada",
-                "Uma missão foi atualizada na sua organização.",
-                NotificationType.MissionUpdated,
-                missionId,
-                "Mission",
+        _repoMock.Verify(
+            r => r.AddRangeAsync(
+                It.Is<IEnumerable<Notification>>(n =>
+                    n.Count() == 1 &&
+                    n.All(x => x.Type == NotificationType.MissionUpdated && x.Title == "Missão atualizada")),
                 It.IsAny<CancellationToken>()),
             Times.Once);
+        _repoMock.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact]
@@ -143,33 +105,18 @@ public class NotificationOrchestratorTests
             .Setup(r => r.ResolveMissionRecipientsAsync(missionId, organizationId, null, It.IsAny<CancellationToken>()))
             .ReturnsAsync(recipients);
 
-        _notificationServiceMock
-            .Setup(s => s.CreateForMultipleRecipientsAsync(
-                It.IsAny<IEnumerable<Guid>>(),
-                It.IsAny<Guid>(),
-                It.IsAny<string>(),
-                It.IsAny<string>(),
-                It.IsAny<NotificationType>(),
-                It.IsAny<Guid?>(),
-                It.IsAny<string?>(),
-                It.IsAny<CancellationToken>()))
-            .ReturnsAsync(ServiceResult.Success());
-
         // Act
         await _orchestrator.NotifyMissionDeletedAsync(missionId, organizationId);
 
         // Assert
-        _notificationServiceMock.Verify(
-            s => s.CreateForMultipleRecipientsAsync(
-                recipients,
-                organizationId,
-                "Missão removida",
-                "Uma missão foi removida da sua organização.",
-                NotificationType.MissionDeleted,
-                missionId,
-                "Mission",
+        _repoMock.Verify(
+            r => r.AddRangeAsync(
+                It.Is<IEnumerable<Notification>>(n =>
+                    n.Count() == 1 &&
+                    n.All(x => x.Type == NotificationType.MissionDeleted && x.Title == "Missão removida")),
                 It.IsAny<CancellationToken>()),
             Times.Once);
+        _repoMock.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact]
@@ -191,33 +138,21 @@ public class NotificationOrchestratorTests
             .Setup(r => r.ResolveMissionRecipientsAsync(missionId, organizationId, excludeCollaboratorId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(recipients);
 
-        _notificationServiceMock
-            .Setup(s => s.CreateForMultipleRecipientsAsync(
-                It.IsAny<IEnumerable<Guid>>(),
-                It.IsAny<Guid>(),
-                It.IsAny<string>(),
-                It.IsAny<string>(),
-                It.IsAny<NotificationType>(),
-                It.IsAny<Guid?>(),
-                It.IsAny<string?>(),
-                It.IsAny<CancellationToken>()))
-            .ReturnsAsync(ServiceResult.Success());
-
         // Act
         await _orchestrator.NotifyMetricCheckinCreatedAsync(checkinId, missionMetricId, organizationId, excludeCollaboratorId);
 
         // Assert
-        _notificationServiceMock.Verify(
-            s => s.CreateForMultipleRecipientsAsync(
-                recipients,
-                organizationId,
-                "Novo check-in registrado",
-                "Um novo check-in de métrica foi registrado.",
-                NotificationType.MetricCheckinCreated,
-                checkinId,
-                "MetricCheckin",
+        _repoMock.Verify(
+            r => r.AddRangeAsync(
+                It.Is<IEnumerable<Notification>>(n =>
+                    n.Count() == 1 &&
+                    n.All(x => x.Type == NotificationType.MetricCheckinCreated &&
+                               x.Title == "Novo check-in registrado" &&
+                               x.RelatedEntityId == checkinId &&
+                               x.RelatedEntityType == "MetricCheckin")),
                 It.IsAny<CancellationToken>()),
             Times.Once);
+        _repoMock.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact]
@@ -239,17 +174,8 @@ public class NotificationOrchestratorTests
         _recipientResolverMock.Verify(
             r => r.ResolveMissionRecipientsAsync(It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<Guid?>(), It.IsAny<CancellationToken>()),
             Times.Never);
-
-        _notificationServiceMock.Verify(
-            s => s.CreateForMultipleRecipientsAsync(
-                It.IsAny<IEnumerable<Guid>>(),
-                It.IsAny<Guid>(),
-                It.IsAny<string>(),
-                It.IsAny<string>(),
-                It.IsAny<NotificationType>(),
-                It.IsAny<Guid?>(),
-                It.IsAny<string?>(),
-                It.IsAny<CancellationToken>()),
+        _repoMock.Verify(
+            r => r.AddRangeAsync(It.IsAny<IEnumerable<Notification>>(), It.IsAny<CancellationToken>()),
             Times.Never);
     }
 
@@ -274,16 +200,8 @@ public class NotificationOrchestratorTests
         await _orchestrator.NotifyMetricCheckinCreatedAsync(checkinId, missionMetricId, organizationId, null);
 
         // Assert
-        _notificationServiceMock.Verify(
-            s => s.CreateForMultipleRecipientsAsync(
-                It.IsAny<IEnumerable<Guid>>(),
-                It.IsAny<Guid>(),
-                It.IsAny<string>(),
-                It.IsAny<string>(),
-                It.IsAny<NotificationType>(),
-                It.IsAny<Guid?>(),
-                It.IsAny<string?>(),
-                It.IsAny<CancellationToken>()),
+        _repoMock.Verify(
+            r => r.AddRangeAsync(It.IsAny<IEnumerable<Notification>>(), It.IsAny<CancellationToken>()),
             Times.Never);
     }
 }

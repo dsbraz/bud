@@ -1,14 +1,14 @@
-using Bud.Server.Data;
-using Bud.Server.Services;
+using Bud.Server.Infrastructure.Persistence;
+using Bud.Server.Infrastructure.Repositories;
 using Bud.Server.Tests.Helpers;
 using Bud.Shared.Domain;
 using FluentAssertions;
 using Microsoft.EntityFrameworkCore;
 using Xunit;
 
-namespace Bud.Server.Tests.Services;
+namespace Bud.Server.Tests.Infrastructure.Repositories;
 
-public class DashboardServiceTests
+public class DashboardReadRepositoryTests
 {
     private readonly TestTenantProvider _tenantProvider = new() { IsGlobalAdmin = true };
 
@@ -22,18 +22,17 @@ public class DashboardServiceTests
     }
 
     [Fact]
-    public async Task GetMyDashboardAsync_CollaboratorNotFound_ReturnsNotFound()
+    public async Task GetMyDashboardAsync_CollaboratorNotFound_ReturnsNull()
     {
         // Arrange
         using var context = CreateInMemoryContext();
-        var service = new DashboardService(context);
+        var repository = new DashboardReadRepository(context);
 
         // Act
-        var result = await service.GetMyDashboardAsync(Guid.NewGuid());
+        var result = await repository.GetMyDashboardAsync(Guid.NewGuid(), null);
 
         // Assert
-        result.IsSuccess.Should().BeFalse();
-        result.ErrorType.Should().Be(ServiceErrorType.NotFound);
+        result.Should().BeNull();
     }
 
     [Fact]
@@ -69,17 +68,17 @@ public class DashboardServiceTests
         context.Collaborators.AddRange(leader, collaborator);
         await context.SaveChangesAsync();
 
-        var service = new DashboardService(context);
+        var repository = new DashboardReadRepository(context);
 
         // Act
-        var result = await service.GetMyDashboardAsync(collaborator.Id);
+        var result = await repository.GetMyDashboardAsync(collaborator.Id, null);
 
         // Assert
-        result.IsSuccess.Should().BeTrue();
-        result.Value!.TeamHealth.Leader.Should().NotBeNull();
-        result.Value.TeamHealth.Leader!.FullName.Should().Be("Maria Silva");
-        result.Value.TeamHealth.Leader.Initials.Should().Be("MS");
-        result.Value.TeamHealth.Leader.TeamName.Should().Be("Diretoria de RH");
+        result.Should().NotBeNull();
+        result!.TeamHealth.Leader.Should().NotBeNull();
+        result.TeamHealth.Leader!.FullName.Should().Be("Maria Silva");
+        result.TeamHealth.Leader.Initials.Should().Be("MS");
+        result.TeamHealth.Leader.TeamName.Should().Be("Diretoria de RH");
     }
 
     [Fact]
@@ -106,16 +105,16 @@ public class DashboardServiceTests
         context.Collaborators.Add(leader);
         await context.SaveChangesAsync();
 
-        var service = new DashboardService(context);
+        var repository = new DashboardReadRepository(context);
 
         // Act
-        var result = await service.GetMyDashboardAsync(leader.Id);
+        var result = await repository.GetMyDashboardAsync(leader.Id, null);
 
         // Assert
-        result.IsSuccess.Should().BeTrue();
-        result.Value!.TeamHealth.Leader.Should().NotBeNull();
-        result.Value.TeamHealth.Leader!.Id.Should().Be(leader.Id);
-        result.Value.TeamHealth.Leader.TeamName.Should().Be("Engenharia");
+        result.Should().NotBeNull();
+        result!.TeamHealth.Leader.Should().NotBeNull();
+        result.TeamHealth.Leader!.Id.Should().Be(leader.Id);
+        result.TeamHealth.Leader.TeamName.Should().Be("Engenharia");
     }
 
     [Fact]
@@ -137,15 +136,15 @@ public class DashboardServiceTests
         context.Collaborators.Add(leader);
         await context.SaveChangesAsync();
 
-        var service = new DashboardService(context);
+        var repository = new DashboardReadRepository(context);
 
         // Act
-        var result = await service.GetMyDashboardAsync(leader.Id);
+        var result = await repository.GetMyDashboardAsync(leader.Id, null);
 
         // Assert
-        result.IsSuccess.Should().BeTrue();
-        result.Value!.TeamHealth.Leader.Should().NotBeNull();
-        result.Value.TeamHealth.Leader!.TeamName.Should().BeEmpty();
+        result.Should().NotBeNull();
+        result!.TeamHealth.Leader.Should().NotBeNull();
+        result.TeamHealth.Leader!.TeamName.Should().BeEmpty();
     }
 
     [Fact]
@@ -167,14 +166,14 @@ public class DashboardServiceTests
         context.Collaborators.Add(collaborator);
         await context.SaveChangesAsync();
 
-        var service = new DashboardService(context);
+        var repository = new DashboardReadRepository(context);
 
         // Act
-        var result = await service.GetMyDashboardAsync(collaborator.Id);
+        var result = await repository.GetMyDashboardAsync(collaborator.Id, null);
 
         // Assert
-        result.IsSuccess.Should().BeTrue();
-        result.Value!.TeamHealth.Leader.Should().BeNull();
+        result.Should().NotBeNull();
+        result!.TeamHealth.Leader.Should().BeNull();
     }
 
     [Fact]
@@ -212,15 +211,15 @@ public class DashboardServiceTests
         context.Collaborators.AddRange(leader, member1, member2);
         await context.SaveChangesAsync();
 
-        var service = new DashboardService(context);
+        var repository = new DashboardReadRepository(context);
 
-        // Act — leader views own dashboard, sees direct reports
-        var result = await service.GetMyDashboardAsync(leader.Id);
+        // Act
+        var result = await repository.GetMyDashboardAsync(leader.Id, null);
 
         // Assert
-        result.IsSuccess.Should().BeTrue();
-        result.Value!.TeamHealth.TeamMembers.Should().HaveCount(2);
-        var memberNames = result.Value.TeamHealth.TeamMembers.Select(m => m.FullName).ToList();
+        result.Should().NotBeNull();
+        result!.TeamHealth.TeamMembers.Should().HaveCount(2);
+        var memberNames = result.TeamHealth.TeamMembers.Select(m => m.FullName).ToList();
         memberNames.Should().Contain("Ana Lima");
         memberNames.Should().Contain("Carlos Souza");
     }
@@ -260,15 +259,15 @@ public class DashboardServiceTests
         context.Collaborators.AddRange(leader, member1, member2);
         await context.SaveChangesAsync();
 
-        var service = new DashboardService(context);
+        var repository = new DashboardReadRepository(context);
 
-        // Act — collaborator views dashboard, sees same leader's direct reports
-        var result = await service.GetMyDashboardAsync(member1.Id);
+        // Act
+        var result = await repository.GetMyDashboardAsync(member1.Id, null);
 
         // Assert
-        result.IsSuccess.Should().BeTrue();
-        result.Value!.TeamHealth.TeamMembers.Should().HaveCount(2);
-        var memberNames = result.Value.TeamHealth.TeamMembers.Select(m => m.FullName).ToList();
+        result.Should().NotBeNull();
+        result!.TeamHealth.TeamMembers.Should().HaveCount(2);
+        var memberNames = result.TeamHealth.TeamMembers.Select(m => m.FullName).ToList();
         memberNames.Should().Contain("Ana Lima");
         memberNames.Should().Contain("Carlos Souza");
     }
@@ -318,15 +317,15 @@ public class DashboardServiceTests
 
         await context.SaveChangesAsync();
 
-        var service = new DashboardService(context);
+        var repository = new DashboardReadRepository(context);
 
         // Act
-        var result = await service.GetMyDashboardAsync(leader.Id);
+        var result = await repository.GetMyDashboardAsync(leader.Id, null);
 
         // Assert
-        result.IsSuccess.Should().BeTrue();
+        result.Should().NotBeNull();
         // 1 out of 2 direct reports accessed = 50%
-        result.Value!.TeamHealth.Indicators.WeeklyAccess.Percentage.Should().Be(50);
+        result!.TeamHealth.Indicators.WeeklyAccess.Percentage.Should().Be(50);
     }
 
     [Fact]
@@ -401,15 +400,15 @@ public class DashboardServiceTests
 
         await context.SaveChangesAsync();
 
-        var service = new DashboardService(context);
+        var repository = new DashboardReadRepository(context);
 
         // Act
-        var result = await service.GetMyDashboardAsync(leader.Id);
+        var result = await repository.GetMyDashboardAsync(leader.Id, null);
 
         // Assert
-        result.IsSuccess.Should().BeTrue();
-        result.Value!.TeamHealth.Engagement.Score.Should().BeGreaterThanOrEqualTo(70);
-        result.Value.TeamHealth.Engagement.Level.Should().Be("high");
+        result.Should().NotBeNull();
+        result!.TeamHealth.Engagement.Score.Should().BeGreaterThanOrEqualTo(70);
+        result.TeamHealth.Engagement.Level.Should().Be("high");
     }
 
     [Fact]
@@ -430,16 +429,16 @@ public class DashboardServiceTests
         context.Collaborators.Add(collaborator);
         await context.SaveChangesAsync();
 
-        var service = new DashboardService(context);
+        var repository = new DashboardReadRepository(context);
 
         // Act
-        var result = await service.GetMyDashboardAsync(collaborator.Id);
+        var result = await repository.GetMyDashboardAsync(collaborator.Id, null);
 
         // Assert
-        result.IsSuccess.Should().BeTrue();
-        result.Value!.TeamHealth.Indicators.WeeklyAccess.Percentage.Should().Be(0);
-        result.Value.TeamHealth.Indicators.MissionsUpdated.Percentage.Should().Be(0);
-        result.Value.TeamHealth.Indicators.FormsResponded.IsPlaceholder.Should().BeTrue();
+        result.Should().NotBeNull();
+        result!.TeamHealth.Indicators.WeeklyAccess.Percentage.Should().Be(0);
+        result.TeamHealth.Indicators.MissionsUpdated.Percentage.Should().Be(0);
+        result.TeamHealth.Indicators.FormsResponded.IsPlaceholder.Should().BeTrue();
     }
 
     [Fact]
@@ -495,16 +494,16 @@ public class DashboardServiceTests
         context.MetricCheckins.Add(checkin);
         await context.SaveChangesAsync();
 
-        var service = new DashboardService(context);
+        var repository = new DashboardReadRepository(context);
 
         // Act
-        var result = await service.GetMyDashboardAsync(collaborator.Id);
+        var result = await repository.GetMyDashboardAsync(collaborator.Id, null);
 
         // Assert
-        result.IsSuccess.Should().BeTrue();
-        result.Value!.PendingTasks.Should().HaveCount(1);
-        result.Value.PendingTasks[0].Title.Should().Be("Overdue Mission");
-        result.Value.PendingTasks[0].TaskType.Should().Be("mission_checkin");
+        result.Should().NotBeNull();
+        result!.PendingTasks.Should().HaveCount(1);
+        result.PendingTasks[0].Title.Should().Be("Overdue Mission");
+        result.PendingTasks[0].TaskType.Should().Be("mission_checkin");
     }
 
     [Fact]
@@ -560,14 +559,14 @@ public class DashboardServiceTests
         context.MetricCheckins.Add(checkin);
         await context.SaveChangesAsync();
 
-        var service = new DashboardService(context);
+        var repository = new DashboardReadRepository(context);
 
         // Act
-        var result = await service.GetMyDashboardAsync(collaborator.Id);
+        var result = await repository.GetMyDashboardAsync(collaborator.Id, null);
 
         // Assert
-        result.IsSuccess.Should().BeTrue();
-        result.Value!.PendingTasks.Should().BeEmpty();
+        result.Should().NotBeNull();
+        result!.PendingTasks.Should().BeEmpty();
     }
 
     [Fact]
@@ -626,15 +625,15 @@ public class DashboardServiceTests
         );
         await context.SaveChangesAsync();
 
-        var service = new DashboardService(context);
+        var repository = new DashboardReadRepository(context);
 
         // Act
-        var result = await service.GetMyDashboardAsync(collaborator.Id, teamId: team.Id);
+        var result = await repository.GetMyDashboardAsync(collaborator.Id, teamId: team.Id);
 
         // Assert
-        result.IsSuccess.Should().BeTrue();
-        result.Value!.TeamHealth.TeamMembers.Should().HaveCount(2);
-        var names = result.Value.TeamHealth.TeamMembers.Select(m => m.FullName).ToList();
+        result.Should().NotBeNull();
+        result!.TeamHealth.TeamMembers.Should().HaveCount(2);
+        var names = result.TeamHealth.TeamMembers.Select(m => m.FullName).ToList();
         names.Should().Contain("Alice Team");
         names.Should().Contain("Bob Team");
         names.Should().NotContain("Charlie Outside");
@@ -675,16 +674,16 @@ public class DashboardServiceTests
         );
         await context.SaveChangesAsync();
 
-        var service = new DashboardService(context);
+        var repository = new DashboardReadRepository(context);
 
         // Act
-        var result = await service.GetMyDashboardAsync(collaborator.Id, teamId: team.Id);
+        var result = await repository.GetMyDashboardAsync(collaborator.Id, teamId: team.Id);
 
         // Assert
-        result.IsSuccess.Should().BeTrue();
-        result.Value!.TeamHealth.Leader.Should().NotBeNull();
-        result.Value.TeamHealth.Leader!.FullName.Should().Be("Beta Leader");
-        result.Value.TeamHealth.Leader.TeamName.Should().Be("Squad Beta");
+        result.Should().NotBeNull();
+        result!.TeamHealth.Leader.Should().NotBeNull();
+        result.TeamHealth.Leader!.FullName.Should().Be("Beta Leader");
+        result.TeamHealth.Leader.TeamName.Should().Be("Squad Beta");
     }
 
     [Fact]
@@ -730,15 +729,15 @@ public class DashboardServiceTests
 
         await context.SaveChangesAsync();
 
-        var service = new DashboardService(context);
+        var repository = new DashboardReadRepository(context);
 
         // Act
-        var result = await service.GetMyDashboardAsync(member1.Id, teamId: team.Id);
+        var result = await repository.GetMyDashboardAsync(member1.Id, teamId: team.Id);
 
         // Assert
-        result.IsSuccess.Should().BeTrue();
+        result.Should().NotBeNull();
         // 1 out of 2 team members accessed = 50%
-        result.Value!.TeamHealth.Indicators.WeeklyAccess.Percentage.Should().Be(50);
+        result!.TeamHealth.Indicators.WeeklyAccess.Percentage.Should().Be(50);
     }
 
     [Fact]
@@ -798,16 +797,16 @@ public class DashboardServiceTests
         context.MetricCheckins.Add(checkin);
         await context.SaveChangesAsync();
 
-        var service = new DashboardService(context);
+        var repository = new DashboardReadRepository(context);
 
         // Act
-        var result = await service.GetMyDashboardAsync(collaborator.Id, teamId: team.Id);
+        var result = await repository.GetMyDashboardAsync(collaborator.Id, teamId: team.Id);
 
         // Assert
-        result.IsSuccess.Should().BeTrue();
+        result.Should().NotBeNull();
         // Pending tasks remain personal even when viewing a team
-        result.Value!.PendingTasks.Should().HaveCount(1);
-        result.Value.PendingTasks[0].Title.Should().Be("My Personal Mission");
+        result!.PendingTasks.Should().HaveCount(1);
+        result.PendingTasks[0].Title.Should().Be("My Personal Mission");
     }
 
     [Fact]
@@ -828,16 +827,16 @@ public class DashboardServiceTests
         context.Collaborators.Add(collaborator);
         await context.SaveChangesAsync();
 
-        var service = new DashboardService(context);
+        var repository = new DashboardReadRepository(context);
 
         // Act
-        var result = await service.GetMyDashboardAsync(collaborator.Id, teamId: Guid.NewGuid());
+        var result = await repository.GetMyDashboardAsync(collaborator.Id, teamId: Guid.NewGuid());
 
         // Assert
-        result.IsSuccess.Should().BeTrue();
-        result.Value!.TeamHealth.Leader.Should().BeNull();
-        result.Value.TeamHealth.TeamMembers.Should().BeEmpty();
-        result.Value.TeamHealth.Indicators.WeeklyAccess.Percentage.Should().Be(0);
+        result.Should().NotBeNull();
+        result!.TeamHealth.Leader.Should().BeNull();
+        result.TeamHealth.TeamMembers.Should().BeEmpty();
+        result.TeamHealth.Indicators.WeeklyAccess.Percentage.Should().Be(0);
     }
 
     [Fact]
@@ -858,14 +857,14 @@ public class DashboardServiceTests
         context.Collaborators.Add(collaborator);
         await context.SaveChangesAsync();
 
-        var service = new DashboardService(context);
+        var repository = new DashboardReadRepository(context);
 
         // Act
-        var result = await service.GetMyDashboardAsync(collaborator.Id);
+        var result = await repository.GetMyDashboardAsync(collaborator.Id, null);
 
         // Assert
-        result.IsSuccess.Should().BeTrue();
-        result.Value!.TeamHealth.Engagement.Score.Should().BeLessThan(40);
-        result.Value.TeamHealth.Engagement.Level.Should().Be("low");
+        result.Should().NotBeNull();
+        result!.TeamHealth.Engagement.Score.Should().BeLessThan(40);
+        result.TeamHealth.Engagement.Level.Should().Be("low");
     }
 }

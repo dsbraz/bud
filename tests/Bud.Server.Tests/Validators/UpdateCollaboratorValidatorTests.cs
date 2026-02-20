@@ -1,4 +1,4 @@
-using Bud.Server.Services;
+using Bud.Server.Application.Ports;
 using Bud.Server.Validators;
 using Bud.Shared.Contracts;
 using FluentAssertions;
@@ -12,12 +12,12 @@ public sealed class UpdateCollaboratorValidatorTests
     [Fact]
     public async Task Validate_WithInvalidLeader_ShouldFail()
     {
-        var validationService = new Mock<ICollaboratorValidationService>();
-        validationService
-            .Setup(x => x.IsValidLeaderForUpdateAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
+        var collaboratorRepository = new Mock<ICollaboratorRepository>();
+        collaboratorRepository
+            .Setup(x => x.IsValidLeaderAsync(It.IsAny<Guid>(), null, It.IsAny<CancellationToken>()))
             .ReturnsAsync(false);
 
-        var validator = new UpdateCollaboratorValidator(validationService.Object);
+        var validator = new UpdateCollaboratorValidator(collaboratorRepository.Object);
         var request = new UpdateCollaboratorRequest
         {
             FullName = "John Doe",

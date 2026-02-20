@@ -1,5 +1,5 @@
 using System.Text.Json;
-using Bud.Server.Infrastructure;
+using Bud.Server.Infrastructure.Serialization;
 using Bud.Shared.Domain;
 using FluentAssertions;
 using Xunit;

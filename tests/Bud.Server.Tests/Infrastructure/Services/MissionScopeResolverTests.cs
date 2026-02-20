@@ -1,12 +1,13 @@
-using Bud.Server.Data;
-using Bud.Server.Services;
+using Bud.Server.Infrastructure.Persistence;
+using Bud.Server.Infrastructure.Services;
 using Bud.Server.Tests.Helpers;
 using Bud.Shared.Domain;
 using FluentAssertions;
 using Microsoft.EntityFrameworkCore;
 using Xunit;
+using Bud.Server.Application.Common;
 
-namespace Bud.Server.Tests.Services;
+namespace Bud.Server.Tests.Infrastructure.Services;
 
 public sealed class MissionScopeResolverTests
 {
@@ -43,7 +44,7 @@ public sealed class MissionScopeResolverTests
 
         // Assert
         result.IsSuccess.Should().BeFalse();
-        result.ErrorType.Should().Be(ServiceErrorType.NotFound);
+        result.ErrorType.Should().Be(ErrorType.NotFound);
         result.Error.Should().Be("Organização não encontrada.");
     }
 
@@ -115,7 +116,7 @@ public sealed class MissionScopeResolverTests
 
         // Assert
         result.IsSuccess.Should().BeFalse();
-        result.ErrorType.Should().Be(ServiceErrorType.NotFound);
+        result.ErrorType.Should().Be(ErrorType.NotFound);
         result.Error.Should().Be("Workspace não encontrado.");
     }
 }

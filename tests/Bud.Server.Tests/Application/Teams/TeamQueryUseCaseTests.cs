@@ -1,4 +1,5 @@
-using Bud.Server.Services;
+using Bud.Server.Application.Common;
+using Bud.Server.Application.Ports;
 using Bud.Server.Application.Teams;
 using Bud.Server.Domain.ReadModels;
 using Bud.Shared.Contracts;
@@ -11,63 +12,81 @@ namespace Bud.Server.Tests.Application.Teams;
 
 public sealed class TeamQueryUseCaseTests
 {
+    private readonly Mock<ITeamRepository> _teamRepo = new();
+
     [Fact]
-    public async Task GetByIdAsync_DelegatesToService()
+    public async Task GetByIdAsync_WithExistingTeam_ReturnsSuccess()
     {
-        // Arrange
         var teamId = Guid.NewGuid();
-        var teamService = new Mock<ITeamService>();
-        teamService
-            .Setup(s => s.GetByIdAsync(teamId, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(ServiceResult<Team>.Success(new Team { Id = teamId, Name = "Produto", WorkspaceId = Guid.NewGuid(), OrganizationId = Guid.NewGuid(), LeaderId = Guid.NewGuid() }));
+        _teamRepo.Setup(r => r.GetByIdAsync(teamId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new Team { Id = teamId, Name = "Produto", WorkspaceId = Guid.NewGuid(), OrganizationId = Guid.NewGuid(), LeaderId = Guid.NewGuid() });
 
-        var useCase = new TeamQueryUseCase(teamService.Object);
+        var useCase = new TeamQueryUseCase(_teamRepo.Object);
 
-        // Act
         var result = await useCase.GetByIdAsync(teamId);
 
-        // Assert
         result.IsSuccess.Should().BeTrue();
         result.Value!.Id.Should().Be(teamId);
     }
 
     [Fact]
-    public async Task GetCollaboratorSummariesAsync_DelegatesToService()
+    public async Task GetByIdAsync_WithNonExistingId_ReturnsNotFound()
     {
-        // Arrange
-        var teamId = Guid.NewGuid();
-        var teamService = new Mock<ITeamService>();
-        teamService
-            .Setup(s => s.GetCollaboratorSummariesAsync(teamId, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(ServiceResult<List<CollaboratorSummary>>.Success([]));
+        _teamRepo.Setup(r => r.GetByIdAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((Team?)null);
 
-        var useCase = new TeamQueryUseCase(teamService.Object);
+        var useCase = new TeamQueryUseCase(_teamRepo.Object);
 
-        // Act
-        var result = await useCase.GetCollaboratorSummariesAsync(teamId);
+        var result = await useCase.GetByIdAsync(Guid.NewGuid());
 
-        // Assert
-        result.IsSuccess.Should().BeTrue();
-        teamService.Verify(s => s.GetCollaboratorSummariesAsync(teamId, It.IsAny<CancellationToken>()), Times.Once);
+        result.IsSuccess.Should().BeFalse();
+        result.ErrorType.Should().Be(ErrorType.NotFound);
     }
 
     [Fact]
-    public async Task GetAvailableCollaboratorsAsync_DelegatesToService()
+    public async Task GetCollaboratorSummariesAsync_WithExistingTeam_ReturnsSuccess()
     {
-        // Arrange
         var teamId = Guid.NewGuid();
-        var teamService = new Mock<ITeamService>();
-        teamService
-            .Setup(s => s.GetAvailableCollaboratorsAsync(teamId, "ana", It.IsAny<CancellationToken>()))
-            .ReturnsAsync(ServiceResult<List<CollaboratorSummary>>.Success([]));
+        _teamRepo.Setup(r => r.ExistsAsync(teamId, It.IsAny<CancellationToken>())).ReturnsAsync(true);
+        _teamRepo.Setup(r => r.GetCollaboratorSummariesAsync(teamId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync([]);
 
-        var useCase = new TeamQueryUseCase(teamService.Object);
+        var useCase = new TeamQueryUseCase(_teamRepo.Object);
 
-        // Act
+        var result = await useCase.GetCollaboratorSummariesAsync(teamId);
+
+        result.IsSuccess.Should().BeTrue();
+        _teamRepo.Verify(r => r.GetCollaboratorSummariesAsync(teamId, It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    [Fact]
+    public async Task GetAvailableCollaboratorsAsync_WithExistingTeam_ReturnsSuccess()
+    {
+        var teamId = Guid.NewGuid();
+        var orgId = Guid.NewGuid();
+        _teamRepo.Setup(r => r.GetByIdAsync(teamId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new Team { Id = teamId, Name = "T", OrganizationId = orgId, WorkspaceId = Guid.NewGuid(), LeaderId = Guid.NewGuid() });
+        _teamRepo.Setup(r => r.GetAvailableCollaboratorsAsync(teamId, orgId, "ana", 50, It.IsAny<CancellationToken>()))
+            .ReturnsAsync([]);
+
+        var useCase = new TeamQueryUseCase(_teamRepo.Object);
+
         var result = await useCase.GetAvailableCollaboratorsAsync(teamId, "ana");
 
-        // Assert
         result.IsSuccess.Should().BeTrue();
-        teamService.Verify(s => s.GetAvailableCollaboratorsAsync(teamId, "ana", It.IsAny<CancellationToken>()), Times.Once);
+        _teamRepo.Verify(r => r.GetAvailableCollaboratorsAsync(teamId, orgId, "ana", 50, It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    [Fact]
+    public async Task GetSubTeamsAsync_WithNonExistingTeam_ReturnsNotFound()
+    {
+        _teamRepo.Setup(r => r.ExistsAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>())).ReturnsAsync(false);
+
+        var useCase = new TeamQueryUseCase(_teamRepo.Object);
+
+        var result = await useCase.GetSubTeamsAsync(Guid.NewGuid(), 1, 10);
+
+        result.IsSuccess.Should().BeFalse();
+        result.ErrorType.Should().Be(ErrorType.NotFound);
     }
 }

@@ -1,11 +1,10 @@
 using System.Net.Http.Headers;
-using Bud.Server.Data;
+using Bud.Server.Infrastructure.Persistence;
 using Bud.Server.IntegrationTests.Helpers;
 using Bud.Server.MultiTenancy;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Testcontainers.PostgreSql;
 using Xunit;
@@ -25,17 +24,11 @@ public class CustomWebApplicationFactory : WebApplicationFactory<Program>, IAsyn
 
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
-        // Override configuration BEFORE Program.cs runs to set the correct connection string
-        builder.ConfigureAppConfiguration((context, config) =>
-        {
-            config.AddInMemoryCollection(new Dictionary<string, string?>
-            {
-                ["ConnectionStrings:DefaultConnection"] = _connectionString,
-                ["Jwt:Key"] = "CHANGE-THIS-KEY-IN-PRODUCTION-USE-AT-LEAST-32-CHARACTERS",
-                ["Jwt:Issuer"] = "bud-api",
-                ["Jwt:Audience"] = "bud-api"
-            });
-        });
+        // UseSetting applies configuration early enough for the minimal hosting model
+        builder.UseSetting("ConnectionStrings:DefaultConnection", _connectionString);
+        builder.UseSetting("Jwt:Key", "CHANGE-THIS-KEY-IN-PRODUCTION-USE-AT-LEAST-32-CHARACTERS");
+        builder.UseSetting("Jwt:Issuer", "bud-api");
+        builder.UseSetting("Jwt:Audience", "bud-api");
 
         builder.ConfigureServices(services =>
         {

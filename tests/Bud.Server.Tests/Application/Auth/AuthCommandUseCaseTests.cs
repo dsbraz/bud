@@ -1,10 +1,11 @@
 using Bud.Server.Application.Auth;
 using Bud.Server.Domain.ReadModels;
-using Bud.Server.Services;
+using Bud.Server.Application.Ports;
 using Bud.Shared.Contracts;
 using FluentAssertions;
 using Moq;
 using Xunit;
+using Bud.Server.Application.Common;
 
 namespace Bud.Server.Tests.Application.Auth;
 
@@ -18,7 +19,7 @@ public sealed class AuthCommandUseCaseTests
         var authService = new Mock<IAuthService>();
         authService
             .Setup(s => s.LoginAsync(request, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(ServiceResult<AuthLoginResult>.Success(new AuthLoginResult
+            .ReturnsAsync(Result<AuthLoginResult>.Success(new AuthLoginResult
             {
                 Token = "token",
                 Email = request.Email,

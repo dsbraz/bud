@@ -114,7 +114,7 @@ public class CollaboratorsEndpointsTests : IClassFixture<CustomWebApplicationFac
 
         // Create mission scoped to collaborator via DbContext
         using var scope = _factory.Services.CreateScope();
-        var dbContext = scope.ServiceProvider.GetRequiredService<Bud.Server.Data.ApplicationDbContext>();
+        var dbContext = scope.ServiceProvider.GetRequiredService<Bud.Server.Infrastructure.Persistence.ApplicationDbContext>();
         var mission = new Mission
         {
             Id = Guid.NewGuid(),
@@ -217,7 +217,7 @@ public class CollaboratorsEndpointsTests : IClassFixture<CustomWebApplicationFac
     private async Task<Collaborator> CreateLeaderCollaborator(Guid organizationId)
     {
         using var scope = _factory.Services.CreateScope();
-        var dbContext = scope.ServiceProvider.GetRequiredService<Bud.Server.Data.ApplicationDbContext>();
+        var dbContext = scope.ServiceProvider.GetRequiredService<Bud.Server.Infrastructure.Persistence.ApplicationDbContext>();
 
         var collaborator = new Collaborator
         {
@@ -237,7 +237,7 @@ public class CollaboratorsEndpointsTests : IClassFixture<CustomWebApplicationFac
     private async Task<Collaborator> CreateLeaderSubordinate(Guid organizationId, Guid leaderId)
     {
         using var scope = _factory.Services.CreateScope();
-        var dbContext = scope.ServiceProvider.GetRequiredService<Bud.Server.Data.ApplicationDbContext>();
+        var dbContext = scope.ServiceProvider.GetRequiredService<Bud.Server.Infrastructure.Persistence.ApplicationDbContext>();
 
         var collaborator = new Collaborator
         {
@@ -258,7 +258,7 @@ public class CollaboratorsEndpointsTests : IClassFixture<CustomWebApplicationFac
     private async Task<Collaborator> CreateSubordinate(Guid organizationId, Guid leaderId)
     {
         using var scope = _factory.Services.CreateScope();
-        var dbContext = scope.ServiceProvider.GetRequiredService<Bud.Server.Data.ApplicationDbContext>();
+        var dbContext = scope.ServiceProvider.GetRequiredService<Bud.Server.Infrastructure.Persistence.ApplicationDbContext>();
 
         var collaborator = new Collaborator
         {
@@ -279,7 +279,7 @@ public class CollaboratorsEndpointsTests : IClassFixture<CustomWebApplicationFac
     private async Task<Guid> GetOrCreateAdminLeader()
     {
         using var scope = _factory.Services.CreateScope();
-        var dbContext = scope.ServiceProvider.GetRequiredService<Bud.Server.Data.ApplicationDbContext>();
+        var dbContext = scope.ServiceProvider.GetRequiredService<Bud.Server.Infrastructure.Persistence.ApplicationDbContext>();
 
         var existingLeader = await dbContext.Collaborators
             .IgnoreQueryFilters()
@@ -321,7 +321,7 @@ public class CollaboratorsEndpointsTests : IClassFixture<CustomWebApplicationFac
     private async Task<Collaborator> CreateNonOwnerCollaborator(Guid organizationId)
     {
         using var scope = _factory.Services.CreateScope();
-        var dbContext = scope.ServiceProvider.GetRequiredService<Bud.Server.Data.ApplicationDbContext>();
+        var dbContext = scope.ServiceProvider.GetRequiredService<Bud.Server.Infrastructure.Persistence.ApplicationDbContext>();
 
         var collaborator = new Collaborator
         {
@@ -341,7 +341,7 @@ public class CollaboratorsEndpointsTests : IClassFixture<CustomWebApplicationFac
     private async Task<Collaborator> CreateCollaborator(Guid organizationId)
     {
         using var scope = _factory.Services.CreateScope();
-        var dbContext = scope.ServiceProvider.GetRequiredService<Bud.Server.Data.ApplicationDbContext>();
+        var dbContext = scope.ServiceProvider.GetRequiredService<Bud.Server.Infrastructure.Persistence.ApplicationDbContext>();
 
         var collaborator = new Collaborator
         {

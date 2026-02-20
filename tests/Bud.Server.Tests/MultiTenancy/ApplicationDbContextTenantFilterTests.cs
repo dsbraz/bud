@@ -1,4 +1,4 @@
-using Bud.Server.Data;
+using Bud.Server.Infrastructure.Persistence;
 using Bud.Server.Tests.Helpers;
 using Bud.Shared.Domain;
 using FluentAssertions;

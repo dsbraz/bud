@@ -1,11 +1,11 @@
 using Bud.Server.Controllers;
-using Bud.Server.Services;
 using FluentAssertions;
 using FluentValidation.Results;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Moq;
 using Xunit;
+using Bud.Server.Application.Common;
 
 namespace Bud.Server.Tests.Controllers;
 
@@ -21,13 +21,13 @@ public sealed class ApiControllerBaseTests
         public ActionResult CallValidationProblemFrom(ValidationResult validationResult)
             => ValidationProblemFrom(validationResult);
 
-        public ActionResult CallFromResult(ServiceResult result)
+        public ActionResult CallFromResult(Result result)
             => FromResult(result, () => Ok());
 
-        public ActionResult<string> CallFromResult(ServiceResult<string> result)
+        public ActionResult<string> CallFromResult(Result<string> result)
             => FromResult(result, value => Ok(value));
 
-        public ActionResult<string> CallFromResultOk(ServiceResult<string> result)
+        public ActionResult<string> CallFromResultOk(Result<string> result)
             => FromResultOk(result);
 
         public ObjectResult CallForbiddenProblem(string detail)
@@ -105,7 +105,7 @@ public sealed class ApiControllerBaseTests
         var controller = new TestController();
 
         // Act
-        var actionResult = controller.CallFromResult(ServiceResult.NotFound("Registro não encontrado."));
+        var actionResult = controller.CallFromResult(Result.NotFound("Registro não encontrado."));
 
         // Assert
         var objectResult = actionResult.Should().BeOfType<NotFoundObjectResult>().Subject;
@@ -121,7 +121,7 @@ public sealed class ApiControllerBaseTests
 
         // Act
         var actionResult = controller.CallFromResult(
-            ServiceResult.Failure("Conflito de dados.", ServiceErrorType.Conflict));
+            Result.Failure("Conflito de dados.", ErrorType.Conflict));
 
         // Assert
         var objectResult = actionResult.Should().BeOfType<ConflictObjectResult>().Subject;
@@ -136,7 +136,7 @@ public sealed class ApiControllerBaseTests
         var controller = new TestController();
 
         // Act
-        var actionResult = controller.CallFromResult(ServiceResult.Forbidden("Acesso negado ao recurso."));
+        var actionResult = controller.CallFromResult(Result.Forbidden("Acesso negado ao recurso."));
 
         // Assert
         var objectResult = actionResult.Should().BeOfType<ObjectResult>().Subject;
@@ -153,7 +153,7 @@ public sealed class ApiControllerBaseTests
         var controller = new TestController();
 
         // Act
-        var actionResult = controller.CallFromResult(ServiceResult<string>.Success("ok"));
+        var actionResult = controller.CallFromResult(Result<string>.Success("ok"));
 
         // Assert
         var objectResult = actionResult.Result.Should().BeOfType<OkObjectResult>().Subject;
@@ -167,7 +167,7 @@ public sealed class ApiControllerBaseTests
         var controller = new TestController();
 
         // Act
-        var actionResult = controller.CallFromResultOk(ServiceResult<string>.Success("ok"));
+        var actionResult = controller.CallFromResultOk(Result<string>.Success("ok"));
 
         // Assert
         var objectResult = actionResult.Result.Should().BeOfType<OkObjectResult>().Subject;
@@ -181,7 +181,7 @@ public sealed class ApiControllerBaseTests
         var controller = new TestController();
 
         // Act
-        var actionResult = controller.CallFromResultOk(ServiceResult<string>.NotFound("Registro não encontrado."));
+        var actionResult = controller.CallFromResultOk(Result<string>.NotFound("Registro não encontrado."));
 
         // Assert
         var objectResult = actionResult.Result.Should().BeOfType<NotFoundObjectResult>().Subject;

@@ -1,5 +1,5 @@
-using Bud.Server.Data;
-using Bud.Server.Services;
+using Bud.Server.Infrastructure.Persistence;
+using Bud.Server.Infrastructure.Services;
 using Bud.Server.Settings;
 using Bud.Server.Tests.Helpers;
 using Bud.Shared.Contracts;
@@ -8,8 +8,9 @@ using FluentAssertions;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using Xunit;
+using Bud.Server.Application.Common;
 
-namespace Bud.Server.Tests.Services;
+namespace Bud.Server.Tests.Infrastructure.Services;
 
 public class AuthServiceTests
 {
@@ -91,7 +92,7 @@ public class AuthServiceTests
 
         // Assert
         result.IsSuccess.Should().BeFalse();
-        result.ErrorType.Should().Be(ServiceErrorType.NotFound);
+        result.ErrorType.Should().Be(ErrorType.NotFound);
     }
 
     #endregion
@@ -205,7 +206,7 @@ public class AuthServiceTests
 
         // Assert
         result.IsSuccess.Should().BeFalse();
-        result.ErrorType.Should().Be(ServiceErrorType.NotFound);
+        result.ErrorType.Should().Be(ErrorType.NotFound);
         result.Error.Should().Be("Usuário não encontrado.");
     }
 
@@ -223,7 +224,7 @@ public class AuthServiceTests
 
         // Assert
         result.IsSuccess.Should().BeFalse();
-        result.ErrorType.Should().Be(ServiceErrorType.Validation);
+        result.ErrorType.Should().Be(ErrorType.Validation);
         result.Error.Should().Be("Informe o e-mail.");
     }
 
@@ -241,7 +242,7 @@ public class AuthServiceTests
 
         // Assert
         result.IsSuccess.Should().BeFalse();
-        result.ErrorType.Should().Be(ServiceErrorType.Validation);
+        result.ErrorType.Should().Be(ErrorType.Validation);
         result.Error.Should().Be("Informe o e-mail.");
     }
 
@@ -590,7 +591,7 @@ public class AuthServiceTests
 
         // Assert
         result.IsSuccess.Should().BeFalse();
-        result.ErrorType.Should().Be(ServiceErrorType.Validation);
+        result.ErrorType.Should().Be(ErrorType.Validation);
         result.Error.Should().Be("E-mail é obrigatório.");
     }
 
@@ -606,7 +607,7 @@ public class AuthServiceTests
 
         // Assert
         result.IsSuccess.Should().BeFalse();
-        result.ErrorType.Should().Be(ServiceErrorType.Validation);
+        result.ErrorType.Should().Be(ErrorType.Validation);
         result.Error.Should().Be("E-mail é obrigatório.");
     }
 

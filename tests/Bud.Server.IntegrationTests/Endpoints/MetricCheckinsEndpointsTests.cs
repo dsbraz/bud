@@ -23,7 +23,7 @@ public class MetricCheckinsEndpointsTests : IClassFixture<CustomWebApplicationFa
     private async Task<Guid> GetOrCreateAdminLeader()
     {
         using var scope = _factory.Services.CreateScope();
-        var dbContext = scope.ServiceProvider.GetRequiredService<Bud.Server.Data.ApplicationDbContext>();
+        var dbContext = scope.ServiceProvider.GetRequiredService<Bud.Server.Infrastructure.Persistence.ApplicationDbContext>();
 
         var existingLeader = await dbContext.Collaborators
             .IgnoreQueryFilters()
@@ -121,7 +121,7 @@ public class MetricCheckinsEndpointsTests : IClassFixture<CustomWebApplicationFa
     private async Task<Collaborator> CreateCollaboratorInOrg(Guid organizationId, CollaboratorRole role = CollaboratorRole.IndividualContributor)
     {
         using var scope = _factory.Services.CreateScope();
-        var dbContext = scope.ServiceProvider.GetRequiredService<Bud.Server.Data.ApplicationDbContext>();
+        var dbContext = scope.ServiceProvider.GetRequiredService<Bud.Server.Infrastructure.Persistence.ApplicationDbContext>();
 
         var collaborator = new Collaborator
         {
@@ -748,7 +748,7 @@ public class MetricCheckinsEndpointsTests : IClassFixture<CustomWebApplicationFa
         // Add member to team
         using (var scope = _factory.Services.CreateScope())
         {
-            var dbContext = scope.ServiceProvider.GetRequiredService<Bud.Server.Data.ApplicationDbContext>();
+            var dbContext = scope.ServiceProvider.GetRequiredService<Bud.Server.Infrastructure.Persistence.ApplicationDbContext>();
             dbContext.Set<CollaboratorTeam>().Add(new CollaboratorTeam
             {
                 CollaboratorId = member.Id,

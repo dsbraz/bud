@@ -25,7 +25,7 @@ public class TeamsEndpointsTests : IClassFixture<CustomWebApplicationFactory>
     private async Task<Guid> GetOrCreateAdminLeader()
     {
         using var scope = _factory.Services.CreateScope();
-        var dbContext = scope.ServiceProvider.GetRequiredService<Bud.Server.Data.ApplicationDbContext>();
+        var dbContext = scope.ServiceProvider.GetRequiredService<Bud.Server.Infrastructure.Persistence.ApplicationDbContext>();
 
         var existingLeader = await dbContext.Collaborators
             .IgnoreQueryFilters()
@@ -91,7 +91,7 @@ public class TeamsEndpointsTests : IClassFixture<CustomWebApplicationFactory>
 
         // Create a Leader collaborator in the new org (required for team creation)
         using var scope = _factory.Services.CreateScope();
-        var dbContext = scope.ServiceProvider.GetRequiredService<Bud.Server.Data.ApplicationDbContext>();
+        var dbContext = scope.ServiceProvider.GetRequiredService<Bud.Server.Infrastructure.Persistence.ApplicationDbContext>();
         var leader = new Collaborator
         {
             Id = Guid.NewGuid(),
@@ -110,7 +110,7 @@ public class TeamsEndpointsTests : IClassFixture<CustomWebApplicationFactory>
     private async Task<Collaborator> CreateNonOwnerCollaborator(Guid organizationId)
     {
         using var scope = _factory.Services.CreateScope();
-        var dbContext = scope.ServiceProvider.GetRequiredService<Bud.Server.Data.ApplicationDbContext>();
+        var dbContext = scope.ServiceProvider.GetRequiredService<Bud.Server.Infrastructure.Persistence.ApplicationDbContext>();
 
         var collaborator = new Collaborator
         {
@@ -390,7 +390,7 @@ public class TeamsEndpointsTests : IClassFixture<CustomWebApplicationFactory>
 
         // Create mission scoped to team via DbContext
         using var scope = _factory.Services.CreateScope();
-        var dbContext = scope.ServiceProvider.GetRequiredService<Bud.Server.Data.ApplicationDbContext>();
+        var dbContext = scope.ServiceProvider.GetRequiredService<Bud.Server.Infrastructure.Persistence.ApplicationDbContext>();
         var mission = new Mission
         {
             Id = Guid.NewGuid(),
@@ -562,7 +562,7 @@ public class TeamsEndpointsTests : IClassFixture<CustomWebApplicationFactory>
 
         // Create collaborators directly in database (since API doesn't support creating with TeamId)
         using var scope = _factory.Services.CreateScope();
-        var dbContext = scope.ServiceProvider.GetRequiredService<Bud.Server.Data.ApplicationDbContext>();
+        var dbContext = scope.ServiceProvider.GetRequiredService<Bud.Server.Infrastructure.Persistence.ApplicationDbContext>();
 
         var collab1 = new Collaborator
         {
@@ -635,7 +635,7 @@ public class TeamsEndpointsTests : IClassFixture<CustomWebApplicationFactory>
 
         // Create another collaborator to use in the update
         using var scope = _factory.Services.CreateScope();
-        var dbContext = scope.ServiceProvider.GetRequiredService<Bud.Server.Data.ApplicationDbContext>();
+        var dbContext = scope.ServiceProvider.GetRequiredService<Bud.Server.Infrastructure.Persistence.ApplicationDbContext>();
         var otherCollab = new Collaborator
         {
             Id = Guid.NewGuid(),

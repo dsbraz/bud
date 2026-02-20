@@ -1,12 +1,12 @@
-using Bud.Server.Data;
-using Bud.Server.Services;
+using Bud.Server.Infrastructure.Services;
+using Bud.Server.Infrastructure.Persistence;
 using Bud.Server.Tests.Helpers;
 using Bud.Shared.Domain;
 using FluentAssertions;
 using Microsoft.EntityFrameworkCore;
 using Xunit;
 
-namespace Bud.Server.Tests.Services;
+namespace Bud.Server.Tests.Infrastructure.Services;
 
 public class NotificationRecipientResolverTests
 {

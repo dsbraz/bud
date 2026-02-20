@@ -24,7 +24,7 @@ public class MissionObjectivesEndpointsTests : IClassFixture<CustomWebApplicatio
     private async Task<Guid> GetOrCreateAdminLeader()
     {
         using var scope = _factory.Services.CreateScope();
-        var dbContext = scope.ServiceProvider.GetRequiredService<Bud.Server.Data.ApplicationDbContext>();
+        var dbContext = scope.ServiceProvider.GetRequiredService<Bud.Server.Infrastructure.Persistence.ApplicationDbContext>();
 
         var existingLeader = await dbContext.Collaborators
             .IgnoreQueryFilters()
@@ -351,7 +351,7 @@ public class MissionObjectivesEndpointsTests : IClassFixture<CustomWebApplicatio
     }
 
     [Fact]
-    public async Task Create_WithTenantMismatch_ReturnsForbidden()
+    public async Task Create_WithTenantMismatch_ReturnsNotFound()
     {
         var leaderId = await GetOrCreateAdminLeader();
         var org1Response = await _client.PostAsJsonAsync("/api/organizations",
@@ -385,7 +385,7 @@ public class MissionObjectivesEndpointsTests : IClassFixture<CustomWebApplicatio
 
         var response = await tenantClient.PostAsJsonAsync("/api/mission-objectives", request);
 
-        response.StatusCode.Should().Be(HttpStatusCode.Forbidden);
+        response.StatusCode.Should().Be(HttpStatusCode.NotFound);
     }
 
     #endregion
@@ -457,7 +457,7 @@ public class MissionObjectivesEndpointsTests : IClassFixture<CustomWebApplicatio
     private async Task<Collaborator> CreateNonOwnerCollaborator(Guid organizationId)
     {
         using var scope = _factory.Services.CreateScope();
-        var dbContext = scope.ServiceProvider.GetRequiredService<Bud.Server.Data.ApplicationDbContext>();
+        var dbContext = scope.ServiceProvider.GetRequiredService<Bud.Server.Infrastructure.Persistence.ApplicationDbContext>();
 
         var collaborator = new Collaborator
         {

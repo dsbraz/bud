@@ -1,10 +1,10 @@
-using Bud.Server.Data;
+using Bud.Server.Infrastructure.Persistence;
 using Bud.Shared.Domain;
 using FluentAssertions;
 using Microsoft.EntityFrameworkCore;
 using Xunit;
 
-namespace Bud.Server.Tests.Data;
+namespace Bud.Server.Tests.Infrastructure.Persistence;
 
 public sealed class DbSeederTests
 {

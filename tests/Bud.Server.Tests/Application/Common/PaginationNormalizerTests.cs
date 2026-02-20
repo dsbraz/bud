@@ -1,8 +1,8 @@
-using Bud.Server.Services;
+using Bud.Server.Application.Common;
 using FluentAssertions;
 using Xunit;
 
-namespace Bud.Server.Tests.Services;
+namespace Bud.Server.Tests.Application.Common;
 
 public sealed class PaginationNormalizerTests
 {

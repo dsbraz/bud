@@ -2,7 +2,7 @@ using System.Security.Claims;
 using Bud.Server.Authorization.Handlers;
 using Bud.Server.Authorization.Requirements;
 using Bud.Server.Authorization.ResourceScopes;
-using Bud.Server.Data;
+using Bud.Server.Infrastructure.Persistence;
 using Bud.Server.Tests.Helpers;
 using Bud.Shared.Domain;
 using FluentAssertions;
