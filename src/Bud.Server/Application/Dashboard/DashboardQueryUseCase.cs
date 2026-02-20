@@ -1,15 +1,16 @@
 using System.Security.Claims;
 using Bud.Server.Application.Common;
+using Bud.Server.Application.Ports;
 using Bud.Server.MultiTenancy;
 using Bud.Shared.Contracts;
 
 namespace Bud.Server.Application.Dashboard;
 
 public sealed class DashboardQueryUseCase(
-    IDashboardService dashboardService,
+    IDashboardReadRepository dashboardReadRepository,
     ITenantProvider tenantProvider) : IDashboardQueryUseCase
 {
-    public async Task<ServiceResult<MyDashboardResponse>> GetMyDashboardAsync(
+    public async Task<Result<MyDashboardResponse>> GetMyDashboardAsync(
         ClaimsPrincipal user,
         Guid? teamId = null,
         CancellationToken cancellationToken = default)
@@ -18,15 +19,17 @@ public sealed class DashboardQueryUseCase(
 
         if (!tenantProvider.CollaboratorId.HasValue)
         {
-            return ServiceResult<MyDashboardResponse>.Forbidden("Colaborador não identificado.");
+            return Result<MyDashboardResponse>.Forbidden("Colaborador não identificado.");
         }
 
-        var result = await dashboardService.GetMyDashboardAsync(tenantProvider.CollaboratorId.Value, teamId, cancellationToken);
-        if (!result.IsSuccess)
+        var snapshot = await dashboardReadRepository.GetMyDashboardAsync(
+            tenantProvider.CollaboratorId.Value, teamId, cancellationToken);
+
+        if (snapshot is null)
         {
-            return ServiceResult<MyDashboardResponse>.Failure(result.Error ?? "Falha ao carregar dashboard.", result.ErrorType);
+            return Result<MyDashboardResponse>.NotFound("Colaborador não encontrado.");
         }
 
-        return ServiceResult<MyDashboardResponse>.Success(result.Value!.ToContract());
+        return Result<MyDashboardResponse>.Success(snapshot.ToContract());
     }
 }

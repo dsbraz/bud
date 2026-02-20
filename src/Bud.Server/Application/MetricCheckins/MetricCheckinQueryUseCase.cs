@@ -1,20 +1,29 @@
-using Bud.Server.Services;
+using Bud.Server.Application.Common;
+using Bud.Server.Application.Ports;
 using Bud.Shared.Contracts;
 using Bud.Shared.Domain;
 
 namespace Bud.Server.Application.MetricCheckins;
 
 public sealed class MetricCheckinQueryUseCase(
-    IMetricCheckinService checkinService) : IMetricCheckinQueryUseCase
+    IMetricCheckinRepository checkinRepository) : IMetricCheckinQueryUseCase
 {
-    public Task<ServiceResult<MetricCheckin>> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
-        => checkinService.GetByIdAsync(id, cancellationToken);
+    public async Task<Result<MetricCheckin>> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
+    {
+        var checkin = await checkinRepository.GetByIdAsync(id, cancellationToken);
+        return checkin is null
+            ? Result<MetricCheckin>.NotFound("Check-in não encontrado.")
+            : Result<MetricCheckin>.Success(checkin);
+    }
 
-    public Task<ServiceResult<PagedResult<MetricCheckin>>> GetAllAsync(
+    public async Task<Result<PagedResult<MetricCheckin>>> GetAllAsync(
         Guid? missionMetricId,
         Guid? missionId,
         int page,
         int pageSize,
         CancellationToken cancellationToken = default)
-        => checkinService.GetAllAsync(missionMetricId, missionId, page, pageSize, cancellationToken);
+    {
+        var result = await checkinRepository.GetAllAsync(missionMetricId, missionId, page, pageSize, cancellationToken);
+        return Result<PagedResult<MetricCheckin>>.Success(result);
+    }
 }

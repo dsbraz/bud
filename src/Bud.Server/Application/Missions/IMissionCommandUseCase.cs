@@ -1,23 +1,24 @@
 using System.Security.Claims;
 using Bud.Shared.Contracts;
 using Bud.Shared.Domain;
+using Bud.Server.Application.Common;
 
 namespace Bud.Server.Application.Missions;
 
 public interface IMissionCommandUseCase
 {
-    Task<ServiceResult<Mission>> CreateAsync(
+    Task<Result<Mission>> CreateAsync(
         ClaimsPrincipal user,
         CreateMissionRequest request,
         CancellationToken cancellationToken = default);
 
-    Task<ServiceResult<Mission>> UpdateAsync(
+    Task<Result<Mission>> UpdateAsync(
         ClaimsPrincipal user,
         Guid id,
         UpdateMissionRequest request,
         CancellationToken cancellationToken = default);
 
-    Task<ServiceResult> DeleteAsync(
+    Task<Result> DeleteAsync(
         ClaimsPrincipal user,
         Guid id,
         CancellationToken cancellationToken = default);

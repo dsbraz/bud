@@ -1,21 +1,31 @@
-using Bud.Server.Services;
+using Bud.Server.Application.Common;
+using Bud.Server.Application.Ports;
 using Bud.Shared.Contracts;
 using Bud.Shared.Domain;
 
 namespace Bud.Server.Application.ObjectiveDimensions;
 
 public sealed class ObjectiveDimensionQueryUseCase(
-    IObjectiveDimensionService objectiveDimensionService) : IObjectiveDimensionQueryUseCase
+    IObjectiveDimensionRepository dimensionRepository) : IObjectiveDimensionQueryUseCase
 {
-    public Task<ServiceResult<ObjectiveDimension>> GetByIdAsync(
+    public async Task<Result<ObjectiveDimension>> GetByIdAsync(
         Guid id,
         CancellationToken cancellationToken = default)
-        => objectiveDimensionService.GetByIdAsync(id, cancellationToken);
+    {
+        var dimension = await dimensionRepository.GetByIdAsync(id, cancellationToken);
+        return dimension is null
+            ? Result<ObjectiveDimension>.NotFound("Dimensão do objetivo não encontrada.")
+            : Result<ObjectiveDimension>.Success(dimension);
+    }
 
-    public Task<ServiceResult<PagedResult<ObjectiveDimension>>> GetAllAsync(
+    public async Task<Result<PagedResult<ObjectiveDimension>>> GetAllAsync(
         string? search,
         int page,
         int pageSize,
         CancellationToken cancellationToken = default)
-        => objectiveDimensionService.GetAllAsync(search, page, pageSize, cancellationToken);
+    {
+        (page, pageSize) = PaginationNormalizer.Normalize(page, pageSize);
+        var result = await dimensionRepository.GetAllAsync(search, page, pageSize, cancellationToken);
+        return Result<PagedResult<ObjectiveDimension>>.Success(result);
+    }
 }

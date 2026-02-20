@@ -1,62 +1,93 @@
-using Bud.Server.Services;
 using Bud.Server.Application.Common;
+using Bud.Server.Application.Ports;
+using Bud.Server.Domain.ReadModels;
 using Bud.Shared.Contracts;
 using Bud.Shared.Domain;
 
 namespace Bud.Server.Application.Teams;
 
-public sealed class TeamQueryUseCase(ITeamService teamService) : ITeamQueryUseCase
+public sealed class TeamQueryUseCase(ITeamRepository teamRepository) : ITeamQueryUseCase
 {
-    public Task<ServiceResult<Team>> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
-        => teamService.GetByIdAsync(id, cancellationToken);
+    public async Task<Result<Team>> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
+    {
+        var team = await teamRepository.GetByIdAsync(id, cancellationToken);
+        return team is null
+            ? Result<Team>.NotFound("Time não encontrado.")
+            : Result<Team>.Success(team);
+    }
 
-    public Task<ServiceResult<PagedResult<Team>>> GetAllAsync(
+    public async Task<Result<PagedResult<Team>>> GetAllAsync(
         Guid? workspaceId,
         Guid? parentTeamId,
         string? search,
         int page,
         int pageSize,
         CancellationToken cancellationToken = default)
-        => teamService.GetAllAsync(workspaceId, parentTeamId, search, page, pageSize, cancellationToken);
+    {
+        (page, pageSize) = PaginationNormalizer.Normalize(page, pageSize);
+        var result = await teamRepository.GetAllAsync(workspaceId, parentTeamId, search, page, pageSize, cancellationToken);
+        return Result<PagedResult<Team>>.Success(result);
+    }
 
-    public Task<ServiceResult<PagedResult<Team>>> GetSubTeamsAsync(
+    public async Task<Result<PagedResult<Team>>> GetSubTeamsAsync(
         Guid id,
         int page,
         int pageSize,
         CancellationToken cancellationToken = default)
-        => teamService.GetSubTeamsAsync(id, page, pageSize, cancellationToken);
+    {
+        (page, pageSize) = PaginationNormalizer.Normalize(page, pageSize);
 
-    public Task<ServiceResult<PagedResult<Collaborator>>> GetCollaboratorsAsync(
+        if (!await teamRepository.ExistsAsync(id, cancellationToken))
+        {
+            return Result<PagedResult<Team>>.NotFound("Time não encontrado.");
+        }
+
+        var result = await teamRepository.GetSubTeamsAsync(id, page, pageSize, cancellationToken);
+        return Result<PagedResult<Team>>.Success(result);
+    }
+
+    public async Task<Result<PagedResult<Collaborator>>> GetCollaboratorsAsync(
         Guid id,
         int page,
         int pageSize,
         CancellationToken cancellationToken = default)
-        => teamService.GetCollaboratorsAsync(id, page, pageSize, cancellationToken);
+    {
+        (page, pageSize) = PaginationNormalizer.Normalize(page, pageSize);
 
-    public async Task<ServiceResult<List<CollaboratorSummaryDto>>> GetCollaboratorSummariesAsync(
+        if (!await teamRepository.ExistsAsync(id, cancellationToken))
+        {
+            return Result<PagedResult<Collaborator>>.NotFound("Time não encontrado.");
+        }
+
+        var result = await teamRepository.GetCollaboratorsAsync(id, page, pageSize, cancellationToken);
+        return Result<PagedResult<Collaborator>>.Success(result);
+    }
+
+    public async Task<Result<List<CollaboratorSummaryDto>>> GetCollaboratorSummariesAsync(
         Guid teamId,
         CancellationToken cancellationToken = default)
     {
-        var result = await teamService.GetCollaboratorSummariesAsync(teamId, cancellationToken);
-        if (!result.IsSuccess)
+        if (!await teamRepository.ExistsAsync(teamId, cancellationToken))
         {
-            return ServiceResult<List<CollaboratorSummaryDto>>.Failure(result.Error ?? "Falha ao listar colaboradores do time.", result.ErrorType);
+            return Result<List<CollaboratorSummaryDto>>.NotFound("Time não encontrado.");
         }
 
-        return ServiceResult<List<CollaboratorSummaryDto>>.Success(result.Value!.Select(c => c.ToContract()).ToList());
+        var summaries = await teamRepository.GetCollaboratorSummariesAsync(teamId, cancellationToken);
+        return Result<List<CollaboratorSummaryDto>>.Success(summaries.Select(c => c.ToContract()).ToList());
     }
 
-    public async Task<ServiceResult<List<CollaboratorSummaryDto>>> GetAvailableCollaboratorsAsync(
+    public async Task<Result<List<CollaboratorSummaryDto>>> GetAvailableCollaboratorsAsync(
         Guid teamId,
         string? search,
         CancellationToken cancellationToken = default)
     {
-        var result = await teamService.GetAvailableCollaboratorsAsync(teamId, search, cancellationToken);
-        if (!result.IsSuccess)
+        var team = await teamRepository.GetByIdAsync(teamId, cancellationToken);
+        if (team is null)
         {
-            return ServiceResult<List<CollaboratorSummaryDto>>.Failure(result.Error ?? "Falha ao listar colaboradores disponíveis.", result.ErrorType);
+            return Result<List<CollaboratorSummaryDto>>.NotFound("Time não encontrado.");
         }
 
-        return ServiceResult<List<CollaboratorSummaryDto>>.Success(result.Value!.Select(c => c.ToContract()).ToList());
+        var summaries = await teamRepository.GetAvailableCollaboratorsAsync(teamId, team.OrganizationId, search, 50, cancellationToken);
+        return Result<List<CollaboratorSummaryDto>>.Success(summaries.Select(c => c.ToContract()).ToList());
     }
 }

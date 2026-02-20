@@ -1,4 +1,5 @@
-using Bud.Server.Services;
+using Bud.Server.Application.Ports;
+using Bud.Server.MultiTenancy;
 using Bud.Shared.Contracts;
 using FluentValidation;
 
@@ -6,11 +7,13 @@ namespace Bud.Server.Validators;
 
 public sealed class CreateCollaboratorValidator : AbstractValidator<CreateCollaboratorRequest>
 {
-    private readonly ICollaboratorValidationService _validationService;
+    private readonly ICollaboratorRepository _collaboratorRepository;
+    private readonly ITenantProvider _tenantProvider;
 
-    public CreateCollaboratorValidator(ICollaboratorValidationService validationService)
+    public CreateCollaboratorValidator(ICollaboratorRepository collaboratorRepository, ITenantProvider tenantProvider)
     {
-        _validationService = validationService;
+        _collaboratorRepository = collaboratorRepository;
+        _tenantProvider = tenantProvider;
 
         RuleFor(x => x.FullName)
             .NotEmpty().WithMessage("Nome completo é obrigatório.")
@@ -32,7 +35,7 @@ public sealed class CreateCollaboratorValidator : AbstractValidator<CreateCollab
 
     private async Task<bool> BeUniqueEmail(string email, CancellationToken cancellationToken)
     {
-        return await _validationService.IsEmailUniqueAsync(email, cancellationToken);
+        return await _collaboratorRepository.IsEmailUniqueAsync(email, null, cancellationToken);
     }
 
     private async Task<bool> BeValidLeader(CreateCollaboratorRequest _, Guid? leaderId, CancellationToken cancellationToken)
@@ -42,17 +45,17 @@ public sealed class CreateCollaboratorValidator : AbstractValidator<CreateCollab
             return true;
         }
 
-        return await _validationService.IsValidLeaderForCreateAsync(leaderId.Value, cancellationToken);
+        return await _collaboratorRepository.IsValidLeaderAsync(leaderId.Value, _tenantProvider.TenantId, cancellationToken);
     }
 }
 
 public sealed class UpdateCollaboratorValidator : AbstractValidator<UpdateCollaboratorRequest>
 {
-    private readonly ICollaboratorValidationService _validationService;
+    private readonly ICollaboratorRepository _collaboratorRepository;
 
-    public UpdateCollaboratorValidator(ICollaboratorValidationService validationService)
+    public UpdateCollaboratorValidator(ICollaboratorRepository collaboratorRepository)
     {
-        _validationService = validationService;
+        _collaboratorRepository = collaboratorRepository;
 
         RuleFor(x => x.FullName)
             .NotEmpty().WithMessage("Nome completo é obrigatório.")
@@ -78,6 +81,6 @@ public sealed class UpdateCollaboratorValidator : AbstractValidator<UpdateCollab
             return true;
         }
 
-        return await _validationService.IsValidLeaderForUpdateAsync(leaderId.Value, cancellationToken);
+        return await _collaboratorRepository.IsValidLeaderAsync(leaderId.Value, null, cancellationToken);
     }
 }

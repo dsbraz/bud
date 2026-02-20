@@ -1,5 +1,5 @@
 using System.Reflection;
-using Bud.Server.Infrastructure;
+using Bud.Server.Infrastructure.Serialization;
 using Bud.Server.Middleware;
 using Bud.Server.Settings;
 using Bud.Server.Validators;

@@ -1,86 +1,88 @@
-using Bud.Server.Services;
 using Bud.Server.Application.Common;
+using Bud.Server.Application.Ports;
+using Bud.Server.Domain.ReadModels;
 using Bud.Shared.Contracts;
 using Bud.Shared.Domain;
 
 namespace Bud.Server.Application.Collaborators;
 
-public sealed class CollaboratorQueryUseCase(ICollaboratorService collaboratorService) : ICollaboratorQueryUseCase
+public sealed class CollaboratorQueryUseCase(ICollaboratorRepository collaboratorRepository) : ICollaboratorQueryUseCase
 {
-    public Task<ServiceResult<Collaborator>> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
-        => collaboratorService.GetByIdAsync(id, cancellationToken);
+    public async Task<Result<Collaborator>> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
+    {
+        var collaborator = await collaboratorRepository.GetByIdAsync(id, cancellationToken);
+        return collaborator is null
+            ? Result<Collaborator>.NotFound("Colaborador não encontrado.")
+            : Result<Collaborator>.Success(collaborator);
+    }
 
-    public async Task<ServiceResult<List<LeaderCollaboratorResponse>>> GetLeadersAsync(
+    public async Task<Result<List<LeaderCollaboratorResponse>>> GetLeadersAsync(
         Guid? organizationId,
         CancellationToken cancellationToken = default)
     {
-        var result = await collaboratorService.GetLeadersAsync(organizationId, cancellationToken);
-        if (!result.IsSuccess)
-        {
-            return ServiceResult<List<LeaderCollaboratorResponse>>.Failure(result.Error ?? "Falha ao listar líderes.", result.ErrorType);
-        }
-
-        return ServiceResult<List<LeaderCollaboratorResponse>>.Success(result.Value!.Select(c => c.ToContract()).ToList());
+        var leaders = await collaboratorRepository.GetLeadersAsync(organizationId, cancellationToken);
+        return Result<List<LeaderCollaboratorResponse>>.Success(leaders.Select(c => c.ToContract()).ToList());
     }
 
-    public Task<ServiceResult<PagedResult<Collaborator>>> GetAllAsync(
+    public async Task<Result<PagedResult<Collaborator>>> GetAllAsync(
         Guid? teamId,
         string? search,
         int page,
         int pageSize,
         CancellationToken cancellationToken = default)
-        => collaboratorService.GetAllAsync(teamId, search, page, pageSize, cancellationToken);
+    {
+        (page, pageSize) = PaginationNormalizer.Normalize(page, pageSize);
+        var result = await collaboratorRepository.GetAllAsync(teamId, search, page, pageSize, cancellationToken);
+        return Result<PagedResult<Collaborator>>.Success(result);
+    }
 
-    public async Task<ServiceResult<List<CollaboratorHierarchyNodeDto>>> GetSubordinatesAsync(
+    public async Task<Result<List<CollaboratorHierarchyNodeDto>>> GetSubordinatesAsync(
         Guid collaboratorId,
         CancellationToken cancellationToken = default)
     {
-        var result = await collaboratorService.GetSubordinatesAsync(collaboratorId, cancellationToken: cancellationToken);
-        if (!result.IsSuccess)
+        if (!await collaboratorRepository.ExistsAsync(collaboratorId, cancellationToken))
         {
-            return ServiceResult<List<CollaboratorHierarchyNodeDto>>.Failure(result.Error ?? "Falha ao listar subordinados.", result.ErrorType);
+            return Result<List<CollaboratorHierarchyNodeDto>>.NotFound("Colaborador não encontrado.");
         }
 
-        return ServiceResult<List<CollaboratorHierarchyNodeDto>>.Success(result.Value!.Select(c => c.ToContract()).ToList());
+        var nodes = await collaboratorRepository.GetSubordinatesAsync(collaboratorId, 5, cancellationToken);
+        return Result<List<CollaboratorHierarchyNodeDto>>.Success(nodes.Select(c => c.ToContract()).ToList());
     }
 
-    public async Task<ServiceResult<List<TeamSummaryDto>>> GetTeamsAsync(
+    public async Task<Result<List<TeamSummaryDto>>> GetTeamsAsync(
         Guid collaboratorId,
         CancellationToken cancellationToken = default)
     {
-        var result = await collaboratorService.GetTeamsAsync(collaboratorId, cancellationToken);
-        if (!result.IsSuccess)
+        if (!await collaboratorRepository.ExistsAsync(collaboratorId, cancellationToken))
         {
-            return ServiceResult<List<TeamSummaryDto>>.Failure(result.Error ?? "Falha ao listar equipes do colaborador.", result.ErrorType);
+            return Result<List<TeamSummaryDto>>.NotFound("Colaborador não encontrado.");
         }
 
-        return ServiceResult<List<TeamSummaryDto>>.Success(result.Value!.Select(t => t.ToContract()).ToList());
+        var teams = await collaboratorRepository.GetTeamsAsync(collaboratorId, cancellationToken);
+        return Result<List<TeamSummaryDto>>.Success(teams.Select(t => t.ToContract()).ToList());
     }
 
-    public async Task<ServiceResult<List<TeamSummaryDto>>> GetAvailableTeamsAsync(
+    public async Task<Result<List<TeamSummaryDto>>> GetAvailableTeamsAsync(
         Guid collaboratorId,
         string? search,
         CancellationToken cancellationToken = default)
     {
-        var result = await collaboratorService.GetAvailableTeamsAsync(collaboratorId, search, cancellationToken);
-        if (!result.IsSuccess)
+        var collaborator = await collaboratorRepository.GetByIdAsync(collaboratorId, cancellationToken);
+        if (collaborator is null)
         {
-            return ServiceResult<List<TeamSummaryDto>>.Failure(result.Error ?? "Falha ao listar equipes disponíveis.", result.ErrorType);
+            return Result<List<TeamSummaryDto>>.NotFound("Colaborador não encontrado.");
         }
 
-        return ServiceResult<List<TeamSummaryDto>>.Success(result.Value!.Select(t => t.ToContract()).ToList());
+        var teams = await collaboratorRepository.GetAvailableTeamsAsync(
+            collaboratorId, collaborator.OrganizationId, search, 50, cancellationToken);
+        return Result<List<TeamSummaryDto>>.Success(teams.Select(t => t.ToContract()).ToList());
     }
 
-    public async Task<ServiceResult<List<CollaboratorSummaryDto>>> GetSummariesAsync(
+    public async Task<Result<List<CollaboratorSummaryDto>>> GetSummariesAsync(
         string? search,
         CancellationToken cancellationToken = default)
     {
-        var result = await collaboratorService.GetSummariesAsync(search, cancellationToken);
-        if (!result.IsSuccess)
-        {
-            return ServiceResult<List<CollaboratorSummaryDto>>.Failure(result.Error ?? "Falha ao listar colaboradores.", result.ErrorType);
-        }
-
-        return ServiceResult<List<CollaboratorSummaryDto>>.Success(result.Value!.Select(c => c.ToContract()).ToList());
+        var summaries = await collaboratorRepository.GetSummariesAsync(search, 50, cancellationToken);
+        return Result<List<CollaboratorSummaryDto>>.Success(summaries.Select(c => c.ToContract()).ToList());
     }
 }

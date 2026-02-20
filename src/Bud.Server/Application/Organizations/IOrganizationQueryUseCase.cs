@@ -1,25 +1,26 @@
 using Bud.Shared.Contracts;
 using Bud.Shared.Domain;
+using Bud.Server.Application.Common;
 
 namespace Bud.Server.Application.Organizations;
 
 public interface IOrganizationQueryUseCase
 {
-    Task<ServiceResult<Organization>> GetByIdAsync(Guid id, CancellationToken cancellationToken = default);
+    Task<Result<Organization>> GetByIdAsync(Guid id, CancellationToken cancellationToken = default);
 
-    Task<ServiceResult<PagedResult<Organization>>> GetAllAsync(
+    Task<Result<PagedResult<Organization>>> GetAllAsync(
         string? search,
         int page,
         int pageSize,
         CancellationToken cancellationToken = default);
 
-    Task<ServiceResult<PagedResult<Workspace>>> GetWorkspacesAsync(
+    Task<Result<PagedResult<Workspace>>> GetWorkspacesAsync(
         Guid id,
         int page,
         int pageSize,
         CancellationToken cancellationToken = default);
 
-    Task<ServiceResult<PagedResult<Collaborator>>> GetCollaboratorsAsync(
+    Task<Result<PagedResult<Collaborator>>> GetCollaboratorsAsync(
         Guid id,
         int page,
         int pageSize,

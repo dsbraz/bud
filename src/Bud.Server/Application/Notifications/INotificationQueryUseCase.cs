@@ -1,14 +1,15 @@
 using Bud.Shared.Contracts;
+using Bud.Server.Application.Common;
 
 namespace Bud.Server.Application.Notifications;
 
 public interface INotificationQueryUseCase
 {
-    Task<ServiceResult<PagedResult<NotificationDto>>> GetMyNotificationsAsync(
+    Task<Result<PagedResult<NotificationDto>>> GetMyNotificationsAsync(
         int page,
         int pageSize,
         CancellationToken cancellationToken = default);
 
-    Task<ServiceResult<int>> GetUnreadCountAsync(
+    Task<Result<int>> GetUnreadCountAsync(
         CancellationToken cancellationToken = default);
 }

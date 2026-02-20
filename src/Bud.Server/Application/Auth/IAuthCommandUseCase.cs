@@ -1,8 +1,9 @@
 using Bud.Shared.Contracts;
+using Bud.Server.Application.Common;
 
 namespace Bud.Server.Application.Auth;
 
 public interface IAuthCommandUseCase
 {
-    Task<ServiceResult<AuthLoginResponse>> LoginAsync(AuthLoginRequest request, CancellationToken cancellationToken = default);
+    Task<Result<AuthLoginResponse>> LoginAsync(AuthLoginRequest request, CancellationToken cancellationToken = default);
 }

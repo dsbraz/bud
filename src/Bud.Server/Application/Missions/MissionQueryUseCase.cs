@@ -1,52 +1,88 @@
-using Bud.Server.Services;
 using Bud.Server.Application.Common;
+using Bud.Server.Application.Ports;
 using Bud.Shared.Contracts;
 using Bud.Shared.Domain;
 
 namespace Bud.Server.Application.Missions;
 
 public sealed class MissionQueryUseCase(
-    IMissionService missionService,
+    IMissionRepository missionRepository,
     IMissionProgressService missionProgressService) : IMissionQueryUseCase
 {
-    public Task<ServiceResult<Mission>> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
-        => missionService.GetByIdAsync(id, cancellationToken);
+    public async Task<Result<Mission>> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
+    {
+        var mission = await missionRepository.GetByIdReadOnlyAsync(id, cancellationToken);
+        return mission is null
+            ? Result<Mission>.NotFound("Missão não encontrada.")
+            : Result<Mission>.Success(mission);
+    }
 
-    public Task<ServiceResult<PagedResult<Mission>>> GetAllAsync(
+    public async Task<Result<PagedResult<Mission>>> GetAllAsync(
         MissionScopeType? scopeType,
         Guid? scopeId,
         string? search,
         int page,
         int pageSize,
         CancellationToken cancellationToken = default)
-        => missionService.GetAllAsync(scopeType, scopeId, search, page, pageSize, cancellationToken);
+    {
+        (page, pageSize) = PaginationNormalizer.Normalize(page, pageSize);
+        var result = await missionRepository.GetAllAsync(scopeType, scopeId, search, page, pageSize, cancellationToken);
+        return Result<PagedResult<Mission>>.Success(result);
+    }
 
-    public Task<ServiceResult<PagedResult<Mission>>> GetMyMissionsAsync(
+    public async Task<Result<PagedResult<Mission>>> GetMyMissionsAsync(
         Guid collaboratorId,
         string? search,
         int page,
         int pageSize,
         CancellationToken cancellationToken = default)
-        => missionService.GetMyMissionsAsync(collaboratorId, search, page, pageSize, cancellationToken);
+    {
+        (page, pageSize) = PaginationNormalizer.Normalize(page, pageSize);
 
-    public async Task<ServiceResult<List<MissionProgressDto>>> GetProgressAsync(
+        var collaborator = await missionRepository.FindCollaboratorForMyMissionsAsync(collaboratorId, cancellationToken);
+        if (collaborator is null)
+        {
+            return Result<PagedResult<Mission>>.NotFound("Colaborador não encontrado.");
+        }
+
+        var teamIds = await missionRepository.GetCollaboratorTeamIdsAsync(collaboratorId, collaborator.TeamId, cancellationToken);
+        var workspaceIds = await missionRepository.GetWorkspaceIdsForTeamsAsync(teamIds, cancellationToken);
+
+        var result = await missionRepository.GetMyMissionsAsync(
+            collaboratorId, collaborator.OrganizationId, teamIds, workspaceIds, search, page, pageSize, cancellationToken);
+
+        return Result<PagedResult<Mission>>.Success(result);
+    }
+
+    public async Task<Result<List<MissionProgressDto>>> GetProgressAsync(
         List<Guid> missionIds,
         CancellationToken cancellationToken = default)
     {
         var result = await missionProgressService.GetProgressAsync(missionIds, cancellationToken);
         if (!result.IsSuccess)
         {
-            return ServiceResult<List<MissionProgressDto>>.Failure(result.Error ?? "Falha ao calcular progresso das missões.", result.ErrorType);
+            return Result<List<MissionProgressDto>>.Failure(result.Error ?? "Falha ao calcular progresso das missões.", result.ErrorType);
         }
 
-        return ServiceResult<List<MissionProgressDto>>.Success(
+        return Result<List<MissionProgressDto>>.Success(
             result.Value!.Select(p => p.ToContract()).ToList());
     }
 
-    public Task<ServiceResult<PagedResult<MissionMetric>>> GetMetricsAsync(
+    public async Task<Result<PagedResult<MissionMetric>>> GetMetricsAsync(
         Guid id,
         int page,
         int pageSize,
         CancellationToken cancellationToken = default)
-        => missionService.GetMetricsAsync(id, page, pageSize, cancellationToken);
+    {
+        (page, pageSize) = PaginationNormalizer.Normalize(page, pageSize);
+
+        var missionExists = await missionRepository.ExistsAsync(id, cancellationToken);
+        if (!missionExists)
+        {
+            return Result<PagedResult<MissionMetric>>.NotFound("Missão não encontrada.");
+        }
+
+        var result = await missionRepository.GetMetricsAsync(id, page, pageSize, cancellationToken);
+        return Result<PagedResult<MissionMetric>>.Success(result);
+    }
 }

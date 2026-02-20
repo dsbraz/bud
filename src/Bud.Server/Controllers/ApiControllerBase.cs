@@ -1,6 +1,7 @@
 using FluentValidation.Results;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Bud.Server.Application.Common;
 
 namespace Bud.Server.Controllers;
 
@@ -70,7 +71,7 @@ public abstract class ApiControllerBase : ControllerBase
             : new LoadEntityAuthorizationResult<TEntity>(null, authorizationFailure);
     }
 
-    protected ActionResult FromResult(ServiceResult result, Func<ActionResult> onSuccess)
+    protected ActionResult FromResult(Result result, Func<ActionResult> onSuccess)
     {
         if (result.IsSuccess)
         {
@@ -79,14 +80,14 @@ public abstract class ApiControllerBase : ControllerBase
 
         return result.ErrorType switch
         {
-            ServiceErrorType.NotFound => NotFound(new ProblemDetails { Detail = result.Error }),
-            ServiceErrorType.Conflict => Conflict(new ProblemDetails { Detail = result.Error }),
-            ServiceErrorType.Forbidden => ForbiddenProblem(result.Error ?? "Você não tem permissão para realizar esta ação."),
+            ErrorType.NotFound => NotFound(new ProblemDetails { Detail = result.Error }),
+            ErrorType.Conflict => Conflict(new ProblemDetails { Detail = result.Error }),
+            ErrorType.Forbidden => ForbiddenProblem(result.Error ?? "Você não tem permissão para realizar esta ação."),
             _ => BadRequest(new ProblemDetails { Detail = result.Error })
         };
     }
 
-    protected ActionResult<T> FromResult<T>(ServiceResult<T> result, Func<T, ActionResult<T>> onSuccess)
+    protected ActionResult<T> FromResult<T>(Result<T> result, Func<T, ActionResult<T>> onSuccess)
     {
         if (result.IsSuccess)
         {
@@ -95,19 +96,19 @@ public abstract class ApiControllerBase : ControllerBase
 
         return result.ErrorType switch
         {
-            ServiceErrorType.NotFound => NotFound(new ProblemDetails { Detail = result.Error }),
-            ServiceErrorType.Conflict => Conflict(new ProblemDetails { Detail = result.Error }),
-            ServiceErrorType.Forbidden => ForbiddenProblem(result.Error ?? "Você não tem permissão para realizar esta ação."),
+            ErrorType.NotFound => NotFound(new ProblemDetails { Detail = result.Error }),
+            ErrorType.Conflict => Conflict(new ProblemDetails { Detail = result.Error }),
+            ErrorType.Forbidden => ForbiddenProblem(result.Error ?? "Você não tem permissão para realizar esta ação."),
             _ => BadRequest(new ProblemDetails { Detail = result.Error })
         };
     }
 
-    protected ActionResult<T> FromResultOk<T>(ServiceResult<T> result)
+    protected ActionResult<T> FromResultOk<T>(Result<T> result)
     {
         return FromResult(result, value => Ok(value));
     }
 
-    protected ActionResult<TResult> FromResultOk<T, TResult>(ServiceResult<T> result, Func<T, TResult> mapper)
+    protected ActionResult<TResult> FromResultOk<T, TResult>(Result<T> result, Func<T, TResult> mapper)
     {
         if (result.IsSuccess)
         {
@@ -116,9 +117,9 @@ public abstract class ApiControllerBase : ControllerBase
 
         return result.ErrorType switch
         {
-            ServiceErrorType.NotFound => NotFound(new ProblemDetails { Detail = result.Error }),
-            ServiceErrorType.Conflict => Conflict(new ProblemDetails { Detail = result.Error }),
-            ServiceErrorType.Forbidden => ForbiddenProblem(result.Error ?? "Você não tem permissão para realizar esta ação."),
+            ErrorType.NotFound => NotFound(new ProblemDetails { Detail = result.Error }),
+            ErrorType.Conflict => Conflict(new ProblemDetails { Detail = result.Error }),
+            ErrorType.Forbidden => ForbiddenProblem(result.Error ?? "Você não tem permissão para realizar esta ação."),
             _ => BadRequest(new ProblemDetails { Detail = result.Error })
         };
     }
