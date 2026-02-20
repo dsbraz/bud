@@ -7,7 +7,7 @@ Accepted (atualizado — regras de fronteira atualizadas para refletir migraçã
 
 Mesmo com boa arquitetura inicial, regressoes acontecem quando novas features introduzem dependencias inadequadas entre camadas.
 
-Com a migracão de `Services/` para `Application/Ports/` + `Infrastructure/Repositories/`, as regras de fronteira precisaram ser atualizadas para refletir a nova estrutura.
+Com a migracão de `Services/` para `Infrastructure/Repositories/` + `Infrastructure/Services/` (interfaces co-localizadas com implementações, ver ADR-0014), as regras de fronteira precisaram ser atualizadas para refletir a nova estrutura.
 
 ## Decisão
 
@@ -17,8 +17,8 @@ Manter testes de arquitetura automatizados em `tests/Bud.Server.Tests/Architectu
 
 - Controllers não dependem diretamente de `ApplicationDbContext`
 - Controllers dependem apenas de UseCases, nunca de Repositories diretamente
-- UseCases dependem de interfaces (ports) em `Application/Ports/`, nunca de implementações em `Infrastructure/`
-- Camada `Application` não depende da camada `Infrastructure`
+- UseCases dependem de interfaces (ports) co-localizadas em `Infrastructure/`, nunca de implementações concretas
+- Camada `Application` importa namespaces de `Infrastructure/` apenas para referenciar interfaces (ports); não depende de tipos concretos
 - Camada `Domain` não depende da camada `Application` nem de `Infrastructure`
 - `Infrastructure/Repositories` não expõem DTOs/Responses de `Bud.Shared.Contracts` em tipos de retorno
 - **Repositories NÃO contêm lógica de negócio** — responsabilidade exclusiva de persistência e queries

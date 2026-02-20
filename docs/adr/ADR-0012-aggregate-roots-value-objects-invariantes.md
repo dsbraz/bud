@@ -34,8 +34,7 @@ Os limites de aggregate root não estavam explicitados no modelo compartilhado, 
    - `MissionMetric` centraliza consistência de payload de check-in via `CreateCheckin(...)` e `UpdateCheckin(...)`, com o UseCase delegando validação de domínio.
 
 6. Interface de repositório única por aggregate:
-   - Cada aggregate root expõe uma única interface de repositório (`ITeamRepository`, `IWorkspaceRepository`, `ICollaboratorRepository`, `IMissionRepository`, `IMissionMetricRepository`, `IMetricCheckinRepository`) definida em `Application/Ports/`.
-   - Implementações ficam em `Infrastructure/Repositories/`.
+   - Cada aggregate root expõe uma única interface de repositório (`ITeamRepository`, `IWorkspaceRepository`, `ICollaboratorRepository`, `IMissionRepository`, `IMissionMetricRepository`, `IMetricCheckinRepository`) co-localizada com sua implementação em `Infrastructure/Repositories/`.
    - Repositories são responsáveis exclusivamente por persistência e queries — sem lógica de negócio.
    - UseCases de comando e consulta dependem da mesma interface de repositório.
 

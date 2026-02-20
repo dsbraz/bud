@@ -1,7 +1,7 @@
 using Bud.Server.Domain.ReadModels;
 using Bud.Server.Application.Common;
 
-namespace Bud.Server.Application.Ports;
+namespace Bud.Server.Infrastructure.Services;
 
 public interface IMissionProgressService
 {

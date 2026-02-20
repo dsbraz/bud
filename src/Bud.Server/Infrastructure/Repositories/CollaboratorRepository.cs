@@ -1,4 +1,3 @@
-using Bud.Server.Application.Ports;
 using Bud.Server.Domain.ReadModels;
 using Bud.Server.Domain.Specifications;
 using Bud.Server.Infrastructure.Persistence;

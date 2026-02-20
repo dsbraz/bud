@@ -32,7 +32,7 @@ Este documento é voltado para devs que precisam:
 O Bud segue uma arquitetura em camadas com separação explícita de responsabilidades:
 
 - **API/Host (`Bud.Server`)**: exposição HTTP, autenticação/autorização, middleware e composição de dependências.
-- **Application**: casos de uso (`Command/Query`), portas (interfaces de repositórios e serviços em `Ports/`), orquestração de notificações e resultado unificado (`Result`).
+- **Application**: casos de uso (`Command/Query`), orquestração de notificações e resultado unificado (`Result`).
 - **Domain**: conceitos de domínio, value objects e specifications.
 - **Infrastructure**: EF Core (`ApplicationDbContext`), repositórios (`Repositories/`) e serviços de infraestrutura (`Services/`).
 - **Client (`Bud.Client`)**: SPA Blazor WASM com consumo da API.
@@ -43,10 +43,9 @@ O Bud segue uma arquitetura em camadas com separação explícita de responsabil
 - **Controllers** recebem requests, validam payloads (FluentValidation) e delegam para UseCases.
   Validações dependentes de dados devem passar por abstrações/repositórios, não por acesso direto de validator ao `DbContext`.
 - **UseCases** centralizam o fluxo completo da aplicação (orquestração, autorização, notificações) e retornam `Result`/`Result<T>` (em `Application/Common/`).
-- **Ports** (`Application/Ports/`) definem as interfaces de repositórios (`I*Repository`) e serviços de infraestrutura (`IAuthService`, `IMissionScopeResolver`, `IMissionProgressService`).
-- **Infrastructure** (`Infrastructure/`) contém as implementações concretas:
-  - `Repositories/`: implementações dos repositórios definidos em `Ports/`.
-  - `Services/`: serviços de infraestrutura (`AuthService`, `MissionScopeResolver`, `MissionProgressService`, `NotificationRecipientResolver`).
+- **Infrastructure** (`Infrastructure/`) contém interfaces e implementações concretas:
+  - `Repositories/`: interfaces (`I*Repository`) e implementações dos repositórios.
+  - `Services/`: interfaces (`IAuthService`, `IMissionScopeResolver`, `IMissionProgressService`) e implementações (`AuthService`, `MissionScopeResolver`, `MissionProgressService`, `NotificationRecipientResolver`).
   - `ApplicationDbContext`, `Configurations/` e `DbSeeder`.
 - **Authorization** (`Authorization/`) contém serviços de autorização (`TenantAuthorizationService`, `OrganizationAuthorizationService`), policies, requirements e handlers.
 - **DependencyInjection** modulariza bootstrap (`BudApi`, `BudSecurity`, `BudData`, `BudApplication`).
@@ -54,8 +53,8 @@ O Bud segue uma arquitetura em camadas com separação explícita de responsabil
 ### Padrões arquiteturais adotados
 
 - **UseCases + Repositories (Clean Architecture)**
-  Controllers delegam para UseCases, que dependem de interfaces (portas) definidas em `Application/Ports/`.
-  Repositórios em `Infrastructure/Repositories/` implementam essas portas. `Application` não depende diretamente de `Infrastructure` e `Domain` não depende de `Application`.
+  Controllers delegam para UseCases, que dependem de interfaces (portas) co-localizadas com suas implementações em `Infrastructure/`.
+  Repositórios e serviços definem interfaces e implementações no mesmo diretório. `Domain` não depende de `Application` nem de `Infrastructure`.
   Referências: `docs/adr/ADR-0002-usecases-services.md`.
 - **Policy-based Authorization (Requirement/Handler)**
   Regras de autorização centralizadas em policies e handlers, reduzindo condicionais espalhadas.
@@ -91,7 +90,7 @@ Isolamento por organização (`OrganizationId`) com:
 1. Request chega no controller.
 2. Payload é validado.
 3. Controller chama o UseCase correspondente.
-4. UseCase aplica regras de autorização/orquestração e delega para repositórios (portas em `Application/Ports/`).
+4. UseCase aplica regras de autorização/orquestração e delega para repositórios (via interfaces definidas em `Infrastructure/`).
 5. Repositório persiste/consulta via `ApplicationDbContext`.
 6. UseCase orquestra notificações quando aplicável (via `INotificationOrchestrator`).
 7. Resultado (`Result`) é mapeado para resposta HTTP.
@@ -124,8 +123,7 @@ Para lista atualizada de ADRs e ordem recomendada de leitura, consulte:
 flowchart LR
     A[Bud.Client<br/>Blazor WASM] -->|HTTP + JWT + X-Tenant-Id| B[Bud.Server Controllers]
     B --> C[Application UseCases<br/>Command/Query]
-    C --> P[Ports<br/>I*Repository]
-    P --> R[Infrastructure<br/>Repositories]
+    C --> R[Infrastructure<br/>I*Repository + Repositories]
     R --> E[(PostgreSQL<br/>ApplicationDbContext)]
     C --> N[NotificationOrchestrator]
     N --> P
@@ -269,20 +267,20 @@ flowchart TB
     end
     subgraph App["Application"]
       UseCases
-      Ports["Ports (I*Repository)"]
     end
     subgraph Domain["Domain"]
       Specifications
       ValueObjects
     end
     subgraph Infra["Infrastructure"]
+      Interfaces["Interfaces (I*Repository)"]
       Repositories
       DbContext
     end
 
     Controllers --> UseCases
-    UseCases --> Ports
-    Repositories --> Ports
+    UseCases --> Interfaces
+    Repositories -.-> Interfaces
     Repositories --> DbContext
     Repositories --> Specifications
     DependencyInjection --> Controllers
@@ -302,11 +300,11 @@ flowchart LR
     subgraph Api["Bud.Server (API/Aplicação)"]
       Controllers["Controllers"]
       UseCases["UseCases"]
-      Ports["Ports (Interfaces)"]
       Authz["AuthN/AuthZ + Policies"]
     end
 
     subgraph Infra["Infrastructure"]
+      Ports["Interfaces (I*Repository)"]
       Repos["Repositories"]
       Db["ApplicationDbContext"]
       Pg["PostgreSQL"]
@@ -316,7 +314,7 @@ flowchart LR
     ApiClient --> Controllers
     Controllers --> UseCases
     UseCases --> Ports
-    Repos --> Ports
+    Repos -.-> Ports
     Controllers --> Authz
     Repos --> Db
     Db --> Pg
@@ -329,7 +327,7 @@ Fluxo recomendado de contribuição para manter qualidade arquitetural e consist
 1. Crie uma branch curta e focada no objetivo da mudança.
 2. Escreva/atualize testes antes da implementação (TDD: Red -> Green -> Refactor).
 3. Implemente seguindo os padrões do projeto:
-   - Controllers -> UseCases -> Repositories (via Ports)
+   - Controllers -> UseCases -> Repositories (via interfaces em Infrastructure)
    - autorização por policies/handlers
    - mensagens de erro/validação em pt-BR
 4. Atualize documentação OpenAPI (summary/description/status/errors) quando alterar contratos.

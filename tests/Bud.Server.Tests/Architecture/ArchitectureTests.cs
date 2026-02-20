@@ -93,11 +93,12 @@ public sealed class ArchitectureTests
             .Where(type => type
                 .GetConstructors(BindingFlags.Public | BindingFlags.Instance | BindingFlags.NonPublic)
                 .SelectMany(c => c.GetParameters())
-                .Any(p => p.ParameterType.Namespace?.StartsWith("Bud.Server.Infrastructure", StringComparison.Ordinal) == true))
+                .Any(p => p.ParameterType.Namespace?.StartsWith("Bud.Server.Infrastructure", StringComparison.Ordinal) == true
+                          && !p.ParameterType.IsInterface))
             .Select(t => t.FullName)
             .ToList();
 
-        invalidTypes.Should().BeEmpty("camada Application não deve depender da camada Data");
+        invalidTypes.Should().BeEmpty("camada Application não deve depender de tipos concretos da camada Infrastructure");
     }
 
     [Fact]
@@ -395,7 +396,9 @@ public sealed class ArchitectureTests
     public void Services_ShouldNotExposeSharedContractPayloadsInReturnTypes()
     {
         var serviceInterfaces = ServerAssembly.GetTypes()
-            .Where(t => t.IsInterface && t.Namespace?.StartsWith("Bud.Server.Application.Ports", StringComparison.Ordinal) == true)
+            .Where(t => t.IsInterface &&
+                (t.Namespace?.StartsWith("Bud.Server.Infrastructure.Repositories", StringComparison.Ordinal) == true ||
+                 t.Namespace?.StartsWith("Bud.Server.Infrastructure.Services", StringComparison.Ordinal) == true))
             .ToList();
 
         serviceInterfaces.Should().NotBeEmpty();
