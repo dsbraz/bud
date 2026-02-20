@@ -30,6 +30,28 @@ a {
 
 .sidebar-header {
     padding: var(--spacing-3) 0;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.sidebar-close-btn {
+    display: none;
+    width: 36px;
+    height: 36px;
+    align-items: center;
+    justify-content: center;
+    border: none;
+    background: transparent;
+    color: var(--color-text-muted);
+    cursor: pointer;
+    border-radius: var(--radius-base);
+    transition: background var(--transition-fast);
+}
+
+.sidebar-close-btn:hover {
+    background: var(--color-sidebar-hover);
+    color: var(--color-text-primary);
 }
 
 .sidebar-header .brand {
@@ -714,25 +736,6 @@ a {
     color: var(--neutral-500);
 }
 
-@media (max-width: 900px) {
-    .app-shell {
-        grid-template-columns: 1fr;
-    }
-
-    .app-sidebar {
-        flex-direction: row;
-        flex-wrap: wrap;
-        gap: var(--spacing-3);
-        border-right: none;
-        border-bottom: 1px solid var(--color-border-light);
-    }
-
-    .sidebar-nav {
-        flex-direction: row;
-        flex-wrap: wrap;
-    }
-}
-
 #blazor-error-ui {
     color-scheme: light only;
     background: var(--color-warning-bg);
@@ -1034,15 +1037,7 @@ a {
     background: transparent;
 }
 
-@media (max-width: 900px) {
-    .auth-shell {
-        grid-template-columns: 1fr;
-    }
-
-    .auth-aside {
-        display: none;
-    }
-}
+/* Auth responsive rules moved to RESPONSIVE section at end of file */
 
 /* ========================================
    MODAL - Modern Dialog Component
@@ -4105,4 +4100,291 @@ a {
 .org-chart-role {
     font-size: var(--font-size-xs);
     color: var(--neutral-500);
+}
+
+/* ========================================
+   RESPONSIVE — Consolidated Media Queries
+   Breakpoints: 1024px (tablet), 768px (tablet portrait), 640px (phone), 400px (small phone)
+   ======================================== */
+
+/* Hamburger button: hidden on desktop, shown on mobile */
+.topbar-nav-toggle {
+    display: none;
+    width: 40px;
+    height: 40px;
+    align-items: center;
+    justify-content: center;
+    border: none;
+    background: transparent;
+    color: var(--color-text-primary);
+    cursor: pointer;
+    border-radius: var(--radius-base);
+    transition: background var(--transition-fast);
+    flex-shrink: 0;
+}
+
+.topbar-nav-toggle:hover {
+    background: var(--color-hover);
+}
+
+/* Nav backdrop overlay (rendered outside .app-shell) */
+.nav-backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 1029;
+    cursor: pointer;
+}
+
+/* Table scroll container (for pages without a named container) */
+.table-scroll-container {
+    /* no-op on desktop */
+}
+
+/* Action column class (replaces inline styles) */
+.th-actions {
+    width: 120px;
+    text-align: center;
+}
+
+/* ── max-width: 1024px (Tablet landscape and below) ── */
+@media (max-width: 1024px) {
+    /* Phase 1: Navigation drawer */
+    .app-shell {
+        grid-template-columns: 1fr;
+    }
+
+    .topbar-nav-toggle {
+        display: flex;
+    }
+
+    .sidebar-close-btn {
+        display: flex;
+    }
+
+    .app-sidebar {
+        position: fixed;
+        top: 0;
+        left: -240px;
+        bottom: 0;
+        width: 240px;
+        z-index: 1030;
+        transition: left 0.3s ease;
+        flex-direction: column;
+        background: var(--color-sidebar-bg);
+        border-right: 1px solid var(--color-sidebar-border);
+        border-bottom: none;
+        overflow-y: auto;
+    }
+
+    .app-sidebar.is-open {
+        left: 0;
+        box-shadow: var(--shadow-xl);
+    }
+
+    .app-main {
+        grid-column: 1;
+    }
+
+    /* Touch targets */
+    .nav-subitem {
+        padding: var(--spacing-2) var(--spacing-3);
+        min-height: 44px;
+        display: flex;
+        align-items: center;
+    }
+
+    .sidebar-nav .nav-item {
+        min-height: 44px;
+    }
+
+    .workspace-dropdown-item {
+        min-height: 44px;
+    }
+
+    /* Phase 2: Content padding */
+    .app-content {
+        padding: var(--spacing-5) var(--spacing-5) var(--spacing-8);
+    }
+
+    /* Phase 3: Table overflow */
+    .collaborators-table-container,
+    .workspaces-table-container,
+    .teams-table-container,
+    .table-scroll-container {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    .collaborators-table-container .table,
+    .workspaces-table-container .table,
+    .teams-table-container .table,
+    .table-scroll-container .table {
+        min-width: 520px;
+    }
+}
+
+/* ── max-width: 768px (Tablet portrait and below) ── */
+@media (max-width: 768px) {
+    /* Phase 2: Auth layout */
+    .auth-shell {
+        grid-template-columns: 1fr;
+    }
+
+    .auth-aside {
+        display: none;
+    }
+
+    /* Phase 4: Metric rows wrap */
+    .metric-row {
+        flex-wrap: wrap;
+        gap: var(--spacing-3);
+    }
+
+    .metric-row-period {
+        width: auto;
+        flex-shrink: 1;
+        flex: 1 1 140px;
+    }
+
+    .metric-row-progress {
+        width: auto;
+        flex-shrink: 1;
+        flex: 1 1 160px;
+    }
+
+    .metric-row-title {
+        min-width: 0;
+        flex-basis: 100%;
+    }
+
+    /* Phase 4: Filter bars wrap */
+    .missions-filter-bar,
+    .collaborators-filter-bar,
+    .workspaces-filter-bar,
+    .teams-filter-bar {
+        flex-wrap: wrap;
+    }
+
+    .missions-filter-left,
+    .collaborators-filter-left,
+    .workspaces-filter-left,
+    .teams-filter-left {
+        flex-wrap: wrap;
+        width: 100%;
+    }
+}
+
+/* ── max-width: 640px (Phone) ── */
+@media (max-width: 640px) {
+    /* Phase 2: Tighter content padding */
+    .app-content {
+        padding: var(--spacing-4) var(--spacing-4) var(--spacing-6);
+    }
+
+    /* Phase 2: Page header wrap */
+    .page-header {
+        flex-wrap: wrap;
+        align-items: flex-start;
+    }
+
+    .page-header h1 {
+        font-size: var(--font-size-title-sm, 20px);
+    }
+
+    /* Phase 2: Hide greeting on phone */
+    .topbar-greeting {
+        display: none;
+    }
+
+    /* Phase 2: Summary cards — 2 per row */
+    .missions-summary,
+    .collaborators-summary,
+    .workspaces-summary,
+    .teams-summary {
+        flex-wrap: wrap;
+    }
+
+    .summary-card {
+        min-width: calc(50% - var(--spacing-2));
+        flex: 1 1 calc(50% - var(--spacing-2));
+    }
+
+    /* Phase 4: Metric rows stack vertically */
+    .metric-row {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .metric-row-title {
+        min-width: 0;
+        flex-basis: auto;
+    }
+
+    .metric-row-period,
+    .metric-row-progress {
+        width: 100%;
+        flex: 1 1 100%;
+    }
+
+    /* Phase 4: Progress bar fluid */
+    .progress-bar {
+        flex: 1;
+        min-width: 60px;
+        max-width: 200px;
+    }
+
+    /* Phase 4: Filter panel rows stack */
+    .filter-panel-row {
+        flex-wrap: wrap;
+    }
+
+    .filter-panel-field {
+        min-width: 100%;
+    }
+
+    /* Phase 4: Wizard tabs scrollable */
+    .wizard-tabs {
+        overflow-x: auto;
+        padding-bottom: var(--spacing-2);
+        scrollbar-width: none;
+        -ms-overflow-style: none;
+    }
+
+    .wizard-tabs::-webkit-scrollbar {
+        display: none;
+    }
+
+    /* Phase 5: Notification panel full-width bottom sheet */
+    .notification-panel {
+        position: fixed;
+        top: auto;
+        right: 0;
+        bottom: 0;
+        left: 0;
+        width: 100%;
+        max-height: 80vh;
+        border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+    }
+
+    /* Phase 5: Dashboard section tighter padding */
+    .dashboard-section {
+        padding: var(--spacing-4);
+        gap: var(--spacing-4);
+    }
+
+    /* Phase 5: Objective progress inline */
+    .objective-progress-inline {
+        width: auto;
+        flex-shrink: 1;
+    }
+}
+
+/* ── max-width: 400px (Small phone) ── */
+@media (max-width: 400px) {
+    /* Phase 2: Summary cards — 1 per row */
+    .summary-card {
+        min-width: 100%;
+        flex: 1 1 100%;
+    }
 }
