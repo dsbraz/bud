@@ -1,7 +1,7 @@
 # ADR-0012: Aggregate Roots explícitas, Value Objects e invariantes de domínio
 
 ## Status
-Accepted
+Accepted (atualizado — seção 6 reflete migração de Services para Repositories)
 
 ## Contexto
 
@@ -18,7 +18,7 @@ Os limites de aggregate root não estavam explicitados no modelo compartilhado, 
    - Agregados expõem métodos explícitos de domínio (`Create`, `Rename`, `UpdateDetails`, `SetScope`, `ApplyTarget`, etc.).
    - Value Objects formais para conceitos semânticos (`PersonName`, `MissionScope`, `ConfidenceLevel`, `MetricRange`, `EntityName`, `NotificationTitle`, `NotificationMessage`).
    - Violações de regra representadas por `DomainInvariantException`.
-   - Services de aplicação orquestram persistência/autorização e traduzem violações de domínio para `ServiceResult` de validação.
+   - UseCases orquestram persistência/autorização e traduzem violações de domínio para `Result` de validação.
 
 3. Padronização de mapeamento de dados:
    - Todas as configurações de entidades extraídas para `IEntityTypeConfiguration<T>` em `Data/Configurations`.
@@ -31,19 +31,21 @@ Os limites de aggregate root não estavam explicitados no modelo compartilhado, 
    - `MissionTemplate` compõe métricas via `ReplaceMetrics(...)` + factory em `MissionTemplateMetric`.
    - `Notification` usa `Create(...)` e `MarkAsRead(...)`.
    - `CollaboratorAccessLog` usa `Create(...)` no fluxo de autenticação.
-   - `MissionMetric` centraliza consistência de payload de check-in via `CreateCheckin(...)` e `UpdateCheckin(...)`, com `MetricCheckinService` delegando validação de domínio.
+   - `MissionMetric` centraliza consistência de payload de check-in via `CreateCheckin(...)` e `UpdateCheckin(...)`, com o UseCase delegando validação de domínio.
 
-6. Interface de serviço única por domínio:
-   - Cada domínio expõe uma única interface (`ITeamService`, `IWorkspaceService`, `ICollaboratorService`, `IMissionService`, `IMissionMetricService`, `IMetricCheckinService`) com todos os métodos de comando e consulta.
-   - UseCases de comando e consulta dependem da mesma interface.
+6. Interface de repositório única por aggregate:
+   - Cada aggregate root expõe uma única interface de repositório (`ITeamRepository`, `IWorkspaceRepository`, `ICollaboratorRepository`, `IMissionRepository`, `IMissionMetricRepository`, `IMetricCheckinRepository`) definida em `Application/Ports/`.
+   - Implementações ficam em `Infrastructure/Repositories/`.
+   - Repositories são responsáveis exclusivamente por persistência e queries — sem lógica de negócio.
+   - UseCases de comando e consulta dependem da mesma interface de repositório.
 
 ## Consequências
 
 - Fronteiras de aggregate verificáveis automaticamente em CI.
 - Invariantes com enforcement no modelo de domínio (não apenas em validators/services), reduzindo drift entre regras de negócio e persistência.
-- Menor risco de mutações inconsistentes por atribuição direta em services de aplicação para fluxos críticos de template/notificação/auditoria.
-- Interface única por domínio simplifica DI e reduz número de abstrações.
+- Menor risco de mutações inconsistentes por atribuição direta em repositories para fluxos críticos de template/notificação/auditoria.
+- Interface única de repositório por aggregate simplifica DI e reduz número de abstrações.
 
 ## Alternativas consideradas
 
-- **CQRS split por portas formais** (`I*CommandService`/`I*QueryService`): descartado por complexidade desproporcional ao estágio atual (CRUD hierárquico com ~9 entidades).
+- **CQRS split por portas formais** (`I*CommandRepository`/`I*QueryRepository`): descartado por complexidade desproporcional ao estágio atual (CRUD hierárquico com ~9 entidades).

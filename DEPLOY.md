@@ -150,7 +150,7 @@ O deploy web executa migracoes EF Core automaticamente via Cloud Run Job.
 Para criar novas migracoes localmente:
 
 ```bash
-dotnet ef migrations add <NomeDaMigracao> --project src/Bud.Server --output-dir Data/Migrations
+dotnet ef migrations add <NomeDaMigracao> --project src/Bud.Server --output-dir Infrastructure/Persistence/Migrations
 ```
 
 ## POS-DEPLOY
