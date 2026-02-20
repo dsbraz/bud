@@ -1,13 +1,23 @@
 ﻿@inherits LayoutComponentBase
+@implements IDisposable
 @inject AuthState AuthState
 @inject OrganizationContext OrgContext
 @inject ApiClient Api
 @inject NavigationManager Nav
 @inject ToastService ToastService
+@if (_navOpen)
+{
+    <div class="nav-backdrop" @onclick="CloseNav"></div>
+}
 <div class="app-shell">
-    <aside class="app-sidebar">
+    <aside class="app-sidebar @(_navOpen ? "is-open" : "")">
         <div class="sidebar-header">
             <div class="brand">bud</div>
+            <button class="sidebar-close-btn" @onclick="CloseNav" aria-label="Fechar menu">
+                <svg width="20" height="20" fill="currentColor" viewBox="0 0 256 256">
+                    <path d="M205.66,194.34a8,8,0,0,1-11.32,11.32L128,139.31,61.66,205.66a8,8,0,0,1-11.32-11.32L116.69,128,50.34,61.66A8,8,0,0,1,61.66,50.34L128,116.69l66.34-66.35a8,8,0,0,1,11.32,11.32L139.31,128Z"/>
+                </svg>
+            </button>
         </div>
 
         @* Organization Selector *@
@@ -60,6 +70,11 @@
 
     <main class="app-main">
         <header class="app-topbar">
+            <button class="topbar-nav-toggle" @onclick="ToggleNav" aria-label="Menu">
+                <svg width="20" height="20" fill="currentColor" viewBox="0 0 256 256">
+                    <path d="M224,128a8,8,0,0,1-8,8H40a8,8,0,0,1,0-16H216A8,8,0,0,1,224,128ZM40,72H216a8,8,0,0,0,0-16H40a8,8,0,0,0,0,16ZM216,184H40a8,8,0,0,0,0,16H216a8,8,0,0,0,0-16Z"/>
+                </svg>
+            </button>
             <div class="topbar-greeting">@GetGreeting()</div>
             <div class="topbar-actions">
                 <button class="topbar-icon-btn" title="Buscar">
@@ -85,6 +100,7 @@
 <ToastContainer />
 
 @code {
+    private bool _navOpen;
     private bool isDropdownOpen = false;
     private int unreadNotificationCount;
     private bool CanShowAllOrganizations => AuthState.Session?.IsGlobalAdmin == true;
@@ -93,8 +109,12 @@
         ? "Sistema interno"
         : $"{AuthState.Session.DisplayName} · {AuthState.Session.Email}";
 
+    private void ToggleNav() => _navOpen = !_navOpen;
+    private void CloseNav() { _navOpen = false; }
+
     protected override async Task OnInitializedAsync()
     {
+        Nav.LocationChanged += OnLocationChanged;
         await AuthState.EnsureInitializedAsync();
 
         try
@@ -237,5 +257,16 @@
             Bud.Shared.Domain.CollaboratorRole.IndividualContributor => "Colaborador",
             _ => "Sem perfil"
         };
+    }
+
+    private void OnLocationChanged(object? sender, Microsoft.AspNetCore.Components.Routing.LocationChangedEventArgs e)
+    {
+        _navOpen = false;
+        InvokeAsync(StateHasChanged);
+    }
+
+    public void Dispose()
+    {
+        Nav.LocationChanged -= OnLocationChanged;
     }
 }

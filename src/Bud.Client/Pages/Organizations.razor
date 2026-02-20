@@ -39,13 +39,14 @@ else
         IsEmpty="@(organizations is not null && organizations.Items.Count == 0)"
         Total="@(organizations?.Total ?? 0)"
         EmptyText="Nenhuma organização encontrada.">
+        <div class="table-scroll-container">
         <table class="table">
             <thead>
                 <tr>
                     <th>Domínio</th>
                     <th>Proprietário</th>
                     <th>ID</th>
-                    <th style="width: 120px; text-align: center;">Ações</th>
+                    <th class="th-actions">Ações</th>
                 </tr>
             </thead>
             <tbody>
@@ -79,6 +80,7 @@ else
                 }
             </tbody>
         </table>
+        </div>
     </PagedTableSection>
 </div>
 
