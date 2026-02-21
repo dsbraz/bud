@@ -1,7 +1,7 @@
 using Bud.Server.Application.MissionObjectives;
 using Bud.Server.Authorization;
 using Bud.Shared.Contracts;
-using Bud.Shared.Domain;
+using Bud.Server.Domain.Model;
 using FluentValidation;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -13,8 +13,12 @@ namespace Bud.Server.Controllers;
 [Route("api/mission-objectives")]
 [Produces("application/json")]
 public sealed class MissionObjectivesController(
-    MissionObjectiveCommand missionObjectiveCommand,
-    MissionObjectiveQuery missionObjectiveQuery,
+    DefineMissionObjective defineMissionObjective,
+    ReviseMissionObjective reviseMissionObjective,
+    RemoveMissionObjective removeMissionObjective,
+    ViewMissionObjectiveDetails viewMissionObjectiveDetails,
+    ListMissionObjectives listMissionObjectives,
+    CalculateMissionObjectiveProgress calculateMissionObjectiveProgress,
     IValidator<CreateMissionObjectiveRequest> createValidator,
     IValidator<UpdateMissionObjectiveRequest> updateValidator) : ApiControllerBase
 {
@@ -43,7 +47,7 @@ public sealed class MissionObjectivesController(
             return ValidationProblemFrom(validationResult);
         }
 
-        var result = await missionObjectiveCommand.CreateAsync(User, request, cancellationToken);
+        var result = await defineMissionObjective.ExecuteAsync(User, request, cancellationToken);
         return FromResult(result, objective => CreatedAtAction(nameof(GetById), new { id = objective.Id }, objective));
     }
 
@@ -68,7 +72,7 @@ public sealed class MissionObjectivesController(
             return ValidationProblemFrom(validationResult);
         }
 
-        var result = await missionObjectiveCommand.UpdateAsync(User, id, request, cancellationToken);
+        var result = await reviseMissionObjective.ExecuteAsync(User, id, request, cancellationToken);
         return FromResultOk(result);
     }
 
@@ -84,7 +88,7 @@ public sealed class MissionObjectivesController(
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status403Forbidden)]
     public async Task<IActionResult> Delete(Guid id, CancellationToken cancellationToken)
     {
-        var result = await missionObjectiveCommand.DeleteAsync(User, id, cancellationToken);
+        var result = await removeMissionObjective.ExecuteAsync(User, id, cancellationToken);
         return FromResult(result, NoContent);
     }
 
@@ -98,7 +102,7 @@ public sealed class MissionObjectivesController(
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
     public async Task<ActionResult<MissionObjective>> GetById(Guid id, CancellationToken cancellationToken)
     {
-        var result = await missionObjectiveQuery.GetByIdAsync(id, cancellationToken);
+        var result = await viewMissionObjectiveDetails.ExecuteAsync(id, cancellationToken);
         return FromResultOk(result);
     }
 
@@ -122,7 +126,7 @@ public sealed class MissionObjectivesController(
             return paginationValidation;
         }
 
-        var result = await missionObjectiveQuery.GetByMissionAsync(missionId, page, pageSize, cancellationToken);
+        var result = await listMissionObjectives.ExecuteAsync(missionId, page, pageSize, cancellationToken);
         return FromResultOk(result);
     }
 
@@ -144,7 +148,7 @@ public sealed class MissionObjectivesController(
             return parseResult.Failure;
         }
 
-        var result = await missionObjectiveQuery.GetProgressAsync(parseResult.Values!, cancellationToken);
+        var result = await calculateMissionObjectiveProgress.ExecuteAsync(parseResult.Values!, cancellationToken);
         return FromResultOk(result);
     }
 }

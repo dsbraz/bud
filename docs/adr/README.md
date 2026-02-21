@@ -1,63 +1,36 @@
 # ADRs (Architecture Decision Records)
 
-Esta pasta concentra as decisões arquiteturais relevantes do projeto.
-Cada ADR registra contexto, decisão, trade-offs e alternativas.
+Esta pasta registra decisões arquiteturais vigentes do sistema.
+Cada ADR é autocontida e descreve contexto, decisão, consequências e alternativas.
 
 ## Convenção
 
 - Arquivos no formato `ADR-XXXX-titulo-curto.md`
-- Numeração sequencial com 4 dígitos (ex.: `ADR-0001`)
+- Numeração contínua com 4 dígitos
 - Um ADR por decisão arquitetural relevante
 
-## Ordem de leitura recomendada
+## Sequência vigente
 
-A ordem abaixo vai das decisões mais abrangentes para as mais específicas:
-
-1. `ADR-0001` - Stack tecnológica
-2. `ADR-0002` - Arquitetura por Commands/Queries e Repositories
-3. `ADR-0003` - Persistência, EF Core e PostgreSQL
-4. `ADR-0004` - Autenticação, autorização e políticas
-5. `ADR-0005` - Multi-tenancy por OrganizationId
-6. `ADR-0006` - Estilo de API e padronização de erros
-7. `ADR-0007` - Estratégia OpenAPI semântica
-8. `ADR-0008` - Estratégia de testes
-9. `ADR-0009` - Governança por testes de arquitetura
-10. `ADR-0010` - Servidor MCP HTTP remoto para missões, métricas e check-ins
-11. `ADR-0011` - Sistema de notificações em comandos da aplicação
-12. `ADR-0012` - Aggregate roots explícitas, value objects e invariantes de domínio
-13. `ADR-0013` - Hardening de produção (JWT fail-fast, security headers, rate limiting, forwarded headers)
-14. `ADR-0014` - Co-localização de ports com implementações em Infrastructure
+1. `ADR-0001` Linguagem Ubíqua e Bounded Contexts do Server
+2. `ADR-0002` Arquitetura DDD Estrita e Regras de Dependência
+3. `ADR-0003` Agregados, Entidades, Value Objects e Invariantes
+4. `ADR-0004` Repositórios por Agregado e Unit of Work
+5. `ADR-0005` Persistência com EF Core e Mapeamento de Infraestrutura
+6. `ADR-0006` Multi-tenancy e Isolamento por Tenant
+7. `ADR-0007` Autenticação e Autorização por Políticas
+8. `ADR-0008` Casos de Uso da Aplicação
+9. `ADR-0009` Eventos de Domínio e Notificações
+10. `ADR-0010` Contratos HTTP, Tratamento de Erros e Camada de Borda
+11. `ADR-0011` Estratégia de Validação
+12. `ADR-0012` Estratégia de Testes e Governança Arquitetural
 
 ## Status possíveis
 
-- `Proposed`: em discussão
-- `Accepted`: adotada e em uso
-- `Superseded`: substituída por outra ADR
-- `Deprecated`: ainda existente, mas não recomendada para novas evoluções
+- `Proposed`
+- `Accepted`
+- `Superseded`
+- `Deprecated`
 
-## Template
+## Governança
 
-Use a estrutura abaixo em novas ADRs:
-
-```md
-# ADR-XXXX: Título
-
-## Status
-Accepted | Proposed | Superseded | Deprecated
-
-## Contexto
-...
-
-## Decisão
-...
-
-## Consequências
-...
-
-## Alternativas consideradas
-...
-```
-
-## Regra de governança
-
-Mudanças arquiteturais em PRs devem incluir ADR nova ou atualização explícita de ADR existente.
+Mudanças arquiteturais devem atualizar ADRs no mesmo conjunto de alterações.

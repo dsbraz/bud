@@ -1,7 +1,7 @@
 using Bud.Server.Application.MissionMetrics;
 using Bud.Server.Authorization;
 using Bud.Shared.Contracts;
-using Bud.Shared.Domain;
+using Bud.Server.Domain.Model;
 using FluentValidation;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -13,8 +13,12 @@ namespace Bud.Server.Controllers;
 [Route("api/mission-metrics")]
 [Produces("application/json")]
 public sealed class MissionMetricsController(
-    MissionMetricCommand missionMetricCommand,
-    MissionMetricQuery missionMetricQuery,
+    DefineMissionMetric defineMissionMetric,
+    ReviseMissionMetricDefinition reviseMissionMetricDefinition,
+    RemoveMissionMetric removeMissionMetric,
+    ViewMissionMetricDetails viewMissionMetricDetails,
+    BrowseMissionMetrics browseMissionMetrics,
+    CalculateMissionMetricProgress calculateMissionMetricProgress,
     IValidator<CreateMissionMetricRequest> createValidator,
     IValidator<UpdateMissionMetricRequest> updateValidator) : ApiControllerBase
 {
@@ -43,7 +47,7 @@ public sealed class MissionMetricsController(
             return ValidationProblemFrom(validationResult);
         }
 
-        var result = await missionMetricCommand.CreateAsync(User, request, cancellationToken);
+        var result = await defineMissionMetric.ExecuteAsync(User, request, cancellationToken);
         return FromResult(result, metric => CreatedAtAction(nameof(GetById), new { id = metric.Id }, metric));
     }
 
@@ -68,7 +72,7 @@ public sealed class MissionMetricsController(
             return ValidationProblemFrom(validationResult);
         }
 
-        var result = await missionMetricCommand.UpdateAsync(User, id, request, cancellationToken);
+        var result = await reviseMissionMetricDefinition.ExecuteAsync(User, id, request, cancellationToken);
         return FromResultOk(result);
     }
 
@@ -84,7 +88,7 @@ public sealed class MissionMetricsController(
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status403Forbidden)]
     public async Task<IActionResult> Delete(Guid id, CancellationToken cancellationToken)
     {
-        var result = await missionMetricCommand.DeleteAsync(User, id, cancellationToken);
+        var result = await removeMissionMetric.ExecuteAsync(User, id, cancellationToken);
         return FromResult(result, NoContent);
     }
 
@@ -98,7 +102,7 @@ public sealed class MissionMetricsController(
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
     public async Task<ActionResult<MissionMetric>> GetById(Guid id, CancellationToken cancellationToken)
     {
-        var result = await missionMetricQuery.GetByIdAsync(id, cancellationToken);
+        var result = await viewMissionMetricDetails.ExecuteAsync(id, cancellationToken);
         return FromResultOk(result);
     }
 
@@ -120,7 +124,7 @@ public sealed class MissionMetricsController(
             return parseResult.Failure;
         }
 
-        var result = await missionMetricQuery.GetProgressAsync(parseResult.Values!, cancellationToken);
+        var result = await calculateMissionMetricProgress.ExecuteAsync(parseResult.Values!, cancellationToken);
         return FromResultOk(result);
     }
 
@@ -152,7 +156,13 @@ public sealed class MissionMetricsController(
             return paginationValidation;
         }
 
-        var result = await missionMetricQuery.GetAllAsync(missionId, objectiveId, searchValidation.Value, page, pageSize, cancellationToken);
+        var result = await browseMissionMetrics.ExecuteAsync(
+            missionId,
+            objectiveId,
+            searchValidation.Value,
+            page,
+            pageSize,
+            cancellationToken);
         return FromResultOk(result);
     }
 }

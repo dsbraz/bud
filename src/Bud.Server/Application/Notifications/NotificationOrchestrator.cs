@@ -1,16 +1,37 @@
-using Bud.Server.Infrastructure.Repositories;
+using Bud.Server.Domain.Repositories;
 using Bud.Server.Infrastructure.Services;
-using Bud.Shared.Domain;
+using Bud.Server.Application.Common;
+using Bud.Server.Domain.Model;
+using Bud.Server.Domain.Abstractions;
 
 namespace Bud.Server.Application.Notifications;
 
 /// <summary>
 /// Orquestra a criacao de notificacoes para eventos de dominio.
 /// </summary>
-public class NotificationOrchestrator(
-    INotificationRepository notificationRepository,
-    INotificationRecipientResolver notificationRecipientResolver)
+public class NotificationOrchestrator
 {
+    private readonly INotificationRepository _notificationRepository;
+    private readonly INotificationRecipientResolver _notificationRecipientResolver;
+    private readonly IUnitOfWork? _unitOfWork;
+
+    public NotificationOrchestrator(
+        INotificationRepository notificationRepository,
+        INotificationRecipientResolver notificationRecipientResolver)
+        : this(notificationRepository, notificationRecipientResolver, null)
+    {
+    }
+
+    public NotificationOrchestrator(
+        INotificationRepository notificationRepository,
+        INotificationRecipientResolver notificationRecipientResolver,
+        IUnitOfWork? unitOfWork)
+    {
+        _notificationRepository = notificationRepository;
+        _notificationRecipientResolver = notificationRecipientResolver;
+        _unitOfWork = unitOfWork;
+    }
+
     public virtual async Task NotifyMissionCreatedAsync(
         Guid missionId,
         Guid organizationId,
@@ -60,13 +81,13 @@ public class NotificationOrchestrator(
         Guid? excludeCollaboratorId,
         CancellationToken cancellationToken = default)
     {
-        var missionId = await notificationRecipientResolver.ResolveMissionIdFromMetricAsync(missionMetricId, cancellationToken);
+        var missionId = await _notificationRecipientResolver.ResolveMissionIdFromMetricAsync(missionMetricId, cancellationToken);
         if (!missionId.HasValue)
         {
             return;
         }
 
-        var recipients = await notificationRecipientResolver.ResolveMissionRecipientsAsync(
+        var recipients = await _notificationRecipientResolver.ResolveMissionRecipientsAsync(
             missionId.Value,
             organizationId,
             excludeCollaboratorId,
@@ -96,7 +117,7 @@ public class NotificationOrchestrator(
         NotificationType type,
         CancellationToken cancellationToken)
     {
-        var recipients = await notificationRecipientResolver.ResolveMissionRecipientsAsync(
+        var recipients = await _notificationRecipientResolver.ResolveMissionRecipientsAsync(
             missionId,
             organizationId,
             null,
@@ -145,7 +166,7 @@ public class NotificationOrchestrator(
             return;
         }
 
-        await notificationRepository.AddRangeAsync(notifications, cancellationToken);
-        await notificationRepository.SaveChangesAsync(cancellationToken);
+        await _notificationRepository.AddRangeAsync(notifications, cancellationToken);
+        await _unitOfWork.CommitAsync(_notificationRepository.SaveChangesAsync, cancellationToken);
     }
 }

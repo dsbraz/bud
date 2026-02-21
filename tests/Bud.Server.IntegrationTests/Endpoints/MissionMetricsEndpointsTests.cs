@@ -1,7 +1,7 @@
 using System.Net;
 using System.Net.Http.Json;
 using Bud.Shared.Contracts;
-using Bud.Shared.Domain;
+using Bud.Server.Domain.Model;
 using FluentAssertions;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -46,7 +46,7 @@ public class MissionMetricsEndpointsTests : IClassFixture<CustomWebApplicationFa
             Id = Guid.NewGuid(),
             FullName = "Administrador",
             Email = "admin@getbud.co",
-            Role = CollaboratorRole.Leader,
+            Role = Bud.Server.Domain.Model.CollaboratorRole.Leader,
             OrganizationId = org.Id
         };
         dbContext.Collaborators.Add(adminLeader);
@@ -80,8 +80,8 @@ public class MissionMetricsEndpointsTests : IClassFixture<CustomWebApplicationFa
                 Name = "Test Mission",
                 StartDate = DateTime.UtcNow,
                 EndDate = DateTime.UtcNow.AddDays(7),
-                Status = MissionStatus.Planned,
-                ScopeType = MissionScopeType.Organization,
+                Status = Bud.Shared.Contracts.MissionStatus.Planned,
+                ScopeType = Bud.Shared.Contracts.MissionScopeType.Organization,
                 ScopeId = org!.Id
             });
 
@@ -100,7 +100,7 @@ public class MissionMetricsEndpointsTests : IClassFixture<CustomWebApplicationFa
         {
             MissionId = mission.Id,
             Name = "Quality Metric",
-            Type = MetricType.Qualitative,
+            Type = Bud.Shared.Contracts.MetricType.Qualitative,
             TargetText = "Achieve high quality standards"
         };
 
@@ -130,10 +130,10 @@ public class MissionMetricsEndpointsTests : IClassFixture<CustomWebApplicationFa
         {
             MissionId = mission.Id,
             Name = "Story Points",
-            Type = MetricType.Quantitative,
-            QuantitativeType = QuantitativeMetricType.KeepAbove,
+            Type = Bud.Shared.Contracts.MetricType.Quantitative,
+            QuantitativeType = Bud.Shared.Contracts.QuantitativeMetricType.KeepAbove,
             MinValue = 50m,
-            Unit = MetricUnit.Points
+            Unit = Bud.Shared.Contracts.MetricUnit.Points
         };
 
         // Act
@@ -162,10 +162,10 @@ public class MissionMetricsEndpointsTests : IClassFixture<CustomWebApplicationFa
         {
             MissionId = mission.Id,
             Name = "Error Rate",
-            Type = MetricType.Quantitative,
-            QuantitativeType = QuantitativeMetricType.KeepBelow,
+            Type = Bud.Shared.Contracts.MetricType.Quantitative,
+            QuantitativeType = Bud.Shared.Contracts.QuantitativeMetricType.KeepBelow,
             MaxValue = 5m,
-            Unit = MetricUnit.Percentage
+            Unit = Bud.Shared.Contracts.MetricUnit.Percentage
         };
 
         // Act
@@ -194,11 +194,11 @@ public class MissionMetricsEndpointsTests : IClassFixture<CustomWebApplicationFa
         {
             MissionId = mission.Id,
             Name = "Response Time",
-            Type = MetricType.Quantitative,
-            QuantitativeType = QuantitativeMetricType.KeepBetween,
+            Type = Bud.Shared.Contracts.MetricType.Quantitative,
+            QuantitativeType = Bud.Shared.Contracts.QuantitativeMetricType.KeepBetween,
             MinValue = 100m,
             MaxValue = 500m,
-            Unit = MetricUnit.Integer
+            Unit = Bud.Shared.Contracts.MetricUnit.Integer
         };
 
         // Act
@@ -225,7 +225,7 @@ public class MissionMetricsEndpointsTests : IClassFixture<CustomWebApplicationFa
         {
             MissionId = Guid.NewGuid(), // Non-existent mission
             Name = "Test Metric",
-            Type = MetricType.Qualitative,
+            Type = Bud.Shared.Contracts.MetricType.Qualitative,
             TargetText = "Test"
         };
 
@@ -246,10 +246,10 @@ public class MissionMetricsEndpointsTests : IClassFixture<CustomWebApplicationFa
         {
             MissionId = mission.Id,
             Name = "Sales Target",
-            Type = MetricType.Quantitative,
-            QuantitativeType = QuantitativeMetricType.Achieve,
+            Type = Bud.Shared.Contracts.MetricType.Quantitative,
+            QuantitativeType = Bud.Shared.Contracts.QuantitativeMetricType.Achieve,
             MaxValue = 100m,
-            Unit = MetricUnit.Integer
+            Unit = Bud.Shared.Contracts.MetricUnit.Integer
         };
 
         // Act
@@ -278,10 +278,10 @@ public class MissionMetricsEndpointsTests : IClassFixture<CustomWebApplicationFa
         {
             MissionId = mission.Id,
             Name = "Cost Reduction",
-            Type = MetricType.Quantitative,
-            QuantitativeType = QuantitativeMetricType.Reduce,
+            Type = Bud.Shared.Contracts.MetricType.Quantitative,
+            QuantitativeType = Bud.Shared.Contracts.QuantitativeMetricType.Reduce,
             MaxValue = 50m,
-            Unit = MetricUnit.Percentage
+            Unit = Bud.Shared.Contracts.MetricUnit.Percentage
         };
 
         // Act
@@ -314,7 +314,7 @@ public class MissionMetricsEndpointsTests : IClassFixture<CustomWebApplicationFa
         {
             MissionId = mission.Id,
             Name = "Original Metric",
-            Type = MetricType.Qualitative,
+            Type = Bud.Shared.Contracts.MetricType.Qualitative,
             TargetText = "Original text"
         };
 
@@ -325,11 +325,11 @@ public class MissionMetricsEndpointsTests : IClassFixture<CustomWebApplicationFa
         var updateRequest = new UpdateMissionMetricRequest
         {
             Name = "Updated Metric",
-            Type = MetricType.Quantitative,
-            QuantitativeType = QuantitativeMetricType.KeepBetween,
+            Type = Bud.Shared.Contracts.MetricType.Quantitative,
+            QuantitativeType = Bud.Shared.Contracts.QuantitativeMetricType.KeepBetween,
             MinValue = 50m,
             MaxValue = 100m,
-            Unit = MetricUnit.Hours
+            Unit = Bud.Shared.Contracts.MetricUnit.Hours
         };
 
         // Act
@@ -365,7 +365,7 @@ public class MissionMetricsEndpointsTests : IClassFixture<CustomWebApplicationFa
             {
                 MissionId = mission1.Id,
                 Name = "Metric Mission 1",
-                Type = MetricType.Qualitative,
+                Type = Bud.Shared.Contracts.MetricType.Qualitative,
                 TargetText = "Test"
             });
 
@@ -374,7 +374,7 @@ public class MissionMetricsEndpointsTests : IClassFixture<CustomWebApplicationFa
             {
                 MissionId = mission2.Id,
                 Name = "Metric Mission 2",
-                Type = MetricType.Qualitative,
+                Type = Bud.Shared.Contracts.MetricType.Qualitative,
                 TargetText = "Test"
             });
 
@@ -458,8 +458,8 @@ public class MissionMetricsEndpointsTests : IClassFixture<CustomWebApplicationFa
                 Name = "Mission Org 2",
                 StartDate = DateTime.UtcNow,
                 EndDate = DateTime.UtcNow.AddDays(7),
-                Status = MissionStatus.Planned,
-                ScopeType = MissionScopeType.Organization,
+                Status = Bud.Shared.Contracts.MissionStatus.Planned,
+                ScopeType = Bud.Shared.Contracts.MissionScopeType.Organization,
                 ScopeId = org2!.Id
             });
         var mission = await missionResponse.Content.ReadFromJsonAsync<Mission>();
@@ -471,7 +471,7 @@ public class MissionMetricsEndpointsTests : IClassFixture<CustomWebApplicationFa
         {
             MissionId = mission!.Id,
             Name = "Metric Forbidden",
-            Type = MetricType.Qualitative,
+            Type = Bud.Shared.Contracts.MetricType.Qualitative,
             TargetText = "Teste"
         };
 
@@ -507,7 +507,7 @@ public class MissionMetricsEndpointsTests : IClassFixture<CustomWebApplicationFa
             Id = Guid.NewGuid(),
             FullName = "Colaborador Teste",
             Email = $"colaborador-{Guid.NewGuid():N}@test.com",
-            Role = CollaboratorRole.IndividualContributor,
+            Role = Bud.Server.Domain.Model.CollaboratorRole.IndividualContributor,
             OrganizationId = organizationId
         };
 

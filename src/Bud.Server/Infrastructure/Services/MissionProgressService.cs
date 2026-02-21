@@ -1,7 +1,6 @@
 using Bud.Server.Infrastructure.Persistence;
-using Bud.Server.Domain.ReadModels;
-using Bud.Shared.Contracts;
-using Bud.Shared.Domain;
+using Bud.Server.Application.Projections;
+using Bud.Server.Domain.Model;
 using Microsoft.EntityFrameworkCore;
 using Bud.Server.Application.Common;
 

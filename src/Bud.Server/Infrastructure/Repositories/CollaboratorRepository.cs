@@ -1,8 +1,8 @@
-using Bud.Server.Domain.ReadModels;
-using Bud.Server.Domain.Specifications;
+using Bud.Server.Application.Projections;
+using Bud.Server.Infrastructure.Querying;
 using Bud.Server.Infrastructure.Persistence;
 using Bud.Shared.Contracts;
-using Bud.Shared.Domain;
+using Bud.Server.Domain.Model;
 using Microsoft.EntityFrameworkCore;
 
 namespace Bud.Server.Infrastructure.Repositories;
@@ -46,7 +46,7 @@ public sealed class CollaboratorRepository(ApplicationDbContext dbContext) : ICo
             .Include(c => c.Organization)
             .Include(c => c.Team!)
                 .ThenInclude(t => t.Workspace)
-            .Where(c => c.Role == CollaboratorRole.Leader);
+            .Where(c => c.Role == Bud.Server.Domain.Model.CollaboratorRole.Leader);
 
         if (organizationId.HasValue)
         {
@@ -188,7 +188,7 @@ public sealed class CollaboratorRepository(ApplicationDbContext dbContext) : ICo
             .IgnoreQueryFilters()
             .FirstOrDefaultAsync(c => c.Id == leaderId, ct);
 
-        if (leader is null || leader.Role != CollaboratorRole.Leader)
+        if (leader is null || leader.Role != Bud.Server.Domain.Model.CollaboratorRole.Leader)
         {
             return false;
         }
@@ -221,7 +221,7 @@ public sealed class CollaboratorRepository(ApplicationDbContext dbContext) : ICo
             Id = c.Id,
             FullName = c.FullName,
             Initials = GetInitials(c.FullName),
-            Role = c.Role == CollaboratorRole.Leader ? "Líder" : "Contribuidor individual",
+            Role = c.Role == Bud.Server.Domain.Model.CollaboratorRole.Leader ? "Líder" : "Contribuidor individual",
             Children = BuildSubordinateTree(childrenByLeader, c.Id, currentDepth + 1, maxDepth)
         }).ToList();
     }

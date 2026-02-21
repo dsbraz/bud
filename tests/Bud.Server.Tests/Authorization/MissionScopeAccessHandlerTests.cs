@@ -4,7 +4,7 @@ using Bud.Server.Authorization.Requirements;
 using Bud.Server.Authorization.ResourceScopes;
 using Bud.Server.Infrastructure.Persistence;
 using Bud.Server.Tests.Helpers;
-using Bud.Shared.Domain;
+using Bud.Server.Domain.Model;
 using FluentAssertions;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.EntityFrameworkCore;

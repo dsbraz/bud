@@ -1,5 +1,5 @@
 using Bud.Client.Shared.Missions;
-using Bud.Shared.Domain;
+using Bud.Shared.Contracts;
 using Bunit;
 using FluentAssertions;
 using Microsoft.AspNetCore.Components;

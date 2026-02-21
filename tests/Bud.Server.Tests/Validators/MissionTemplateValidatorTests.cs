@@ -1,6 +1,5 @@
 using Bud.Server.Validators;
 using Bud.Shared.Contracts;
-using Bud.Shared.Domain;
 using FluentAssertions;
 using FluentValidation.TestHelper;
 using Xunit;
@@ -46,18 +45,18 @@ public sealed class CreateMissionTemplateValidatorTests
                 new MissionTemplateMetricDto
                 {
                     Name = "Métrica Qualitativa",
-                    Type = MetricType.Qualitative,
+                    Type = Bud.Shared.Contracts.MetricType.Qualitative,
                     OrderIndex = 0,
                     TargetText = "Texto alvo"
                 },
                 new MissionTemplateMetricDto
                 {
                     Name = "Métrica Quantitativa",
-                    Type = MetricType.Quantitative,
+                    Type = Bud.Shared.Contracts.MetricType.Quantitative,
                     OrderIndex = 1,
-                    QuantitativeType = QuantitativeMetricType.Achieve,
+                    QuantitativeType = Bud.Shared.Contracts.QuantitativeMetricType.Achieve,
                     MaxValue = 100m,
-                    Unit = MetricUnit.Percentage
+                    Unit = Bud.Shared.Contracts.MetricUnit.Percentage
                 }
             ]
         };
@@ -318,7 +317,7 @@ public sealed class CreateMissionTemplateValidatorTests
                 new MissionTemplateMetricDto
                 {
                     Name = "", // Invalid: empty name
-                    Type = MetricType.Qualitative,
+                    Type = Bud.Shared.Contracts.MetricType.Qualitative,
                     OrderIndex = 0,
                     TargetText = "Texto alvo"
                 }
@@ -356,7 +355,7 @@ public sealed class CreateMissionTemplateValidatorTests
                 new MissionTemplateMetricDto
                 {
                     Name = "Métrica 1",
-                    Type = MetricType.Qualitative,
+                    Type = Bud.Shared.Contracts.MetricType.Qualitative,
                     OrderIndex = 0,
                     MissionTemplateObjectiveId = Guid.NewGuid()
                 }
@@ -413,7 +412,7 @@ public sealed class UpdateMissionTemplateValidatorTests
                 new MissionTemplateMetricDto
                 {
                     Name = "Métrica Qualitativa",
-                    Type = MetricType.Qualitative,
+                    Type = Bud.Shared.Contracts.MetricType.Qualitative,
                     OrderIndex = 0,
                     TargetText = "Texto alvo"
                 }
@@ -592,7 +591,7 @@ public sealed class UpdateMissionTemplateValidatorTests
                 new MissionTemplateMetricDto
                 {
                     Name = "", // Invalid: empty name
-                    Type = MetricType.Qualitative,
+                    Type = Bud.Shared.Contracts.MetricType.Qualitative,
                     OrderIndex = 0,
                     TargetText = "Texto alvo"
                 }
@@ -630,7 +629,7 @@ public sealed class UpdateMissionTemplateValidatorTests
                 new MissionTemplateMetricDto
                 {
                     Name = "Métrica 1",
-                    Type = MetricType.Qualitative,
+                    Type = Bud.Shared.Contracts.MetricType.Qualitative,
                     OrderIndex = 0,
                     MissionTemplateObjectiveId = Guid.NewGuid()
                 }
@@ -663,11 +662,11 @@ public sealed class MissionTemplateMetricDtoValidatorTests
         var dto = new MissionTemplateMetricDto
         {
             Name = "Story Points",
-            Type = MetricType.Quantitative,
+            Type = Bud.Shared.Contracts.MetricType.Quantitative,
             OrderIndex = 0,
-            QuantitativeType = QuantitativeMetricType.KeepAbove,
+            QuantitativeType = Bud.Shared.Contracts.QuantitativeMetricType.KeepAbove,
             MinValue = 50m,
-            Unit = MetricUnit.Points
+            Unit = Bud.Shared.Contracts.MetricUnit.Points
         };
 
         // Act
@@ -685,7 +684,7 @@ public sealed class MissionTemplateMetricDtoValidatorTests
         var dto = new MissionTemplateMetricDto
         {
             Name = "Qualidade do Código",
-            Type = MetricType.Qualitative,
+            Type = Bud.Shared.Contracts.MetricType.Qualitative,
             OrderIndex = 0,
             TargetText = "Manter alta qualidade no código"
         };
@@ -708,7 +707,7 @@ public sealed class MissionTemplateMetricDtoValidatorTests
         var dto = new MissionTemplateMetricDto
         {
             Name = name!,
-            Type = MetricType.Qualitative,
+            Type = Bud.Shared.Contracts.MetricType.Qualitative,
             OrderIndex = 0,
             TargetText = "Texto alvo"
         };
@@ -730,7 +729,7 @@ public sealed class MissionTemplateMetricDtoValidatorTests
         var dto = new MissionTemplateMetricDto
         {
             Name = new string('A', 201),
-            Type = MetricType.Qualitative,
+            Type = Bud.Shared.Contracts.MetricType.Qualitative,
             OrderIndex = 0,
             TargetText = "Texto alvo"
         };
@@ -752,7 +751,7 @@ public sealed class MissionTemplateMetricDtoValidatorTests
         var dto = new MissionTemplateMetricDto
         {
             Name = new string('A', 200),
-            Type = MetricType.Qualitative,
+            Type = Bud.Shared.Contracts.MetricType.Qualitative,
             OrderIndex = 0,
             TargetText = "Texto alvo"
         };
@@ -771,7 +770,7 @@ public sealed class MissionTemplateMetricDtoValidatorTests
         var dto = new MissionTemplateMetricDto
         {
             Name = "Métrica",
-            Type = (MetricType)99,
+            Type = (Bud.Shared.Contracts.MetricType)99,
             OrderIndex = 0
         };
 
@@ -792,7 +791,7 @@ public sealed class MissionTemplateMetricDtoValidatorTests
         var dto = new MissionTemplateMetricDto
         {
             Name = "Métrica",
-            Type = MetricType.Qualitative,
+            Type = Bud.Shared.Contracts.MetricType.Qualitative,
             OrderIndex = -1,
             TargetText = "Texto alvo"
         };
@@ -814,7 +813,7 @@ public sealed class MissionTemplateMetricDtoValidatorTests
         var dto = new MissionTemplateMetricDto
         {
             Name = "Métrica",
-            Type = MetricType.Qualitative,
+            Type = Bud.Shared.Contracts.MetricType.Qualitative,
             OrderIndex = 0,
             TargetText = "Texto alvo"
         };
@@ -837,7 +836,7 @@ public sealed class MissionTemplateMetricDtoValidatorTests
         var dto = new MissionTemplateMetricDto
         {
             Name = "Métrica Qualitativa",
-            Type = MetricType.Qualitative,
+            Type = Bud.Shared.Contracts.MetricType.Qualitative,
             OrderIndex = 0,
             TargetText = null
         };
@@ -856,7 +855,7 @@ public sealed class MissionTemplateMetricDtoValidatorTests
         var dto = new MissionTemplateMetricDto
         {
             Name = "Métrica Qualitativa",
-            Type = MetricType.Qualitative,
+            Type = Bud.Shared.Contracts.MetricType.Qualitative,
             OrderIndex = 0,
             TargetText = ""
         };
@@ -875,7 +874,7 @@ public sealed class MissionTemplateMetricDtoValidatorTests
         var dto = new MissionTemplateMetricDto
         {
             Name = "Métrica Qualitativa",
-            Type = MetricType.Qualitative,
+            Type = Bud.Shared.Contracts.MetricType.Qualitative,
             OrderIndex = 0,
             TargetText = new string('A', 1001)
         };
@@ -897,7 +896,7 @@ public sealed class MissionTemplateMetricDtoValidatorTests
         var dto = new MissionTemplateMetricDto
         {
             Name = "Métrica Qualitativa",
-            Type = MetricType.Qualitative,
+            Type = Bud.Shared.Contracts.MetricType.Qualitative,
             OrderIndex = 0,
             TargetText = new string('A', 1000)
         };
@@ -920,10 +919,10 @@ public sealed class MissionTemplateMetricDtoValidatorTests
         var dto = new MissionTemplateMetricDto
         {
             Name = "Métrica Quantitativa",
-            Type = MetricType.Quantitative,
+            Type = Bud.Shared.Contracts.MetricType.Quantitative,
             OrderIndex = 0,
             QuantitativeType = null,
-            Unit = MetricUnit.Points,
+            Unit = Bud.Shared.Contracts.MetricUnit.Points,
             MinValue = 50m
         };
 
@@ -944,10 +943,10 @@ public sealed class MissionTemplateMetricDtoValidatorTests
         var dto = new MissionTemplateMetricDto
         {
             Name = "Métrica Quantitativa",
-            Type = MetricType.Quantitative,
+            Type = Bud.Shared.Contracts.MetricType.Quantitative,
             OrderIndex = 0,
-            QuantitativeType = (QuantitativeMetricType)99,
-            Unit = MetricUnit.Points,
+            QuantitativeType = (Bud.Shared.Contracts.QuantitativeMetricType)99,
+            Unit = Bud.Shared.Contracts.MetricUnit.Points,
             MinValue = 50m
         };
 
@@ -968,9 +967,9 @@ public sealed class MissionTemplateMetricDtoValidatorTests
         var dto = new MissionTemplateMetricDto
         {
             Name = "Métrica Quantitativa",
-            Type = MetricType.Quantitative,
+            Type = Bud.Shared.Contracts.MetricType.Quantitative,
             OrderIndex = 0,
-            QuantitativeType = QuantitativeMetricType.KeepAbove,
+            QuantitativeType = Bud.Shared.Contracts.QuantitativeMetricType.KeepAbove,
             Unit = null,
             MinValue = 50m
         };
@@ -992,10 +991,10 @@ public sealed class MissionTemplateMetricDtoValidatorTests
         var dto = new MissionTemplateMetricDto
         {
             Name = "Métrica Quantitativa",
-            Type = MetricType.Quantitative,
+            Type = Bud.Shared.Contracts.MetricType.Quantitative,
             OrderIndex = 0,
-            QuantitativeType = QuantitativeMetricType.KeepAbove,
-            Unit = (MetricUnit)99,
+            QuantitativeType = Bud.Shared.Contracts.QuantitativeMetricType.KeepAbove,
+            Unit = (Bud.Shared.Contracts.MetricUnit)99,
             MinValue = 50m
         };
 
@@ -1020,11 +1019,11 @@ public sealed class MissionTemplateMetricDtoValidatorTests
         var dto = new MissionTemplateMetricDto
         {
             Name = "Story Points",
-            Type = MetricType.Quantitative,
+            Type = Bud.Shared.Contracts.MetricType.Quantitative,
             OrderIndex = 0,
-            QuantitativeType = QuantitativeMetricType.KeepAbove,
+            QuantitativeType = Bud.Shared.Contracts.QuantitativeMetricType.KeepAbove,
             MinValue = 50m,
-            Unit = MetricUnit.Points
+            Unit = Bud.Shared.Contracts.MetricUnit.Points
         };
 
         // Act
@@ -1042,11 +1041,11 @@ public sealed class MissionTemplateMetricDtoValidatorTests
         var dto = new MissionTemplateMetricDto
         {
             Name = "Story Points",
-            Type = MetricType.Quantitative,
+            Type = Bud.Shared.Contracts.MetricType.Quantitative,
             OrderIndex = 0,
-            QuantitativeType = QuantitativeMetricType.KeepAbove,
+            QuantitativeType = Bud.Shared.Contracts.QuantitativeMetricType.KeepAbove,
             MinValue = 0m,
-            Unit = MetricUnit.Points
+            Unit = Bud.Shared.Contracts.MetricUnit.Points
         };
 
         // Act
@@ -1063,11 +1062,11 @@ public sealed class MissionTemplateMetricDtoValidatorTests
         var dto = new MissionTemplateMetricDto
         {
             Name = "Story Points",
-            Type = MetricType.Quantitative,
+            Type = Bud.Shared.Contracts.MetricType.Quantitative,
             OrderIndex = 0,
-            QuantitativeType = QuantitativeMetricType.KeepAbove,
+            QuantitativeType = Bud.Shared.Contracts.QuantitativeMetricType.KeepAbove,
             MinValue = null,
-            Unit = MetricUnit.Points
+            Unit = Bud.Shared.Contracts.MetricUnit.Points
         };
 
         // Act
@@ -1087,11 +1086,11 @@ public sealed class MissionTemplateMetricDtoValidatorTests
         var dto = new MissionTemplateMetricDto
         {
             Name = "Story Points",
-            Type = MetricType.Quantitative,
+            Type = Bud.Shared.Contracts.MetricType.Quantitative,
             OrderIndex = 0,
-            QuantitativeType = QuantitativeMetricType.KeepAbove,
+            QuantitativeType = Bud.Shared.Contracts.QuantitativeMetricType.KeepAbove,
             MinValue = -10m,
-            Unit = MetricUnit.Points
+            Unit = Bud.Shared.Contracts.MetricUnit.Points
         };
 
         // Act
@@ -1115,11 +1114,11 @@ public sealed class MissionTemplateMetricDtoValidatorTests
         var dto = new MissionTemplateMetricDto
         {
             Name = "Taxa de Erro",
-            Type = MetricType.Quantitative,
+            Type = Bud.Shared.Contracts.MetricType.Quantitative,
             OrderIndex = 0,
-            QuantitativeType = QuantitativeMetricType.KeepBelow,
+            QuantitativeType = Bud.Shared.Contracts.QuantitativeMetricType.KeepBelow,
             MaxValue = 5m,
-            Unit = MetricUnit.Percentage
+            Unit = Bud.Shared.Contracts.MetricUnit.Percentage
         };
 
         // Act
@@ -1137,11 +1136,11 @@ public sealed class MissionTemplateMetricDtoValidatorTests
         var dto = new MissionTemplateMetricDto
         {
             Name = "Taxa de Erro",
-            Type = MetricType.Quantitative,
+            Type = Bud.Shared.Contracts.MetricType.Quantitative,
             OrderIndex = 0,
-            QuantitativeType = QuantitativeMetricType.KeepBelow,
+            QuantitativeType = Bud.Shared.Contracts.QuantitativeMetricType.KeepBelow,
             MaxValue = 0m,
-            Unit = MetricUnit.Percentage
+            Unit = Bud.Shared.Contracts.MetricUnit.Percentage
         };
 
         // Act
@@ -1158,11 +1157,11 @@ public sealed class MissionTemplateMetricDtoValidatorTests
         var dto = new MissionTemplateMetricDto
         {
             Name = "Taxa de Erro",
-            Type = MetricType.Quantitative,
+            Type = Bud.Shared.Contracts.MetricType.Quantitative,
             OrderIndex = 0,
-            QuantitativeType = QuantitativeMetricType.KeepBelow,
+            QuantitativeType = Bud.Shared.Contracts.QuantitativeMetricType.KeepBelow,
             MaxValue = null,
-            Unit = MetricUnit.Percentage
+            Unit = Bud.Shared.Contracts.MetricUnit.Percentage
         };
 
         // Act
@@ -1182,11 +1181,11 @@ public sealed class MissionTemplateMetricDtoValidatorTests
         var dto = new MissionTemplateMetricDto
         {
             Name = "Taxa de Erro",
-            Type = MetricType.Quantitative,
+            Type = Bud.Shared.Contracts.MetricType.Quantitative,
             OrderIndex = 0,
-            QuantitativeType = QuantitativeMetricType.KeepBelow,
+            QuantitativeType = Bud.Shared.Contracts.QuantitativeMetricType.KeepBelow,
             MaxValue = -5m,
-            Unit = MetricUnit.Percentage
+            Unit = Bud.Shared.Contracts.MetricUnit.Percentage
         };
 
         // Act
@@ -1210,12 +1209,12 @@ public sealed class MissionTemplateMetricDtoValidatorTests
         var dto = new MissionTemplateMetricDto
         {
             Name = "Tempo de Resposta",
-            Type = MetricType.Quantitative,
+            Type = Bud.Shared.Contracts.MetricType.Quantitative,
             OrderIndex = 0,
-            QuantitativeType = QuantitativeMetricType.KeepBetween,
+            QuantitativeType = Bud.Shared.Contracts.QuantitativeMetricType.KeepBetween,
             MinValue = 100m,
             MaxValue = 500m,
-            Unit = MetricUnit.Integer
+            Unit = Bud.Shared.Contracts.MetricUnit.Integer
         };
 
         // Act
@@ -1233,12 +1232,12 @@ public sealed class MissionTemplateMetricDtoValidatorTests
         var dto = new MissionTemplateMetricDto
         {
             Name = "Tempo de Resposta",
-            Type = MetricType.Quantitative,
+            Type = Bud.Shared.Contracts.MetricType.Quantitative,
             OrderIndex = 0,
-            QuantitativeType = QuantitativeMetricType.KeepBetween,
+            QuantitativeType = Bud.Shared.Contracts.QuantitativeMetricType.KeepBetween,
             MinValue = null,
             MaxValue = 500m,
-            Unit = MetricUnit.Integer
+            Unit = Bud.Shared.Contracts.MetricUnit.Integer
         };
 
         // Act
@@ -1258,12 +1257,12 @@ public sealed class MissionTemplateMetricDtoValidatorTests
         var dto = new MissionTemplateMetricDto
         {
             Name = "Tempo de Resposta",
-            Type = MetricType.Quantitative,
+            Type = Bud.Shared.Contracts.MetricType.Quantitative,
             OrderIndex = 0,
-            QuantitativeType = QuantitativeMetricType.KeepBetween,
+            QuantitativeType = Bud.Shared.Contracts.QuantitativeMetricType.KeepBetween,
             MinValue = 100m,
             MaxValue = null,
-            Unit = MetricUnit.Integer
+            Unit = Bud.Shared.Contracts.MetricUnit.Integer
         };
 
         // Act
@@ -1283,12 +1282,12 @@ public sealed class MissionTemplateMetricDtoValidatorTests
         var dto = new MissionTemplateMetricDto
         {
             Name = "Tempo de Resposta",
-            Type = MetricType.Quantitative,
+            Type = Bud.Shared.Contracts.MetricType.Quantitative,
             OrderIndex = 0,
-            QuantitativeType = QuantitativeMetricType.KeepBetween,
+            QuantitativeType = Bud.Shared.Contracts.QuantitativeMetricType.KeepBetween,
             MinValue = 500m,
             MaxValue = 100m,
-            Unit = MetricUnit.Integer
+            Unit = Bud.Shared.Contracts.MetricUnit.Integer
         };
 
         // Act
@@ -1308,12 +1307,12 @@ public sealed class MissionTemplateMetricDtoValidatorTests
         var dto = new MissionTemplateMetricDto
         {
             Name = "Tempo de Resposta",
-            Type = MetricType.Quantitative,
+            Type = Bud.Shared.Contracts.MetricType.Quantitative,
             OrderIndex = 0,
-            QuantitativeType = QuantitativeMetricType.KeepBetween,
+            QuantitativeType = Bud.Shared.Contracts.QuantitativeMetricType.KeepBetween,
             MinValue = 100m,
             MaxValue = 100m,
-            Unit = MetricUnit.Integer
+            Unit = Bud.Shared.Contracts.MetricUnit.Integer
         };
 
         // Act
@@ -1333,12 +1332,12 @@ public sealed class MissionTemplateMetricDtoValidatorTests
         var dto = new MissionTemplateMetricDto
         {
             Name = "Tempo de Resposta",
-            Type = MetricType.Quantitative,
+            Type = Bud.Shared.Contracts.MetricType.Quantitative,
             OrderIndex = 0,
-            QuantitativeType = QuantitativeMetricType.KeepBetween,
+            QuantitativeType = Bud.Shared.Contracts.QuantitativeMetricType.KeepBetween,
             MinValue = -10m,
             MaxValue = 100m,
-            Unit = MetricUnit.Integer
+            Unit = Bud.Shared.Contracts.MetricUnit.Integer
         };
 
         // Act
@@ -1358,12 +1357,12 @@ public sealed class MissionTemplateMetricDtoValidatorTests
         var dto = new MissionTemplateMetricDto
         {
             Name = "Tempo de Resposta",
-            Type = MetricType.Quantitative,
+            Type = Bud.Shared.Contracts.MetricType.Quantitative,
             OrderIndex = 0,
-            QuantitativeType = QuantitativeMetricType.KeepBetween,
+            QuantitativeType = Bud.Shared.Contracts.QuantitativeMetricType.KeepBetween,
             MinValue = 0m,
             MaxValue = -5m,
-            Unit = MetricUnit.Integer
+            Unit = Bud.Shared.Contracts.MetricUnit.Integer
         };
 
         // Act
@@ -1387,11 +1386,11 @@ public sealed class MissionTemplateMetricDtoValidatorTests
         var dto = new MissionTemplateMetricDto
         {
             Name = "Meta de Vendas",
-            Type = MetricType.Quantitative,
+            Type = Bud.Shared.Contracts.MetricType.Quantitative,
             OrderIndex = 0,
-            QuantitativeType = QuantitativeMetricType.Achieve,
+            QuantitativeType = Bud.Shared.Contracts.QuantitativeMetricType.Achieve,
             MaxValue = 100m,
-            Unit = MetricUnit.Integer
+            Unit = Bud.Shared.Contracts.MetricUnit.Integer
         };
 
         // Act
@@ -1409,11 +1408,11 @@ public sealed class MissionTemplateMetricDtoValidatorTests
         var dto = new MissionTemplateMetricDto
         {
             Name = "Meta de Vendas",
-            Type = MetricType.Quantitative,
+            Type = Bud.Shared.Contracts.MetricType.Quantitative,
             OrderIndex = 0,
-            QuantitativeType = QuantitativeMetricType.Achieve,
+            QuantitativeType = Bud.Shared.Contracts.QuantitativeMetricType.Achieve,
             MaxValue = 0m,
-            Unit = MetricUnit.Integer
+            Unit = Bud.Shared.Contracts.MetricUnit.Integer
         };
 
         // Act
@@ -1430,11 +1429,11 @@ public sealed class MissionTemplateMetricDtoValidatorTests
         var dto = new MissionTemplateMetricDto
         {
             Name = "Meta de Vendas",
-            Type = MetricType.Quantitative,
+            Type = Bud.Shared.Contracts.MetricType.Quantitative,
             OrderIndex = 0,
-            QuantitativeType = QuantitativeMetricType.Achieve,
+            QuantitativeType = Bud.Shared.Contracts.QuantitativeMetricType.Achieve,
             MaxValue = null,
-            Unit = MetricUnit.Integer
+            Unit = Bud.Shared.Contracts.MetricUnit.Integer
         };
 
         // Act
@@ -1454,11 +1453,11 @@ public sealed class MissionTemplateMetricDtoValidatorTests
         var dto = new MissionTemplateMetricDto
         {
             Name = "Meta de Vendas",
-            Type = MetricType.Quantitative,
+            Type = Bud.Shared.Contracts.MetricType.Quantitative,
             OrderIndex = 0,
-            QuantitativeType = QuantitativeMetricType.Achieve,
+            QuantitativeType = Bud.Shared.Contracts.QuantitativeMetricType.Achieve,
             MaxValue = -50m,
-            Unit = MetricUnit.Integer
+            Unit = Bud.Shared.Contracts.MetricUnit.Integer
         };
 
         // Act
@@ -1482,11 +1481,11 @@ public sealed class MissionTemplateMetricDtoValidatorTests
         var dto = new MissionTemplateMetricDto
         {
             Name = "Redução de Custos",
-            Type = MetricType.Quantitative,
+            Type = Bud.Shared.Contracts.MetricType.Quantitative,
             OrderIndex = 0,
-            QuantitativeType = QuantitativeMetricType.Reduce,
+            QuantitativeType = Bud.Shared.Contracts.QuantitativeMetricType.Reduce,
             MaxValue = 50m,
-            Unit = MetricUnit.Percentage
+            Unit = Bud.Shared.Contracts.MetricUnit.Percentage
         };
 
         // Act
@@ -1504,11 +1503,11 @@ public sealed class MissionTemplateMetricDtoValidatorTests
         var dto = new MissionTemplateMetricDto
         {
             Name = "Redução de Custos",
-            Type = MetricType.Quantitative,
+            Type = Bud.Shared.Contracts.MetricType.Quantitative,
             OrderIndex = 0,
-            QuantitativeType = QuantitativeMetricType.Reduce,
+            QuantitativeType = Bud.Shared.Contracts.QuantitativeMetricType.Reduce,
             MaxValue = 0m,
-            Unit = MetricUnit.Percentage
+            Unit = Bud.Shared.Contracts.MetricUnit.Percentage
         };
 
         // Act
@@ -1525,11 +1524,11 @@ public sealed class MissionTemplateMetricDtoValidatorTests
         var dto = new MissionTemplateMetricDto
         {
             Name = "Redução de Custos",
-            Type = MetricType.Quantitative,
+            Type = Bud.Shared.Contracts.MetricType.Quantitative,
             OrderIndex = 0,
-            QuantitativeType = QuantitativeMetricType.Reduce,
+            QuantitativeType = Bud.Shared.Contracts.QuantitativeMetricType.Reduce,
             MaxValue = null,
-            Unit = MetricUnit.Percentage
+            Unit = Bud.Shared.Contracts.MetricUnit.Percentage
         };
 
         // Act
@@ -1549,11 +1548,11 @@ public sealed class MissionTemplateMetricDtoValidatorTests
         var dto = new MissionTemplateMetricDto
         {
             Name = "Redução de Custos",
-            Type = MetricType.Quantitative,
+            Type = Bud.Shared.Contracts.MetricType.Quantitative,
             OrderIndex = 0,
-            QuantitativeType = QuantitativeMetricType.Reduce,
+            QuantitativeType = Bud.Shared.Contracts.QuantitativeMetricType.Reduce,
             MaxValue = -10m,
-            Unit = MetricUnit.Percentage
+            Unit = Bud.Shared.Contracts.MetricUnit.Percentage
         };
 
         // Act
@@ -1571,20 +1570,20 @@ public sealed class MissionTemplateMetricDtoValidatorTests
     #region Unit Enum Tests
 
     [Theory]
-    [InlineData(MetricUnit.Integer)]
-    [InlineData(MetricUnit.Decimal)]
-    [InlineData(MetricUnit.Percentage)]
-    [InlineData(MetricUnit.Hours)]
-    [InlineData(MetricUnit.Points)]
-    public async Task Validate_QuantitativeWithAllValidUnits_Passes(MetricUnit unit)
+    [InlineData(Bud.Shared.Contracts.MetricUnit.Integer)]
+    [InlineData(Bud.Shared.Contracts.MetricUnit.Decimal)]
+    [InlineData(Bud.Shared.Contracts.MetricUnit.Percentage)]
+    [InlineData(Bud.Shared.Contracts.MetricUnit.Hours)]
+    [InlineData(Bud.Shared.Contracts.MetricUnit.Points)]
+    public async Task Validate_QuantitativeWithAllValidUnits_Passes(Bud.Shared.Contracts.MetricUnit unit)
     {
         // Arrange
         var dto = new MissionTemplateMetricDto
         {
             Name = "Métrica",
-            Type = MetricType.Quantitative,
+            Type = Bud.Shared.Contracts.MetricType.Quantitative,
             OrderIndex = 0,
-            QuantitativeType = QuantitativeMetricType.Achieve,
+            QuantitativeType = Bud.Shared.Contracts.QuantitativeMetricType.Achieve,
             MaxValue = 100m,
             Unit = unit
         };
@@ -1597,23 +1596,23 @@ public sealed class MissionTemplateMetricDtoValidatorTests
     }
 
     [Theory]
-    [InlineData(QuantitativeMetricType.KeepAbove)]
-    [InlineData(QuantitativeMetricType.KeepBelow)]
-    [InlineData(QuantitativeMetricType.KeepBetween)]
-    [InlineData(QuantitativeMetricType.Achieve)]
-    [InlineData(QuantitativeMetricType.Reduce)]
-    public async Task Validate_QuantitativeWithAllValidTypes_PassesTypeValidation(QuantitativeMetricType quantitativeType)
+    [InlineData(Bud.Shared.Contracts.QuantitativeMetricType.KeepAbove)]
+    [InlineData(Bud.Shared.Contracts.QuantitativeMetricType.KeepBelow)]
+    [InlineData(Bud.Shared.Contracts.QuantitativeMetricType.KeepBetween)]
+    [InlineData(Bud.Shared.Contracts.QuantitativeMetricType.Achieve)]
+    [InlineData(Bud.Shared.Contracts.QuantitativeMetricType.Reduce)]
+    public async Task Validate_QuantitativeWithAllValidTypes_PassesTypeValidation(Bud.Shared.Contracts.QuantitativeMetricType quantitativeType)
     {
         // Arrange
         var dto = new MissionTemplateMetricDto
         {
             Name = "Métrica",
-            Type = MetricType.Quantitative,
+            Type = Bud.Shared.Contracts.MetricType.Quantitative,
             OrderIndex = 0,
             QuantitativeType = quantitativeType,
             MinValue = 10m,
             MaxValue = 100m,
-            Unit = MetricUnit.Integer
+            Unit = Bud.Shared.Contracts.MetricUnit.Integer
         };
 
         // Act

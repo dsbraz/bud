@@ -2,7 +2,6 @@ using System.Net;
 using System.Text;
 using Bud.Client.Services;
 using Bud.Shared.Contracts;
-using Bud.Shared.Domain;
 using FluentAssertions;
 using Xunit;
 

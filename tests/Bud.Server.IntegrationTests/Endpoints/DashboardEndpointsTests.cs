@@ -3,7 +3,7 @@ using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using Bud.Server.Infrastructure.Persistence;
 using Bud.Server.IntegrationTests.Helpers;
-using Bud.Shared.Domain;
+using Bud.Server.Domain.Model;
 using FluentAssertions;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -123,7 +123,7 @@ public sealed class DashboardEndpointsTests : IClassFixture<CustomWebApplication
             Id = Guid.NewGuid(),
             FullName = "Dashboard Filter Leader",
             Email = $"filter-leader-{teamId:N}@test.com",
-            Role = CollaboratorRole.Leader,
+            Role = Bud.Server.Domain.Model.CollaboratorRole.Leader,
             TeamId = null,
             OrganizationId = organizationId
         };
@@ -195,7 +195,7 @@ public sealed class DashboardEndpointsTests : IClassFixture<CustomWebApplication
             Id = Guid.NewGuid(),
             FullName = "Administrador Dashboard",
             Email = email,
-            Role = CollaboratorRole.Leader,
+            Role = Bud.Server.Domain.Model.CollaboratorRole.Leader,
             TeamId = null,
             OrganizationId = org.Id
         };

@@ -1,7 +1,6 @@
 using Bud.Client.Services;
 using Bud.Client.Shared.Missions;
 using Bud.Shared.Contracts;
-using Bud.Shared.Domain;
 
 #pragma warning disable IDE0011, IDE0044, CA1822, CA1859, CA1860, CA1868
 

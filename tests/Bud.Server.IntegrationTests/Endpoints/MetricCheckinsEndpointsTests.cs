@@ -1,7 +1,7 @@
 using System.Net;
 using System.Net.Http.Json;
 using Bud.Shared.Contracts;
-using Bud.Shared.Domain;
+using Bud.Server.Domain.Model;
 using FluentAssertions;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
@@ -45,7 +45,7 @@ public class MetricCheckinsEndpointsTests : IClassFixture<CustomWebApplicationFa
             Id = Guid.NewGuid(),
             FullName = "Administrador",
             Email = "admin@getbud.co",
-            Role = CollaboratorRole.Leader,
+            Role = Bud.Server.Domain.Model.CollaboratorRole.Leader,
             OrganizationId = org.Id
         };
         dbContext.Collaborators.Add(adminLeader);
@@ -84,8 +84,8 @@ public class MetricCheckinsEndpointsTests : IClassFixture<CustomWebApplicationFa
                 Name = "Checkin Test Mission",
                 StartDate = DateTime.UtcNow,
                 EndDate = DateTime.UtcNow.AddDays(30),
-                Status = MissionStatus.Active,
-                ScopeType = MissionScopeType.Organization,
+                Status = Bud.Shared.Contracts.MissionStatus.Active,
+                ScopeType = Bud.Shared.Contracts.MissionScopeType.Organization,
                 ScopeId = org.Id
             });
         var mission = (await missionResponse.Content.ReadFromJsonAsync<Mission>())!;
@@ -95,10 +95,10 @@ public class MetricCheckinsEndpointsTests : IClassFixture<CustomWebApplicationFa
             {
                 MissionId = mission.Id,
                 Name = "NPS Score",
-                Type = MetricType.Quantitative,
-                QuantitativeType = QuantitativeMetricType.Achieve,
+                Type = Bud.Shared.Contracts.MetricType.Quantitative,
+                QuantitativeType = Bud.Shared.Contracts.QuantitativeMetricType.Achieve,
                 MaxValue = 100m,
-                Unit = MetricUnit.Points
+                Unit = Bud.Shared.Contracts.MetricUnit.Points
             });
         var quantMetric = (await quantMetricResponse.Content.ReadFromJsonAsync<MissionMetric>())!;
 
@@ -107,7 +107,7 @@ public class MetricCheckinsEndpointsTests : IClassFixture<CustomWebApplicationFa
             {
                 MissionId = mission.Id,
                 Name = "Quality Standards",
-                Type = MetricType.Qualitative,
+                Type = Bud.Shared.Contracts.MetricType.Qualitative,
                 TargetText = "Achieve high quality"
             });
         var qualMetric = (await qualMetricResponse.Content.ReadFromJsonAsync<MissionMetric>())!;
@@ -626,8 +626,8 @@ public class MetricCheckinsEndpointsTests : IClassFixture<CustomWebApplicationFa
                 Name = "Org2 Mission",
                 StartDate = DateTime.UtcNow,
                 EndDate = DateTime.UtcNow.AddDays(30),
-                Status = MissionStatus.Active,
-                ScopeType = MissionScopeType.Organization,
+                Status = Bud.Shared.Contracts.MissionStatus.Active,
+                ScopeType = Bud.Shared.Contracts.MissionScopeType.Organization,
                 ScopeId = org2.Id
             });
         var mission = (await missionResponse.Content.ReadFromJsonAsync<Mission>())!;
@@ -637,10 +637,10 @@ public class MetricCheckinsEndpointsTests : IClassFixture<CustomWebApplicationFa
             {
                 MissionId = mission.Id,
                 Name = "Cross-Org Metric",
-                Type = MetricType.Quantitative,
-                QuantitativeType = QuantitativeMetricType.Achieve,
+                Type = Bud.Shared.Contracts.MetricType.Quantitative,
+                QuantitativeType = Bud.Shared.Contracts.QuantitativeMetricType.Achieve,
                 MaxValue = 100m,
-                Unit = MetricUnit.Points
+                Unit = Bud.Shared.Contracts.MetricUnit.Points
             });
         var metric = (await metricResponse.Content.ReadFromJsonAsync<MissionMetric>())!;
 
@@ -683,8 +683,8 @@ public class MetricCheckinsEndpointsTests : IClassFixture<CustomWebApplicationFa
                 Name = "Personal Mission",
                 StartDate = DateTime.UtcNow,
                 EndDate = DateTime.UtcNow.AddDays(30),
-                Status = MissionStatus.Active,
-                ScopeType = MissionScopeType.Collaborator,
+                Status = Bud.Shared.Contracts.MissionStatus.Active,
+                ScopeType = Bud.Shared.Contracts.MissionScopeType.Collaborator,
                 ScopeId = owner.Id
             });
         var mission = (await missionResponse.Content.ReadFromJsonAsync<Mission>())!;
@@ -694,10 +694,10 @@ public class MetricCheckinsEndpointsTests : IClassFixture<CustomWebApplicationFa
             {
                 MissionId = mission.Id,
                 Name = "Personal Metric",
-                Type = MetricType.Quantitative,
-                QuantitativeType = QuantitativeMetricType.Achieve,
+                Type = Bud.Shared.Contracts.MetricType.Quantitative,
+                QuantitativeType = Bud.Shared.Contracts.QuantitativeMetricType.Achieve,
                 MaxValue = 100m,
-                Unit = MetricUnit.Points
+                Unit = Bud.Shared.Contracts.MetricUnit.Points
             });
         var metric = (await metricResponse.Content.ReadFromJsonAsync<MissionMetric>())!;
 
@@ -764,8 +764,8 @@ public class MetricCheckinsEndpointsTests : IClassFixture<CustomWebApplicationFa
                 Name = "Team Mission",
                 StartDate = DateTime.UtcNow,
                 EndDate = DateTime.UtcNow.AddDays(30),
-                Status = MissionStatus.Active,
-                ScopeType = MissionScopeType.Team,
+                Status = Bud.Shared.Contracts.MissionStatus.Active,
+                ScopeType = Bud.Shared.Contracts.MissionScopeType.Team,
                 ScopeId = team.Id
             });
         var mission = (await missionResponse.Content.ReadFromJsonAsync<Mission>())!;
@@ -775,10 +775,10 @@ public class MetricCheckinsEndpointsTests : IClassFixture<CustomWebApplicationFa
             {
                 MissionId = mission.Id,
                 Name = "Team Metric",
-                Type = MetricType.Quantitative,
-                QuantitativeType = QuantitativeMetricType.Achieve,
+                Type = Bud.Shared.Contracts.MetricType.Quantitative,
+                QuantitativeType = Bud.Shared.Contracts.QuantitativeMetricType.Achieve,
                 MaxValue = 100m,
-                Unit = MetricUnit.Points
+                Unit = Bud.Shared.Contracts.MetricUnit.Points
             });
         var metric = (await metricResponse.Content.ReadFromJsonAsync<MissionMetric>())!;
 

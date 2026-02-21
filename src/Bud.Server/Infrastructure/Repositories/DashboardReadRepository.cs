@@ -1,6 +1,6 @@
-using Bud.Server.Domain.ReadModels;
+using Bud.Server.Application.Projections;
 using Bud.Server.Infrastructure.Persistence;
-using Bud.Shared.Domain;
+using Bud.Server.Domain.Model;
 using Microsoft.EntityFrameworkCore;
 
 namespace Bud.Server.Infrastructure.Repositories;

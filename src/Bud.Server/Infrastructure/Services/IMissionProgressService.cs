@@ -1,4 +1,4 @@
-using Bud.Server.Domain.ReadModels;
+using Bud.Server.Application.Projections;
 using Bud.Server.Application.Common;
 
 namespace Bud.Server.Infrastructure.Services;

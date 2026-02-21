@@ -3,7 +3,7 @@ using Bud.Server.Infrastructure.Services;
 using Bud.Server.Settings;
 using Bud.Server.Tests.Helpers;
 using Bud.Shared.Contracts;
-using Bud.Shared.Domain;
+using Bud.Server.Domain.Model;
 using FluentAssertions;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;

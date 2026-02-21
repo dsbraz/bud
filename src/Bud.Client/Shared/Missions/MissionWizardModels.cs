@@ -1,4 +1,4 @@
-using Bud.Shared.Domain;
+using Bud.Shared.Contracts;
 
 namespace Bud.Client.Shared.Missions;
 

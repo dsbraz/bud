@@ -2,7 +2,7 @@ using System.Net;
 using System.Net.Http.Json;
 using Bud.Server.Infrastructure.Persistence;
 using Bud.Shared.Contracts;
-using Bud.Shared.Domain;
+using Bud.Server.Domain.Model;
 using FluentAssertions;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
@@ -32,7 +32,7 @@ public class NotificationsEndpointsTests : IClassFixture<CustomWebApplicationFac
             FullName = "Notification User",
             Email = $"notif-{Guid.NewGuid()}@example.com",
             OrganizationId = org.Id,
-            Role = CollaboratorRole.IndividualContributor
+            Role = Bud.Server.Domain.Model.CollaboratorRole.IndividualContributor
         };
         dbContext.Collaborators.Add(collaborator);
         await dbContext.SaveChangesAsync();

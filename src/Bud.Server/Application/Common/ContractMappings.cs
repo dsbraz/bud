@@ -1,4 +1,4 @@
-using Bud.Server.Domain.ReadModels;
+using Bud.Server.Application.Projections;
 using Bud.Shared.Contracts;
 
 namespace Bud.Server.Application.Common;
@@ -14,7 +14,7 @@ internal static class ContractMappings
             DisplayName = source.DisplayName,
             IsGlobalAdmin = source.IsGlobalAdmin,
             CollaboratorId = source.CollaboratorId,
-            Role = source.Role,
+            Role = source.Role.HasValue ? source.Role.Value.ToShared() : null,
             OrganizationId = source.OrganizationId
         };
     }
@@ -51,7 +51,7 @@ internal static class ContractMappings
             Id = source.Id,
             FullName = source.FullName,
             Email = source.Email,
-            Role = source.Role
+            Role = source.Role.ToShared()
         };
     }
 

@@ -1,6 +1,6 @@
 using System.Text.Json;
 using Bud.Mcp.Tests.Helpers;
-using Bud.Shared.Domain;
+using Bud.Shared.Contracts;
 
 namespace Bud.Mcp.Tests.Http;
 

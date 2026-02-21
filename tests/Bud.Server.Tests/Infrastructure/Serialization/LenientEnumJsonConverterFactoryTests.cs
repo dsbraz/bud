@@ -1,6 +1,6 @@
 using System.Text.Json;
 using Bud.Server.Infrastructure.Serialization;
-using Bud.Shared.Domain;
+using Bud.Server.Domain.Model;
 using FluentAssertions;
 using Xunit;
 

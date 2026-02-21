@@ -22,7 +22,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Bud.Shared\Bud.Shared.csproj" />
-    <ProjectReference Include="..\Bud.Client\Bud.Client.csproj" ReferenceOutputAssembly="false" />
+    <ProjectReference Include="..\Bud.Client\Bud.Client.csproj" ReferenceOutputAssembly="false" Condition="'$(SkipClientBuild)' != 'true'" />
   </ItemGroup>
 
 </Project>

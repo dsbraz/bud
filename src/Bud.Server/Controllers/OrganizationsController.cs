@@ -1,7 +1,7 @@
 using Bud.Server.Application.Organizations;
 using Bud.Server.Authorization;
 using Bud.Shared.Contracts;
-using Bud.Shared.Domain;
+using Bud.Server.Domain.Model;
 using FluentValidation;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -13,8 +13,13 @@ namespace Bud.Server.Controllers;
 [Route("api/organizations")]
 [Produces("application/json")]
 public sealed class OrganizationsController(
-    OrganizationCommand organizationCommand,
-    OrganizationQuery organizationQuery,
+    RegisterOrganization registerOrganization,
+    RenameOrganization renameOrganization,
+    DeleteOrganization deleteOrganization,
+    ViewOrganizationDetails viewOrganizationDetails,
+    ListOrganizations listOrganizations,
+    ListOrganizationWorkspaces listOrganizationWorkspaces,
+    ListOrganizationCollaborators listOrganizationCollaborators,
     IValidator<CreateOrganizationRequest> createValidator,
     IValidator<UpdateOrganizationRequest> updateValidator) : ApiControllerBase
 {
@@ -39,7 +44,7 @@ public sealed class OrganizationsController(
             return ValidationProblemFrom(validationResult);
         }
 
-        var result = await organizationCommand.CreateAsync(request, cancellationToken);
+        var result = await registerOrganization.ExecuteAsync(request, cancellationToken);
         return FromResult(result, organization => CreatedAtAction(nameof(GetById), new { id = organization.Id }, organization));
     }
 
@@ -65,7 +70,7 @@ public sealed class OrganizationsController(
             return ValidationProblemFrom(validationResult);
         }
 
-        var result = await organizationCommand.UpdateAsync(id, request, cancellationToken);
+        var result = await renameOrganization.ExecuteAsync(id, request, cancellationToken);
         return FromResultOk(result);
     }
 
@@ -84,7 +89,7 @@ public sealed class OrganizationsController(
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status409Conflict)]
     public async Task<IActionResult> Delete(Guid id, CancellationToken cancellationToken)
     {
-        var result = await organizationCommand.DeleteAsync(id, cancellationToken);
+        var result = await deleteOrganization.ExecuteAsync(id, cancellationToken);
         return FromResult(result, NoContent);
     }
 
@@ -98,7 +103,7 @@ public sealed class OrganizationsController(
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
     public async Task<ActionResult<Organization>> GetById(Guid id, CancellationToken cancellationToken)
     {
-        var result = await organizationQuery.GetByIdAsync(id, cancellationToken);
+        var result = await viewOrganizationDetails.ExecuteAsync(id, cancellationToken);
         return FromResultOk(result);
     }
 
@@ -128,7 +133,7 @@ public sealed class OrganizationsController(
             return paginationValidation;
         }
 
-        var result = await organizationQuery.GetAllAsync(searchValidation.Value, page, pageSize, cancellationToken);
+        var result = await listOrganizations.ExecuteAsync(searchValidation.Value, page, pageSize, cancellationToken);
         return FromResultOk(result);
     }
 
@@ -154,7 +159,7 @@ public sealed class OrganizationsController(
             return paginationValidation;
         }
 
-        var result = await organizationQuery.GetWorkspacesAsync(id, page, pageSize, cancellationToken);
+        var result = await listOrganizationWorkspaces.ExecuteAsync(id, page, pageSize, cancellationToken);
         return FromResultOk(result);
     }
 
@@ -180,7 +185,7 @@ public sealed class OrganizationsController(
             return paginationValidation;
         }
 
-        var result = await organizationQuery.GetCollaboratorsAsync(id, page, pageSize, cancellationToken);
+        var result = await listOrganizationCollaborators.ExecuteAsync(id, page, pageSize, cancellationToken);
         return FromResultOk(result);
     }
 }

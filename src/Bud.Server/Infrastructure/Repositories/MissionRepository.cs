@@ -1,7 +1,7 @@
-using Bud.Server.Domain.Specifications;
+using Bud.Server.Infrastructure.Querying;
 using Bud.Server.Infrastructure.Persistence;
 using Bud.Shared.Contracts;
-using Bud.Shared.Domain;
+using Bud.Server.Domain.Model;
 using Microsoft.EntityFrameworkCore;
 
 namespace Bud.Server.Infrastructure.Repositories;
@@ -17,7 +17,7 @@ public sealed class MissionRepository(ApplicationDbContext dbContext) : IMission
             .FirstOrDefaultAsync(m => m.Id == id, ct);
 
     public async Task<PagedResult<Mission>> GetAllAsync(
-        MissionScopeType? scopeType, Guid? scopeId, string? search,
+        Bud.Server.Domain.Model.MissionScopeType? scopeType, Guid? scopeId, string? search,
         int page, int pageSize, CancellationToken ct = default)
     {
         var query = dbContext.Missions.AsNoTracking();

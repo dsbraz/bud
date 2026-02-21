@@ -1,7 +1,7 @@
 using Bud.Server.Application.MissionTemplates;
 using Bud.Server.Authorization;
 using Bud.Shared.Contracts;
-using Bud.Shared.Domain;
+using Bud.Server.Domain.Model;
 using FluentValidation;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -13,8 +13,11 @@ namespace Bud.Server.Controllers;
 [Route("api/mission-templates")]
 [Produces("application/json")]
 public sealed class MissionTemplatesController(
-    MissionTemplateCommand missionTemplateCommand,
-    MissionTemplateQuery missionTemplateQuery,
+    CreateStrategicMissionTemplate createStrategicMissionTemplate,
+    ReviseStrategicMissionTemplate reviseStrategicMissionTemplate,
+    RemoveStrategicMissionTemplate removeStrategicMissionTemplate,
+    ViewStrategicMissionTemplate viewStrategicMissionTemplate,
+    ListMissionTemplates listMissionTemplates,
     IValidator<CreateMissionTemplateRequest> createValidator,
     IValidator<UpdateMissionTemplateRequest> updateValidator) : ApiControllerBase
 {
@@ -35,7 +38,7 @@ public sealed class MissionTemplatesController(
             return ValidationProblemFrom(validationResult);
         }
 
-        var result = await missionTemplateCommand.CreateAsync(User, request, cancellationToken);
+        var result = await createStrategicMissionTemplate.ExecuteAsync(User, request, cancellationToken);
         return FromResult(result, template => CreatedAtAction(nameof(GetById), new { id = template.Id }, template));
     }
 
@@ -58,7 +61,7 @@ public sealed class MissionTemplatesController(
             return ValidationProblemFrom(validationResult);
         }
 
-        var result = await missionTemplateCommand.UpdateAsync(User, id, request, cancellationToken);
+        var result = await reviseStrategicMissionTemplate.ExecuteAsync(User, id, request, cancellationToken);
         return FromResultOk(result);
     }
 
@@ -72,7 +75,7 @@ public sealed class MissionTemplatesController(
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> Delete(Guid id, CancellationToken cancellationToken)
     {
-        var result = await missionTemplateCommand.DeleteAsync(User, id, cancellationToken);
+        var result = await removeStrategicMissionTemplate.ExecuteAsync(User, id, cancellationToken);
         return FromResult(result, NoContent);
     }
 
@@ -86,7 +89,7 @@ public sealed class MissionTemplatesController(
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
     public async Task<ActionResult<MissionTemplate>> GetById(Guid id, CancellationToken cancellationToken)
     {
-        var result = await missionTemplateQuery.GetByIdAsync(id, cancellationToken);
+        var result = await viewStrategicMissionTemplate.ExecuteAsync(id, cancellationToken);
         return FromResultOk(result);
     }
 
@@ -116,7 +119,7 @@ public sealed class MissionTemplatesController(
             return paginationValidation;
         }
 
-        var result = await missionTemplateQuery.GetAllAsync(searchValidation.Value, page, pageSize, cancellationToken);
+        var result = await listMissionTemplates.ExecuteAsync(searchValidation.Value, page, pageSize, cancellationToken);
         return FromResultOk(result);
     }
 }

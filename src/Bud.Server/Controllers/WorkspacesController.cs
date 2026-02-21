@@ -1,7 +1,7 @@
 using Bud.Server.Application.Workspaces;
 using Bud.Server.Authorization;
 using Bud.Shared.Contracts;
-using Bud.Shared.Domain;
+using Bud.Server.Domain.Model;
 using FluentValidation;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -13,8 +13,12 @@ namespace Bud.Server.Controllers;
 [Route("api/workspaces")]
 [Produces("application/json")]
 public sealed class WorkspacesController(
-    WorkspaceQuery workspaceQuery,
-    WorkspaceCommand workspaceCommand,
+    CreateWorkspace createWorkspace,
+    RenameWorkspace renameWorkspace,
+    DeleteWorkspace deleteWorkspace,
+    ViewWorkspaceDetails viewWorkspaceDetails,
+    ListWorkspaces listWorkspaces,
+    ListWorkspaceTeams listWorkspaceTeams,
     IValidator<CreateWorkspaceRequest> createValidator,
     IValidator<UpdateWorkspaceRequest> updateValidator) : ApiControllerBase
 {
@@ -39,7 +43,7 @@ public sealed class WorkspacesController(
             return ValidationProblemFrom(validationResult);
         }
 
-        var result = await workspaceCommand.CreateAsync(User, request, cancellationToken);
+        var result = await createWorkspace.ExecuteAsync(User, request, cancellationToken);
         return FromResult(result, workspace => CreatedAtAction(nameof(GetById), new { id = workspace.Id }, workspace));
     }
 
@@ -64,7 +68,7 @@ public sealed class WorkspacesController(
             return ValidationProblemFrom(validationResult);
         }
 
-        var result = await workspaceCommand.UpdateAsync(User, id, request, cancellationToken);
+        var result = await renameWorkspace.ExecuteAsync(User, id, request, cancellationToken);
         return FromResultOk(result);
     }
 
@@ -80,7 +84,7 @@ public sealed class WorkspacesController(
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status403Forbidden)]
     public async Task<IActionResult> Delete(Guid id, CancellationToken cancellationToken)
     {
-        var result = await workspaceCommand.DeleteAsync(User, id, cancellationToken);
+        var result = await deleteWorkspace.ExecuteAsync(User, id, cancellationToken);
         return FromResult(result, NoContent);
     }
 
@@ -94,7 +98,7 @@ public sealed class WorkspacesController(
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
     public async Task<ActionResult<Workspace>> GetById(Guid id, CancellationToken cancellationToken)
     {
-        var result = await workspaceQuery.GetByIdAsync(id, cancellationToken);
+        var result = await viewWorkspaceDetails.ExecuteAsync(id, cancellationToken);
         return FromResultOk(result);
     }
 
@@ -125,7 +129,7 @@ public sealed class WorkspacesController(
             return paginationValidation;
         }
 
-        var result = await workspaceQuery.GetAllAsync(organizationId, searchValidation.Value, page, pageSize, cancellationToken);
+        var result = await listWorkspaces.ExecuteAsync(organizationId, searchValidation.Value, page, pageSize, cancellationToken);
         return FromResultOk(result);
     }
 
@@ -151,7 +155,7 @@ public sealed class WorkspacesController(
             return paginationValidation;
         }
 
-        var result = await workspaceQuery.GetTeamsAsync(id, page, pageSize, cancellationToken);
+        var result = await listWorkspaceTeams.ExecuteAsync(id, page, pageSize, cancellationToken);
         return FromResultOk(result);
     }
 }

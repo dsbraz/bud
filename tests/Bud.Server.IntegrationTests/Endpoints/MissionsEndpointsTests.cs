@@ -4,7 +4,7 @@ using System.Diagnostics;
 using System.Text;
 using System.Text.Json;
 using Bud.Shared.Contracts;
-using Bud.Shared.Domain;
+using Bud.Server.Domain.Model;
 using FluentAssertions;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -49,7 +49,7 @@ public class MissionsEndpointsTests : IClassFixture<CustomWebApplicationFactory>
             Id = Guid.NewGuid(),
             FullName = "Administrador",
             Email = "admin@getbud.co",
-            Role = CollaboratorRole.Leader,
+            Role = Bud.Server.Domain.Model.CollaboratorRole.Leader,
             TeamId = null,
             OrganizationId = org.Id
         };
@@ -99,8 +99,8 @@ public class MissionsEndpointsTests : IClassFixture<CustomWebApplicationFactory>
             Name = "Test Mission",
             StartDate = DateTime.UtcNow,
             EndDate = DateTime.UtcNow.AddDays(7),
-            Status = MissionStatus.Planned,
-            ScopeType = MissionScopeType.Organization,
+            Status = Bud.Shared.Contracts.MissionStatus.Planned,
+            ScopeType = Bud.Shared.Contracts.MissionScopeType.Organization,
             ScopeId = org!.Id
         };
 
@@ -147,8 +147,8 @@ public class MissionsEndpointsTests : IClassFixture<CustomWebApplicationFactory>
             Name = "Mission Forbidden",
             StartDate = DateTime.UtcNow,
             EndDate = DateTime.UtcNow.AddDays(7),
-            Status = MissionStatus.Planned,
-            ScopeType = MissionScopeType.Organization,
+            Status = Bud.Shared.Contracts.MissionStatus.Planned,
+            ScopeType = Bud.Shared.Contracts.MissionScopeType.Organization,
             ScopeId = org2!.Id
         };
 
@@ -168,8 +168,8 @@ public class MissionsEndpointsTests : IClassFixture<CustomWebApplicationFactory>
             Name = "Test Mission",
             StartDate = DateTime.UtcNow,
             EndDate = DateTime.UtcNow.AddDays(7),
-            Status = MissionStatus.Planned,
-            ScopeType = MissionScopeType.Organization,
+            Status = Bud.Shared.Contracts.MissionStatus.Planned,
+            ScopeType = Bud.Shared.Contracts.MissionScopeType.Organization,
             ScopeId = Guid.NewGuid() // Non-existent ID
         };
 
@@ -198,8 +198,8 @@ public class MissionsEndpointsTests : IClassFixture<CustomWebApplicationFactory>
             Name = "Test Mission",
             StartDate = DateTime.UtcNow.AddDays(7),
             EndDate = DateTime.UtcNow, // Before start date
-            Status = MissionStatus.Planned,
-            ScopeType = MissionScopeType.Organization,
+            Status = Bud.Shared.Contracts.MissionStatus.Planned,
+            ScopeType = Bud.Shared.Contracts.MissionScopeType.Organization,
             ScopeId = org!.Id
         };
 
@@ -282,7 +282,7 @@ public class MissionsEndpointsTests : IClassFixture<CustomWebApplicationFactory>
             Id = Guid.NewGuid(),
             FullName = "Colaborador Teste",
             Email = $"colaborador-{Guid.NewGuid():N}@test.com",
-            Role = CollaboratorRole.IndividualContributor,
+            Role = Bud.Server.Domain.Model.CollaboratorRole.IndividualContributor,
             OrganizationId = organizationId
         };
 
@@ -308,8 +308,8 @@ public class MissionsEndpointsTests : IClassFixture<CustomWebApplicationFactory>
             Name = "Test Mission for GetById",
             StartDate = DateTime.UtcNow,
             EndDate = DateTime.UtcNow.AddDays(7),
-            Status = MissionStatus.Planned,
-            ScopeType = MissionScopeType.Organization,
+            Status = Bud.Shared.Contracts.MissionStatus.Planned,
+            ScopeType = Bud.Shared.Contracts.MissionScopeType.Organization,
             ScopeId = org!.Id
         };
         var createResponse = await _client.PostAsJsonAsync("/api/missions", createRequest);
@@ -370,8 +370,8 @@ public class MissionsEndpointsTests : IClassFixture<CustomWebApplicationFactory>
             Name = "Mission Org 1",
             StartDate = DateTime.UtcNow,
             EndDate = DateTime.UtcNow.AddDays(7),
-            Status = MissionStatus.Planned,
-            ScopeType = MissionScopeType.Organization,
+            Status = Bud.Shared.Contracts.MissionStatus.Planned,
+            ScopeType = Bud.Shared.Contracts.MissionScopeType.Organization,
             ScopeId = org1!.Id
         });
 
@@ -380,8 +380,8 @@ public class MissionsEndpointsTests : IClassFixture<CustomWebApplicationFactory>
             Name = "Mission Org 2",
             StartDate = DateTime.UtcNow,
             EndDate = DateTime.UtcNow.AddDays(7),
-            Status = MissionStatus.Planned,
-            ScopeType = MissionScopeType.Organization,
+            Status = Bud.Shared.Contracts.MissionStatus.Planned,
+            ScopeType = Bud.Shared.Contracts.MissionScopeType.Organization,
             ScopeId = org2!.Id
         });
 
@@ -411,8 +411,8 @@ public class MissionsEndpointsTests : IClassFixture<CustomWebApplicationFactory>
                 Name = $"Mission {i}",
                 StartDate = DateTime.UtcNow,
                 EndDate = DateTime.UtcNow.AddDays(7),
-                Status = MissionStatus.Planned,
-                ScopeType = MissionScopeType.Organization,
+                Status = Bud.Shared.Contracts.MissionStatus.Planned,
+                ScopeType = Bud.Shared.Contracts.MissionScopeType.Organization,
                 ScopeId = org!.Id
             });
         }
@@ -497,7 +497,7 @@ public class MissionsEndpointsTests : IClassFixture<CustomWebApplicationFactory>
             Id = Guid.NewGuid(),
             FullName = "Líder Org Teste",
             Email = $"leader-{Guid.NewGuid():N}@test-org.com",
-            Role = CollaboratorRole.Leader,
+            Role = Bud.Server.Domain.Model.CollaboratorRole.Leader,
             OrganizationId = org!.Id,
             TeamId = null
         };
@@ -513,7 +513,7 @@ public class MissionsEndpointsTests : IClassFixture<CustomWebApplicationFactory>
             Id = Guid.NewGuid(),
             FullName = "Test User",
             Email = $"test-{Guid.NewGuid():N}@example.com",
-            Role = CollaboratorRole.IndividualContributor,
+            Role = Bud.Server.Domain.Model.CollaboratorRole.IndividualContributor,
             OrganizationId = org!.Id,
             TeamId = team!.Id
         };
@@ -527,8 +527,8 @@ public class MissionsEndpointsTests : IClassFixture<CustomWebApplicationFactory>
             Name = "Org Mission",
             StartDate = DateTime.UtcNow,
             EndDate = DateTime.UtcNow.AddDays(7),
-            Status = MissionStatus.Planned,
-            ScopeType = MissionScopeType.Organization,
+            Status = Bud.Shared.Contracts.MissionStatus.Planned,
+            ScopeType = Bud.Shared.Contracts.MissionScopeType.Organization,
             ScopeId = org.Id
         });
 
@@ -537,8 +537,8 @@ public class MissionsEndpointsTests : IClassFixture<CustomWebApplicationFactory>
             Name = "Collaborator Mission",
             StartDate = DateTime.UtcNow,
             EndDate = DateTime.UtcNow.AddDays(7),
-            Status = MissionStatus.Planned,
-            ScopeType = MissionScopeType.Collaborator,
+            Status = Bud.Shared.Contracts.MissionStatus.Planned,
+            ScopeType = Bud.Shared.Contracts.MissionScopeType.Collaborator,
             ScopeId = collaborator!.Id
         });
 
@@ -572,8 +572,8 @@ public class MissionsEndpointsTests : IClassFixture<CustomWebApplicationFactory>
             Name = "Original Name",
             StartDate = DateTime.UtcNow,
             EndDate = DateTime.UtcNow.AddDays(7),
-            Status = MissionStatus.Planned,
-            ScopeType = MissionScopeType.Organization,
+            Status = Bud.Shared.Contracts.MissionStatus.Planned,
+            ScopeType = Bud.Shared.Contracts.MissionScopeType.Organization,
             ScopeId = org!.Id
         };
         var createResponse = await _client.PostAsJsonAsync("/api/missions", createRequest);
@@ -584,7 +584,7 @@ public class MissionsEndpointsTests : IClassFixture<CustomWebApplicationFactory>
             Name = "Updated Name",
             StartDate = created!.StartDate,
             EndDate = created.EndDate,
-            Status = MissionStatus.Active
+            Status = Bud.Shared.Contracts.MissionStatus.Active
         };
 
         // Act
@@ -616,8 +616,8 @@ public class MissionsEndpointsTests : IClassFixture<CustomWebApplicationFactory>
             Name = "Mission to Delete",
             StartDate = DateTime.UtcNow,
             EndDate = DateTime.UtcNow.AddDays(7),
-            Status = MissionStatus.Planned,
-            ScopeType = MissionScopeType.Organization,
+            Status = Bud.Shared.Contracts.MissionStatus.Planned,
+            ScopeType = Bud.Shared.Contracts.MissionScopeType.Organization,
             ScopeId = org!.Id
         };
         var createResponse = await _client.PostAsJsonAsync("/api/missions", createRequest);

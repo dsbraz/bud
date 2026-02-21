@@ -36,7 +36,7 @@ O Bud segue uma arquitetura em camadas com separação explícita de responsabil
 - **Domain**: conceitos de domínio, value objects e specifications.
 - **Infrastructure**: EF Core (`ApplicationDbContext`), repositórios (`Repositories/`) e serviços de infraestrutura (`Services/`).
 - **Client (`Bud.Client`)**: SPA Blazor WASM com consumo da API.
-- **Shared (`Bud.Shared`)**: contratos e modelos compartilhados entre cliente e servidor.
+- **Shared (`Bud.Shared`)**: contratos de borda compartilhados entre cliente, servidor e MCP.
 
 ### Organização do backend (Bud.Server)
 
@@ -55,13 +55,13 @@ O Bud segue uma arquitetura em camadas com separação explícita de responsabil
 - **Commands/Queries + Repositories (Clean Architecture)**
   Controllers delegam para Commands/Queries, que dependem de interfaces (portas) co-localizadas com suas implementações em `Infrastructure/`.
   Repositórios e serviços definem interfaces e implementações no mesmo diretório. `Domain` não depende de `Application` nem de `Infrastructure`.
-  Referências: `docs/adr/ADR-0002-usecases-services.md`.
+  Referências: `docs/adr/ADR-0002-arquitetura-ddd-estrita-e-regras-de-dependencia.md`.
 - **Policy-based Authorization (Requirement/Handler)**
   Regras de autorização centralizadas em policies e handlers, reduzindo condicionais espalhadas.
-  Referências: `docs/adr/ADR-0004-autenticacao-autorizacao.md`.
+  Referências: `docs/adr/ADR-0007-autenticacao-e-autorizacao-por-politicas.md`.
 - **Specification Pattern (consultas reutilizáveis)**
   Filtros de domínio encapsulados em specifications para evitar duplicação de predicados.
-  Referências: `src/Bud.Server/Domain/Specifications/`.
+  Referências: `src/Bud.Server/Infrastructure/Querying/`.
 - **Structured Logging (source-generated)**
   Logs com `[LoggerMessage]` definidos localmente por componente (`partial`), com `EventId` estável e sem catálogo central global.
 - **Governança arquitetural por testes + ADRs**  
@@ -69,7 +69,7 @@ O Bud segue uma arquitetura em camadas com separação explícita de responsabil
   Referências: `docs/adr/README.md` e `tests/Bud.Server.Tests/Architecture/ArchitectureTests.cs`.
 - **Aggregate Roots explícitas**
   Entidades raiz de agregado são marcadas com `IAggregateRoot` para tornar boundaries verificáveis por testes.
-  Referências: `docs/adr/ADR-0012-aggregate-roots-value-objects-invariantes.md`.
+  Referências: `docs/adr/ADR-0003-agregados-entidades-value-objects-e-invariantes.md`.
 - **Invariantes no domínio (modelo rico)**  
   Regras centrais de negócio são aplicadas por métodos de agregado/entidade (`Create`, `Rename`, `SetScope`, etc.) com tradução para `Result` na camada de aplicação (Commands/Queries).
   Inclui Value Objects formais (`PersonName`, `MissionScope`, `ConfidenceLevel`, `MetricRange`) para reduzir primitive obsession.

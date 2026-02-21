@@ -1,4 +1,6 @@
 using Bud.Server.Infrastructure.Persistence;
+using Bud.Server.Infrastructure.DomainEvents;
+using Bud.Server.Domain.Abstractions;
 using Bud.Server.MultiTenancy;
 using Microsoft.EntityFrameworkCore;
 
@@ -17,6 +19,7 @@ public static class BudInfrastructureCompositionExtensions
         services.AddHttpContextAccessor();
         services.AddScoped<ITenantProvider, JwtTenantProvider>();
         services.AddScoped<TenantSaveChangesInterceptor>();
+        services.AddScoped<IDomainEventDispatcher, DomainEventDispatcher>();
 
         services.AddScoped<ApplicationDbContext>(sp =>
         {
@@ -27,6 +30,7 @@ public static class BudInfrastructureCompositionExtensions
             var tenantProvider = sp.GetRequiredService<ITenantProvider>();
             return new ApplicationDbContext(optionsBuilder.Options, tenantProvider);
         });
+        services.AddScoped<IUnitOfWork, EfUnitOfWork>();
 
         services.AddHealthChecks()
             .AddNpgSql(connectionString, name: "postgres", tags: ["db", "ready"]);

@@ -1,7 +1,7 @@
 using System.Net;
 using System.Net.Http.Json;
 using Bud.Shared.Contracts;
-using Bud.Shared.Domain;
+using Bud.Server.Domain.Model;
 using FluentAssertions;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -46,7 +46,7 @@ public class MissionObjectivesEndpointsTests : IClassFixture<CustomWebApplicatio
             Id = Guid.NewGuid(),
             FullName = "Administrador",
             Email = "admin@getbud.co",
-            Role = CollaboratorRole.Leader,
+            Role = Bud.Server.Domain.Model.CollaboratorRole.Leader,
             OrganizationId = org.Id
         };
         dbContext.Collaborators.Add(adminLeader);
@@ -80,8 +80,8 @@ public class MissionObjectivesEndpointsTests : IClassFixture<CustomWebApplicatio
                 Name = "Test Mission",
                 StartDate = DateTime.UtcNow,
                 EndDate = DateTime.UtcNow.AddDays(7),
-                Status = MissionStatus.Planned,
-                ScopeType = MissionScopeType.Organization,
+                Status = Bud.Shared.Contracts.MissionStatus.Planned,
+                ScopeType = Bud.Shared.Contracts.MissionScopeType.Organization,
                 ScopeId = org!.Id
             });
 
@@ -368,8 +368,8 @@ public class MissionObjectivesEndpointsTests : IClassFixture<CustomWebApplicatio
                 Name = "Mission Org 2",
                 StartDate = DateTime.UtcNow,
                 EndDate = DateTime.UtcNow.AddDays(7),
-                Status = MissionStatus.Planned,
-                ScopeType = MissionScopeType.Organization,
+                Status = Bud.Shared.Contracts.MissionStatus.Planned,
+                ScopeType = Bud.Shared.Contracts.MissionScopeType.Organization,
                 ScopeId = org2!.Id
             });
         var mission = await missionResponse.Content.ReadFromJsonAsync<Mission>();
@@ -407,7 +407,7 @@ public class MissionObjectivesEndpointsTests : IClassFixture<CustomWebApplicatio
                 MissionId = mission.Id,
                 MissionObjectiveId = objective!.Id,
                 Name = "Métrica do Objetivo",
-                Type = MetricType.Qualitative,
+                Type = Bud.Shared.Contracts.MetricType.Qualitative,
                 TargetText = "Teste"
             });
 
@@ -431,7 +431,7 @@ public class MissionObjectivesEndpointsTests : IClassFixture<CustomWebApplicatio
                 MissionId = mission.Id,
                 MissionObjectiveId = objective!.Id,
                 Name = "Métrica do Objetivo",
-                Type = MetricType.Qualitative,
+                Type = Bud.Shared.Contracts.MetricType.Qualitative,
                 TargetText = "T1"
             });
 
@@ -440,7 +440,7 @@ public class MissionObjectivesEndpointsTests : IClassFixture<CustomWebApplicatio
             {
                 MissionId = mission.Id,
                 Name = "Métrica Direta",
-                Type = MetricType.Qualitative,
+                Type = Bud.Shared.Contracts.MetricType.Qualitative,
                 TargetText = "T2"
             });
 
@@ -464,7 +464,7 @@ public class MissionObjectivesEndpointsTests : IClassFixture<CustomWebApplicatio
             Id = Guid.NewGuid(),
             FullName = "Colaborador Teste",
             Email = $"colaborador-{Guid.NewGuid():N}@test.com",
-            Role = CollaboratorRole.IndividualContributor,
+            Role = Bud.Server.Domain.Model.CollaboratorRole.IndividualContributor,
             OrganizationId = organizationId
         };
 

@@ -1,4 +1,4 @@
-using Bud.Server.Infrastructure.Repositories;
+using Bud.Server.Domain.Repositories;
 using Bud.Server.MultiTenancy;
 using Bud.Shared.Contracts;
 using FluentValidation;

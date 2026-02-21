@@ -1,6 +1,5 @@
 using Bud.Server.Validators;
 using Bud.Shared.Contracts;
-using Bud.Shared.Domain;
 using FluentAssertions;
 using Xunit;
 
@@ -21,8 +20,8 @@ public class CreateMissionValidatorTests
             Name = "Test Mission",
             StartDate = DateTime.UtcNow,
             EndDate = DateTime.UtcNow.AddDays(7),
-            Status = MissionStatus.Planned,
-            ScopeType = MissionScopeType.Organization,
+            Status = Bud.Shared.Contracts.MissionStatus.Planned,
+            ScopeType = Bud.Shared.Contracts.MissionScopeType.Organization,
             ScopeId = Guid.NewGuid()
         };
 
@@ -46,8 +45,8 @@ public class CreateMissionValidatorTests
             Name = name!,
             StartDate = DateTime.UtcNow,
             EndDate = DateTime.UtcNow.AddDays(7),
-            Status = MissionStatus.Planned,
-            ScopeType = MissionScopeType.Organization,
+            Status = Bud.Shared.Contracts.MissionStatus.Planned,
+            ScopeType = Bud.Shared.Contracts.MissionScopeType.Organization,
             ScopeId = Guid.NewGuid()
         };
 
@@ -68,8 +67,8 @@ public class CreateMissionValidatorTests
             Name = new string('A', 201), // 201 characters
             StartDate = DateTime.UtcNow,
             EndDate = DateTime.UtcNow.AddDays(7),
-            Status = MissionStatus.Planned,
-            ScopeType = MissionScopeType.Organization,
+            Status = Bud.Shared.Contracts.MissionStatus.Planned,
+            ScopeType = Bud.Shared.Contracts.MissionScopeType.Organization,
             ScopeId = Guid.NewGuid()
         };
 
@@ -96,8 +95,8 @@ public class CreateMissionValidatorTests
             Name = "Test Mission",
             StartDate = DateTime.UtcNow.AddDays(7),
             EndDate = DateTime.UtcNow, // Before start date
-            Status = MissionStatus.Planned,
-            ScopeType = MissionScopeType.Organization,
+            Status = Bud.Shared.Contracts.MissionStatus.Planned,
+            ScopeType = Bud.Shared.Contracts.MissionScopeType.Organization,
             ScopeId = Guid.NewGuid()
         };
 
@@ -121,8 +120,8 @@ public class CreateMissionValidatorTests
             Name = "Test Mission",
             StartDate = startDate,
             EndDate = startDate, // Same as start date
-            Status = MissionStatus.Planned,
-            ScopeType = MissionScopeType.Organization,
+            Status = Bud.Shared.Contracts.MissionStatus.Planned,
+            ScopeType = Bud.Shared.Contracts.MissionScopeType.Organization,
             ScopeId = Guid.NewGuid()
         };
 
@@ -143,8 +142,8 @@ public class CreateMissionValidatorTests
             Name = "Test Mission",
             StartDate = DateTime.UtcNow,
             EndDate = DateTime.UtcNow.AddDays(7), // After start date
-            Status = MissionStatus.Planned,
-            ScopeType = MissionScopeType.Organization,
+            Status = Bud.Shared.Contracts.MissionStatus.Planned,
+            ScopeType = Bud.Shared.Contracts.MissionScopeType.Organization,
             ScopeId = Guid.NewGuid()
         };
 
@@ -165,8 +164,8 @@ public class CreateMissionValidatorTests
             Name = "Test Mission",
             StartDate = default(DateTime), // Empty date
             EndDate = DateTime.UtcNow.AddDays(7),
-            Status = MissionStatus.Planned,
-            ScopeType = MissionScopeType.Organization,
+            Status = Bud.Shared.Contracts.MissionStatus.Planned,
+            ScopeType = Bud.Shared.Contracts.MissionScopeType.Organization,
             ScopeId = Guid.NewGuid()
         };
 
@@ -187,8 +186,8 @@ public class CreateMissionValidatorTests
             Name = "Test Mission",
             StartDate = DateTime.UtcNow,
             EndDate = default(DateTime), // Empty date
-            Status = MissionStatus.Planned,
-            ScopeType = MissionScopeType.Organization,
+            Status = Bud.Shared.Contracts.MissionStatus.Planned,
+            ScopeType = Bud.Shared.Contracts.MissionScopeType.Organization,
             ScopeId = Guid.NewGuid()
         };
 
@@ -213,8 +212,8 @@ public class CreateMissionValidatorTests
             Name = "Test Mission",
             StartDate = DateTime.UtcNow,
             EndDate = DateTime.UtcNow.AddDays(7),
-            Status = MissionStatus.Planned,
-            ScopeType = MissionScopeType.Team,
+            Status = Bud.Shared.Contracts.MissionStatus.Planned,
+            ScopeType = Bud.Shared.Contracts.MissionScopeType.Team,
             ScopeId = Guid.NewGuid()
         };
 
@@ -235,8 +234,8 @@ public class CreateMissionValidatorTests
             Name = "Test Mission",
             StartDate = DateTime.UtcNow,
             EndDate = DateTime.UtcNow.AddDays(7),
-            Status = MissionStatus.Planned,
-            ScopeType = MissionScopeType.Organization,
+            Status = Bud.Shared.Contracts.MissionStatus.Planned,
+            ScopeType = Bud.Shared.Contracts.MissionScopeType.Organization,
             ScopeId = Guid.Empty // Empty GUID
         };
 

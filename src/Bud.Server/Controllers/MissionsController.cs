@@ -2,7 +2,7 @@ using Bud.Server.Application.MissionObjectives;
 using Bud.Server.Application.Missions;
 using Bud.Server.Authorization;
 using Bud.Shared.Contracts;
-using Bud.Shared.Domain;
+using Bud.Server.Domain.Model;
 using FluentValidation;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -14,9 +14,15 @@ namespace Bud.Server.Controllers;
 [Route("api/missions")]
 [Produces("application/json")]
 public sealed class MissionsController(
-    MissionCommand missionCommand,
-    MissionQuery missionQuery,
-    MissionObjectiveQuery missionObjectiveQuery,
+    PlanMission planMission,
+    ReplanMission replanMission,
+    DeleteMission deleteMission,
+    ViewMissionDetails viewMissionDetails,
+    ListMissionsByScope listMissionsByScope,
+    ListCollaboratorMissions listCollaboratorMissions,
+    ListMissionProgress listMissionProgress,
+    ListMissionMetrics listMissionMetrics,
+    ListMissionObjectives listMissionObjectives,
     IValidator<CreateMissionRequest> createValidator,
     IValidator<UpdateMissionRequest> updateValidator) : ApiControllerBase
 {
@@ -43,7 +49,7 @@ public sealed class MissionsController(
             return ValidationProblemFrom(validationResult);
         }
 
-        var result = await missionCommand.CreateAsync(User, request, cancellationToken);
+        var result = await planMission.ExecuteAsync(User, request, cancellationToken);
         return FromResult(result, mission => CreatedAtAction(nameof(GetById), new { id = mission.Id }, mission));
     }
 
@@ -70,7 +76,7 @@ public sealed class MissionsController(
             return ValidationProblemFrom(validationResult);
         }
 
-        var result = await missionCommand.UpdateAsync(User, id, request, cancellationToken);
+        var result = await replanMission.ExecuteAsync(User, id, request, cancellationToken);
         return FromResultOk(result);
     }
 
@@ -84,7 +90,7 @@ public sealed class MissionsController(
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> Delete(Guid id, CancellationToken cancellationToken)
     {
-        var result = await missionCommand.DeleteAsync(User, id, cancellationToken);
+        var result = await deleteMission.ExecuteAsync(User, id, cancellationToken);
         return FromResult(result, NoContent);
     }
 
@@ -98,7 +104,7 @@ public sealed class MissionsController(
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
     public async Task<ActionResult<Mission>> GetById(Guid id, CancellationToken cancellationToken)
     {
-        var result = await missionQuery.GetByIdAsync(id, cancellationToken);
+        var result = await viewMissionDetails.ExecuteAsync(id, cancellationToken);
         return FromResultOk(result);
     }
 
@@ -111,7 +117,7 @@ public sealed class MissionsController(
     [ProducesResponseType(typeof(PagedResult<Mission>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
     public async Task<ActionResult<PagedResult<Mission>>> GetAll(
-        [FromQuery] MissionScopeType? scopeType,
+        [FromQuery] Bud.Shared.Contracts.MissionScopeType? scopeType,
         [FromQuery] Guid? scopeId,
         [FromQuery] string? search,
         [FromQuery] int page = 1,
@@ -130,7 +136,7 @@ public sealed class MissionsController(
             return paginationValidation;
         }
 
-        var result = await missionQuery.GetAllAsync(scopeType, scopeId, searchValidation.Value, page, pageSize, cancellationToken);
+        var result = await listMissionsByScope.ExecuteAsync(scopeType, scopeId, searchValidation.Value, page, pageSize, cancellationToken);
         return FromResultOk(result);
     }
 
@@ -163,7 +169,7 @@ public sealed class MissionsController(
             return paginationValidation;
         }
 
-        var result = await missionQuery.GetMyMissionsAsync(collaboratorId, searchValidation.Value, page, pageSize, cancellationToken);
+        var result = await listCollaboratorMissions.ExecuteAsync(collaboratorId, searchValidation.Value, page, pageSize, cancellationToken);
         return FromResultOk(result);
     }
 
@@ -185,7 +191,7 @@ public sealed class MissionsController(
             return parseResult.Failure;
         }
 
-        var result = await missionQuery.GetProgressAsync(parseResult.Values!, cancellationToken);
+        var result = await listMissionProgress.ExecuteAsync(parseResult.Values!, cancellationToken);
         return FromResultOk(result);
     }
 
@@ -211,7 +217,7 @@ public sealed class MissionsController(
             return paginationValidation;
         }
 
-        var result = await missionQuery.GetMetricsAsync(id, page, pageSize, cancellationToken);
+        var result = await listMissionMetrics.ExecuteAsync(id, page, pageSize, cancellationToken);
         return FromResultOk(result);
     }
 
@@ -235,7 +241,7 @@ public sealed class MissionsController(
             return paginationValidation;
         }
 
-        var result = await missionObjectiveQuery.GetByMissionAsync(id, page, pageSize, cancellationToken);
+        var result = await listMissionObjectives.ExecuteAsync(id, page, pageSize, cancellationToken);
         return FromResultOk(result);
     }
 }

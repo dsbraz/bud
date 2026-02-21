@@ -2,7 +2,7 @@ using System.Net;
 using System.Net.Http.Json;
 using System.Diagnostics;
 using Bud.Shared.Contracts;
-using Bud.Shared.Domain;
+using Bud.Server.Domain.Model;
 using FluentAssertions;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -48,7 +48,7 @@ public class TeamsEndpointsTests : IClassFixture<CustomWebApplicationFactory>
             Id = Guid.NewGuid(),
             FullName = "Administrador",
             Email = "admin@getbud.co",
-            Role = CollaboratorRole.Leader,
+            Role = Bud.Server.Domain.Model.CollaboratorRole.Leader,
             TeamId = null,
             OrganizationId = org.Id
         };
@@ -97,7 +97,7 @@ public class TeamsEndpointsTests : IClassFixture<CustomWebApplicationFactory>
             Id = Guid.NewGuid(),
             FullName = "Líder Teste",
             Email = $"leader-{Guid.NewGuid():N}@test-org.com",
-            Role = CollaboratorRole.Leader,
+            Role = Bud.Server.Domain.Model.CollaboratorRole.Leader,
             OrganizationId = org!.Id,
             TeamId = null
         };
@@ -117,7 +117,7 @@ public class TeamsEndpointsTests : IClassFixture<CustomWebApplicationFactory>
             Id = Guid.NewGuid(),
             FullName = "Colaborador Teste",
             Email = $"colaborador-{Guid.NewGuid():N}@example.com",
-            Role = CollaboratorRole.IndividualContributor,
+            Role = Bud.Server.Domain.Model.CollaboratorRole.IndividualContributor,
             OrganizationId = organizationId,
             TeamId = null
         };
@@ -399,7 +399,7 @@ public class TeamsEndpointsTests : IClassFixture<CustomWebApplicationFactory>
             TeamId = team.Id,
             StartDate = DateTime.UtcNow,
             EndDate = DateTime.UtcNow.AddDays(30),
-            Status = MissionStatus.Active
+            Status = Bud.Server.Domain.Model.MissionStatus.Active
         };
         dbContext.Missions.Add(mission);
         await dbContext.SaveChangesAsync();
@@ -569,7 +569,7 @@ public class TeamsEndpointsTests : IClassFixture<CustomWebApplicationFactory>
             Id = Guid.NewGuid(),
             FullName = "Collaborator 1",
             Email = "collab1@example.com",
-            Role = CollaboratorRole.IndividualContributor,
+            Role = Bud.Server.Domain.Model.CollaboratorRole.IndividualContributor,
             OrganizationId = org.Id,
             TeamId = team!.Id
         };
@@ -579,7 +579,7 @@ public class TeamsEndpointsTests : IClassFixture<CustomWebApplicationFactory>
             Id = Guid.NewGuid(),
             FullName = "Collaborator 2",
             Email = "collab2@example.com",
-            Role = CollaboratorRole.Leader,
+            Role = Bud.Server.Domain.Model.CollaboratorRole.Leader,
             OrganizationId = org.Id,
             TeamId = team.Id
         };
@@ -641,7 +641,7 @@ public class TeamsEndpointsTests : IClassFixture<CustomWebApplicationFactory>
             Id = Guid.NewGuid(),
             FullName = "Other Collaborator",
             Email = $"other-{Guid.NewGuid():N}@test-org.com",
-            Role = CollaboratorRole.IndividualContributor,
+            Role = Bud.Server.Domain.Model.CollaboratorRole.IndividualContributor,
             OrganizationId = org.Id
         };
         dbContext.Collaborators.Add(otherCollab);

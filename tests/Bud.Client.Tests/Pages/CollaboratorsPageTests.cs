@@ -1,5 +1,5 @@
 using Bud.Client.Pages;
-using Bud.Shared.Domain;
+using Bud.Shared.Contracts;
 using FluentAssertions;
 using Xunit;
 

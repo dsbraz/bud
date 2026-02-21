@@ -1,4 +1,4 @@
-using Bud.Shared.Domain;
+using Bud.Server.Domain.Model;
 using Bud.Server.Application.Common;
 
 namespace Bud.Server.Infrastructure.Services;

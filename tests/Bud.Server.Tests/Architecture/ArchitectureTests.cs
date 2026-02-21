@@ -2,7 +2,7 @@ using System.Reflection;
 using Bud.Server.Controllers;
 using Bud.Server.Infrastructure.Persistence;
 using Bud.Server.DependencyInjection;
-using Bud.Shared.Domain;
+using Bud.Server.Domain.Model;
 using FluentAssertions;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -397,7 +397,7 @@ public sealed class ArchitectureTests
     {
         var serviceInterfaces = ServerAssembly.GetTypes()
             .Where(t => t.IsInterface &&
-                (t.Namespace?.StartsWith("Bud.Server.Infrastructure.Repositories", StringComparison.Ordinal) == true ||
+                (t.Namespace?.StartsWith("Bud.Server.Domain.Repositories", StringComparison.Ordinal) == true ||
                  t.Namespace?.StartsWith("Bud.Server.Infrastructure.Services", StringComparison.Ordinal) == true))
             .ToList();
 

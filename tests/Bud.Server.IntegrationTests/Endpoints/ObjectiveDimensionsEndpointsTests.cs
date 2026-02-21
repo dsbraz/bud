@@ -2,7 +2,7 @@ using System.Net;
 using System.Net.Http.Json;
 using Bud.Server.Infrastructure.Persistence;
 using Bud.Shared.Contracts;
-using Bud.Shared.Domain;
+using Bud.Server.Domain.Model;
 using FluentAssertions;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
@@ -153,8 +153,8 @@ public class ObjectiveDimensionsEndpointsTests : IClassFixture<CustomWebApplicat
                 Name = "Missão para dimensão",
                 StartDate = DateTime.UtcNow,
                 EndDate = DateTime.UtcNow.AddDays(7),
-                Status = MissionStatus.Planned,
-                ScopeType = MissionScopeType.Organization,
+                Status = Bud.Shared.Contracts.MissionStatus.Planned,
+                ScopeType = Bud.Shared.Contracts.MissionScopeType.Organization,
                 ScopeId = org.Id
             });
 

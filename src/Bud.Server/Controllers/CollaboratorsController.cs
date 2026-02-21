@@ -1,7 +1,7 @@
 using Bud.Server.Application.Collaborators;
 using Bud.Server.Authorization;
 using Bud.Shared.Contracts;
-using Bud.Shared.Domain;
+using Bud.Server.Domain.Model;
 using FluentValidation;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -13,8 +13,17 @@ namespace Bud.Server.Controllers;
 [Route("api/collaborators")]
 [Produces("application/json")]
 public sealed class CollaboratorsController(
-    CollaboratorQuery collaboratorQuery,
-    CollaboratorCommand collaboratorCommand,
+    CreateCollaborator createCollaborator,
+    UpdateCollaboratorProfile updateCollaboratorProfile,
+    DeleteCollaborator deleteCollaborator,
+    ViewCollaboratorProfile viewCollaboratorProfile,
+    ListCollaboratorSummaries listCollaboratorSummaries,
+    ListLeaders listLeaders,
+    ListCollaborators listCollaborators,
+    GetCollaboratorHierarchy getCollaboratorHierarchy,
+    ListCollaboratorTeams listCollaboratorTeams,
+    UpdateCollaboratorTeams updateCollaboratorTeams,
+    ListAvailableCollaboratorTeams listAvailableCollaboratorTeams,
     IValidator<CreateCollaboratorRequest> createValidator,
     IValidator<UpdateCollaboratorRequest> updateValidator) : ApiControllerBase
 {
@@ -39,7 +48,7 @@ public sealed class CollaboratorsController(
             return ValidationProblemFrom(validationResult);
         }
 
-        var result = await collaboratorCommand.CreateAsync(User, request, cancellationToken);
+        var result = await createCollaborator.ExecuteAsync(User, request, cancellationToken);
         return FromResult(result, collaborator => CreatedAtAction(nameof(GetById), new { id = collaborator.Id }, collaborator));
     }
 
@@ -64,7 +73,7 @@ public sealed class CollaboratorsController(
             return ValidationProblemFrom(validationResult);
         }
 
-        var result = await collaboratorCommand.UpdateAsync(User, id, request, cancellationToken);
+        var result = await updateCollaboratorProfile.ExecuteAsync(User, id, request, cancellationToken);
         return FromResultOk(result);
     }
 
@@ -82,7 +91,7 @@ public sealed class CollaboratorsController(
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status409Conflict)]
     public async Task<IActionResult> Delete(Guid id, CancellationToken cancellationToken)
     {
-        var result = await collaboratorCommand.DeleteAsync(User, id, cancellationToken);
+        var result = await deleteCollaborator.ExecuteAsync(User, id, cancellationToken);
         return FromResult(result, NoContent);
     }
 
@@ -96,7 +105,7 @@ public sealed class CollaboratorsController(
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
     public async Task<ActionResult<Collaborator>> GetById(Guid id, CancellationToken cancellationToken)
     {
-        var result = await collaboratorQuery.GetByIdAsync(id, cancellationToken);
+        var result = await viewCollaboratorProfile.ExecuteAsync(id, cancellationToken);
         return FromResultOk(result);
     }
 
@@ -118,7 +127,7 @@ public sealed class CollaboratorsController(
             return searchValidation.Failure;
         }
 
-        var result = await collaboratorQuery.GetSummariesAsync(searchValidation.Value, cancellationToken);
+        var result = await listCollaboratorSummaries.ExecuteAsync(searchValidation.Value, cancellationToken);
         return FromResultOk(result);
     }
 
@@ -132,7 +141,7 @@ public sealed class CollaboratorsController(
         [FromQuery] Guid? organizationId,
         CancellationToken cancellationToken)
     {
-        var result = await collaboratorQuery.GetLeadersAsync(organizationId, cancellationToken);
+        var result = await listLeaders.ExecuteAsync(organizationId, cancellationToken);
         return FromResultOk(result);
     }
 
@@ -163,7 +172,7 @@ public sealed class CollaboratorsController(
             return paginationValidation;
         }
 
-        var result = await collaboratorQuery.GetAllAsync(teamId, searchValidation.Value, page, pageSize, cancellationToken);
+        var result = await listCollaborators.ExecuteAsync(teamId, searchValidation.Value, page, pageSize, cancellationToken);
         return FromResultOk(result);
     }
 
@@ -177,7 +186,7 @@ public sealed class CollaboratorsController(
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
     public async Task<ActionResult<List<CollaboratorHierarchyNodeDto>>> GetSubordinates(Guid id, CancellationToken cancellationToken)
     {
-        var result = await collaboratorQuery.GetSubordinatesAsync(id, cancellationToken);
+        var result = await getCollaboratorHierarchy.ExecuteAsync(id, cancellationToken);
         return FromResultOk(result);
     }
 
@@ -191,7 +200,7 @@ public sealed class CollaboratorsController(
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
     public async Task<ActionResult<List<TeamSummaryDto>>> GetTeams(Guid id, CancellationToken cancellationToken)
     {
-        var result = await collaboratorQuery.GetTeamsAsync(id, cancellationToken);
+        var result = await listCollaboratorTeams.ExecuteAsync(id, cancellationToken);
         return FromResultOk(result);
     }
 
@@ -210,7 +219,7 @@ public sealed class CollaboratorsController(
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status403Forbidden)]
     public async Task<IActionResult> UpdateTeams(Guid id, UpdateCollaboratorTeamsRequest request, CancellationToken cancellationToken)
     {
-        var result = await collaboratorCommand.UpdateTeamsAsync(User, id, request, cancellationToken);
+        var result = await updateCollaboratorTeams.ExecuteAsync(User, id, request, cancellationToken);
         return FromResult(result, NoContent);
     }
 
@@ -235,7 +244,7 @@ public sealed class CollaboratorsController(
             return searchValidation.Failure;
         }
 
-        var result = await collaboratorQuery.GetAvailableTeamsAsync(id, searchValidation.Value, cancellationToken);
+        var result = await listAvailableCollaboratorTeams.ExecuteAsync(id, searchValidation.Value, cancellationToken);
         return FromResultOk(result);
     }
 }

@@ -2,7 +2,7 @@ using System.Net;
 using System.Net.Http.Json;
 using Bud.Server.Infrastructure.Persistence;
 using Bud.Shared.Contracts;
-using Bud.Shared.Domain;
+using Bud.Server.Domain.Model;
 using FluentAssertions;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
@@ -41,11 +41,11 @@ public class MissionTemplatesEndpointsTests : IClassFixture<CustomWebApplication
                 new()
                 {
                     Name = "Metric 1",
-                    Type = MetricType.Quantitative,
+                    Type = Bud.Shared.Contracts.MetricType.Quantitative,
                     OrderIndex = 0,
-                    QuantitativeType = QuantitativeMetricType.Achieve,
+                    QuantitativeType = Bud.Shared.Contracts.QuantitativeMetricType.Achieve,
                     MaxValue = 100,
-                    Unit = MetricUnit.Percentage
+                    Unit = Bud.Shared.Contracts.MetricUnit.Percentage
                 }
             }
         };
@@ -71,16 +71,16 @@ public class MissionTemplatesEndpointsTests : IClassFixture<CustomWebApplication
                 new()
                 {
                     Name = "Revenue Target",
-                    Type = MetricType.Quantitative,
+                    Type = Bud.Shared.Contracts.MetricType.Quantitative,
                     OrderIndex = 0,
-                    QuantitativeType = QuantitativeMetricType.Achieve,
+                    QuantitativeType = Bud.Shared.Contracts.QuantitativeMetricType.Achieve,
                     MaxValue = 1000,
-                    Unit = MetricUnit.Integer
+                    Unit = Bud.Shared.Contracts.MetricUnit.Integer
                 },
                 new()
                 {
                     Name = "Quality Check",
-                    Type = MetricType.Qualitative,
+                    Type = Bud.Shared.Contracts.MetricType.Qualitative,
                     OrderIndex = 1,
                     TargetText = "Ensure all deliverables meet standards"
                 }
@@ -123,12 +123,12 @@ public class MissionTemplatesEndpointsTests : IClassFixture<CustomWebApplication
                 new MissionTemplateMetricDto
                 {
                     Name = "Métrica vinculada",
-                    Type = MetricType.Quantitative,
+                    Type = Bud.Shared.Contracts.MetricType.Quantitative,
                     OrderIndex = 0,
                     MissionTemplateObjectiveId = objectiveId,
-                    QuantitativeType = QuantitativeMetricType.Achieve,
+                    QuantitativeType = Bud.Shared.Contracts.QuantitativeMetricType.Achieve,
                     MaxValue = 100,
-                    Unit = MetricUnit.Percentage
+                    Unit = Bud.Shared.Contracts.MetricUnit.Percentage
                 }
             ]
         };
@@ -243,12 +243,12 @@ public class MissionTemplatesEndpointsTests : IClassFixture<CustomWebApplication
                 new()
                 {
                     Name = "Updated Metric",
-                    Type = MetricType.Quantitative,
+                    Type = Bud.Shared.Contracts.MetricType.Quantitative,
                     OrderIndex = 0,
-                    QuantitativeType = QuantitativeMetricType.Reduce,
+                    QuantitativeType = Bud.Shared.Contracts.QuantitativeMetricType.Reduce,
                     MinValue = 0,
                     MaxValue = 50,
-                    Unit = MetricUnit.Percentage
+                    Unit = Bud.Shared.Contracts.MetricUnit.Percentage
                 }
             }
         };

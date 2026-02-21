@@ -8,7 +8,7 @@ This note is informational and does not add or override any requirement.
 ## Quick Reference (Top 5 Rules)
 
 1. **pt-BR**: All user-facing messages in Brazilian Portuguese (see Language Requirements)
-2. **Boundaries**: Controller -> Command/Query -> Repository (via interfaces co-located in Infrastructure/) (never skip layers)
+2. **Boundaries**: Controller -> Command/Query -> Repository (via interfaces em `Domain/Repositories` e implementacoes em `Infrastructure/Repositories`) (never skip layers)
 3. **TDD**: Write/update tests BEFORE production code (Red -> Green -> Refactor)
 4. **Tenant isolation**: Every tenant-scoped entity needs `OrganizationId` + query filter + interceptor
 5. **No warnings**: `TreatWarningsAsErrors=true` — zero build/test warnings allowed
@@ -39,7 +39,7 @@ This file provides guidance to coding agents when working with code in this repo
 - Keep all user-facing text in `pt-BR` (errors, validation messages, API problem responses, UI text).
 - Preserve architectural boundaries:
   - Controllers -> Commands/Queries
-  - Commands/Queries -> Repositories (via interfaces co-located in `Infrastructure/Repositories/` and `Infrastructure/Services/`)
+  - Commands/Queries -> Repositories (via interfaces em `Domain/Repositories`) e Services (via interfaces co-located em `Infrastructure/Services/`)
   - Domain MUST NOT reference `Bud.Server.Infrastructure` (or any sub-namespace)
   - Repositories MUST NOT return HTTP DTO payloads from `Bud.Shared.Contracts`
   - Application (`Commands/Queries`) MUST depend only on interfaces from `Infrastructure/`, not on concrete implementations
@@ -131,10 +131,10 @@ Bud is an ASP.NET Core 10 application with a Blazor WebAssembly frontend, using 
     - `Application/Notifications/`: `NotificationOrchestrator`
     - `Infrastructure/Services/`: `INotificationRecipientResolver`, `NotificationRecipientResolver`
   - `Authorization/`: policy-based authorization (requirements, handlers, `IApplicationAuthorizationGateway`, `TenantAuthorizationService`, `OrganizationAuthorizationService`)
-  - `Domain/`: specifications (`Domain/Specifications/`), querying (`Domain/Querying/`), value objects, and domain-specific contracts
+  - `Domain/`: modelos de domínio (`Domain/Model/`), abstrações de domínio (`Domain/Abstractions/`) e value objects
   - `Infrastructure/`: infrastructure layer
     - `Infrastructure/Persistence/`: `ApplicationDbContext`, `DbSeeder`, `Configurations/` (EF Core entity configurations), `Migrations/`
-    - `Infrastructure/Repositories/`: repository interfaces (`I*Repository`) and implementations, co-located
+    - `Domain/Repositories/`: repository interfaces (`I*Repository`); `Infrastructure/Repositories/`: implementacoes
     - `Infrastructure/Services/`: service interfaces (`IAuthService`, `IMissionScopeResolver`, `IMissionProgressService`) and implementations (`AuthService`, `MissionScopeResolver`, `MissionProgressService`, `NotificationRecipientResolver`), co-located
     - `Infrastructure/Serialization/`: JSON converters (`LenientEnumJsonConverterFactory`)
   - `DependencyInjection/`: modular composition (`Bud*CompositionExtensions`)
@@ -150,9 +150,8 @@ Bud is an ASP.NET Core 10 application with a Blazor WebAssembly frontend, using 
   - `Shared/`: Reusable Razor components (Modal, TransferList, PagedTableSection, CrudRowActions, Toast/ToastContainer, summary cards, form fields, ConfirmDeleteButton, NotificationDropdown, etc.)
   - `Services/`: ApiClient, AuthState, OrganizationContext, TenantDelegatingHandler, ToastService, UiOperationService, EnumParsingHelper, MissionMetricDisplayHelper, MissionProgressDisplayHelper
 
-- **Bud.Shared** (`src/Bud.Shared`): Shared models, contracts, and DTOs used by both Client and Server
-  - `Domain/`: Domain entities, value objects, `IAggregateRoot`, `ITenantEntity`, `DomainInvariantException`
-  - `Contracts/`: Request/response DTOs
+- **Bud.Shared** (`src/Bud.Shared`): Contratos de borda compartilhados entre Client, Server e MCP
+  - `Contracts/`: Request/response DTOs e enums de API
 
 - **Bud.Mcp** (`src/Bud.Mcp`): MCP server over HTTP for agent integration
   - `Protocol/`: JSON-RPC/MCP over HTTP infrastructure (`IMcpRequestProcessor`, `McpRequestProcessor`, `McpJsonRpcDispatcher`)
@@ -325,7 +324,7 @@ public sealed class Result<T>
 ```
 
 **Rules for agents:**
-- MUST keep command/query contracts in `Application/*` depending on interfaces from `Infrastructure/Repositories/` and `Infrastructure/Services/`.
+- MUST keep command/query contracts in `Application/*` depending on interfaces from `Domain/Repositories` and `Infrastructure/Services/`.
 - MUST keep controllers depending on `Commands/Queries` (not directly on repositories).
 - MUST keep `Application/*` free of direct dependencies on `Infrastructure/` concrete types (interfaces are allowed).
 - MUST map `result.ErrorType` to HTTP status codes consistently:
@@ -339,19 +338,19 @@ public sealed class Result<T>
 
 This project intentionally uses the patterns below. New changes should follow the same direction:
 
-- **Repository interfaces and implementations (co-located):**
-  - `Infrastructure/Repositories/` contains repository interfaces (`I*Repository`) and their implementations, co-located
+- **Repository interfaces and implementations:**
+  - `Domain/Repositories/` contains repository interfaces (`I*Repository`); `Infrastructure/Repositories/` contains implementations
   - `Infrastructure/Services/` contains service interfaces (`IAuthService`, `IMissionScopeResolver`, `IMissionProgressService`) and their implementations, co-located
   - Commands/Queries depend on interfaces, not concrete implementations
   - Each domain exposes a single `I*Repository` interface with all command and query methods
 - **Specification Pattern (query composition):**
-  - Query specifications in `Domain/Specifications`
+  - Query specifications in `Infrastructure/Querying`
   - Prefer specifications for reusable filtering logic instead of duplicating LINQ predicates in multiple repositories
 - **Aggregate Root boundaries (explicit markers):**
-  - Domain roots are marked with `IAggregateRoot` in `Bud.Shared.Domain`
+  - Domain roots are marked with `IAggregateRoot` in `Bud.Server.Domain.Model`
   - Child entities (internal to aggregates) MUST NOT implement `IAggregateRoot`
 - **Domain invariants in aggregates:**
-  - Critical business invariants SHOULD be enforced by aggregate/entity methods in `Bud.Shared.Domain`
+  - Critical business invariants SHOULD be enforced by aggregate/entity methods in `Bud.Server.Domain.Model`
   - Repositories SHOULD orchestrate persistence and map `DomainInvariantException` to application results
   - Prefer Value Objects for semantic concepts (e.g., `PersonName`, `MissionScope`, `ConfidenceLevel`, `MetricRange`) instead of primitive strings/guids
 - **Policy-based Authorization + Handlers:**
@@ -421,7 +420,7 @@ See [OrganizationsController.cs](src/Bud.Server/Controllers/OrganizationsControl
 
 - **Entity Framework Core** with PostgreSQL (Npgsql provider)
 - DbContext: [ApplicationDbContext.cs](src/Bud.Server/Infrastructure/Persistence/ApplicationDbContext.cs)
-- All entities are in `Bud.Shared/Domain`
+- All entities are in `Bud.Server/Domain/Model`
 - Entity configurations (`IEntityTypeConfiguration<T>`) are in `Infrastructure/Persistence/Configurations/`, loaded via `ApplyConfigurationsFromAssembly`
 - **Global Query Filters** (multi-tenancy) are applied via configurations
 - The DbContext accepts an optional `ITenantProvider` for tenant-aware queries (nullable for schema creation and tests)
@@ -523,14 +522,14 @@ Enforced by `.editorconfig` and `Directory.Build.props`:
 
 Follow this sequence as a MUST checklist:
 
-1. Create the model in `src/Bud.Shared/Domain/`
+1. Create the model in `src/Bud.Server/Domain/Model/`
    - If the entity belongs to an organization, implement `ITenantEntity` and add `Guid OrganizationId` + `Organization` nav prop
 2. Add `DbSet<TEntity>` to `ApplicationDbContext`
 3. Create `IEntityTypeConfiguration<TEntity>` in `src/Bud.Server/Infrastructure/Persistence/Configurations/`
    - If tenant-scoped: add FK/index for `OrganizationId` (`DeleteBehavior.Restrict`) and add a `HasQueryFilter` following the existing pattern
 4. Create request/response contracts in `src/Bud.Shared/Contracts/`
 5. Create FluentValidation validators in `src/Bud.Server/Validators/`
-6. Create repository interface and implementation in `src/Bud.Server/Infrastructure/Repositories/`
+6. Create repository interface in `src/Bud.Server/Domain/Repositories/` and implementation in `src/Bud.Server/Infrastructure/Repositories/`
    - If tenant-scoped: resolve and set `OrganizationId` from the parent entity in `CreateAsync`
 7. Create/adjust command/query contracts in `src/Bud.Server/Application/{Domain}/`
 8. Register implementations and commands/queries in [BudApplicationCompositionExtensions.cs](src/Bud.Server/DependencyInjection/BudApplicationCompositionExtensions.cs)
@@ -562,11 +561,11 @@ Quick reference:
 ### Architecture & Patterns
 - **Controller:** [OrganizationsController.cs](src/Bud.Server/Controllers/OrganizationsController.cs), [ApiControllerBase.cs](src/Bud.Server/Controllers/ApiControllerBase.cs)
 - **Repository:** [OrganizationRepository.cs](src/Bud.Server/Infrastructure/Repositories/OrganizationRepository.cs)
-- **Repository Interfaces:** [IOrganizationRepository.cs](src/Bud.Server/Infrastructure/Repositories/IOrganizationRepository.cs), [IMissionRepository.cs](src/Bud.Server/Infrastructure/Repositories/IMissionRepository.cs)
+- **Repository Interfaces:** [IOrganizationRepository.cs](src/Bud.Server/Domain/Repositories/IOrganizationRepository.cs), [IMissionRepository.cs](src/Bud.Server/Domain/Repositories/IMissionRepository.cs)
 - **Use cases:** [MissionCommand.cs](src/Bud.Server/Application/Missions/MissionCommand.cs), [MissionQuery.cs](src/Bud.Server/Application/Missions/MissionQuery.cs)
 - **Application Common:** [Result.cs](src/Bud.Server/Application/Common/Result.cs), [PaginationNormalizer.cs](src/Bud.Server/Application/Common/PaginationNormalizer.cs)
-- **Specifications:** [IQuerySpecification.cs](src/Bud.Server/Domain/Specifications/IQuerySpecification.cs), [MissionSearchSpecification.cs](src/Bud.Server/Domain/Specifications/MissionSearchSpecification.cs), [MissionScopeSpecification.cs](src/Bud.Server/Domain/Specifications/MissionScopeSpecification.cs)
-- **Querying:** [QuerySearchHelper.cs](src/Bud.Server/Domain/Querying/QuerySearchHelper.cs)
+- **Specifications:** [IQuerySpecification.cs](src/Bud.Server/Infrastructure/Querying/IQuerySpecification.cs), [MissionSearchSpecification.cs](src/Bud.Server/Infrastructure/Querying/MissionSearchSpecification.cs), [MissionScopeSpecification.cs](src/Bud.Server/Infrastructure/Querying/MissionScopeSpecification.cs)
+- **Querying:** [QuerySearchHelper.cs](src/Bud.Server/Infrastructure/Querying/QuerySearchHelper.cs)
 - **Validators:** [OrganizationValidators.cs](src/Bud.Server/Validators/OrganizationValidators.cs)
 - **Error handling:** [GlobalExceptionHandler.cs](src/Bud.Server/Middleware/GlobalExceptionHandler.cs)
 - **Security middleware:** [SecurityHeadersMiddleware.cs](src/Bud.Server/Middleware/SecurityHeadersMiddleware.cs)
@@ -578,12 +577,12 @@ Quick reference:
 - **Auth:** [IAuthService.cs](src/Bud.Server/Infrastructure/Services/IAuthService.cs), [AuthService.cs](src/Bud.Server/Infrastructure/Services/AuthService.cs)
 - **DbSeeder:** [DbSeeder.cs](src/Bud.Server/Infrastructure/Persistence/DbSeeder.cs)
 - **Tenant backend:** [ITenantProvider.cs](src/Bud.Server/MultiTenancy/ITenantProvider.cs), [JwtTenantProvider.cs](src/Bud.Server/MultiTenancy/JwtTenantProvider.cs), [TenantRequiredMiddleware.cs](src/Bud.Server/MultiTenancy/TenantRequiredMiddleware.cs)
-- **Tenant entity:** [ITenantEntity.cs](src/Bud.Shared/Domain/ITenantEntity.cs)
+- **Tenant entity:** [ITenantEntity.cs](src/Bud.Server/Domain/Model/ITenantEntity.cs)
 - **Tenant authorization:** [OrganizationAuthorizationService.cs](src/Bud.Server/Authorization/OrganizationAuthorizationService.cs), [TenantAuthorizationService.cs](src/Bud.Server/Authorization/TenantAuthorizationService.cs)
 
 ### Infrastructure Services
 - **Mission:** [MissionProgressService.cs](src/Bud.Server/Infrastructure/Services/MissionProgressService.cs), [MissionScopeResolver.cs](src/Bud.Server/Infrastructure/Services/MissionScopeResolver.cs)
-- **Value Objects:** [EmailAddress.cs](src/Bud.Server/Domain/ValueObjects/EmailAddress.cs), [EntityName.cs](src/Bud.Shared/Domain/EntityName.cs), [PersonName.cs](src/Bud.Shared/Domain/PersonName.cs), [MissionScope.cs](src/Bud.Shared/Domain/MissionScope.cs), [ConfidenceLevel.cs](src/Bud.Shared/Domain/ConfidenceLevel.cs), [MetricRange.cs](src/Bud.Shared/Domain/MetricRange.cs), [NotificationTitle.cs](src/Bud.Shared/Domain/NotificationTitle.cs), [NotificationMessage.cs](src/Bud.Shared/Domain/NotificationMessage.cs)
+- **Value Objects:** [EmailAddress.cs](src/Bud.Server/Domain/ValueObjects/EmailAddress.cs), [EntityName.cs](src/Bud.Server/Domain/Model/EntityName.cs), [PersonName.cs](src/Bud.Server/Domain/Model/PersonName.cs), [MissionScope.cs](src/Bud.Server/Domain/Model/MissionScope.cs), [ConfidenceLevel.cs](src/Bud.Server/Domain/Model/ConfidenceLevel.cs), [MetricRange.cs](src/Bud.Server/Domain/Model/MetricRange.cs), [NotificationTitle.cs](src/Bud.Server/Domain/Model/NotificationTitle.cs), [NotificationMessage.cs](src/Bud.Server/Domain/Model/NotificationMessage.cs)
 - **Notifications:** [NotificationsController.cs](src/Bud.Server/Controllers/NotificationsController.cs), [NotificationOrchestrator.cs](src/Bud.Server/Application/Notifications/NotificationOrchestrator.cs), [NotificationRecipientResolver.cs](src/Bud.Server/Infrastructure/Services/NotificationRecipientResolver.cs)
 
 ### Client

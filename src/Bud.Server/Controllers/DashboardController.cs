@@ -13,7 +13,7 @@ namespace Bud.Server.Controllers;
 [Route("api/dashboard")]
 [Authorize(Policy = AuthorizationPolicies.TenantSelected)]
 [Produces("application/json")]
-public sealed class DashboardController(DashboardQuery dashboardQuery) : ApiControllerBase
+public sealed class DashboardController(GetCollaboratorDashboard getCollaboratorDashboard) : ApiControllerBase
 {
     /// <summary>
     /// Retorna os dados do dashboard do colaborador.
@@ -26,7 +26,7 @@ public sealed class DashboardController(DashboardQuery dashboardQuery) : ApiCont
         [FromQuery] Guid? teamId,
         CancellationToken cancellationToken)
     {
-        var result = await dashboardQuery.GetMyDashboardAsync(User, teamId, cancellationToken);
+        var result = await getCollaboratorDashboard.ExecuteAsync(User, teamId, cancellationToken);
         return FromResultOk(result);
     }
 }

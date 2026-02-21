@@ -1,7 +1,7 @@
-using Bud.Server.Infrastructure.Repositories;
+using Bud.Server.Domain.Repositories;
 using Bud.Server.Infrastructure.Services;
 using Bud.Server.Application.Notifications;
-using Bud.Shared.Domain;
+using Bud.Server.Domain.Model;
 using FluentAssertions;
 using Moq;
 using Xunit;

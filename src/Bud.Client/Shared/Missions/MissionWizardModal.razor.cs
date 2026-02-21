@@ -1,5 +1,5 @@
 using Bud.Client.Shared;
-using Bud.Shared.Domain;
+using Bud.Shared.Contracts;
 using Microsoft.AspNetCore.Components;
 
 #pragma warning disable IDE0011

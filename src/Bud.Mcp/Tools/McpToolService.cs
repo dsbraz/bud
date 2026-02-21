@@ -6,7 +6,6 @@ using Bud.Mcp.Auth;
 using Bud.Mcp.Http;
 using Bud.Mcp.Tools.Generation;
 using Bud.Shared.Contracts;
-using Bud.Shared.Domain;
 
 namespace Bud.Mcp.Tools;
 

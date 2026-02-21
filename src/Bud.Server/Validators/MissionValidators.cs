@@ -1,5 +1,4 @@
 using Bud.Shared.Contracts;
-using Bud.Shared.Domain;
 using FluentValidation;
 
 namespace Bud.Server.Validators;

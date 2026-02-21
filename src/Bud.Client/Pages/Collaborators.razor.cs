@@ -1,6 +1,5 @@
 using Bud.Client.Services;
 using Bud.Shared.Contracts;
-using Bud.Shared.Domain;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Web;
 using Microsoft.AspNetCore.Components.Rendering;
@@ -390,7 +389,7 @@ public partial class Collaborators
         }
     }
 
-    private static string GetRoleLabel(CollaboratorRole role) => role switch
+    private static string GetRoleLabel(Bud.Shared.Contracts.CollaboratorRole role) => role switch
     {
         CollaboratorRole.Leader => "Lider",
         _ => "Contribuidor individual"
