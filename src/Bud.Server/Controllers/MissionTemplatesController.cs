@@ -13,8 +13,8 @@ namespace Bud.Server.Controllers;
 [Route("api/mission-templates")]
 [Produces("application/json")]
 public sealed class MissionTemplatesController(
-    IMissionTemplateCommandUseCase commandUseCase,
-    IMissionTemplateQueryUseCase queryUseCase,
+    MissionTemplateCommand missionTemplateCommand,
+    MissionTemplateQuery missionTemplateQuery,
     IValidator<CreateMissionTemplateRequest> createValidator,
     IValidator<UpdateMissionTemplateRequest> updateValidator) : ApiControllerBase
 {
@@ -35,7 +35,7 @@ public sealed class MissionTemplatesController(
             return ValidationProblemFrom(validationResult);
         }
 
-        var result = await commandUseCase.CreateAsync(User, request, cancellationToken);
+        var result = await missionTemplateCommand.CreateAsync(User, request, cancellationToken);
         return FromResult(result, template => CreatedAtAction(nameof(GetById), new { id = template.Id }, template));
     }
 
@@ -58,7 +58,7 @@ public sealed class MissionTemplatesController(
             return ValidationProblemFrom(validationResult);
         }
 
-        var result = await commandUseCase.UpdateAsync(User, id, request, cancellationToken);
+        var result = await missionTemplateCommand.UpdateAsync(User, id, request, cancellationToken);
         return FromResultOk(result);
     }
 
@@ -72,7 +72,7 @@ public sealed class MissionTemplatesController(
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> Delete(Guid id, CancellationToken cancellationToken)
     {
-        var result = await commandUseCase.DeleteAsync(User, id, cancellationToken);
+        var result = await missionTemplateCommand.DeleteAsync(User, id, cancellationToken);
         return FromResult(result, NoContent);
     }
 
@@ -86,7 +86,7 @@ public sealed class MissionTemplatesController(
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
     public async Task<ActionResult<MissionTemplate>> GetById(Guid id, CancellationToken cancellationToken)
     {
-        var result = await queryUseCase.GetByIdAsync(id, cancellationToken);
+        var result = await missionTemplateQuery.GetByIdAsync(id, cancellationToken);
         return FromResultOk(result);
     }
 
@@ -116,7 +116,7 @@ public sealed class MissionTemplatesController(
             return paginationValidation;
         }
 
-        var result = await queryUseCase.GetAllAsync(searchValidation.Value, page, pageSize, cancellationToken);
+        var result = await missionTemplateQuery.GetAllAsync(searchValidation.Value, page, pageSize, cancellationToken);
         return FromResultOk(result);
     }
 }

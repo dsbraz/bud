@@ -1,40 +1,41 @@
-# ADR-0011: Sistema de Notificações em Use Cases
+# ADR-0011: Sistema de notificações em comandos da aplicação
 
 ## Status
 Accepted
 
 ## Contexto
 
-O sistema precisa notificar colaboradores sobre eventos relevantes (missões criadas/atualizadas/removidas, check-ins de métricas). Essas notificações devem ser persistentes, marcáveis como lidas, e acessíveis via API e frontend.
+O sistema precisa notificar colaboradores sobre eventos relevantes de missão e check-ins.
+As notificações devem ser persistentes, marcáveis como lidas e acessíveis por API/frontend.
 
 ## Decisão
 
-Criar notificações diretamente nos use cases de comando que geram eventos relevantes:
+Criar notificações diretamente nos comandos que geram eventos relevantes:
 
-1. `MissionCommandUseCase` — após criar/atualizar/deletar missão com sucesso, resolve destinatários e cria notificações
-2. `MetricCheckinCommandUseCase` — após criar check-in com sucesso, resolve destinatários (excluindo o autor) e cria notificações
+1. `MissionCommand`: após criar/atualizar/deletar missão com sucesso.
+2. `MetricCheckinCommand`: após criar check-in com sucesso.
 
-Os use cases utilizam:
-- `INotificationRecipientResolver` para resolver destinatários com base no escopo da missão (organização, workspace, time ou colaborador)
-- `INotificationRepository.CreateForMultipleRecipientsAsync` para persistir notificações
-- A orquestração de criação de notificações (resolução de destinatários + persistência) é coordenada diretamente pelos UseCases
+Os comandos utilizam:
+
+- `INotificationRecipientResolver` para resolver destinatários por escopo.
+- `INotificationRepository.CreateForMultipleRecipientsAsync` para persistência.
+- `INotificationOrchestrator` para encapsular coordenação de envio/persistência.
 
 ### Modelo de dados
 
-- `Notification` implementa `ITenantEntity` com `OrganizationId` denormalizado
-- FK para `Collaborator` (destinatário) com `DeleteBehavior.Cascade`
-- FK para `Organization` com `DeleteBehavior.Restrict`
-- Index composto em `(RecipientCollaboratorId, IsRead, CreatedAtUtc)` para queries eficientes
+- `Notification` implementa `ITenantEntity` com `OrganizationId` denormalizado.
+- FK para `Collaborator` com `DeleteBehavior.Cascade`.
+- FK para `Organization` com `DeleteBehavior.Restrict`.
+- Índice `(RecipientCollaboratorId, IsRead, CreatedAtUtc)` para leitura eficiente.
 
 ## Consequências
 
-- A entidade `Notification` segue o mesmo padrão de tenant isolation das demais entidades
-- O uso de `ExecuteUpdateAsync` para "marcar todas como lidas" garante eficiência sem materializar as entidades
-- Notificações são criadas de forma síncrona no mesmo request, garantindo entrega imediata (ideal para SignalR futuro)
-- Falhas na criação de notificações não afetam o resultado da operação principal (fire-and-forget dentro do mesmo request)
+- Fluxo síncrono de criação de notificações dentro do request principal.
+- Operação principal permanece resiliente mesmo com falha de notificação (tratamento controlado na orquestração).
+- Consistência com o modelo multi-tenant existente.
 
 ## Alternativas consideradas
 
-1. **Polling/SignalR em tempo real**: descartado por complexidade desnecessária nesta fase; o badge de contagem carrega no page load
-2. **Notificações em tabela separada sem tenant isolation**: descartado para manter consistência com o modelo de segurança existente
-3. **Criar notificações via domain events + outbox**: descartado por adicionar indireção desnecessária (use case → outbox → background worker → handler → notification service) quando a criação direta é mais simples e imediata
+1. Polling/SignalR em tempo real desde o início.
+2. Notificações sem tenant isolation.
+3. Domain events + outbox para todo o fluxo.

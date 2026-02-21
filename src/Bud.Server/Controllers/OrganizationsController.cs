@@ -13,8 +13,8 @@ namespace Bud.Server.Controllers;
 [Route("api/organizations")]
 [Produces("application/json")]
 public sealed class OrganizationsController(
-    IOrganizationCommandUseCase organizationCommandUseCase,
-    IOrganizationQueryUseCase organizationQueryUseCase,
+    OrganizationCommand organizationCommand,
+    OrganizationQuery organizationQuery,
     IValidator<CreateOrganizationRequest> createValidator,
     IValidator<UpdateOrganizationRequest> updateValidator) : ApiControllerBase
 {
@@ -39,7 +39,7 @@ public sealed class OrganizationsController(
             return ValidationProblemFrom(validationResult);
         }
 
-        var result = await organizationCommandUseCase.CreateAsync(request, cancellationToken);
+        var result = await organizationCommand.CreateAsync(request, cancellationToken);
         return FromResult(result, organization => CreatedAtAction(nameof(GetById), new { id = organization.Id }, organization));
     }
 
@@ -65,7 +65,7 @@ public sealed class OrganizationsController(
             return ValidationProblemFrom(validationResult);
         }
 
-        var result = await organizationCommandUseCase.UpdateAsync(id, request, cancellationToken);
+        var result = await organizationCommand.UpdateAsync(id, request, cancellationToken);
         return FromResultOk(result);
     }
 
@@ -84,7 +84,7 @@ public sealed class OrganizationsController(
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status409Conflict)]
     public async Task<IActionResult> Delete(Guid id, CancellationToken cancellationToken)
     {
-        var result = await organizationCommandUseCase.DeleteAsync(id, cancellationToken);
+        var result = await organizationCommand.DeleteAsync(id, cancellationToken);
         return FromResult(result, NoContent);
     }
 
@@ -98,7 +98,7 @@ public sealed class OrganizationsController(
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
     public async Task<ActionResult<Organization>> GetById(Guid id, CancellationToken cancellationToken)
     {
-        var result = await organizationQueryUseCase.GetByIdAsync(id, cancellationToken);
+        var result = await organizationQuery.GetByIdAsync(id, cancellationToken);
         return FromResultOk(result);
     }
 
@@ -128,7 +128,7 @@ public sealed class OrganizationsController(
             return paginationValidation;
         }
 
-        var result = await organizationQueryUseCase.GetAllAsync(searchValidation.Value, page, pageSize, cancellationToken);
+        var result = await organizationQuery.GetAllAsync(searchValidation.Value, page, pageSize, cancellationToken);
         return FromResultOk(result);
     }
 
@@ -154,7 +154,7 @@ public sealed class OrganizationsController(
             return paginationValidation;
         }
 
-        var result = await organizationQueryUseCase.GetWorkspacesAsync(id, page, pageSize, cancellationToken);
+        var result = await organizationQuery.GetWorkspacesAsync(id, page, pageSize, cancellationToken);
         return FromResultOk(result);
     }
 
@@ -180,7 +180,7 @@ public sealed class OrganizationsController(
             return paginationValidation;
         }
 
-        var result = await organizationQueryUseCase.GetCollaboratorsAsync(id, page, pageSize, cancellationToken);
+        var result = await organizationQuery.GetCollaboratorsAsync(id, page, pageSize, cancellationToken);
         return FromResultOk(result);
     }
 }

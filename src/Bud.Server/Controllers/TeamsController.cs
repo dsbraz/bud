@@ -13,8 +13,8 @@ namespace Bud.Server.Controllers;
 [Route("api/teams")]
 [Produces("application/json")]
 public sealed class TeamsController(
-    ITeamQueryUseCase teamQueryUseCase,
-    ITeamCommandUseCase teamCommandUseCase,
+    TeamQuery teamQuery,
+    TeamCommand teamCommand,
     IValidator<CreateTeamRequest> createValidator,
     IValidator<UpdateTeamRequest> updateValidator) : ApiControllerBase
 {
@@ -39,7 +39,7 @@ public sealed class TeamsController(
             return ValidationProblemFrom(validationResult);
         }
 
-        var result = await teamCommandUseCase.CreateAsync(User, request, cancellationToken);
+        var result = await teamCommand.CreateAsync(User, request, cancellationToken);
         return FromResult(result, team => CreatedAtAction(nameof(GetById), new { id = team.Id }, team));
     }
 
@@ -64,7 +64,7 @@ public sealed class TeamsController(
             return ValidationProblemFrom(validationResult);
         }
 
-        var result = await teamCommandUseCase.UpdateAsync(User, id, request, cancellationToken);
+        var result = await teamCommand.UpdateAsync(User, id, request, cancellationToken);
         return FromResultOk(result);
     }
 
@@ -82,7 +82,7 @@ public sealed class TeamsController(
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status403Forbidden)]
     public async Task<IActionResult> Delete(Guid id, CancellationToken cancellationToken)
     {
-        var result = await teamCommandUseCase.DeleteAsync(User, id, cancellationToken);
+        var result = await teamCommand.DeleteAsync(User, id, cancellationToken);
         return FromResult(result, NoContent);
     }
 
@@ -96,7 +96,7 @@ public sealed class TeamsController(
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
     public async Task<ActionResult<Team>> GetById(Guid id, CancellationToken cancellationToken)
     {
-        var result = await teamQueryUseCase.GetByIdAsync(id, cancellationToken);
+        var result = await teamQuery.GetByIdAsync(id, cancellationToken);
         return FromResultOk(result);
     }
 
@@ -128,7 +128,7 @@ public sealed class TeamsController(
             return paginationValidation;
         }
 
-        var result = await teamQueryUseCase.GetAllAsync(workspaceId, parentTeamId, searchValidation.Value, page, pageSize, cancellationToken);
+        var result = await teamQuery.GetAllAsync(workspaceId, parentTeamId, searchValidation.Value, page, pageSize, cancellationToken);
         return FromResultOk(result);
     }
 
@@ -154,7 +154,7 @@ public sealed class TeamsController(
             return paginationValidation;
         }
 
-        var result = await teamQueryUseCase.GetSubTeamsAsync(id, page, pageSize, cancellationToken);
+        var result = await teamQuery.GetSubTeamsAsync(id, page, pageSize, cancellationToken);
         return FromResultOk(result);
     }
 
@@ -180,7 +180,7 @@ public sealed class TeamsController(
             return paginationValidation;
         }
 
-        var result = await teamQueryUseCase.GetCollaboratorsAsync(id, page, pageSize, cancellationToken);
+        var result = await teamQuery.GetCollaboratorsAsync(id, page, pageSize, cancellationToken);
         return FromResultOk(result);
     }
 
@@ -194,7 +194,7 @@ public sealed class TeamsController(
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
     public async Task<ActionResult<List<CollaboratorSummaryDto>>> GetCollaboratorSummaries(Guid id, CancellationToken cancellationToken)
     {
-        var result = await teamQueryUseCase.GetCollaboratorSummariesAsync(id, cancellationToken);
+        var result = await teamQuery.GetCollaboratorSummariesAsync(id, cancellationToken);
         return FromResultOk(result);
     }
 
@@ -213,7 +213,7 @@ public sealed class TeamsController(
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status403Forbidden)]
     public async Task<IActionResult> UpdateCollaborators(Guid id, UpdateTeamCollaboratorsRequest request, CancellationToken cancellationToken)
     {
-        var result = await teamCommandUseCase.UpdateCollaboratorsAsync(User, id, request, cancellationToken);
+        var result = await teamCommand.UpdateCollaboratorsAsync(User, id, request, cancellationToken);
         return FromResult(result, NoContent);
     }
 
@@ -238,7 +238,7 @@ public sealed class TeamsController(
             return searchValidation.Failure;
         }
 
-        var result = await teamQueryUseCase.GetAvailableCollaboratorsAsync(id, searchValidation.Value, cancellationToken);
+        var result = await teamQuery.GetAvailableCollaboratorsAsync(id, searchValidation.Value, cancellationToken);
         return FromResultOk(result);
     }
 }

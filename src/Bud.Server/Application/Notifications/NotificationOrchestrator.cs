@@ -7,11 +7,11 @@ namespace Bud.Server.Application.Notifications;
 /// <summary>
 /// Orquestra a criacao de notificacoes para eventos de dominio.
 /// </summary>
-public sealed class NotificationOrchestrator(
+public class NotificationOrchestrator(
     INotificationRepository notificationRepository,
-    INotificationRecipientResolver recipientResolver) : INotificationOrchestrator
+    INotificationRecipientResolver notificationRecipientResolver)
 {
-    public async Task NotifyMissionCreatedAsync(
+    public virtual async Task NotifyMissionCreatedAsync(
         Guid missionId,
         Guid organizationId,
         CancellationToken cancellationToken = default)
@@ -25,7 +25,7 @@ public sealed class NotificationOrchestrator(
             cancellationToken);
     }
 
-    public async Task NotifyMissionUpdatedAsync(
+    public virtual async Task NotifyMissionUpdatedAsync(
         Guid missionId,
         Guid organizationId,
         CancellationToken cancellationToken = default)
@@ -39,7 +39,7 @@ public sealed class NotificationOrchestrator(
             cancellationToken);
     }
 
-    public async Task NotifyMissionDeletedAsync(
+    public virtual async Task NotifyMissionDeletedAsync(
         Guid missionId,
         Guid organizationId,
         CancellationToken cancellationToken = default)
@@ -53,20 +53,20 @@ public sealed class NotificationOrchestrator(
             cancellationToken);
     }
 
-    public async Task NotifyMetricCheckinCreatedAsync(
+    public virtual async Task NotifyMetricCheckinCreatedAsync(
         Guid checkinId,
         Guid missionMetricId,
         Guid organizationId,
         Guid? excludeCollaboratorId,
         CancellationToken cancellationToken = default)
     {
-        var missionId = await recipientResolver.ResolveMissionIdFromMetricAsync(missionMetricId, cancellationToken);
+        var missionId = await notificationRecipientResolver.ResolveMissionIdFromMetricAsync(missionMetricId, cancellationToken);
         if (!missionId.HasValue)
         {
             return;
         }
 
-        var recipients = await recipientResolver.ResolveMissionRecipientsAsync(
+        var recipients = await notificationRecipientResolver.ResolveMissionRecipientsAsync(
             missionId.Value,
             organizationId,
             excludeCollaboratorId,
@@ -96,10 +96,10 @@ public sealed class NotificationOrchestrator(
         NotificationType type,
         CancellationToken cancellationToken)
     {
-        var recipients = await recipientResolver.ResolveMissionRecipientsAsync(
+        var recipients = await notificationRecipientResolver.ResolveMissionRecipientsAsync(
             missionId,
             organizationId,
-            excludeCollaboratorId: null,
+            null,
             cancellationToken);
 
         if (recipients.Count == 0)

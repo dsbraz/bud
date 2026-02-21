@@ -40,9 +40,9 @@ O Bud segue uma arquitetura em camadas com separação explícita de responsabil
 
 ### Organização do backend (Bud.Server)
 
-- **Controllers** recebem requests, validam payloads (FluentValidation) e delegam para UseCases.
+- **Controllers** recebem requests, validam payloads (FluentValidation) e delegam para Commands/Queries.
   Validações dependentes de dados devem passar por abstrações/repositórios, não por acesso direto de validator ao `DbContext`.
-- **UseCases** centralizam o fluxo completo da aplicação (orquestração, autorização, notificações) e retornam `Result`/`Result<T>` (em `Application/Common/`).
+- **Commands/Queries** centralizam o fluxo completo da aplicação (orquestração, autorização, notificações) e retornam `Result`/`Result<T>` (em `Application/Common/`).
 - **Infrastructure** (`Infrastructure/`) contém interfaces e implementações concretas:
   - `Repositories/`: interfaces (`I*Repository`) e implementações dos repositórios.
   - `Services/`: interfaces (`IAuthService`, `IMissionScopeResolver`, `IMissionProgressService`) e implementações (`AuthService`, `MissionScopeResolver`, `MissionProgressService`, `NotificationRecipientResolver`).
@@ -52,8 +52,8 @@ O Bud segue uma arquitetura em camadas com separação explícita de responsabil
 
 ### Padrões arquiteturais adotados
 
-- **UseCases + Repositories (Clean Architecture)**
-  Controllers delegam para UseCases, que dependem de interfaces (portas) co-localizadas com suas implementações em `Infrastructure/`.
+- **Commands/Queries + Repositories (Clean Architecture)**
+  Controllers delegam para Commands/Queries, que dependem de interfaces (portas) co-localizadas com suas implementações em `Infrastructure/`.
   Repositórios e serviços definem interfaces e implementações no mesmo diretório. `Domain` não depende de `Application` nem de `Infrastructure`.
   Referências: `docs/adr/ADR-0002-usecases-services.md`.
 - **Policy-based Authorization (Requirement/Handler)**
@@ -71,10 +71,10 @@ O Bud segue uma arquitetura em camadas com separação explícita de responsabil
   Entidades raiz de agregado são marcadas com `IAggregateRoot` para tornar boundaries verificáveis por testes.
   Referências: `docs/adr/ADR-0012-aggregate-roots-value-objects-invariantes.md`.
 - **Invariantes no domínio (modelo rico)**  
-  Regras centrais de negócio são aplicadas por métodos de agregado/entidade (`Create`, `Rename`, `SetScope`, etc.) com tradução para `Result` na camada de aplicação (UseCases).
+  Regras centrais de negócio são aplicadas por métodos de agregado/entidade (`Create`, `Rename`, `SetScope`, etc.) com tradução para `Result` na camada de aplicação (Commands/Queries).
   Inclui Value Objects formais (`PersonName`, `MissionScope`, `ConfidenceLevel`, `MetricRange`) para reduzir primitive obsession.
 - **Notification Orchestration (Application)**
-  Orquestração de notificações centralizada em `Application/Notifications/` (`INotificationOrchestrator`), desacoplada dos repositórios.
+  Orquestração de notificações centralizada em `Application/Notifications/` (`NotificationOrchestrator`), desacoplada dos repositórios.
 
 ### Multi-tenancy
 
@@ -89,17 +89,17 @@ Isolamento por organização (`OrganizationId`) com:
 
 1. Request chega no controller.
 2. Payload é validado.
-3. Controller chama o UseCase correspondente.
-4. UseCase aplica regras de autorização/orquestração e delega para repositórios (via interfaces definidas em `Infrastructure/`).
+3. Controller chama o Command/Query correspondente.
+4. Command/Query aplica regras de autorização/orquestração e delega para repositórios (via interfaces definidas em `Infrastructure/`).
 5. Repositório persiste/consulta via `ApplicationDbContext`.
-6. UseCase orquestra notificações quando aplicável (via `INotificationOrchestrator`).
+6. Command/Query orquestra notificações quando aplicável (via `NotificationOrchestrator`).
 7. Resultado (`Result`) é mapeado para resposta HTTP.
 
 ### Testes e governança arquitetural
 
-- **Unit tests**: regras de negócio, validações, use cases e componentes de infraestrutura.
+- **Unit tests**: regras de negócio, validações, commands/queries e componentes de infraestrutura.
 - **Integration tests**: ciclo HTTP completo com PostgreSQL em container.
-- **Architecture tests**: evitam regressão de fronteira entre camadas (ex.: UseCase depender de Infrastructure diretamente), validam tenant isolation, autorização e boundaries de aggregate roots.
+- **Architecture tests**: evitam regressão de fronteira entre camadas (ex.: Command/Query depender de Infrastructure diretamente), validam tenant isolation, autorização e boundaries de aggregate roots.
   A camada de infraestrutura exige `IEntityTypeConfiguration<T>` dedicada para todas as entidades do `ApplicationDbContext`.
 - **ADRs**: decisões arquiteturais versionadas em `docs/adr/`.
 
@@ -122,7 +122,7 @@ Para lista atualizada de ADRs e ordem recomendada de leitura, consulte:
 ```mermaid
 flowchart LR
     A[Bud.Client<br/>Blazor WASM] -->|HTTP + JWT + X-Tenant-Id| B[Bud.Server Controllers]
-    B --> C[Application UseCases<br/>Command/Query]
+    B --> C[Application Commands/Queries<br/>Command/Query]
     C --> R[Infrastructure<br/>I*Repository + Repositories]
     R --> E[(PostgreSQL<br/>ApplicationDbContext)]
     C --> N[NotificationOrchestrator]
@@ -135,7 +135,7 @@ flowchart LR
 sequenceDiagram
     participant U as Usuário/Client
     participant C as Controller
-    participant UC as UseCase
+    participant UC as Command/Query
     participant R as Repository
     participant NO as NotificationOrchestrator
     participant DB as PostgreSQL
@@ -189,7 +189,7 @@ flowchart TD
 sequenceDiagram
     participant UI as Bud.Client
     participant API as Bud.Server
-    participant AUTH as AuthController/AuthUseCase
+    participant AUTH as AuthController/AuthCommand
     participant TENANT as TenantRequiredMiddleware
     participant CTRL as Controller
 
@@ -217,7 +217,7 @@ sequenceDiagram
     participant TENANT as TenantRequiredMiddleware
     participant CTRL as Controller
     participant VAL as FluentValidation
-    participant UC as UseCase
+    participant UC as Command/Query
     participant REPO as Repository
     participant DB as ApplicationDbContext/PostgreSQL
 
@@ -266,7 +266,7 @@ flowchart TB
       DependencyInjection
     end
     subgraph App["Application"]
-      UseCases
+      Commands/Queries
     end
     subgraph Domain["Domain"]
       Specifications
@@ -278,13 +278,13 @@ flowchart TB
       DbContext
     end
 
-    Controllers --> UseCases
-    UseCases --> Interfaces
+    Controllers --> Commands/Queries
+    Commands/Queries --> Interfaces
     Repositories -.-> Interfaces
     Repositories --> DbContext
     Repositories --> Specifications
     DependencyInjection --> Controllers
-    DependencyInjection --> UseCases
+    DependencyInjection --> Commands/Queries
     DependencyInjection --> Repositories
 ```
 
@@ -299,7 +299,7 @@ flowchart LR
 
     subgraph Api["Bud.Server (API/Aplicação)"]
       Controllers["Controllers"]
-      UseCases["UseCases"]
+      Commands/Queries["Commands/Queries"]
       Authz["AuthN/AuthZ + Policies"]
     end
 
@@ -312,8 +312,8 @@ flowchart LR
 
     UI --> ApiClient
     ApiClient --> Controllers
-    Controllers --> UseCases
-    UseCases --> Ports
+    Controllers --> Commands/Queries
+    Commands/Queries --> Ports
     Repos -.-> Ports
     Controllers --> Authz
     Repos --> Db
@@ -327,7 +327,7 @@ Fluxo recomendado de contribuição para manter qualidade arquitetural e consist
 1. Crie uma branch curta e focada no objetivo da mudança.
 2. Escreva/atualize testes antes da implementação (TDD: Red -> Green -> Refactor).
 3. Implemente seguindo os padrões do projeto:
-   - Controllers -> UseCases -> Repositories (via interfaces em Infrastructure)
+   - Controllers -> Commands/Queries -> Repositories (via interfaces em Infrastructure)
    - autorização por policies/handlers
    - mensagens de erro/validação em pt-BR
 4. Atualize documentação OpenAPI (summary/description/status/errors) quando alterar contratos.

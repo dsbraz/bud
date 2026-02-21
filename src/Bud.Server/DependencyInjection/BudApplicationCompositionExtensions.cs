@@ -25,59 +25,59 @@ public static class BudApplicationCompositionExtensions
 
         services.AddScoped<IOrganizationRepository, OrganizationRepository>();
         services.AddScoped<ICollaboratorRepository, CollaboratorRepository>();
-        services.AddScoped<IOrganizationCommandUseCase, OrganizationCommandUseCase>();
-        services.AddScoped<IOrganizationQueryUseCase, OrganizationQueryUseCase>();
+        services.AddScoped<OrganizationCommand>();
+        services.AddScoped<OrganizationQuery>();
 
         services.AddScoped<IWorkspaceRepository, WorkspaceRepository>();
-        services.AddScoped<IWorkspaceCommandUseCase, WorkspaceCommandUseCase>();
-        services.AddScoped<IWorkspaceQueryUseCase, WorkspaceQueryUseCase>();
+        services.AddScoped<WorkspaceCommand>();
+        services.AddScoped<WorkspaceQuery>();
 
         services.AddScoped<ITeamRepository, TeamRepository>();
-        services.AddScoped<ITeamCommandUseCase, TeamCommandUseCase>();
-        services.AddScoped<ITeamQueryUseCase, TeamQueryUseCase>();
+        services.AddScoped<TeamCommand>();
+        services.AddScoped<TeamQuery>();
 
-        services.AddScoped<ICollaboratorCommandUseCase, CollaboratorCommandUseCase>();
-        services.AddScoped<ICollaboratorQueryUseCase, CollaboratorQueryUseCase>();
+        services.AddScoped<CollaboratorCommand>();
+        services.AddScoped<CollaboratorQuery>();
 
         services.AddScoped<IMissionRepository, MissionRepository>();
-        services.AddScoped<IMissionCommandUseCase, MissionCommandUseCase>();
-        services.AddScoped<IMissionQueryUseCase, MissionQueryUseCase>();
+        services.AddScoped<MissionCommand>();
+        services.AddScoped<MissionQuery>();
 
         services.AddScoped<IMissionObjectiveRepository, MissionObjectiveRepository>();
-        services.AddScoped<IMissionObjectiveCommandUseCase, MissionObjectiveCommandUseCase>();
-        services.AddScoped<IMissionObjectiveQueryUseCase, MissionObjectiveQueryUseCase>();
+        services.AddScoped<MissionObjectiveCommand>();
+        services.AddScoped<MissionObjectiveQuery>();
 
         services.AddScoped<IMissionMetricRepository, MissionMetricRepository>();
-        services.AddScoped<IMissionMetricCommandUseCase, MissionMetricCommandUseCase>();
-        services.AddScoped<IMissionMetricQueryUseCase, MissionMetricQueryUseCase>();
+        services.AddScoped<MissionMetricCommand>();
+        services.AddScoped<MissionMetricQuery>();
 
         services.AddScoped<IMetricCheckinRepository, MetricCheckinRepository>();
-        services.AddScoped<IMetricCheckinCommandUseCase, MetricCheckinCommandUseCase>();
-        services.AddScoped<IMetricCheckinQueryUseCase, MetricCheckinQueryUseCase>();
+        services.AddScoped<MetricCheckinCommand>();
+        services.AddScoped<MetricCheckinQuery>();
 
         services.AddScoped<IAuthService, AuthService>();
-        services.AddScoped<IAuthCommandUseCase, AuthCommandUseCase>();
-        services.AddScoped<IAuthQueryUseCase, AuthQueryUseCase>();
+        services.AddScoped<AuthCommand>();
+        services.AddScoped<AuthQuery>();
 
         services.AddScoped<IMissionTemplateRepository, MissionTemplateRepository>();
-        services.AddScoped<IMissionTemplateCommandUseCase, MissionTemplateCommandUseCase>();
-        services.AddScoped<IMissionTemplateQueryUseCase, MissionTemplateQueryUseCase>();
+        services.AddScoped<MissionTemplateCommand>();
+        services.AddScoped<MissionTemplateQuery>();
 
         services.AddScoped<IObjectiveDimensionRepository, ObjectiveDimensionRepository>();
-        services.AddScoped<IObjectiveDimensionCommandUseCase, ObjectiveDimensionCommandUseCase>();
-        services.AddScoped<IObjectiveDimensionQueryUseCase, ObjectiveDimensionQueryUseCase>();
+        services.AddScoped<ObjectiveDimensionCommand>();
+        services.AddScoped<ObjectiveDimensionQuery>();
 
         services.AddScoped<IDashboardReadRepository, DashboardReadRepository>();
-        services.AddScoped<IDashboardQueryUseCase, DashboardQueryUseCase>();
+        services.AddScoped<DashboardQuery>();
 
         services.AddScoped<IMissionProgressService, MissionProgressService>();
         services.AddScoped<IMissionScopeResolver, MissionScopeResolver>();
 
         services.AddScoped<INotificationRepository, NotificationRepository>();
         services.AddScoped<INotificationRecipientResolver, NotificationRecipientResolver>();
-        services.AddScoped<INotificationOrchestrator, NotificationOrchestrator>();
-        services.AddScoped<INotificationQueryUseCase, NotificationQueryUseCase>();
-        services.AddScoped<INotificationCommandUseCase, NotificationCommandUseCase>();
+        services.AddScoped<NotificationOrchestrator>();
+        services.AddScoped<NotificationQuery>();
+        services.AddScoped<NotificationCommand>();
 
         return services;
     }

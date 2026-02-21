@@ -1,50 +1,28 @@
-# ADR-0012: Aggregate Roots explícitas, Value Objects e invariantes de domínio
+# ADR-0012: Aggregate roots explícitas, value objects e invariantes de domínio
 
 ## Status
-Accepted (atualizado — seção 6 reflete migração de Services para Repositories)
+Accepted
 
 ## Contexto
 
-Os limites de aggregate root não estavam explicitados no modelo compartilhado, dificultando governança arquitetural por testes. Além disso, invariantes de domínio estavam dispersas em services/validators sem enforcement formal no modelo.
+Limites de aggregate root e enforcement de invariantes precisam estar explícitos para manter consistência de domínio e governança por testes.
 
 ## Decisão
 
-1. Explicitar aggregate roots no domínio compartilhado:
-   - `IAggregateRoot` em `Bud.Shared.Domain` marca entidades raiz.
-   - Roots: `Organization`, `Workspace`, `Team`, `Collaborator`, `Mission`, `MissionTemplate`.
-   - Entidades internas (`MissionMetric`, `MetricCheckin`, `MissionTemplateMetric`, `CollaboratorTeam`) não implementam `IAggregateRoot`.
-
-2. Invariantes de domínio e comportamento nos agregados:
-   - Agregados expõem métodos explícitos de domínio (`Create`, `Rename`, `UpdateDetails`, `SetScope`, `ApplyTarget`, etc.).
-   - Value Objects formais para conceitos semânticos (`PersonName`, `MissionScope`, `ConfidenceLevel`, `MetricRange`, `EntityName`, `NotificationTitle`, `NotificationMessage`).
-   - Violações de regra representadas por `DomainInvariantException`.
-   - UseCases orquestram persistência/autorização e traduzem violações de domínio para `Result` de validação.
-
-3. Padronização de mapeamento de dados:
-   - Todas as configurações de entidades extraídas para `IEntityTypeConfiguration<T>` em `Data/Configurations`.
-   - `ApplicationDbContext` mantém `DbSet<>`, `ApplyConfigurationsFromAssembly` e query filters multi-tenant.
-
-4. Proteção por testes de arquitetura:
-   - Testes garantindo quais entidades são roots e quais não são.
-
-5. Boundaries de entidades sensíveis com API explícita de domínio:
-   - `MissionTemplate` compõe métricas via `ReplaceMetrics(...)` + factory em `MissionTemplateMetric`.
-   - `Notification` usa `Create(...)` e `MarkAsRead(...)`.
-   - `CollaboratorAccessLog` usa `Create(...)` no fluxo de autenticação.
-   - `MissionMetric` centraliza consistência de payload de check-in via `CreateCheckin(...)` e `UpdateCheckin(...)`, com o UseCase delegando validação de domínio.
-
-6. Interface de repositório única por aggregate:
-   - Cada aggregate root expõe uma única interface de repositório (`ITeamRepository`, `IWorkspaceRepository`, `ICollaboratorRepository`, `IMissionRepository`, `IMissionMetricRepository`, `IMetricCheckinRepository`) co-localizada com sua implementação em `Infrastructure/Repositories/`.
-   - Repositories são responsáveis exclusivamente por persistência e queries — sem lógica de negócio.
-   - UseCases de comando e consulta dependem da mesma interface de repositório.
+1. Explicitar aggregate roots no domínio compartilhado.
+2. Centralizar invariantes críticas nos agregados/value objects.
+3. Usar `DomainInvariantException` para violação de invariantes.
+4. Commands/Queries da camada `Application` orquestram persistência/autorização e traduzem falhas de domínio para `Result`.
+5. Repositories permanecem focados em persistência e consulta.
+6. Manter uma interface de repositório por aggregate root em `Infrastructure/Repositories`.
 
 ## Consequências
 
-- Fronteiras de aggregate verificáveis automaticamente em CI.
-- Invariantes com enforcement no modelo de domínio (não apenas em validators/services), reduzindo drift entre regras de negócio e persistência.
-- Menor risco de mutações inconsistentes por atribuição direta em repositories para fluxos críticos de template/notificação/auditoria.
-- Interface única de repositório por aggregate simplifica DI e reduz número de abstrações.
+- Invariantes de domínio ficam próximas do modelo, reduzindo drift.
+- Menor risco de mutações inconsistentes em fluxos críticos.
+- Melhor testabilidade de regras de domínio e da orquestração de aplicação.
 
 ## Alternativas consideradas
 
-- **CQRS split por portas formais** (`I*CommandRepository`/`I*QueryRepository`): descartado por complexidade desproporcional ao estágio atual (CRUD hierárquico com ~9 entidades).
+- Regras concentradas apenas em validators/services de aplicação.
+- Split formal de repositories por CQRS (`I*CommandRepository`/`I*QueryRepository`) em todos os domínios.

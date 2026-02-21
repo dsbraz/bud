@@ -5,24 +5,24 @@ Accepted
 
 ## Contexto
 
-A aplicação possui regras de negócio críticas, multi-tenancy e fluxos assíncronos.
-Era necessário equilibrar velocidade de feedback e confiança end-to-end.
+A aplicação possui regras críticas de negócio, multi-tenancy e fluxos assíncronos.
+É necessário equilibrar velocidade de feedback com confiança end-to-end.
 
 ## Decisão
 
 Adotar estratégia híbrida:
 
-- **Unit tests** para UseCases, Repositories, Domain Services, validações e componentes isolados
-- **Integration tests** com `WebApplicationFactory` + PostgreSQL via Testcontainers
-- TDD como fluxo padrão (`Red -> Green -> Refactor`)
+- **Unit tests** para `Application` Commands/Queries, repositories, serviços de domínio, validações e componentes isolados.
+- **Integration tests** com `WebApplicationFactory` + PostgreSQL via Testcontainers.
+- TDD como fluxo padrão (`Red -> Green -> Refactor`).
 
 ## Consequências
 
-- Alta confiança em regressões funcionais e arquiteturais
-- Tempo de execução maior na suíte completa comparado a apenas unit tests
-- Melhor cobertura dos cenários reais de infraestrutura
+- Alta confiança contra regressões funcionais e arquiteturais.
+- Suíte completa mais lenta do que apenas unit tests.
+- Melhor cobertura dos cenários reais de infraestrutura.
 
 ## Alternativas consideradas
 
-- Somente unit tests: rápido, mas com risco de gaps de integração
-- Somente integration tests: alta confiança end-to-end, porém ciclo de feedback mais lento
+- Somente unit tests.
+- Somente integration tests.

@@ -14,9 +14,9 @@ namespace Bud.Server.Controllers;
 [Route("api/missions")]
 [Produces("application/json")]
 public sealed class MissionsController(
-    IMissionCommandUseCase missionCommandUseCase,
-    IMissionQueryUseCase missionQueryUseCase,
-    IMissionObjectiveQueryUseCase missionObjectiveQueryUseCase,
+    MissionCommand missionCommand,
+    MissionQuery missionQuery,
+    MissionObjectiveQuery missionObjectiveQuery,
     IValidator<CreateMissionRequest> createValidator,
     IValidator<UpdateMissionRequest> updateValidator) : ApiControllerBase
 {
@@ -43,7 +43,7 @@ public sealed class MissionsController(
             return ValidationProblemFrom(validationResult);
         }
 
-        var result = await missionCommandUseCase.CreateAsync(User, request, cancellationToken);
+        var result = await missionCommand.CreateAsync(User, request, cancellationToken);
         return FromResult(result, mission => CreatedAtAction(nameof(GetById), new { id = mission.Id }, mission));
     }
 
@@ -70,7 +70,7 @@ public sealed class MissionsController(
             return ValidationProblemFrom(validationResult);
         }
 
-        var result = await missionCommandUseCase.UpdateAsync(User, id, request, cancellationToken);
+        var result = await missionCommand.UpdateAsync(User, id, request, cancellationToken);
         return FromResultOk(result);
     }
 
@@ -84,7 +84,7 @@ public sealed class MissionsController(
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> Delete(Guid id, CancellationToken cancellationToken)
     {
-        var result = await missionCommandUseCase.DeleteAsync(User, id, cancellationToken);
+        var result = await missionCommand.DeleteAsync(User, id, cancellationToken);
         return FromResult(result, NoContent);
     }
 
@@ -98,7 +98,7 @@ public sealed class MissionsController(
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
     public async Task<ActionResult<Mission>> GetById(Guid id, CancellationToken cancellationToken)
     {
-        var result = await missionQueryUseCase.GetByIdAsync(id, cancellationToken);
+        var result = await missionQuery.GetByIdAsync(id, cancellationToken);
         return FromResultOk(result);
     }
 
@@ -130,7 +130,7 @@ public sealed class MissionsController(
             return paginationValidation;
         }
 
-        var result = await missionQueryUseCase.GetAllAsync(scopeType, scopeId, searchValidation.Value, page, pageSize, cancellationToken);
+        var result = await missionQuery.GetAllAsync(scopeType, scopeId, searchValidation.Value, page, pageSize, cancellationToken);
         return FromResultOk(result);
     }
 
@@ -163,7 +163,7 @@ public sealed class MissionsController(
             return paginationValidation;
         }
 
-        var result = await missionQueryUseCase.GetMyMissionsAsync(collaboratorId, searchValidation.Value, page, pageSize, cancellationToken);
+        var result = await missionQuery.GetMyMissionsAsync(collaboratorId, searchValidation.Value, page, pageSize, cancellationToken);
         return FromResultOk(result);
     }
 
@@ -185,7 +185,7 @@ public sealed class MissionsController(
             return parseResult.Failure;
         }
 
-        var result = await missionQueryUseCase.GetProgressAsync(parseResult.Values!, cancellationToken);
+        var result = await missionQuery.GetProgressAsync(parseResult.Values!, cancellationToken);
         return FromResultOk(result);
     }
 
@@ -211,7 +211,7 @@ public sealed class MissionsController(
             return paginationValidation;
         }
 
-        var result = await missionQueryUseCase.GetMetricsAsync(id, page, pageSize, cancellationToken);
+        var result = await missionQuery.GetMetricsAsync(id, page, pageSize, cancellationToken);
         return FromResultOk(result);
     }
 
@@ -235,7 +235,7 @@ public sealed class MissionsController(
             return paginationValidation;
         }
 
-        var result = await missionObjectiveQueryUseCase.GetByMissionAsync(id, page, pageSize, cancellationToken);
+        var result = await missionObjectiveQuery.GetByMissionAsync(id, page, pageSize, cancellationToken);
         return FromResultOk(result);
     }
 }

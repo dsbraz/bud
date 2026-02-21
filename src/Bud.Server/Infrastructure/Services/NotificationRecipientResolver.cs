@@ -1,4 +1,3 @@
-using Bud.Server.Application.Notifications;
 using Bud.Server.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 

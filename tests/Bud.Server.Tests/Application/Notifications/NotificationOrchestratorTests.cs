@@ -1,5 +1,5 @@
-using Bud.Server.Infrastructure.Services;
 using Bud.Server.Infrastructure.Repositories;
+using Bud.Server.Infrastructure.Services;
 using Bud.Server.Application.Notifications;
 using Bud.Shared.Domain;
 using FluentAssertions;

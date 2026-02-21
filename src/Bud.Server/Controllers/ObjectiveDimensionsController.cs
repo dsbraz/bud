@@ -13,8 +13,8 @@ namespace Bud.Server.Controllers;
 [Route("api/objective-dimensions")]
 [Produces("application/json")]
 public sealed class ObjectiveDimensionsController(
-    IObjectiveDimensionCommandUseCase commandUseCase,
-    IObjectiveDimensionQueryUseCase queryUseCase,
+    ObjectiveDimensionCommand objectiveDimensionCommand,
+    ObjectiveDimensionQuery objectiveDimensionQuery,
     IValidator<CreateObjectiveDimensionRequest> createValidator,
     IValidator<UpdateObjectiveDimensionRequest> updateValidator) : ApiControllerBase
 {
@@ -39,7 +39,7 @@ public sealed class ObjectiveDimensionsController(
             return ValidationProblemFrom(validationResult);
         }
 
-        var result = await commandUseCase.CreateAsync(User, request, cancellationToken);
+        var result = await objectiveDimensionCommand.CreateAsync(User, request, cancellationToken);
         return FromResult(result, dimension => CreatedAtAction(nameof(GetById), new { id = dimension.Id }, dimension));
     }
 
@@ -69,7 +69,7 @@ public sealed class ObjectiveDimensionsController(
             return ValidationProblemFrom(validationResult);
         }
 
-        var result = await commandUseCase.UpdateAsync(User, id, request, cancellationToken);
+        var result = await objectiveDimensionCommand.UpdateAsync(User, id, request, cancellationToken);
         return FromResultOk(result);
     }
 
@@ -87,7 +87,7 @@ public sealed class ObjectiveDimensionsController(
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status409Conflict)]
     public async Task<IActionResult> Delete(Guid id, CancellationToken cancellationToken)
     {
-        var result = await commandUseCase.DeleteAsync(User, id, cancellationToken);
+        var result = await objectiveDimensionCommand.DeleteAsync(User, id, cancellationToken);
         return FromResult(result, NoContent);
     }
 
@@ -101,7 +101,7 @@ public sealed class ObjectiveDimensionsController(
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
     public async Task<ActionResult<ObjectiveDimension>> GetById(Guid id, CancellationToken cancellationToken)
     {
-        var result = await queryUseCase.GetByIdAsync(id, cancellationToken);
+        var result = await objectiveDimensionQuery.GetByIdAsync(id, cancellationToken);
         return FromResultOk(result);
     }
 
@@ -125,7 +125,7 @@ public sealed class ObjectiveDimensionsController(
             return listValidation.Failure;
         }
 
-        var result = await queryUseCase.GetAllAsync(listValidation.Search, page, pageSize, cancellationToken);
+        var result = await objectiveDimensionQuery.GetAllAsync(listValidation.Search, page, pageSize, cancellationToken);
         return FromResultOk(result);
     }
 }

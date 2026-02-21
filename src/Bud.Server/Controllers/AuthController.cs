@@ -10,8 +10,8 @@ namespace Bud.Server.Controllers;
 [Route("api/auth")]
 [Produces("application/json")]
 public sealed class AuthController(
-    IAuthCommandUseCase authCommandUseCase,
-    IAuthQueryUseCase authQueryUseCase,
+    AuthCommand authCommand,
+    AuthQuery authQuery,
     IValidator<AuthLoginRequest> loginValidator) : ApiControllerBase
 {
     /// <summary>
@@ -36,7 +36,7 @@ public sealed class AuthController(
             return ValidationProblemFrom(validationResult);
         }
 
-        var result = await authCommandUseCase.LoginAsync(request, cancellationToken);
+        var result = await authCommand.LoginAsync(request, cancellationToken);
         return FromResultOk(result);
     }
 
@@ -63,7 +63,7 @@ public sealed class AuthController(
         [FromHeader(Name = "X-User-Email")] string email,
         CancellationToken cancellationToken)
     {
-        var result = await authQueryUseCase.GetMyOrganizationsAsync(email, cancellationToken);
+        var result = await authQuery.GetMyOrganizationsAsync(email, cancellationToken);
         return FromResultOk(result);
     }
 }

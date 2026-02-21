@@ -13,8 +13,8 @@ namespace Bud.Server.Controllers;
 [Route("api/workspaces")]
 [Produces("application/json")]
 public sealed class WorkspacesController(
-    IWorkspaceQueryUseCase workspaceQueryUseCase,
-    IWorkspaceCommandUseCase workspaceCommandUseCase,
+    WorkspaceQuery workspaceQuery,
+    WorkspaceCommand workspaceCommand,
     IValidator<CreateWorkspaceRequest> createValidator,
     IValidator<UpdateWorkspaceRequest> updateValidator) : ApiControllerBase
 {
@@ -39,7 +39,7 @@ public sealed class WorkspacesController(
             return ValidationProblemFrom(validationResult);
         }
 
-        var result = await workspaceCommandUseCase.CreateAsync(User, request, cancellationToken);
+        var result = await workspaceCommand.CreateAsync(User, request, cancellationToken);
         return FromResult(result, workspace => CreatedAtAction(nameof(GetById), new { id = workspace.Id }, workspace));
     }
 
@@ -64,7 +64,7 @@ public sealed class WorkspacesController(
             return ValidationProblemFrom(validationResult);
         }
 
-        var result = await workspaceCommandUseCase.UpdateAsync(User, id, request, cancellationToken);
+        var result = await workspaceCommand.UpdateAsync(User, id, request, cancellationToken);
         return FromResultOk(result);
     }
 
@@ -80,7 +80,7 @@ public sealed class WorkspacesController(
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status403Forbidden)]
     public async Task<IActionResult> Delete(Guid id, CancellationToken cancellationToken)
     {
-        var result = await workspaceCommandUseCase.DeleteAsync(User, id, cancellationToken);
+        var result = await workspaceCommand.DeleteAsync(User, id, cancellationToken);
         return FromResult(result, NoContent);
     }
 
@@ -94,7 +94,7 @@ public sealed class WorkspacesController(
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
     public async Task<ActionResult<Workspace>> GetById(Guid id, CancellationToken cancellationToken)
     {
-        var result = await workspaceQueryUseCase.GetByIdAsync(id, cancellationToken);
+        var result = await workspaceQuery.GetByIdAsync(id, cancellationToken);
         return FromResultOk(result);
     }
 
@@ -125,7 +125,7 @@ public sealed class WorkspacesController(
             return paginationValidation;
         }
 
-        var result = await workspaceQueryUseCase.GetAllAsync(organizationId, searchValidation.Value, page, pageSize, cancellationToken);
+        var result = await workspaceQuery.GetAllAsync(organizationId, searchValidation.Value, page, pageSize, cancellationToken);
         return FromResultOk(result);
     }
 
@@ -151,7 +151,7 @@ public sealed class WorkspacesController(
             return paginationValidation;
         }
 
-        var result = await workspaceQueryUseCase.GetTeamsAsync(id, page, pageSize, cancellationToken);
+        var result = await workspaceQuery.GetTeamsAsync(id, page, pageSize, cancellationToken);
         return FromResultOk(result);
     }
 }

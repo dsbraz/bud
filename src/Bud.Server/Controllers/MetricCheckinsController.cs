@@ -13,8 +13,8 @@ namespace Bud.Server.Controllers;
 [Route("api/metric-checkins")]
 [Produces("application/json")]
 public sealed class MetricCheckinsController(
-    IMetricCheckinCommandUseCase metricCheckinCommandUseCase,
-    IMetricCheckinQueryUseCase metricCheckinQueryUseCase,
+    MetricCheckinCommand metricCheckinCommand,
+    MetricCheckinQuery metricCheckinQuery,
     IValidator<CreateMetricCheckinRequest> createValidator,
     IValidator<UpdateMetricCheckinRequest> updateValidator) : ApiControllerBase
 {
@@ -43,7 +43,7 @@ public sealed class MetricCheckinsController(
             return ValidationProblemFrom(validationResult);
         }
 
-        var result = await metricCheckinCommandUseCase.CreateAsync(User, request, cancellationToken);
+        var result = await metricCheckinCommand.CreateAsync(User, request, cancellationToken);
         return FromResult(result, checkin => CreatedAtAction(nameof(GetById), new { id = checkin.Id }, checkin));
     }
 
@@ -68,7 +68,7 @@ public sealed class MetricCheckinsController(
             return ValidationProblemFrom(validationResult);
         }
 
-        var result = await metricCheckinCommandUseCase.UpdateAsync(User, id, request, cancellationToken);
+        var result = await metricCheckinCommand.UpdateAsync(User, id, request, cancellationToken);
         return FromResultOk(result);
     }
 
@@ -84,7 +84,7 @@ public sealed class MetricCheckinsController(
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status403Forbidden)]
     public async Task<IActionResult> Delete(Guid id, CancellationToken cancellationToken)
     {
-        var result = await metricCheckinCommandUseCase.DeleteAsync(User, id, cancellationToken);
+        var result = await metricCheckinCommand.DeleteAsync(User, id, cancellationToken);
         return FromResult(result, NoContent);
     }
 
@@ -98,7 +98,7 @@ public sealed class MetricCheckinsController(
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
     public async Task<ActionResult<MetricCheckin>> GetById(Guid id, CancellationToken cancellationToken)
     {
-        var result = await metricCheckinQueryUseCase.GetByIdAsync(id, cancellationToken);
+        var result = await metricCheckinQuery.GetByIdAsync(id, cancellationToken);
         return FromResultOk(result);
     }
 
@@ -123,7 +123,7 @@ public sealed class MetricCheckinsController(
             return paginationValidation;
         }
 
-        var result = await metricCheckinQueryUseCase.GetAllAsync(missionMetricId, missionId, page, pageSize, cancellationToken);
+        var result = await metricCheckinQuery.GetAllAsync(missionMetricId, missionId, page, pageSize, cancellationToken);
         return FromResultOk(result);
     }
 

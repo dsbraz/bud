@@ -14,8 +14,8 @@ namespace Bud.Server.Controllers;
 [Route("api/notifications")]
 [Produces("application/json")]
 public sealed class NotificationsController(
-    INotificationQueryUseCase notificationQueryUseCase,
-    INotificationCommandUseCase notificationCommandUseCase) : ApiControllerBase
+    NotificationQuery notificationQuery,
+    NotificationCommand notificationCommand) : ApiControllerBase
 {
     /// <summary>
     /// Lista notificações do colaborador autenticado com paginação.
@@ -38,7 +38,7 @@ public sealed class NotificationsController(
             return paginationValidation;
         }
 
-        var result = await notificationQueryUseCase.GetMyNotificationsAsync(page, pageSize, cancellationToken);
+        var result = await notificationQuery.GetMyNotificationsAsync(page, pageSize, cancellationToken);
         return FromResultOk(result);
     }
 
@@ -52,7 +52,7 @@ public sealed class NotificationsController(
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status403Forbidden)]
     public async Task<ActionResult<UnreadCountResponse>> GetUnreadCount(CancellationToken cancellationToken)
     {
-        var result = await notificationQueryUseCase.GetUnreadCountAsync(cancellationToken);
+        var result = await notificationQuery.GetUnreadCountAsync(cancellationToken);
         return FromResultOk(result, count => new UnreadCountResponse { Count = count });
     }
 
@@ -68,7 +68,7 @@ public sealed class NotificationsController(
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> MarkAsRead(Guid id, CancellationToken cancellationToken)
     {
-        var result = await notificationCommandUseCase.MarkAsReadAsync(id, cancellationToken);
+        var result = await notificationCommand.MarkAsReadAsync(id, cancellationToken);
         return FromResult(result, NoContent);
     }
 
@@ -82,7 +82,7 @@ public sealed class NotificationsController(
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status403Forbidden)]
     public async Task<IActionResult> MarkAllAsRead(CancellationToken cancellationToken)
     {
-        var result = await notificationCommandUseCase.MarkAllAsReadAsync(cancellationToken);
+        var result = await notificationCommand.MarkAllAsReadAsync(cancellationToken);
         return FromResult(result, NoContent);
     }
 }
