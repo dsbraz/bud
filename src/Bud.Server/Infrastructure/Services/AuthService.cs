@@ -6,7 +6,6 @@ using Bud.Server.Application.Ports;
 using Bud.Server.Domain.ReadModels;
 using Bud.Server.Infrastructure.Persistence;
 using Bud.Server.Settings;
-using Bud.Shared.Contracts;
 using Bud.Server.Domain.Model;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
@@ -20,7 +19,7 @@ public sealed class AuthService(
 {
     private readonly JwtSettings _jwtSettings = jwtOptions.Value;
 
-    public async Task<Result<AuthLoginResult>> LoginAsync(AuthLoginRequest request, CancellationToken cancellationToken = default)
+    public async Task<Result<AuthLoginResult>> LoginAsync(CreateSessionRequest request, CancellationToken cancellationToken = default)
     {
         var email = request.Email?.Trim();
         if (string.IsNullOrWhiteSpace(email))
@@ -70,12 +69,12 @@ public sealed class AuthService(
         });
     }
 
-    public async Task<Result<List<OrganizationSummary>>> GetMyOrganizationsAsync(string email, CancellationToken cancellationToken = default)
+    public async Task<Result<List<Bud.Server.Domain.ReadModels.OrganizationSummary>>> GetMyOrganizationsAsync(string email, CancellationToken cancellationToken = default)
     {
         var normalizedEmail = email?.Trim().ToLowerInvariant();
         if (string.IsNullOrWhiteSpace(normalizedEmail))
         {
-            return Result<List<OrganizationSummary>>.Failure("E-mail é obrigatório.");
+            return Result<List<Bud.Server.Domain.ReadModels.OrganizationSummary>>.Failure("E-mail é obrigatório.");
         }
 
         var collaborator = await dbContext.Collaborators
@@ -89,14 +88,14 @@ public sealed class AuthService(
                 .AsNoTracking()
                 .IgnoreQueryFilters()
                 .OrderBy(o => o.Name)
-                .Select(o => new OrganizationSummary
+                .Select(o => new Bud.Server.Domain.ReadModels.OrganizationSummary
                 {
                     Id = o.Id,
                     Name = o.Name
                 })
                 .ToListAsync(cancellationToken);
 
-            return Result<List<OrganizationSummary>>.Success(allOrgs);
+            return Result<List<Bud.Server.Domain.ReadModels.OrganizationSummary>>.Success(allOrgs);
         }
 
         // Regular users: get organizations from two sources:
@@ -108,7 +107,7 @@ public sealed class AuthService(
             .IgnoreQueryFilters()
             .Where(c => c.Email == normalizedEmail)
             .Include(c => c.Organization)
-            .Select(c => new OrganizationSummary
+            .Select(c => new Bud.Server.Domain.ReadModels.OrganizationSummary
             {
                 Id = c.Organization.Id,
                 Name = c.Organization.Name
@@ -119,7 +118,7 @@ public sealed class AuthService(
             .AsNoTracking()
             .IgnoreQueryFilters()
             .Where(o => o.Owner != null && o.Owner.Email == normalizedEmail)
-            .Select(o => new OrganizationSummary
+            .Select(o => new Bud.Server.Domain.ReadModels.OrganizationSummary
             {
                 Id = o.Id,
                 Name = o.Name
@@ -134,7 +133,7 @@ public sealed class AuthService(
             .OrderBy(o => o.Name)
             .ToList();
 
-        return Result<List<OrganizationSummary>>.Success(organizations);
+        return Result<List<Bud.Server.Domain.ReadModels.OrganizationSummary>>.Success(organizations);
     }
 
     private async Task RegisterAccessLogAsync(Guid collaboratorId, Guid organizationId, CancellationToken cancellationToken)

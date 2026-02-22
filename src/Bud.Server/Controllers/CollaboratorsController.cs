@@ -1,10 +1,10 @@
-using Bud.Server.Application.Collaborators;
+using Bud.Server.Application.UseCases.Collaborators;
 using Bud.Server.Authorization;
 using Bud.Shared.Contracts;
-using Bud.Server.Domain.Model;
 using FluentValidation;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Bud.Server.Domain.Model;
 
 namespace Bud.Server.Controllers;
 
@@ -36,7 +36,7 @@ public sealed class CollaboratorsController(
     /// <response code="403">Sem permissão para criar colaborador.</response>
     [HttpPost]
     [Consumes("application/json")]
-    [ProducesResponseType(typeof(Collaborator), StatusCodes.Status201Created)]
+    [ProducesResponseType(typeof(CollaboratorResponse), StatusCodes.Status201Created)]
     [ProducesResponseType(typeof(ValidationProblemDetails), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status403Forbidden)]
@@ -61,7 +61,7 @@ public sealed class CollaboratorsController(
     /// <response code="403">Sem permissão para atualizar colaborador.</response>
     [HttpPatch("{id:guid}")]
     [Consumes("application/json")]
-    [ProducesResponseType(typeof(Collaborator), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(CollaboratorResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
     [ProducesResponseType(typeof(ValidationProblemDetails), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status403Forbidden)]
@@ -101,7 +101,7 @@ public sealed class CollaboratorsController(
     /// <response code="200">Colaborador encontrado.</response>
     /// <response code="404">Colaborador não encontrado.</response>
     [HttpGet("{id:guid}")]
-    [ProducesResponseType(typeof(Collaborator), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(CollaboratorResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
     public async Task<ActionResult<Collaborator>> GetById(Guid id, CancellationToken cancellationToken)
     {
@@ -144,9 +144,9 @@ public sealed class CollaboratorsController(
     /// Lista opções simplificadas de colaboradores.
     /// </summary>
     [HttpGet("lookup")]
-    [ProducesResponseType(typeof(List<CollaboratorSummaryDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(List<CollaboratorLookupResponse>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
-    public async Task<ActionResult<List<CollaboratorSummaryDto>>> GetLookup(
+    public async Task<ActionResult<List<CollaboratorLookupResponse>>> GetLookup(
         [FromQuery] string? search,
         CancellationToken cancellationToken = default)
     {
@@ -164,8 +164,8 @@ public sealed class CollaboratorsController(
     /// Lista colaboradores líderes.
     /// </summary>
     [HttpGet("leaders")]
-    [ProducesResponseType(typeof(List<LeaderCollaboratorResponse>), StatusCodes.Status200OK)]
-    public async Task<ActionResult<List<LeaderCollaboratorResponse>>> GetLeaders(
+    [ProducesResponseType(typeof(List<CollaboratorLeaderResponse>), StatusCodes.Status200OK)]
+    public async Task<ActionResult<List<CollaboratorLeaderResponse>>> GetLeaders(
         [FromQuery] Guid? organizationId = null,
         CancellationToken cancellationToken = default)
     {
@@ -179,9 +179,9 @@ public sealed class CollaboratorsController(
     /// <response code="200">Hierarquia retornada com sucesso.</response>
     /// <response code="404">Colaborador não encontrado.</response>
     [HttpGet("{id:guid}/subordinates")]
-    [ProducesResponseType(typeof(List<CollaboratorHierarchyNodeDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(List<CollaboratorSubordinateResponse>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
-    public async Task<ActionResult<List<CollaboratorHierarchyNodeDto>>> GetSubordinates(Guid id, CancellationToken cancellationToken)
+    public async Task<ActionResult<List<CollaboratorSubordinateResponse>>> GetSubordinates(Guid id, CancellationToken cancellationToken)
     {
         var result = await getCollaboratorHierarchy.ExecuteAsync(id, cancellationToken);
         return FromResultOk(result);
@@ -193,9 +193,9 @@ public sealed class CollaboratorsController(
     /// <response code="200">Lista retornada com sucesso.</response>
     /// <response code="404">Colaborador não encontrado.</response>
     [HttpGet("{id:guid}/teams")]
-    [ProducesResponseType(typeof(List<TeamSummaryDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(List<CollaboratorTeamResponse>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
-    public async Task<ActionResult<List<TeamSummaryDto>>> GetTeams(
+    public async Task<ActionResult<List<CollaboratorTeamResponse>>> GetTeams(
         Guid id,
         CancellationToken cancellationToken = default)
     {
@@ -207,10 +207,10 @@ public sealed class CollaboratorsController(
     /// Lista times disponíveis para vínculo com o colaborador.
     /// </summary>
     [HttpGet("{id:guid}/teams/eligible-for-assignment")]
-    [ProducesResponseType(typeof(List<TeamSummaryDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(List<CollaboratorTeamResponse>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
-    public async Task<ActionResult<List<TeamSummaryDto>>> GetAvailableTeams(
+    public async Task<ActionResult<List<CollaboratorTeamResponse>>> GetAvailableTeams(
         Guid id,
         [FromQuery] string? search = null,
         CancellationToken cancellationToken = default)

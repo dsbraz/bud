@@ -1,7 +1,8 @@
 using Bud.Server.Application.Ports;
 using Bud.Server.Domain.Repositories;
 using Bud.Server.Application.Common;
-using Bud.Server.Application.Missions;
+using Bud.Server.Application.Mapping;
+using Bud.Server.Application.UseCases.Missions;
 using Bud.Server.Domain.ReadModels;
 
 using Bud.Shared.Contracts;

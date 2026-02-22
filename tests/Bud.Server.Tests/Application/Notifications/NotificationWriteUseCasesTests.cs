@@ -1,6 +1,7 @@
 using Bud.Server.Domain.Repositories;
 using Bud.Server.Application.Common;
-using Bud.Server.Application.Notifications;
+using Bud.Server.Application.Mapping;
+using Bud.Server.Application.UseCases.Notifications;
 using Bud.Server.MultiTenancy;
 using Bud.Server.Domain.Model;
 using FluentAssertions;
@@ -40,7 +41,7 @@ public sealed class NotificationWriteUseCasesTests
         var collaboratorId = Guid.NewGuid();
         _tenantProvider.SetupGet(x => x.CollaboratorId).Returns(collaboratorId);
         _repo.Setup(r => r.GetByIdAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync((Notification?)null);
+            .ReturnsAsync((NotificationResponse?)null);
 
         var result = await CreateMarkAsReadUseCase().ExecuteAsync(Guid.NewGuid());
 
@@ -56,7 +57,7 @@ public sealed class NotificationWriteUseCasesTests
         var notificationId = Guid.NewGuid();
         _tenantProvider.SetupGet(x => x.CollaboratorId).Returns(collaboratorId);
 
-        var notification = new Notification
+        var notification = new NotificationResponse
         {
             Id = notificationId,
             RecipientCollaboratorId = Guid.NewGuid(),
@@ -83,7 +84,7 @@ public sealed class NotificationWriteUseCasesTests
         var notificationId = Guid.NewGuid();
         _tenantProvider.SetupGet(x => x.CollaboratorId).Returns(collaboratorId);
 
-        var notification = new Notification
+        var notification = new NotificationResponse
         {
             Id = notificationId,
             RecipientCollaboratorId = collaboratorId,
@@ -111,7 +112,7 @@ public sealed class NotificationWriteUseCasesTests
         var notificationId = Guid.NewGuid();
         _tenantProvider.SetupGet(x => x.CollaboratorId).Returns(collaboratorId);
 
-        var notification = new Notification
+        var notification = new NotificationResponse
         {
             Id = notificationId,
             RecipientCollaboratorId = collaboratorId,

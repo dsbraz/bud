@@ -103,11 +103,11 @@
     private bool _navOpen;
     private bool isDropdownOpen = false;
     private int unreadNotificationCount;
-    private bool CanShowAllOrganizations => AuthState.Session?.IsGlobalAdmin == true;
+    private bool CanShowAllOrganizations => AuthState.SessionResponse?.IsGlobalAdmin == true;
 
-    private string UserLabel => AuthState.Session is null
+    private string UserLabel => AuthState.SessionResponse is null
         ? "Sistema interno"
-        : $"{AuthState.Session.DisplayName} · {AuthState.Session.Email}";
+        : $"{AuthState.SessionResponse.DisplayName} · {AuthState.SessionResponse.Email}";
 
     private void ToggleNav() => _navOpen = !_navOpen;
     private void CloseNav() { _navOpen = false; }
@@ -216,10 +216,10 @@
 
     private string GetUserName()
     {
-        if (AuthState.Session is null)
+        if (AuthState.SessionResponse is null)
             return "Usuário";
 
-        var displayName = AuthState.Session.DisplayName;
+        var displayName = AuthState.SessionResponse.DisplayName;
         if (string.IsNullOrWhiteSpace(displayName))
             return "Usuário";
 
@@ -229,10 +229,10 @@
 
     private string GetUserInitials()
     {
-        if (AuthState.Session is null)
+        if (AuthState.SessionResponse is null)
             return "U";
 
-        var displayName = AuthState.Session.DisplayName;
+        var displayName = AuthState.SessionResponse.DisplayName;
         if (string.IsNullOrWhiteSpace(displayName))
             return "U";
 
@@ -245,13 +245,13 @@
 
     private string GetUserRole()
     {
-        if (AuthState.Session is null)
+        if (AuthState.SessionResponse is null)
             return "Sem perfil";
 
-        if (AuthState.Session.IsGlobalAdmin)
+        if (AuthState.SessionResponse.IsGlobalAdmin)
             return "Administrador Global";
 
-        return AuthState.Session.Role switch
+        return AuthState.SessionResponse.Role switch
         {
             Bud.Shared.Contracts.CollaboratorRole.Leader => "Líder",
             Bud.Shared.Contracts.CollaboratorRole.IndividualContributor => "Colaborador",

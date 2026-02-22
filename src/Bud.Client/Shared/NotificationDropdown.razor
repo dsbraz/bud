@@ -59,7 +59,7 @@
 
     private bool isOpen;
     private bool isLoading;
-    private List<Bud.Shared.Contracts.NotificationDto> notifications = new();
+    private List<NotificationResponse> notifications = new();
 
     private async Task ToggleDropdown()
     {
@@ -91,7 +91,7 @@
         }
     }
 
-    private async Task HandleNotificationClick(Bud.Shared.Contracts.NotificationDto notification)
+    private async Task HandleNotificationClick(NotificationResponse notification)
     {
         if (!notification.IsRead)
         {

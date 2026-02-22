@@ -899,7 +899,7 @@ a {
     background: var(--color-hover);
 }
 
-/* Notification Dropdown */
+/* NotificationResponse Dropdown */
 .notification-dropdown-wrapper {
     position: relative;
 }
@@ -4355,7 +4355,7 @@ a {
         display: none;
     }
 
-    /* Phase 5: Notification panel full-width bottom sheet */
+    /* Phase 5: NotificationResponse panel full-width bottom sheet */
     .notification-panel {
         position: fixed;
         top: auto;

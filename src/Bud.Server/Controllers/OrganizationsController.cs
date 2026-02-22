@@ -1,10 +1,10 @@
-using Bud.Server.Application.Organizations;
+using Bud.Server.Application.UseCases.Organizations;
 using Bud.Server.Authorization;
 using Bud.Shared.Contracts;
-using Bud.Server.Domain.Model;
 using FluentValidation;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Bud.Server.Domain.Model;
 
 namespace Bud.Server.Controllers;
 
@@ -32,7 +32,7 @@ public sealed class OrganizationsController(
     [HttpPost]
     [Authorize(Policy = AuthorizationPolicies.GlobalAdmin)]
     [Consumes("application/json")]
-    [ProducesResponseType(typeof(Organization), StatusCodes.Status201Created)]
+    [ProducesResponseType(typeof(OrganizationResponse), StatusCodes.Status201Created)]
     [ProducesResponseType(typeof(ValidationProblemDetails), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status403Forbidden)]
@@ -58,7 +58,7 @@ public sealed class OrganizationsController(
     [HttpPatch("{id:guid}")]
     [Authorize(Policy = AuthorizationPolicies.GlobalAdmin)]
     [Consumes("application/json")]
-    [ProducesResponseType(typeof(Organization), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(OrganizationResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
     [ProducesResponseType(typeof(ValidationProblemDetails), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status403Forbidden)]
@@ -99,7 +99,7 @@ public sealed class OrganizationsController(
     /// <response code="200">Organização encontrada.</response>
     /// <response code="404">Organização não encontrada.</response>
     [HttpGet("{id:guid}")]
-    [ProducesResponseType(typeof(Organization), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(OrganizationResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
     public async Task<ActionResult<Organization>> GetById(Guid id, CancellationToken cancellationToken)
     {

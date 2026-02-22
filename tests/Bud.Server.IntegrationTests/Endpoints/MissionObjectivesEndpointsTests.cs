@@ -304,7 +304,7 @@ public class MissionObjectivesEndpointsTests : IClassFixture<CustomWebApplicatio
         var response = await _client.GetAsync($"/api/objectives/progress?ids={objective!.Id}");
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
-        var progress = await response.Content.ReadFromJsonAsync<List<ObjectiveProgressDto>>();
+        var progress = await response.Content.ReadFromJsonAsync<List<ObjectiveProgressResponse>>();
         progress.Should().NotBeNull();
     }
 

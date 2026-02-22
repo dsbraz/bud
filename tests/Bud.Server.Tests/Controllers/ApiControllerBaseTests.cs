@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Mvc;
 using Moq;
 using Xunit;
 using Bud.Server.Application.Common;
+using Bud.Server.Application.Mapping;
 
 namespace Bud.Server.Tests.Controllers;
 

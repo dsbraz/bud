@@ -24,27 +24,27 @@ public partial class Teams
     private bool showWorkspaceDropdown = false;
 
     // Estado do modal de criação — líder + colaboradores
-    private List<LeaderCollaboratorResponse> createLeaders = new();
+    private List<CollaboratorLeaderResponse> createLeaders = new();
     private string createLeaderId = "";
-    private List<CollaboratorSummaryDto> availableCollaboratorsForCreate = new();
-    private List<CollaboratorSummaryDto> assignedCollaboratorsForCreate = new();
+    private List<CollaboratorLookupResponse> availableCollaboratorsForCreate = new();
+    private List<CollaboratorLookupResponse> assignedCollaboratorsForCreate = new();
 
     // Estado do modal de edição
     private bool isEditModalOpen = false;
     private Team? selectedTeam = null;
-    private PatchTeamRequest editTeam = new();
+    private TeamEditModel editTeam = new();
     private string? editParentTeamId;
     private List<Team> editParentTeams = new();
-    private List<LeaderCollaboratorResponse> editLeaders = new();
+    private List<CollaboratorLeaderResponse> editLeaders = new();
     private string editLeaderId = "";
-    private List<CollaboratorSummaryDto> availableCollaboratorsForEdit = new();
-    private List<CollaboratorSummaryDto> assignedCollaboratorsForEdit = new();
+    private List<CollaboratorLookupResponse> availableCollaboratorsForEdit = new();
+    private List<CollaboratorLookupResponse> assignedCollaboratorsForEdit = new();
     private bool collaboratorsModified = false;
 
     // Estado do modal de detalhes
     private bool isDetailsModalOpen = false;
     private Team? detailsTeam = null;
-    private List<CollaboratorSummaryDto>? detailsTeamCollaborators = null;
+    private List<CollaboratorLookupResponse>? detailsTeamCollaborators = null;
 
     // Estado de confirmação de exclusão
     private Guid? deletingTeamId = null;
@@ -261,10 +261,9 @@ public partial class Teams
     private async Task OpenEditModal(Team team)
     {
         selectedTeam = team;
-        editTeam = new PatchTeamRequest
+        editTeam = new TeamEditModel
         {
-            Name = team.Name,
-            ParentTeamId = team.ParentTeamId
+            Name = team.Name
         };
         editParentTeamId = team.ParentTeamId?.ToString() ?? "";
         editLeaderId = team.LeaderId.ToString();
@@ -286,7 +285,7 @@ public partial class Teams
     {
         isEditModalOpen = false;
         selectedTeam = null;
-        editTeam = new();
+        editTeam = new TeamEditModel();
         editParentTeamId = null;
         editLeaderId = "";
         editParentTeams.Clear();
@@ -306,8 +305,12 @@ public partial class Teams
             return;
         }
 
-        editTeam.ParentTeamId = Guid.TryParse(editParentTeamId, out var parentId) ? parentId : null;
-        editTeam.LeaderId = leaderId;
+        var request = new PatchTeamRequest
+        {
+            Name = editTeam.Name,
+            ParentTeamId = Guid.TryParse(editParentTeamId, out var parentId) ? parentId : null,
+            LeaderId = leaderId
+        };
 
         if (collaboratorsModified && !assignedCollaboratorsForEdit.Any(c => c.Id == leaderId))
         {
@@ -318,7 +321,7 @@ public partial class Teams
         await UiOps.RunAsync(
             async () =>
             {
-                var result = await Api.UpdateTeamAsync(selectedTeam.Id, editTeam);
+                var result = await Api.UpdateTeamAsync(selectedTeam.Id, request);
                 if (result != null)
                 {
                     if (collaboratorsModified)
@@ -339,7 +342,7 @@ public partial class Teams
             "Não foi possível atualizar a equipe. Verifique os dados e tente novamente.");
     }
 
-    private void OnCreateCollaboratorsChanged(List<CollaboratorSummaryDto> collaborators)
+    private void OnCreateCollaboratorsChanged(List<CollaboratorLookupResponse> collaborators)
     {
         assignedCollaboratorsForCreate = collaborators;
     }
@@ -349,7 +352,7 @@ public partial class Teams
         availableCollaboratorsForCreate = await Api.GetCollaboratorSummariesAsync(search) ?? new();
     }
 
-    private void OnCollaboratorsChanged(List<CollaboratorSummaryDto> collaborators)
+    private void OnCollaboratorsChanged(List<CollaboratorLookupResponse> collaborators)
     {
         assignedCollaboratorsForEdit = collaborators;
         collaboratorsModified = true;
@@ -408,5 +411,10 @@ public partial class Teams
             deleteConfirmTimer?.Dispose();
             deleteConfirmTimer = null;
         }
+    }
+
+    private sealed class TeamEditModel
+    {
+        public string Name { get; set; } = string.Empty;
     }
 }

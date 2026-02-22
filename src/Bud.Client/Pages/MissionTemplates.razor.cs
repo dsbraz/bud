@@ -203,10 +203,10 @@ public partial class MissionTemplates : IDisposable
 
     // ---- Payload Builders ----
 
-    private CreateMissionTemplateRequest BuildCreateRequest(MissionWizardResult result)
+    private CreateTemplateRequest BuildCreateRequest(MissionWizardResult result)
     {
         var (objectives, metrics) = BuildTemplatePayload(result);
-        return new CreateMissionTemplateRequest
+        return new CreateTemplateRequest
         {
             Name = result.Name.Trim(),
             Description = string.IsNullOrWhiteSpace(result.Description) ? null : result.Description.Trim(),
@@ -215,10 +215,10 @@ public partial class MissionTemplates : IDisposable
         };
     }
 
-    private PatchMissionTemplateRequest BuildUpdateRequest(MissionWizardResult result)
+    private PatchTemplateRequest BuildUpdateRequest(MissionWizardResult result)
     {
         var (objectives, metrics) = BuildTemplatePayload(result);
-        return new PatchMissionTemplateRequest
+        return new PatchTemplateRequest
         {
             Name = result.Name.Trim(),
             Description = string.IsNullOrWhiteSpace(result.Description) ? null : result.Description.Trim(),
@@ -227,7 +227,7 @@ public partial class MissionTemplates : IDisposable
         };
     }
 
-    private static (List<MissionTemplateObjectiveDto> Objectives, List<MissionTemplateMetricDto> Metrics) BuildTemplatePayload(MissionWizardResult result)
+    private static (List<TemplateObjectiveRequest> Objectives, List<TemplateMetricRequest> Metrics) BuildTemplatePayload(MissionWizardResult result)
     {
         var objectiveIdByTempId = new Dictionary<string, Guid>();
 
@@ -237,7 +237,7 @@ public partial class MissionTemplates : IDisposable
                 var objectiveId = objective.OriginalId ?? Guid.NewGuid();
                 objectiveIdByTempId[objective.TempId] = objectiveId;
 
-                return new MissionTemplateObjectiveDto
+                return new TemplateObjectiveRequest
                 {
                     Id = objectiveId,
                     Name = objective.Name,
@@ -249,7 +249,7 @@ public partial class MissionTemplates : IDisposable
             .ToList();
 
         var metrics = result.Metrics
-            .Select((metric, index) => new MissionTemplateMetricDto
+            .Select((metric, index) => new TemplateMetricRequest
             {
                 Name = metric.Name,
                 Type = Enum.Parse<MetricType>(metric.Type),
@@ -259,7 +259,7 @@ public partial class MissionTemplates : IDisposable
                 MaxValue = metric.MaxValue,
                 Unit = ParseOptionalEnum<MetricUnit>(metric.Unit),
                 TargetText = metric.TargetText,
-                MissionTemplateObjectiveId = metric.ObjectiveTempId is not null && objectiveIdByTempId.TryGetValue(metric.ObjectiveTempId, out var objectiveId)
+                TemplateObjectiveId = metric.ObjectiveTempId is not null && objectiveIdByTempId.TryGetValue(metric.ObjectiveTempId, out var objectiveId)
                     ? objectiveId
                     : null
             })

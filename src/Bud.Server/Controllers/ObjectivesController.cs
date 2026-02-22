@@ -1,10 +1,10 @@
-using Bud.Server.Application.Objectives;
+using Bud.Server.Application.UseCases.Objectives;
 using Bud.Server.Authorization;
 using Bud.Shared.Contracts;
-using Bud.Server.Domain.Model;
 using FluentValidation;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Bud.Server.Domain.Model;
 
 namespace Bud.Server.Controllers;
 
@@ -36,7 +36,7 @@ public sealed class ObjectivesController(
     /// <response code="403">Sem permissão para criar objetivo.</response>
     [HttpPost]
     [Consumes("application/json")]
-    [ProducesResponseType(typeof(Objective), StatusCodes.Status201Created)]
+    [ProducesResponseType(typeof(ObjectiveResponse), StatusCodes.Status201Created)]
     [ProducesResponseType(typeof(ValidationProblemDetails), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status403Forbidden)]
@@ -61,7 +61,7 @@ public sealed class ObjectivesController(
     /// <response code="403">Sem permissão para atualizar objetivo.</response>
     [HttpPatch("{id:guid}")]
     [Consumes("application/json")]
-    [ProducesResponseType(typeof(Objective), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ObjectiveResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
     [ProducesResponseType(typeof(ValidationProblemDetails), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status403Forbidden)]
@@ -99,7 +99,7 @@ public sealed class ObjectivesController(
     /// <response code="200">Objetivo encontrado.</response>
     /// <response code="404">Objetivo não encontrado.</response>
     [HttpGet("{id:guid}")]
-    [ProducesResponseType(typeof(Objective), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ObjectiveResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
     public async Task<ActionResult<Objective>> GetById(Guid id, CancellationToken cancellationToken)
     {
@@ -161,9 +161,9 @@ public sealed class ObjectivesController(
     /// <response code="200">Progresso calculado com sucesso.</response>
     /// <response code="400">Parâmetro ids inválido.</response>
     [HttpGet("progress")]
-    [ProducesResponseType(typeof(List<ObjectiveProgressDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(List<ObjectiveProgressResponse>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
-    public async Task<ActionResult<List<ObjectiveProgressDto>>> GetProgress(
+    public async Task<ActionResult<List<ObjectiveProgressResponse>>> GetProgress(
         [FromQuery] string ids,
         CancellationToken cancellationToken)
     {

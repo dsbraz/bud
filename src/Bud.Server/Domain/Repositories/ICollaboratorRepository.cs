@@ -6,7 +6,7 @@ public interface ICollaboratorRepository
 {
     Task<Collaborator?> GetByIdAsync(Guid id, CancellationToken ct = default);
     Task<Collaborator?> GetByIdWithCollaboratorTeamsAsync(Guid id, CancellationToken ct = default);
-    Task<Bud.Shared.Contracts.PagedResult<Collaborator>> GetAllAsync(Guid? teamId, string? search, int page, int pageSize, CancellationToken ct = default);
+    Task<Bud.Shared.Contracts.Common.PagedResult<Collaborator>> GetAllAsync(Guid? teamId, string? search, int page, int pageSize, CancellationToken ct = default);
     Task<List<Collaborator>> GetLeadersAsync(Guid? organizationId, CancellationToken ct = default);
     Task<List<Collaborator>> GetSubordinatesAsync(Guid collaboratorId, int maxDepth, CancellationToken ct = default);
     Task<List<Team>> GetTeamsAsync(Guid collaboratorId, CancellationToken ct = default);

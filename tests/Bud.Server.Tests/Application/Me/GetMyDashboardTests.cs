@@ -1,4 +1,5 @@
-using Bud.Server.Application.Me;
+using Bud.Server.Application.Ports;
+using Bud.Server.Application.UseCases.Me;
 using Bud.Server.Domain.ReadModels;
 using Bud.Server.MultiTenancy;
 using FluentAssertions;
@@ -6,6 +7,7 @@ using Moq;
 using System.Security.Claims;
 using Xunit;
 using Bud.Server.Application.Common;
+using Bud.Server.Application.Mapping;
 
 namespace Bud.Server.Tests.Application.Me;
 

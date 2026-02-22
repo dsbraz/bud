@@ -59,7 +59,7 @@ public sealed class CreateCollaboratorValidatorTests
         var result = await _validator.ValidateAsync(request);
 
         result.IsValid.Should().BeFalse();
-        result.Errors.Should().Contain(e => e.PropertyName == "FullName");
+        result.Errors.Should().Contain(e => e.PropertyName.Contains("FullName"));
     }
 
     [Theory]
@@ -77,7 +77,7 @@ public sealed class CreateCollaboratorValidatorTests
         var result = await _validator.ValidateAsync(request);
 
         result.IsValid.Should().BeFalse();
-        result.Errors.Should().Contain(e => e.PropertyName == "Email");
+        result.Errors.Should().Contain(e => e.PropertyName.Contains("Email"));
     }
 
     [Theory]
@@ -96,7 +96,7 @@ public sealed class CreateCollaboratorValidatorTests
         var result = await _validator.ValidateAsync(request);
 
         result.IsValid.Should().BeFalse();
-        result.Errors.Should().Contain(e => e.PropertyName == "Email" && e.ErrorMessage.Contains("E-mail deve ser válido"));
+        result.Errors.Should().Contain(e => e.PropertyName.Contains("Email") && e.ErrorMessage.Contains("E-mail deve ser válido"));
     }
 
     [Fact]
@@ -115,7 +115,7 @@ public sealed class CreateCollaboratorValidatorTests
         var result = await _validator.ValidateAsync(request);
 
         result.IsValid.Should().BeFalse();
-        result.Errors.Should().Contain(e => e.PropertyName == "Email" && e.ErrorMessage.Contains("E-mail já está em uso"));
+        result.Errors.Should().Contain(e => e.PropertyName.Contains("Email") && e.ErrorMessage.Contains("E-mail já está em uso"));
     }
 
     [Fact]
@@ -135,6 +135,6 @@ public sealed class CreateCollaboratorValidatorTests
         var result = await _validator.ValidateAsync(request);
 
         result.IsValid.Should().BeFalse();
-        result.Errors.Should().Contain(e => e.PropertyName == "LeaderId");
+        result.Errors.Should().Contain(e => e.PropertyName.Contains("LeaderId"));
     }
 }

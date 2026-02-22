@@ -1,7 +1,8 @@
 using Bud.Server.Domain.Repositories;
 using System.Security.Claims;
 using Bud.Server.Application.Common;
-using Bud.Server.Application.Workspaces;
+using Bud.Server.Application.Mapping;
+using Bud.Server.Application.UseCases.Workspaces;
 using Bud.Server.Authorization;
 using Bud.Shared.Contracts;
 using Bud.Server.Domain.Model;

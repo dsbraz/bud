@@ -12,7 +12,7 @@ public sealed class McpSessionContext(
 {
     public string SessionId { get; } = sessionId;
     public HttpClient HttpClient { get; } = httpClient;
-    public BudApiSession Session { get; } = session;
+    public BudApiSession SessionResponse { get; } = session;
     public BudApiClient ApiClient { get; } = apiClient;
     public McpToolService ToolService { get; } = toolService;
 

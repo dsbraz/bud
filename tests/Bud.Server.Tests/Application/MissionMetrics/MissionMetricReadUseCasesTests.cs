@@ -1,5 +1,6 @@
 using Bud.Server.Application.Common;
-using Bud.Server.Application.Metrics;
+using Bud.Server.Application.Mapping;
+using Bud.Server.Application.UseCases.Metrics;
 using Bud.Server.Domain.ReadModels;
 using Bud.Server.Domain.Model;
 using Bud.Server.Domain.Repositories;

@@ -39,7 +39,7 @@ public sealed class McpHttpEndpointsTests : IClassFixture<WebApplicationFactory<
         var response = await client.PostAsJsonAsync("/", payload);
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
-        response.Headers.Contains("MCP-Session-Id").Should().BeTrue();
+        response.Headers.Contains("MCP-SessionResponse-Id").Should().BeTrue();
     }
 
     [Fact]
@@ -59,7 +59,7 @@ public sealed class McpHttpEndpointsTests : IClassFixture<WebApplicationFactory<
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         body.Should().NotBeNull();
         body!["error"]!["message"]!.GetValue<string>()
-            .Should().Be("Header MCP-Session-Id é obrigatório para este método.");
+            .Should().Be("Header MCP-SessionResponse-Id é obrigatório para este método.");
     }
 
     [Fact]
@@ -73,7 +73,7 @@ public sealed class McpHttpEndpointsTests : IClassFixture<WebApplicationFactory<
             method = "initialize"
         };
         var initializeResponse = await client.PostAsJsonAsync("/", initializePayload);
-        var sessionId = initializeResponse.Headers.GetValues("MCP-Session-Id").Single();
+        var sessionId = initializeResponse.Headers.GetValues("MCP-SessionResponse-Id").Single();
 
         var listRequest = new HttpRequestMessage(HttpMethod.Post, "/")
         {
@@ -84,7 +84,7 @@ public sealed class McpHttpEndpointsTests : IClassFixture<WebApplicationFactory<
                 method = "tools/list"
             })
         };
-        listRequest.Headers.Add("MCP-Session-Id", sessionId);
+        listRequest.Headers.Add("MCP-SessionResponse-Id", sessionId);
 
         var listResponse = await client.SendAsync(listRequest);
         var body = await listResponse.Content.ReadFromJsonAsync<JsonObject>();
@@ -105,7 +105,7 @@ public sealed class McpHttpEndpointsTests : IClassFixture<WebApplicationFactory<
             method = "initialize"
         };
         var initializeResponse = await client.PostAsJsonAsync("/", initializePayload);
-        var sessionId = initializeResponse.Headers.GetValues("MCP-Session-Id").Single();
+        var sessionId = initializeResponse.Headers.GetValues("MCP-SessionResponse-Id").Single();
 
         var promptsRequest = new HttpRequestMessage(HttpMethod.Post, "/")
         {
@@ -116,7 +116,7 @@ public sealed class McpHttpEndpointsTests : IClassFixture<WebApplicationFactory<
                 method = "prompts/list"
             })
         };
-        promptsRequest.Headers.Add("MCP-Session-Id", sessionId);
+        promptsRequest.Headers.Add("MCP-SessionResponse-Id", sessionId);
 
         var promptsResponse = await client.SendAsync(promptsRequest);
         var body = await promptsResponse.Content.ReadFromJsonAsync<JsonObject>();
@@ -150,7 +150,7 @@ public sealed class McpHttpEndpointsTests : IClassFixture<WebApplicationFactory<
                 method = "tools/list"
             })
         };
-        request.Headers.Add("MCP-Session-Id", "not-a-guid");
+        request.Headers.Add("MCP-SessionResponse-Id", "not-a-guid");
 
         var response = await client.SendAsync(request);
         var body = await response.Content.ReadFromJsonAsync<JsonObject>();
@@ -158,6 +158,6 @@ public sealed class McpHttpEndpointsTests : IClassFixture<WebApplicationFactory<
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         body.Should().NotBeNull();
         body!["error"]!["message"]!.GetValue<string>()
-            .Should().Be("Header MCP-Session-Id deve ser um GUID válido.");
+            .Should().Be("Header MCP-SessionResponse-Id deve ser um GUID válido.");
     }
 }

@@ -28,6 +28,6 @@ public sealed class UpdateCollaboratorValidatorTests
         var result = await validator.ValidateAsync(request);
 
         result.IsValid.Should().BeFalse();
-        result.Errors.Should().Contain(e => e.PropertyName == "LeaderId");
+        result.Errors.Should().Contain(e => e.PropertyName.Contains("LeaderId"));
     }
 }

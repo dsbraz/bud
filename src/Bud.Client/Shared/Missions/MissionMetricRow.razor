@@ -40,20 +40,20 @@
 @code {
     [Parameter, EditorRequired] public Mission Mission { get; set; } = default!;
     [Parameter, EditorRequired] public Metric Metric { get; set; } = default!;
-    [Parameter] public MissionProgressDto? MissionProgress { get; set; }
-    [Parameter] public MetricProgressDto? MetricProgress { get; set; }
+    [Parameter] public MissionProgressResponse? MissionProgressResponse { get; set; }
+    [Parameter] public MetricProgressResponse? MetricProgressResponse { get; set; }
     [Parameter] public EventCallback<Metric> OnCheckinClick { get; set; }
     [Parameter] public EventCallback<Metric> OnHistoryClick { get; set; }
 
-    private int MetricProgressPercent => (int)(MetricProgress?.Progress ?? 0);
-    private decimal ExpectedProgress => MissionProgress?.ExpectedProgress ?? 0m;
-    private bool IsMetricOutdated => MetricProgress?.IsOutdated ?? true;
+    private int MetricProgressPercent => (int)(MetricProgressResponse?.Progress ?? 0);
+    private decimal ExpectedProgress => MissionProgressResponse?.ExpectedProgress ?? 0m;
+    private bool IsMetricOutdated => MetricProgressResponse?.IsOutdated ?? true;
 
     private string MetricStatusClass => GetMetricStatusClass(MetricProgressPercent, ExpectedProgress);
     private string MetricStatusLabel => GetMetricStatusLabel(MetricProgressPercent, ExpectedProgress, Metric);
 
-    private bool HasLastCheckinAuthor => MetricProgress?.LastCheckinCollaboratorName is not null;
-    private string LastCheckinAuthorName => MetricProgress?.LastCheckinCollaboratorName ?? "Último check-in";
+    private bool HasLastCheckinAuthor => MetricProgressResponse?.LastCheckinCollaboratorName is not null;
+    private string LastCheckinAuthorName => MetricProgressResponse?.LastCheckinCollaboratorName ?? "Último check-in";
 
     private string GetQuarterLabel()
     {

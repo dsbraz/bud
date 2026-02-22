@@ -45,7 +45,7 @@ public class CreateOrganizationValidatorTests
 
         // Assert
         result.IsValid.Should().BeFalse();
-        result.Errors.Should().Contain(e => e.PropertyName == "Name");
+        result.Errors.Should().Contain(e => e.PropertyName.Contains("Name"));
     }
 
     [Fact]
@@ -65,7 +65,7 @@ public class CreateOrganizationValidatorTests
 
         // Assert
         result.IsValid.Should().BeFalse();
-        result.Errors.Should().Contain(e => e.PropertyName == "Name" && e.ErrorMessage.Contains("200"));
+        result.Errors.Should().Contain(e => e.PropertyName.Contains("Name") && e.ErrorMessage.Contains("200"));
     }
 
     [Fact]
@@ -132,7 +132,7 @@ public class CreateOrganizationValidatorTests
 
         // Assert
         result.IsValid.Should().BeFalse();
-        result.Errors.Should().Contain(e => e.PropertyName == "Name");
+        result.Errors.Should().Contain(e => e.PropertyName.Contains("Name"));
     }
 
     [Fact]
@@ -150,6 +150,6 @@ public class CreateOrganizationValidatorTests
 
         // Assert
         result.IsValid.Should().BeFalse();
-        result.Errors.Should().Contain(e => e.PropertyName == "OwnerId");
+        result.Errors.Should().Contain(e => e.PropertyName.Contains("OwnerId"));
     }
 }

@@ -163,7 +163,7 @@
     // Estado do modal de edição
     private bool isEditModalOpen = false;
     private Workspace? selectedWorkspace = null;
-    private PatchWorkspaceRequest editWorkspace = new();
+    private WorkspaceEditModel editWorkspace = new();
 
     // Estado do modal de detalhes
     private bool isDetailsModalOpen = false;
@@ -302,7 +302,7 @@
     private void OpenEditModal(Workspace workspace)
     {
         selectedWorkspace = workspace;
-        editWorkspace = new PatchWorkspaceRequest
+        editWorkspace = new WorkspaceEditModel
         {
             Name = workspace.Name
         };
@@ -313,7 +313,7 @@
     {
         isEditModalOpen = false;
         selectedWorkspace = null;
-        editWorkspace = new();
+        editWorkspace = new WorkspaceEditModel();
     }
 
     private async Task UpdateWorkspace()
@@ -323,7 +323,11 @@
         await UiOps.RunAsync(
             async () =>
             {
-                var result = await Api.UpdateWorkspaceAsync(selectedWorkspace.Id, editWorkspace);
+                var request = new PatchWorkspaceRequest
+                {
+                    Name = editWorkspace.Name
+                };
+                var result = await Api.UpdateWorkspaceAsync(selectedWorkspace.Id, request);
                 if (result != null)
                 {
                     ToastService.ShowSuccess("Espaço de trabalho atualizado", "As alterações foram salvas com sucesso.");
@@ -382,5 +386,10 @@
             deleteConfirmTimer?.Dispose();
             deleteConfirmTimer = null;
         }
+    }
+
+    private sealed class WorkspaceEditModel
+    {
+        public string Name { get; set; } = string.Empty;
     }
 }

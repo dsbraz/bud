@@ -7,6 +7,7 @@ using FluentAssertions;
 using Microsoft.EntityFrameworkCore;
 using Xunit;
 using Bud.Server.Application.Common;
+using Bud.Server.Application.Mapping;
 
 namespace Bud.Server.Tests.Infrastructure.Services;
 

@@ -7,7 +7,7 @@
 @inject OrganizationContext OrgContext
 @inject UiOperationService UiOps
 
-@if (AuthState.Session?.IsGlobalAdmin != true)
+@if (AuthState.SessionResponse?.IsGlobalAdmin != true)
 {
     <div class="card">
         <p class="muted">Você não tem permissão para acessar esta página. Apenas administradores podem gerenciar organizações.</p>
@@ -20,7 +20,7 @@ else
         Title="Organizações"
         Subtitle="Crie e liste organizações cadastradas."
         PrimaryActionText="Nova organização"
-        ShowPrimaryAction="@(AuthState.Session?.IsGlobalAdmin == true)"
+        ShowPrimaryAction="@(AuthState.SessionResponse?.IsGlobalAdmin == true)"
         OnPrimaryAction="OpenCreateModal" />
 
 <div class="card">
@@ -87,7 +87,7 @@ else
 @if (isModalOpen)
 {
     <Modal Title="@(modalMode == "create" ? "Criar organização" : "Editar organização")" OnClose="CloseModal">
-        @if (AuthState.Session?.IsGlobalAdmin == true)
+        @if (AuthState.SessionResponse?.IsGlobalAdmin == true)
         {
             @if (modalMode == "create")
             {

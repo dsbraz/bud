@@ -13,18 +13,18 @@ public sealed class TenantDelegatingHandler(
     {
         await authState.EnsureInitializedAsync();
 
-        if (authState.Session is not null)
+        if (authState.SessionResponse is not null)
         {
             // Add JWT Authorization header
-            if (!string.IsNullOrEmpty(authState.Session.Token))
+            if (!string.IsNullOrEmpty(authState.SessionResponse.Token))
             {
-                request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", authState.Session.Token);
+                request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", authState.SessionResponse.Token);
             }
 
             // Add user email header for organization lookup
-            if (!string.IsNullOrEmpty(authState.Session.Email))
+            if (!string.IsNullOrEmpty(authState.SessionResponse.Email))
             {
-                request.Headers.Add("X-User-Email", authState.Session.Email);
+                request.Headers.Add("X-User-Email", authState.SessionResponse.Email);
             }
 
             // Use the selected organization from OrganizationContext

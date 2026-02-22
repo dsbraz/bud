@@ -1,6 +1,7 @@
 using System.Security.Claims;
 using Bud.Server.Application.Common;
-using Bud.Server.Application.MissionTemplates;
+using Bud.Server.Application.Mapping;
+using Bud.Server.Application.UseCases.Templates;
 using Bud.Server.Authorization;
 using Bud.Server.Domain.Model;
 using Bud.Server.Domain.Repositories;
@@ -16,7 +17,7 @@ public sealed class MissionTemplateUseCasesTests
 {
     private static readonly ClaimsPrincipal User = new(new ClaimsIdentity([new Claim(ClaimTypes.Name, "test")]));
 
-    private readonly Mock<IMissionTemplateRepository> _repository = new();
+    private readonly Mock<ITemplateRepository> _repository = new();
     private readonly Mock<IApplicationAuthorizationGateway> _authorizationGateway = new();
     private readonly Mock<ITenantProvider> _tenantProvider = new();
 
@@ -34,12 +35,12 @@ public sealed class MissionTemplateUseCasesTests
             _authorizationGateway.Object,
             _tenantProvider.Object);
 
-        var request = new CreateMissionTemplateRequest
+        var request = new CreateTemplateRequest
         {
             Name = "Template",
             Metrics =
             [
-                new MissionTemplateMetricDto
+                new TemplateMetricRequest
                 {
                     Name = "Metric",
                     Type = Bud.Shared.Contracts.MetricType.Qualitative,
@@ -71,7 +72,7 @@ public sealed class MissionTemplateUseCasesTests
             _authorizationGateway.Object,
             _tenantProvider.Object);
 
-        var result = await useCase.ExecuteAsync(User, new CreateMissionTemplateRequest { Name = "Template" });
+        var result = await useCase.ExecuteAsync(User, new CreateTemplateRequest { Name = "Template" });
 
         result.IsSuccess.Should().BeFalse();
         result.ErrorType.Should().Be(ErrorType.Forbidden);
@@ -104,7 +105,7 @@ public sealed class MissionTemplateUseCasesTests
             _repository.Object,
             _authorizationGateway.Object);
 
-        var result = await useCase.ExecuteAsync(User, template.Id, new PatchMissionTemplateRequest { Name = "Updated" });
+        var result = await useCase.ExecuteAsync(User, template.Id, new PatchTemplateRequest { Name = "Updated" });
 
         result.IsSuccess.Should().BeTrue();
         result.Value!.Name.Should().Be("Updated");
@@ -122,7 +123,7 @@ public sealed class MissionTemplateUseCasesTests
             _repository.Object,
             _authorizationGateway.Object);
 
-        var result = await useCase.ExecuteAsync(User, Guid.NewGuid(), new PatchMissionTemplateRequest { Name = "Updated" });
+        var result = await useCase.ExecuteAsync(User, Guid.NewGuid(), new PatchTemplateRequest { Name = "Updated" });
 
         result.IsSuccess.Should().BeFalse();
         result.ErrorType.Should().Be(ErrorType.NotFound);

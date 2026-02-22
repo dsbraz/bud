@@ -1,10 +1,10 @@
-using Bud.Server.Application.Teams;
+using Bud.Server.Application.UseCases.Teams;
 using Bud.Server.Authorization;
 using Bud.Shared.Contracts;
-using Bud.Server.Domain.Model;
 using FluentValidation;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Bud.Server.Domain.Model;
 
 namespace Bud.Server.Controllers;
 
@@ -35,7 +35,7 @@ public sealed class TeamsController(
     /// <response code="403">Sem permissão para criar time.</response>
     [HttpPost]
     [Consumes("application/json")]
-    [ProducesResponseType(typeof(Team), StatusCodes.Status201Created)]
+    [ProducesResponseType(typeof(TeamResponse), StatusCodes.Status201Created)]
     [ProducesResponseType(typeof(ValidationProblemDetails), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status403Forbidden)]
@@ -60,7 +60,7 @@ public sealed class TeamsController(
     /// <response code="403">Sem permissão para atualizar time.</response>
     [HttpPatch("{id:guid}")]
     [Consumes("application/json")]
-    [ProducesResponseType(typeof(Team), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(TeamResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
     [ProducesResponseType(typeof(ValidationProblemDetails), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status403Forbidden)]
@@ -100,7 +100,7 @@ public sealed class TeamsController(
     /// <response code="200">Time encontrado.</response>
     /// <response code="404">Time não encontrado.</response>
     [HttpGet("{id:guid}")]
-    [ProducesResponseType(typeof(Team), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(TeamResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
     public async Task<ActionResult<Team>> GetById(Guid id, CancellationToken cancellationToken)
     {
@@ -202,9 +202,9 @@ public sealed class TeamsController(
     /// Lista opções simplificadas de colaboradores do time.
     /// </summary>
     [HttpGet("{id:guid}/collaborators/lookup")]
-    [ProducesResponseType(typeof(List<CollaboratorSummaryDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(List<CollaboratorLookupResponse>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
-    public async Task<ActionResult<List<CollaboratorSummaryDto>>> GetCollaboratorOptions(
+    public async Task<ActionResult<List<CollaboratorLookupResponse>>> GetCollaboratorOptions(
         Guid id,
         CancellationToken cancellationToken = default)
     {
@@ -216,10 +216,10 @@ public sealed class TeamsController(
     /// Lista colaboradores disponíveis para associação ao time.
     /// </summary>
     [HttpGet("{id:guid}/collaborators/eligible-for-assignment")]
-    [ProducesResponseType(typeof(List<CollaboratorSummaryDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(List<CollaboratorLookupResponse>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
-    public async Task<ActionResult<List<CollaboratorSummaryDto>>> GetAvailableCollaborators(
+    public async Task<ActionResult<List<CollaboratorLookupResponse>>> GetAvailableCollaborators(
         Guid id,
         [FromQuery] string? search = null,
         CancellationToken cancellationToken = default)

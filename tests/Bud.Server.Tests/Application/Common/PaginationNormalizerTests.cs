@@ -1,4 +1,5 @@
 using Bud.Server.Application.Common;
+using Bud.Server.Application.Mapping;
 using FluentAssertions;
 using Xunit;
 

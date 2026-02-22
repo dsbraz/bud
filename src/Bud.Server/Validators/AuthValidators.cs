@@ -4,12 +4,12 @@ using FluentValidation;
 
 namespace Bud.Server.Validators;
 
-public sealed class AuthLoginRequestValidator : AbstractValidator<AuthLoginRequest>
+public sealed class CreateSessionRequestValidator : AbstractValidator<CreateSessionRequest>
 {
     private const string AdminAlias = "admin";
     private static readonly EmailAddressAttribute EmailValidator = new();
 
-    public AuthLoginRequestValidator()
+    public CreateSessionRequestValidator()
     {
         RuleFor(x => x.Email)
             .NotEmpty()

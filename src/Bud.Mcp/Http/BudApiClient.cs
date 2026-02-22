@@ -61,8 +61,8 @@ public sealed class BudApiClient(HttpClient httpClient, BudApiSession session)
     public Task DeleteMissionMetricAsync(Guid id, CancellationToken cancellationToken = default)
         => DeleteAsync($"/api/metrics/{id}", cancellationToken);
 
-    public Task<MetricCheckin> CreateMetricCheckinAsync(CreateCheckinRequest request, CancellationToken cancellationToken = default)
-        => PostAsync<CreateCheckinRequest, MetricCheckin>($"/api/metrics/{request.MetricId}/checkins", request, cancellationToken);
+    public Task<MetricCheckin> CreateMetricCheckinAsync(Guid metricId, CreateCheckinRequest request, CancellationToken cancellationToken = default)
+        => PostAsync<CreateCheckinRequest, MetricCheckin>($"/api/metrics/{metricId}/checkins", request, cancellationToken);
 
     public Task<MetricCheckin> GetMetricCheckinAsync(Guid metricId, Guid id, CancellationToken cancellationToken = default)
         => GetAsync<MetricCheckin>($"/api/metrics/{metricId}/checkins/{id}", cancellationToken);

@@ -1,6 +1,7 @@
 using Bud.Server.Domain.Repositories;
 using Bud.Server.Application.Common;
-using Bud.Server.Application.Metrics;
+using Bud.Server.Application.Mapping;
+using Bud.Server.Application.UseCases.Metrics;
 using Bud.Shared.Contracts;
 using Bud.Server.Domain.Model;
 using FluentAssertions;

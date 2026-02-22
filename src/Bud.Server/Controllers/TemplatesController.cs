@@ -1,10 +1,10 @@
-using Bud.Server.Application.MissionTemplates;
+using Bud.Server.Application.UseCases.Templates;
 using Bud.Server.Authorization;
 using Bud.Shared.Contracts;
-using Bud.Server.Domain.Model;
 using FluentValidation;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Bud.Server.Domain.Model;
 
 namespace Bud.Server.Controllers;
 
@@ -18,8 +18,8 @@ public sealed class TemplatesController(
     DeleteTemplate deleteTemplate,
     GetTemplateById getTemplateById,
     ListTemplates listTemplates,
-    IValidator<CreateMissionTemplateRequest> createValidator,
-    IValidator<PatchMissionTemplateRequest> updateValidator) : ApiControllerBase
+    IValidator<CreateTemplateRequest> createValidator,
+    IValidator<PatchTemplateRequest> updateValidator) : ApiControllerBase
 {
     /// <summary>
     /// Cria um novo template de missão.
@@ -28,9 +28,9 @@ public sealed class TemplatesController(
     /// <response code="400">Payload inválido ou erro de validação.</response>
     [HttpPost]
     [Consumes("application/json")]
-    [ProducesResponseType(typeof(MissionTemplate), StatusCodes.Status201Created)]
+    [ProducesResponseType(typeof(TemplateResponse), StatusCodes.Status201Created)]
     [ProducesResponseType(typeof(ValidationProblemDetails), StatusCodes.Status400BadRequest)]
-    public async Task<ActionResult<MissionTemplate>> Create(CreateMissionTemplateRequest request, CancellationToken cancellationToken)
+    public async Task<ActionResult<MissionTemplate>> Create(CreateTemplateRequest request, CancellationToken cancellationToken)
     {
         var validationResult = await createValidator.ValidateAsync(request, cancellationToken);
         if (!validationResult.IsValid)
@@ -50,10 +50,10 @@ public sealed class TemplatesController(
     /// <response code="404">Template não encontrado.</response>
     [HttpPatch("{id:guid}")]
     [Consumes("application/json")]
-    [ProducesResponseType(typeof(MissionTemplate), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(TemplateResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ValidationProblemDetails), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
-    public async Task<ActionResult<MissionTemplate>> Update(Guid id, PatchMissionTemplateRequest request, CancellationToken cancellationToken)
+    public async Task<ActionResult<MissionTemplate>> Update(Guid id, PatchTemplateRequest request, CancellationToken cancellationToken)
     {
         var validationResult = await updateValidator.ValidateAsync(request, cancellationToken);
         if (!validationResult.IsValid)
@@ -85,7 +85,7 @@ public sealed class TemplatesController(
     /// <response code="200">Template encontrado.</response>
     /// <response code="404">Template não encontrado.</response>
     [HttpGet("{id:guid}")]
-    [ProducesResponseType(typeof(MissionTemplate), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(TemplateResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
     public async Task<ActionResult<MissionTemplate>> GetById(Guid id, CancellationToken cancellationToken)
     {

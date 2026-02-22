@@ -96,8 +96,8 @@
                         var objMetrics = Metrics.Where(m => m.ObjectiveId == objective.Id).ToList();
                         <MissionObjectiveSection Mission="Mission"
                                                  Objective="objective"
-                                                 ObjectiveProgress="@(ObjectiveProgressCache.GetValueOrDefault(objective.Id))"
-                                                 MissionProgress="Progress"
+                                                 ObjectiveProgressResponse="@(ObjectiveProgressCache.GetValueOrDefault(objective.Id))"
+                                                 MissionProgressResponse="Progress"
                                                  ObjectiveMetrics="objMetrics"
                                                  MetricProgressCache="MetricProgressCache"
                                                  IsExpanded="@(ExpandedObjectives.Contains(objective.Id))"
@@ -118,8 +118,8 @@
                     {
                         <MissionMetricRow Mission="Mission"
                                           Metric="metric"
-                                          MissionProgress="Progress"
-                                          MetricProgress="@(MetricProgressCache.GetValueOrDefault(metric.Id))"
+                                          MissionProgressResponse="Progress"
+                                          MetricProgressResponse="@(MetricProgressCache.GetValueOrDefault(metric.Id))"
                                           OnCheckinClick="OnCheckinClick"
                                           OnHistoryClick="OnHistoryClick" />
                     }
@@ -136,13 +136,13 @@
 
 @code {
     [Parameter, EditorRequired] public Mission Mission { get; set; } = default!;
-    [Parameter] public MissionProgressDto? Progress { get; set; }
+    [Parameter] public MissionProgressResponse? Progress { get; set; }
     [Parameter] public bool IsExpanded { get; set; }
     [Parameter] public bool IsDeleting { get; set; }
     [Parameter] public List<Metric>? Metrics { get; set; }
     [Parameter] public List<Objective>? Objectives { get; set; }
-    [Parameter] public Dictionary<Guid, MetricProgressDto> MetricProgressCache { get; set; } = new();
-    [Parameter] public Dictionary<Guid, ObjectiveProgressDto> ObjectiveProgressCache { get; set; } = new();
+    [Parameter] public Dictionary<Guid, MetricProgressResponse> MetricProgressCache { get; set; } = new();
+    [Parameter] public Dictionary<Guid, ObjectiveProgressResponse> ObjectiveProgressCache { get; set; } = new();
     [Parameter] public HashSet<Guid> ExpandedObjectives { get; set; } = new();
     [Parameter] public EventCallback OnToggleExpand { get; set; }
     [Parameter] public EventCallback OnEdit { get; set; }

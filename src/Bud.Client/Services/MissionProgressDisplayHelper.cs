@@ -4,7 +4,7 @@ namespace Bud.Client.Services;
 
 public static class MissionProgressDisplayHelper
 {
-    public static string GetMissionProgressStatusClass(MissionProgressDto? progress)
+    public static string GetMissionProgressStatusClass(MissionProgressResponse? progress)
     {
         if (progress is null || progress.MetricsWithCheckins == 0)
         {
@@ -19,7 +19,7 @@ public static class MissionProgressDisplayHelper
         return progress.OverallProgress >= progress.ExpectedProgress * 0.7m ? "at-risk" : "off-track";
     }
 
-    public static string GetMetricProgressStatusClass(MetricProgressDto progress)
+    public static string GetMetricProgressStatusClass(MetricProgressResponse progress)
     {
         if (!progress.HasCheckins)
         {

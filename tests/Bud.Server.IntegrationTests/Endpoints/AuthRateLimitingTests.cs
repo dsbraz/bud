@@ -15,7 +15,7 @@ public sealed class AuthRateLimitingTests(CustomWebApplicationFactory factory)
         // Arrange
         var client = factory.CreateClient();
 
-        var payload = new AuthLoginRequest { Email = "admin@getbud.co" };
+        var payload = new CreateSessionRequest { Email = "admin@getbud.co" };
 
         // Act — send requests up to and beyond the default limit (10/min)
         var responses = new List<HttpResponseMessage>();

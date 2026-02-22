@@ -29,7 +29,7 @@ public class NotificationsEndpointsTests : IClassFixture<CustomWebApplicationFac
         var collaborator = new Collaborator
         {
             Id = Guid.NewGuid(),
-            FullName = "Notification User",
+            FullName = "NotificationResponse User",
             Email = $"notif-{Guid.NewGuid()}@example.com",
             OrganizationId = org.Id,
             Role = Bud.Server.Domain.Model.CollaboratorRole.IndividualContributor
@@ -53,7 +53,7 @@ public class NotificationsEndpointsTests : IClassFixture<CustomWebApplicationFac
                 Id = Guid.NewGuid(),
                 RecipientCollaboratorId = collaboratorId,
                 OrganizationId = orgId,
-                Title = $"Notification {i}",
+                Title = $"NotificationResponse {i}",
                 Message = $"Message {i}",
                 Type = NotificationType.MissionCreated,
                 IsRead = read,
@@ -78,7 +78,7 @@ public class NotificationsEndpointsTests : IClassFixture<CustomWebApplicationFac
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.OK);
-        var result = await response.Content.ReadFromJsonAsync<PagedResult<NotificationDto>>();
+        var result = await response.Content.ReadFromJsonAsync<PagedResult<NotificationResponse>>();
         result.Should().NotBeNull();
         result!.Items.Should().HaveCount(3);
         result.Total.Should().Be(5);
@@ -98,7 +98,7 @@ public class NotificationsEndpointsTests : IClassFixture<CustomWebApplicationFac
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.OK);
-        var result = await response.Content.ReadFromJsonAsync<PagedResult<NotificationDto>>();
+        var result = await response.Content.ReadFromJsonAsync<PagedResult<NotificationResponse>>();
         result.Should().NotBeNull();
         result!.Total.Should().Be(3);
         result.Items.Should().OnlyContain(n => !n.IsRead);
@@ -159,7 +159,7 @@ public class NotificationsEndpointsTests : IClassFixture<CustomWebApplicationFac
 
         // Verify unread count is 0
         var listResponse = await client.GetAsync("/api/notifications?isRead=false&page=1&pageSize=10");
-        var result = await listResponse.Content.ReadFromJsonAsync<PagedResult<NotificationDto>>();
+        var result = await listResponse.Content.ReadFromJsonAsync<PagedResult<NotificationResponse>>();
         result!.Total.Should().Be(0);
     }
 

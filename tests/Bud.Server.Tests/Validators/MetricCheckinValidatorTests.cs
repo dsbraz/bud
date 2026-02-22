@@ -14,7 +14,6 @@ public class CreateMetricCheckinValidatorTests
     {
         var request = new CreateCheckinRequest
         {
-            MetricId = Guid.NewGuid(),
             Value = 42m,
             CheckinDate = DateTime.UtcNow,
             ConfidenceLevel = 3,
@@ -27,19 +26,17 @@ public class CreateMetricCheckinValidatorTests
     }
 
     [Fact]
-    public async Task Validate_EmptyMissionMetricId_Fails()
+    public async Task Validate_MinimalPayload_Passes()
     {
         var request = new CreateCheckinRequest
         {
-            MetricId = Guid.Empty,
             CheckinDate = DateTime.UtcNow,
             ConfidenceLevel = 3
         };
 
         var result = await _validator.ValidateAsync(request);
 
-        result.IsValid.Should().BeFalse();
-        result.Errors.Should().Contain(e => e.PropertyName == "MetricId");
+        result.IsValid.Should().BeTrue();
     }
 
     [Fact]
@@ -47,7 +44,6 @@ public class CreateMetricCheckinValidatorTests
     {
         var request = new CreateCheckinRequest
         {
-            MetricId = Guid.NewGuid(),
             CheckinDate = default,
             ConfidenceLevel = 3
         };
@@ -55,7 +51,7 @@ public class CreateMetricCheckinValidatorTests
         var result = await _validator.ValidateAsync(request);
 
         result.IsValid.Should().BeFalse();
-        result.Errors.Should().Contain(e => e.PropertyName == "CheckinDate");
+        result.Errors.Should().Contain(e => e.PropertyName.Contains("CheckinDate"));
     }
 
     [Theory]
@@ -67,7 +63,6 @@ public class CreateMetricCheckinValidatorTests
     {
         var request = new CreateCheckinRequest
         {
-            MetricId = Guid.NewGuid(),
             CheckinDate = DateTime.UtcNow,
             ConfidenceLevel = confidenceLevel
         };
@@ -76,7 +71,7 @@ public class CreateMetricCheckinValidatorTests
 
         result.IsValid.Should().BeFalse();
         result.Errors.Should().Contain(e =>
-            e.PropertyName == "ConfidenceLevel" &&
+            e.PropertyName.Contains("ConfidenceLevel") &&
             e.ErrorMessage.Contains("entre 1 e 5"));
     }
 
@@ -88,7 +83,6 @@ public class CreateMetricCheckinValidatorTests
     {
         var request = new CreateCheckinRequest
         {
-            MetricId = Guid.NewGuid(),
             CheckinDate = DateTime.UtcNow,
             ConfidenceLevel = confidenceLevel
         };
@@ -103,7 +97,6 @@ public class CreateMetricCheckinValidatorTests
     {
         var request = new CreateCheckinRequest
         {
-            MetricId = Guid.NewGuid(),
             CheckinDate = DateTime.UtcNow,
             ConfidenceLevel = 3,
             Note = new string('a', 1001)
@@ -113,7 +106,7 @@ public class CreateMetricCheckinValidatorTests
 
         result.IsValid.Should().BeFalse();
         result.Errors.Should().Contain(e =>
-            e.PropertyName == "Note" &&
+            e.PropertyName.Contains("Note") &&
             e.ErrorMessage.Contains("1000"));
     }
 
@@ -122,7 +115,6 @@ public class CreateMetricCheckinValidatorTests
     {
         var request = new CreateCheckinRequest
         {
-            MetricId = Guid.NewGuid(),
             CheckinDate = DateTime.UtcNow,
             ConfidenceLevel = 3,
             Text = new string('a', 1001)
@@ -132,7 +124,7 @@ public class CreateMetricCheckinValidatorTests
 
         result.IsValid.Should().BeFalse();
         result.Errors.Should().Contain(e =>
-            e.PropertyName == "Text" &&
+            e.PropertyName.Contains("Text") &&
             e.ErrorMessage.Contains("1000"));
     }
 
@@ -141,7 +133,6 @@ public class CreateMetricCheckinValidatorTests
     {
         var request = new CreateCheckinRequest
         {
-            MetricId = Guid.NewGuid(),
             CheckinDate = DateTime.UtcNow,
             ConfidenceLevel = 2,
             Note = null,
@@ -186,7 +177,7 @@ public class UpdateMetricCheckinValidatorTests
         var result = await _validator.ValidateAsync(request);
 
         result.IsValid.Should().BeFalse();
-        result.Errors.Should().Contain(e => e.PropertyName == "CheckinDate");
+        result.Errors.Should().Contain(e => e.PropertyName.Contains("CheckinDate"));
     }
 
     [Theory]
@@ -203,7 +194,7 @@ public class UpdateMetricCheckinValidatorTests
         var result = await _validator.ValidateAsync(request);
 
         result.IsValid.Should().BeFalse();
-        result.Errors.Should().Contain(e => e.PropertyName == "ConfidenceLevel");
+        result.Errors.Should().Contain(e => e.PropertyName.Contains("ConfidenceLevel"));
     }
 
     [Fact]
@@ -219,7 +210,7 @@ public class UpdateMetricCheckinValidatorTests
         var result = await _validator.ValidateAsync(request);
 
         result.IsValid.Should().BeFalse();
-        result.Errors.Should().Contain(e => e.PropertyName == "Note");
+        result.Errors.Should().Contain(e => e.PropertyName.Contains("Note"));
     }
 
     [Fact]
@@ -235,6 +226,6 @@ public class UpdateMetricCheckinValidatorTests
         var result = await _validator.ValidateAsync(request);
 
         result.IsValid.Should().BeFalse();
-        result.Errors.Should().Contain(e => e.PropertyName == "Text");
+        result.Errors.Should().Contain(e => e.PropertyName.Contains("Text"));
     }
 }

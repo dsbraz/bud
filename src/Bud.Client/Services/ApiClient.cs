@@ -17,9 +17,9 @@ public sealed class ApiClient
         _toastService = toastService;
     }
 
-    public async Task<List<OrganizationSummaryDto>?> GetMyOrganizationsAsync()
+    public async Task<List<OrganizationSummaryResponse>?> GetMyOrganizationsAsync()
     {
-        return await GetSafeAsync<List<OrganizationSummaryDto>>("api/me/organizations");
+        return await GetSafeAsync<List<OrganizationSummaryResponse>>("api/me/organizations");
     }
 
     public async Task<PagedResult<Organization>?> GetOrganizationsAsync(string? search, int page = 1, int pageSize = 10)
@@ -77,14 +77,14 @@ public sealed class ApiClient
         }
     }
 
-    public async Task<List<LeaderCollaboratorResponse>?> GetLeadersAsync(Guid? organizationId = null)
+    public async Task<List<CollaboratorLeaderResponse>?> GetLeadersAsync(Guid? organizationId = null)
     {
         var url = "api/collaborators/leaders";
         if (organizationId.HasValue)
         {
             url += $"?organizationId={organizationId.Value}";
         }
-        return await GetSafeAsync<List<LeaderCollaboratorResponse>>(url);
+        return await GetSafeAsync<List<CollaboratorLeaderResponse>>(url);
     }
 
     public async Task<PagedResult<Workspace>?> GetWorkspacesAsync(Guid? organizationId, string? search, int page = 1, int pageSize = 10)
@@ -491,7 +491,7 @@ public sealed class ApiClient
         }
     }
 
-    public async Task<List<ObjectiveProgressDto>?> GetObjectiveProgressAsync(List<Guid> objectiveIds)
+    public async Task<List<ObjectiveProgressResponse>?> GetObjectiveProgressAsync(List<Guid> objectiveIds)
     {
         if (objectiveIds.Count == 0)
         {
@@ -499,11 +499,11 @@ public sealed class ApiClient
         }
 
         var ids = string.Join(",", objectiveIds);
-        return await GetSafeAsync<List<ObjectiveProgressDto>>($"api/objectives/progress?ids={ids}");
+        return await GetSafeAsync<List<ObjectiveProgressResponse>>($"api/objectives/progress?ids={ids}");
     }
 
     // Metric Progress
-    public async Task<List<MetricProgressDto>?> GetMetricProgressAsync(List<Guid> metricIds)
+    public async Task<List<MetricProgressResponse>?> GetMetricProgressAsync(List<Guid> metricIds)
     {
         if (metricIds.Count == 0)
         {
@@ -511,11 +511,11 @@ public sealed class ApiClient
         }
 
         var ids = string.Join(",", metricIds);
-        return await GetSafeAsync<List<MetricProgressDto>>($"api/metrics/progress?ids={ids}");
+        return await GetSafeAsync<List<MetricProgressResponse>>($"api/metrics/progress?ids={ids}");
     }
 
     // Mission Progress
-    public async Task<List<MissionProgressDto>?> GetMissionProgressAsync(List<Guid> missionIds)
+    public async Task<List<MissionProgressResponse>?> GetMissionProgressAsync(List<Guid> missionIds)
     {
         if (missionIds.Count == 0)
         {
@@ -523,7 +523,7 @@ public sealed class ApiClient
         }
 
         var ids = string.Join(",", missionIds);
-        return await GetSafeAsync<List<MissionProgressDto>>($"api/missions/progress?ids={ids}");
+        return await GetSafeAsync<List<MissionProgressResponse>>($"api/missions/progress?ids={ids}");
     }
 
     // MetricCheckin methods
@@ -540,9 +540,9 @@ public sealed class ApiClient
         return await GetSafeAsync<PagedResult<MetricCheckin>>(url);
     }
 
-    public async Task<MetricCheckin?> CreateMetricCheckinAsync(CreateCheckinRequest request)
+    public async Task<MetricCheckin?> CreateMetricCheckinAsync(Guid metricId, CreateCheckinRequest request)
     {
-        var response = await _http.PostAsJsonAsync($"api/metrics/{request.MetricId}/checkins", request);
+        var response = await _http.PostAsJsonAsync($"api/metrics/{metricId}/checkins", request);
 
         if (!response.IsSuccessStatusCode)
         {
@@ -601,7 +601,7 @@ public sealed class ApiClient
         return await GetSafeAsync<MissionTemplate>($"api/templates/{id}");
     }
 
-    public async Task<MissionTemplate?> CreateMissionTemplateAsync(CreateMissionTemplateRequest request)
+    public async Task<MissionTemplate?> CreateMissionTemplateAsync(CreateTemplateRequest request)
     {
         var response = await _http.PostAsJsonAsync("api/templates", request);
 
@@ -614,7 +614,7 @@ public sealed class ApiClient
         return await response.Content.ReadFromJsonAsync<MissionTemplate>();
     }
 
-    public async Task<MissionTemplate?> UpdateMissionTemplateAsync(Guid id, PatchMissionTemplateRequest request)
+    public async Task<MissionTemplate?> UpdateMissionTemplateAsync(Guid id, PatchTemplateRequest request)
     {
         var response = await _http.PatchAsJsonAsync($"api/templates/{id}", request);
 
@@ -708,12 +708,12 @@ public sealed class ApiClient
         return $"Erro do servidor ({(int)response.StatusCode}).";
     }
 
-    public async Task<AuthLoginResponse?> LoginAsync(AuthLoginRequest request)
+    public async Task<SessionResponse?> LoginAsync(CreateSessionRequest request)
     {
         var response = await _http.PostAsJsonAsync("api/sessions", request);
         if (response.IsSuccessStatusCode)
         {
-            return await response.Content.ReadFromJsonAsync<AuthLoginResponse>();
+            return await response.Content.ReadFromJsonAsync<SessionResponse>();
         }
 
         if (response.StatusCode == System.Net.HttpStatusCode.NotFound ||
@@ -737,15 +737,15 @@ public sealed class ApiClient
     }
 
     // Collaborator Subordinates (Hierarchy)
-    public async Task<List<CollaboratorHierarchyNodeDto>?> GetCollaboratorSubordinatesAsync(Guid collaboratorId)
+    public async Task<List<CollaboratorSubordinateResponse>?> GetCollaboratorSubordinatesAsync(Guid collaboratorId)
     {
-        return await GetSafeAsync<List<CollaboratorHierarchyNodeDto>>($"api/collaborators/{collaboratorId}/subordinates");
+        return await GetSafeAsync<List<CollaboratorSubordinateResponse>>($"api/collaborators/{collaboratorId}/subordinates");
     }
 
     // Collaborator Teams (Many-to-Many)
-    public async Task<List<TeamSummaryDto>?> GetCollaboratorTeamsAsync(Guid collaboratorId)
+    public async Task<List<CollaboratorTeamResponse>?> GetCollaboratorTeamsAsync(Guid collaboratorId)
     {
-        return await GetSafeAsync<List<TeamSummaryDto>>($"api/collaborators/{collaboratorId}/teams");
+        return await GetSafeAsync<List<CollaboratorTeamResponse>>($"api/collaborators/{collaboratorId}/teams");
     }
 
     public async Task UpdateCollaboratorTeamsAsync(Guid collaboratorId, PatchCollaboratorTeamsRequest request)
@@ -759,31 +759,31 @@ public sealed class ApiClient
         }
     }
 
-    public async Task<List<TeamSummaryDto>?> GetAvailableTeamsForCollaboratorAsync(Guid collaboratorId, string? search = null)
+    public async Task<List<CollaboratorTeamResponse>?> GetAvailableTeamsForCollaboratorAsync(Guid collaboratorId, string? search = null)
     {
         var url = $"api/collaborators/{collaboratorId}/teams/eligible-for-assignment";
         if (!string.IsNullOrWhiteSpace(search))
         {
             url += $"?search={Uri.EscapeDataString(search)}";
         }
-        return await GetSafeAsync<List<TeamSummaryDto>>(url);
+        return await GetSafeAsync<List<CollaboratorTeamResponse>>(url);
     }
 
     // Collaborator Summaries
-    public async Task<List<CollaboratorSummaryDto>?> GetCollaboratorSummariesAsync(string? search = null)
+    public async Task<List<CollaboratorLookupResponse>?> GetCollaboratorSummariesAsync(string? search = null)
     {
         var url = "api/collaborators/lookup";
         if (!string.IsNullOrWhiteSpace(search))
         {
             url += $"?search={Uri.EscapeDataString(search)}";
         }
-        return await GetSafeAsync<List<CollaboratorSummaryDto>>(url);
+        return await GetSafeAsync<List<CollaboratorLookupResponse>>(url);
     }
 
     // Team Collaborators (Many-to-Many)
-    public async Task<List<CollaboratorSummaryDto>?> GetTeamCollaboratorSummariesAsync(Guid teamId)
+    public async Task<List<CollaboratorLookupResponse>?> GetTeamCollaboratorSummariesAsync(Guid teamId)
     {
-        return await GetSafeAsync<List<CollaboratorSummaryDto>>($"api/teams/{teamId}/collaborators/lookup");
+        return await GetSafeAsync<List<CollaboratorLookupResponse>>($"api/teams/{teamId}/collaborators/lookup");
     }
 
     public async Task UpdateTeamCollaboratorsAsync(Guid teamId, PatchTeamCollaboratorsRequest request)
@@ -797,18 +797,18 @@ public sealed class ApiClient
         }
     }
 
-    public async Task<List<CollaboratorSummaryDto>?> GetAvailableCollaboratorsForTeamAsync(Guid teamId, string? search = null)
+    public async Task<List<CollaboratorLookupResponse>?> GetAvailableCollaboratorsForTeamAsync(Guid teamId, string? search = null)
     {
         var url = $"api/teams/{teamId}/collaborators/eligible-for-assignment";
         if (!string.IsNullOrWhiteSpace(search))
         {
             url += $"?search={Uri.EscapeDataString(search)}";
         }
-        return await GetSafeAsync<List<CollaboratorSummaryDto>>(url);
+        return await GetSafeAsync<List<CollaboratorLookupResponse>>(url);
     }
 
-    // Notification methods
-    public async Task<PagedResult<NotificationDto>?> GetNotificationsAsync(bool? isRead = null, int page = 1, int pageSize = 20)
+    // NotificationResponse methods
+    public async Task<PagedResult<NotificationResponse>?> GetNotificationsAsync(bool? isRead = null, int page = 1, int pageSize = 20)
     {
         (page, pageSize) = NormalizePagination(page, pageSize);
         var queryParams = new List<string>();
@@ -820,7 +820,7 @@ public sealed class ApiClient
         queryParams.Add($"page={page}");
         queryParams.Add($"pageSize={pageSize}");
         var url = $"api/notifications?{string.Join("&", queryParams)}";
-        return await GetSafeAsync<PagedResult<NotificationDto>>(url);
+        return await GetSafeAsync<PagedResult<NotificationResponse>>(url);
     }
 
     public async Task MarkNotificationAsReadAsync(Guid id)

@@ -70,7 +70,6 @@
     private async Task HandleSubmit()
     {
         if (Metric is null) return;
-        checkinRequest.MetricId = Metric.Id;
         checkinRequest.CheckinDate = DateTime.UtcNow;
         await OnSubmit.InvokeAsync(checkinRequest);
     }

@@ -1,10 +1,10 @@
-using Bud.Server.Application.Metrics;
+using Bud.Server.Application.UseCases.Metrics;
 using Bud.Server.Authorization;
 using Bud.Shared.Contracts;
-using Bud.Server.Domain.Model;
 using FluentValidation;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Bud.Server.Domain.Model;
 
 namespace Bud.Server.Controllers;
 
@@ -42,7 +42,7 @@ public sealed class MetricsController(
     /// <response code="403">Sem permissão para criar métrica.</response>
     [HttpPost]
     [Consumes("application/json")]
-    [ProducesResponseType(typeof(Metric), StatusCodes.Status201Created)]
+    [ProducesResponseType(typeof(MetricResponse), StatusCodes.Status201Created)]
     [ProducesResponseType(typeof(ValidationProblemDetails), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status403Forbidden)]
@@ -67,7 +67,7 @@ public sealed class MetricsController(
     /// <response code="403">Sem permissão para atualizar métrica.</response>
     [HttpPatch("{id:guid}")]
     [Consumes("application/json")]
-    [ProducesResponseType(typeof(Metric), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(MetricResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
     [ProducesResponseType(typeof(ValidationProblemDetails), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status403Forbidden)]
@@ -105,7 +105,7 @@ public sealed class MetricsController(
     /// <response code="200">Métrica encontrada.</response>
     /// <response code="404">Métrica não encontrada.</response>
     [HttpGet("{id:guid}")]
-    [ProducesResponseType(typeof(Metric), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(MetricResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
     public async Task<ActionResult<Metric>> GetById(Guid id, CancellationToken cancellationToken)
     {
@@ -119,9 +119,9 @@ public sealed class MetricsController(
     /// <response code="200">Progresso calculado com sucesso.</response>
     /// <response code="400">Parâmetro metricIds inválido.</response>
     [HttpGet("progress")]
-    [ProducesResponseType(typeof(List<MetricProgressDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(List<MetricProgressResponse>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
-    public async Task<ActionResult<List<MetricProgressDto>>> GetProgress(
+    public async Task<ActionResult<List<MetricProgressResponse>>> GetProgress(
         [FromQuery] string ids,
         CancellationToken cancellationToken)
     {
@@ -178,7 +178,7 @@ public sealed class MetricsController(
     /// </summary>
     [HttpPost("{metricId:guid}/checkins")]
     [Consumes("application/json")]
-    [ProducesResponseType(typeof(MetricCheckin), StatusCodes.Status201Created)]
+    [ProducesResponseType(typeof(MetricCheckinResponse), StatusCodes.Status201Created)]
     [ProducesResponseType(typeof(ValidationProblemDetails), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status403Forbidden)]
@@ -224,7 +224,7 @@ public sealed class MetricsController(
     /// Busca um check-in por identificador dentro da métrica.
     /// </summary>
     [HttpGet("{metricId:guid}/checkins/{checkinId:guid}")]
-    [ProducesResponseType(typeof(MetricCheckin), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(MetricCheckinResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
     public async Task<ActionResult<MetricCheckin>> GetCheckinById(
         Guid metricId,
@@ -240,7 +240,7 @@ public sealed class MetricsController(
     /// </summary>
     [HttpPatch("{metricId:guid}/checkins/{checkinId:guid}")]
     [Consumes("application/json")]
-    [ProducesResponseType(typeof(MetricCheckin), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(MetricCheckinResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ValidationProblemDetails), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status403Forbidden)]

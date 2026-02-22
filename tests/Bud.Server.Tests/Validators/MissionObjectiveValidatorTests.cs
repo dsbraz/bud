@@ -38,7 +38,7 @@ public sealed class CreateMissionObjectiveValidatorTests
 
         result.IsValid.Should().BeFalse();
         result.Errors.Should().ContainSingle(e =>
-            e.PropertyName == "MissionId" &&
+            e.PropertyName.Contains("MissionId") &&
             e.ErrorMessage.Contains("obrigatória"));
     }
 
@@ -57,7 +57,7 @@ public sealed class CreateMissionObjectiveValidatorTests
         var result = await _validator.ValidateAsync(request);
 
         result.IsValid.Should().BeFalse();
-        result.Errors.Should().Contain(e => e.PropertyName == "Name");
+        result.Errors.Should().Contain(e => e.PropertyName.Contains("Name"));
     }
 
     [Fact]
@@ -73,7 +73,7 @@ public sealed class CreateMissionObjectiveValidatorTests
 
         result.IsValid.Should().BeFalse();
         result.Errors.Should().ContainSingle(e =>
-            e.PropertyName == "Name" &&
+            e.PropertyName.Contains("Name") &&
             e.ErrorMessage.Contains("200"));
     }
 
@@ -91,7 +91,7 @@ public sealed class CreateMissionObjectiveValidatorTests
 
         result.IsValid.Should().BeFalse();
         result.Errors.Should().ContainSingle(e =>
-            e.PropertyName == "Description" &&
+            e.PropertyName.Contains("Description") &&
             e.ErrorMessage.Contains("1000"));
     }
 
@@ -144,7 +144,7 @@ public sealed class UpdateMissionObjectiveValidatorTests
         var result = await _validator.ValidateAsync(request);
 
         result.IsValid.Should().BeFalse();
-        result.Errors.Should().Contain(e => e.PropertyName == "Name");
+        result.Errors.Should().Contain(e => e.PropertyName.Contains("Name"));
     }
 
     [Fact]
@@ -159,7 +159,7 @@ public sealed class UpdateMissionObjectiveValidatorTests
 
         result.IsValid.Should().BeFalse();
         result.Errors.Should().ContainSingle(e =>
-            e.PropertyName == "Name" &&
+            e.PropertyName.Contains("Name") &&
             e.ErrorMessage.Contains("200"));
     }
 
@@ -176,7 +176,7 @@ public sealed class UpdateMissionObjectiveValidatorTests
 
         result.IsValid.Should().BeFalse();
         result.Errors.Should().ContainSingle(e =>
-            e.PropertyName == "Description" &&
+            e.PropertyName.Contains("Description") &&
             e.ErrorMessage.Contains("1000"));
     }
 

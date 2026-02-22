@@ -8,16 +8,16 @@ public sealed class OrganizationContext(IJSRuntime jsRuntime)
     private const string StorageKey = "bud.organization.selected";
     private bool _initialized;
     private Guid? _selectedOrganizationId;
-    private List<OrganizationSummaryDto> _availableOrganizations = new();
+    private List<OrganizationSummaryResponse> _availableOrganizations = new();
 
     public event Action? OnOrganizationChanged;
 
     public Guid? SelectedOrganizationId => _selectedOrganizationId;
-    public List<OrganizationSummaryDto> AvailableOrganizations => _availableOrganizations;
+    public List<OrganizationSummaryResponse> AvailableOrganizations => _availableOrganizations;
     public bool ShowAllOrganizations => _selectedOrganizationId == null;
     public bool IsInitialized => _initialized;
 
-    public async Task InitializeAsync(List<OrganizationSummaryDto> organizations)
+    public async Task InitializeAsync(List<OrganizationSummaryResponse> organizations)
     {
         _availableOrganizations = organizations;
 
@@ -67,7 +67,7 @@ public sealed class OrganizationContext(IJSRuntime jsRuntime)
         await jsRuntime.InvokeAsync<object>("localStorage.removeItem", StorageKey);
     }
 
-    public void UpdateAvailableOrganizations(List<OrganizationSummaryDto> organizations)
+    public void UpdateAvailableOrganizations(List<OrganizationSummaryResponse> organizations)
     {
         _availableOrganizations = organizations;
         OnOrganizationChanged?.Invoke();

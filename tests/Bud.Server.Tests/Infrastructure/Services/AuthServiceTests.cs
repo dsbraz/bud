@@ -10,6 +10,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using Xunit;
 using Bud.Server.Application.Common;
+using Bud.Server.Application.Mapping;
 
 namespace Bud.Server.Tests.Infrastructure.Services;
 
@@ -63,7 +64,7 @@ public class AuthServiceTests
         await context.SaveChangesAsync();
 
         var service = CreateService(context);
-        var request = new AuthLoginRequest { Email = email };
+        var request = new CreateSessionRequest { Email = email };
 
         // Act
         var result = await service.LoginAsync(request);
@@ -86,7 +87,7 @@ public class AuthServiceTests
         using var context = CreateInMemoryContext();
         var service = CreateService(context);
 
-        var request = new AuthLoginRequest { Email = email };
+        var request = new CreateSessionRequest { Email = email };
 
         // Act
         var result = await service.LoginAsync(request);
@@ -138,7 +139,7 @@ public class AuthServiceTests
         await context.SaveChangesAsync();
 
         var service = CreateService(context);
-        var request = new AuthLoginRequest { Email = "john.doe@example.com" };
+        var request = new CreateSessionRequest { Email = "john.doe@example.com" };
 
         // Act
         var result = await service.LoginAsync(request);
@@ -182,7 +183,7 @@ public class AuthServiceTests
         var service = CreateService(context);
 
         // Act
-        var result = await service.LoginAsync(new AuthLoginRequest { Email = collaborator.Email });
+        var result = await service.LoginAsync(new CreateSessionRequest { Email = collaborator.Email });
 
         // Assert
         result.IsSuccess.Should().BeTrue();
@@ -200,7 +201,7 @@ public class AuthServiceTests
         using var context = CreateInMemoryContext();
         var service = CreateService(context);
 
-        var request = new AuthLoginRequest { Email = "nonexistent@example.com" };
+        var request = new CreateSessionRequest { Email = "nonexistent@example.com" };
 
         // Act
         var result = await service.LoginAsync(request);
@@ -218,7 +219,7 @@ public class AuthServiceTests
         using var context = CreateInMemoryContext();
         var service = CreateService(context);
 
-        var request = new AuthLoginRequest { Email = "" };
+        var request = new CreateSessionRequest { Email = "" };
 
         // Act
         var result = await service.LoginAsync(request);
@@ -236,7 +237,7 @@ public class AuthServiceTests
         using var context = CreateInMemoryContext();
         var service = CreateService(context);
 
-        var request = new AuthLoginRequest { Email = "   " };
+        var request = new CreateSessionRequest { Email = "   " };
 
         // Act
         var result = await service.LoginAsync(request);
@@ -292,7 +293,7 @@ public class AuthServiceTests
         await context.SaveChangesAsync();
 
         var service = CreateService(context);
-        var request = new AuthLoginRequest { Email = inputEmail };
+        var request = new CreateSessionRequest { Email = inputEmail };
 
         // Act
         var result = await service.LoginAsync(request);
@@ -336,7 +337,7 @@ public class AuthServiceTests
         await context.SaveChangesAsync();
 
         var service = CreateService(context);
-        var request = new AuthLoginRequest { Email = globalAdminEmail };
+        var request = new CreateSessionRequest { Email = globalAdminEmail };
 
         // Act
         var result = await service.LoginAsync(request);
@@ -380,7 +381,7 @@ public class AuthServiceTests
         var service = CreateService(context);
 
         // Act
-        var result = await service.LoginAsync(new AuthLoginRequest { Email = globalAdminEmail });
+        var result = await service.LoginAsync(new CreateSessionRequest { Email = globalAdminEmail });
 
         // Assert
         result.IsSuccess.Should().BeTrue();
@@ -418,7 +419,7 @@ public class AuthServiceTests
         var service = CreateService(context);
 
         // Act
-        var result = await service.LoginAsync(new AuthLoginRequest { Email = "custom.admin@anycompany.com" });
+        var result = await service.LoginAsync(new CreateSessionRequest { Email = "custom.admin@anycompany.com" });
 
         // Assert
         result.IsSuccess.Should().BeTrue();
@@ -452,7 +453,7 @@ public class AuthServiceTests
         var service = CreateService(context);
 
         // Act
-        var result = await service.LoginAsync(new AuthLoginRequest { Email = "admin@getbud.co" });
+        var result = await service.LoginAsync(new CreateSessionRequest { Email = "admin@getbud.co" });
 
         // Assert
         result.IsSuccess.Should().BeTrue();

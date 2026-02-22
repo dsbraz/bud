@@ -37,7 +37,7 @@
 {
     <div class="form-row" style="margin-top: var(--spacing-4);">
         <label>Equipes</label>
-        <TransferList TItem="TeamSummaryDto"
+        <TransferList TItem="CollaboratorTeamResponse"
             AvailableItems="@AvailableTeams"
             AssignedItems="@AssignedTeams"
             AssignedItemsChanged="OnAssignedTeamsChangedAsync"
@@ -66,12 +66,12 @@
     [Parameter] public string? LeaderId { get; set; }
     [Parameter] public EventCallback<string?> LeaderIdChanged { get; set; }
 
-    [Parameter] public List<LeaderCollaboratorResponse> Leaders { get; set; } = new();
+    [Parameter] public List<CollaboratorLeaderResponse> Leaders { get; set; } = new();
     [Parameter] public Guid? ExcludeLeaderId { get; set; }
 
-    [Parameter] public List<TeamSummaryDto> AvailableTeams { get; set; } = new();
-    [Parameter] public List<TeamSummaryDto> AssignedTeams { get; set; } = new();
-    [Parameter] public EventCallback<List<TeamSummaryDto>> AssignedTeamsChanged { get; set; }
+    [Parameter] public List<CollaboratorTeamResponse> AvailableTeams { get; set; } = new();
+    [Parameter] public List<CollaboratorTeamResponse> AssignedTeams { get; set; } = new();
+    [Parameter] public EventCallback<List<CollaboratorTeamResponse>> AssignedTeamsChanged { get; set; }
     [Parameter] public EventCallback<string> OnAvailableTeamsSearch { get; set; }
 
     [Parameter] public bool ShowTeams { get; set; } = true;
@@ -101,7 +101,7 @@
         await LeaderIdChanged.InvokeAsync(LeaderId);
     }
 
-    private async Task OnAssignedTeamsChangedAsync(List<TeamSummaryDto> teams)
+    private async Task OnAssignedTeamsChangedAsync(List<CollaboratorTeamResponse> teams)
     {
         AssignedTeams = teams;
         await AssignedTeamsChanged.InvokeAsync(teams);

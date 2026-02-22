@@ -32,7 +32,9 @@ Este documento é voltado para devs que precisam:
 O Bud segue uma arquitetura em camadas com separação explícita de responsabilidades:
 
 - **API/Host (`Bud.Server`)**: exposição HTTP, autenticação/autorização, middleware e composição de dependências.
-- **Application**: casos de uso (`Command/Query`), orquestração de notificações e resultado unificado (`Result`).
+- **Application**: casos de uso (`Command/Query`), portas de aplicação e orquestração de eventos de domínio.
+  - `Application/Common`: resultados e utilitários transversais.
+  - `Application/Mapping`: mapeamento entre read models/domínio e contratos de borda.
 - **Domain**: conceitos de domínio, value objects e specifications.
 - **Infrastructure**: EF Core (`ApplicationDbContext`), repositórios (`Repositories/`) e serviços de infraestrutura (`Services/`).
 - **Client (`Bud.Client`)**: SPA Blazor WASM com consumo da API.
@@ -43,9 +45,9 @@ O Bud segue uma arquitetura em camadas com separação explícita de responsabil
 - **Controllers** recebem requests, validam payloads (FluentValidation) e delegam para Commands/Queries.
   Validações dependentes de dados devem passar por abstrações/repositórios, não por acesso direto de validator ao `DbContext`.
 - **Commands/Queries** centralizam o fluxo completo da aplicação (orquestração, autorização, notificações) e retornam `Result`/`Result<T>` (em `Application/Common/`).
-- **Infrastructure** (`Infrastructure/`) contém interfaces e implementações concretas:
-  - `Repositories/`: interfaces (`I*Repository`) e implementações dos repositórios.
-  - `Services/`: interfaces (`IAuthService`, `IMissionScopeResolver`, `IMissionProgressService`) e implementações (`AuthService`, `MissionScopeResolver`, `MissionProgressService`, `NotificationRecipientResolver`).
+- **Infrastructure** (`Infrastructure/`) contém implementações concretas:
+  - `Repositories/`: implementações dos repositórios (`I*Repository` ficam em `Domain/Repositories/`).
+  - `Services/`: implementações de adapters (`AuthService`, `MissionScopeResolver`, `MissionProgressService`, `NotificationRecipientResolver`), com interfaces em `Application/Ports/`.
   - `ApplicationDbContext`, `Configurations/` e `DbSeeder`.
 - **Authorization** (`Authorization/`) contém serviços de autorização (`TenantAuthorizationService`, `OrganizationAuthorizationService`), policies, requirements e handlers.
 - **DependencyInjection** modulariza bootstrap (`BudApi`, `BudSecurity`, `BudData`, `BudApplication`).
@@ -53,8 +55,8 @@ O Bud segue uma arquitetura em camadas com separação explícita de responsabil
 ### Padrões arquiteturais adotados
 
 - **Commands/Queries + Repositories (Clean Architecture)**
-  Controllers delegam para Commands/Queries, que dependem de interfaces (portas) co-localizadas com suas implementações em `Infrastructure/`.
-  Repositórios e serviços definem interfaces e implementações no mesmo diretório. `Domain` não depende de `Application` nem de `Infrastructure`.
+  Controllers delegam para Commands/Queries, que dependem de interfaces (portas) em `Domain/Repositories` e `Application/Ports`.
+  Implementações concretas ficam em `Infrastructure/Repositories` e `Infrastructure/Services`. `Domain` não depende de `Application` nem de `Infrastructure`.
   Referências: `docs/adr/ADR-0002-arquitetura-ddd-estrita-e-regras-de-dependencia.md`.
 - **Policy-based Authorization (Requirement/Handler)**
   Regras de autorização centralizadas em policies e handlers, reduzindo condicionais espalhadas.
@@ -74,7 +76,7 @@ O Bud segue uma arquitetura em camadas com separação explícita de responsabil
   Regras centrais de negócio são aplicadas por métodos de agregado/entidade (`Create`, `Rename`, `SetScope`, etc.) com tradução para `Result` na camada de aplicação (Commands/Queries).
   Inclui Value Objects formais (`PersonName`, `MissionScope`, `ConfidenceLevel`, `MetricRange`) para reduzir primitive obsession.
 - **Notification Orchestration (Application)**
-  Orquestração de notificações centralizada em `Application/Notifications/` (`NotificationOrchestrator`), desacoplada dos repositórios.
+  Orquestração de notificações centralizada em `Application/EventHandlers/` (`NotificationOrchestrator`), desacoplada dos repositórios.
 
 ### Multi-tenancy
 
@@ -90,7 +92,7 @@ Isolamento por organização (`OrganizationId`) com:
 1. Request chega no controller.
 2. Payload é validado.
 3. Controller chama o Command/Query correspondente.
-4. Command/Query aplica regras de autorização/orquestração e delega para repositórios (via interfaces definidas em `Infrastructure/`).
+4. Command/Query aplica regras de autorização/orquestração e delega para repositórios/ports (via interfaces em `Domain/Repositories` e `Application/Ports`).
 5. Repositório persiste/consulta via `ApplicationDbContext`.
 6. Command/Query orquestra notificações quando aplicável (via `NotificationOrchestrator`).
 7. Resultado (`Result`) é mapeado para resposta HTTP.

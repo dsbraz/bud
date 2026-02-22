@@ -1,11 +1,11 @@
-using Bud.Server.Application.Objectives;
-using Bud.Server.Application.Missions;
+using Bud.Server.Application.UseCases.Objectives;
+using Bud.Server.Application.UseCases.Missions;
 using Bud.Server.Authorization;
 using Bud.Shared.Contracts;
-using Bud.Server.Domain.Model;
 using FluentValidation;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Bud.Server.Domain.Model;
 
 namespace Bud.Server.Controllers;
 
@@ -37,7 +37,7 @@ public sealed class MissionsController(
     /// <response code="404">Escopo da missão não encontrado.</response>
     [HttpPost]
     [Consumes("application/json")]
-    [ProducesResponseType(typeof(Mission), StatusCodes.Status201Created)]
+    [ProducesResponseType(typeof(MissionResponse), StatusCodes.Status201Created)]
     [ProducesResponseType(typeof(ValidationProblemDetails), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
     public async Task<ActionResult<Mission>> Create(CreateMissionRequest request, CancellationToken cancellationToken)
@@ -64,7 +64,7 @@ public sealed class MissionsController(
     /// <response code="404">Missão não encontrada.</response>
     [HttpPatch("{id:guid}")]
     [Consumes("application/json")]
-    [ProducesResponseType(typeof(Mission), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(MissionResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
     [ProducesResponseType(typeof(ValidationProblemDetails), StatusCodes.Status400BadRequest)]
     public async Task<ActionResult<Mission>> Update(Guid id, PatchMissionRequest request, CancellationToken cancellationToken)
@@ -99,7 +99,7 @@ public sealed class MissionsController(
     /// <response code="200">Missão encontrada.</response>
     /// <response code="404">Missão não encontrada.</response>
     [HttpGet("{id:guid}")]
-    [ProducesResponseType(typeof(Mission), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(MissionResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
     public async Task<ActionResult<Mission>> GetById(Guid id, CancellationToken cancellationToken)
     {
@@ -145,9 +145,9 @@ public sealed class MissionsController(
     /// <response code="200">Progresso calculado com sucesso.</response>
     /// <response code="400">Parâmetro missionIds inválido.</response>
     [HttpGet("progress")]
-    [ProducesResponseType(typeof(List<MissionProgressDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(List<MissionProgressResponse>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
-    public async Task<ActionResult<List<MissionProgressDto>>> GetProgress(
+    public async Task<ActionResult<List<MissionProgressResponse>>> GetProgress(
         [FromQuery] string ids,
         CancellationToken cancellationToken)
     {

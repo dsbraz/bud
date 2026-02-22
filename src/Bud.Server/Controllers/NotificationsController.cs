@@ -1,8 +1,9 @@
-using Bud.Server.Application.Notifications;
+using Bud.Server.Application.UseCases.Notifications;
 using Bud.Server.Authorization;
 using Bud.Shared.Contracts;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Bud.Server.Domain.Model;
 
 namespace Bud.Server.Controllers;
 
@@ -25,10 +26,10 @@ public sealed class NotificationsController(
     /// <response code="400">Parâmetros de paginação inválidos.</response>
     /// <response code="403">Colaborador não identificado.</response>
     [HttpGet]
-    [ProducesResponseType(typeof(PagedResult<NotificationDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(PagedResult<NotificationResponse>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status403Forbidden)]
-    public async Task<ActionResult<PagedResult<NotificationDto>>> GetAll(
+    public async Task<ActionResult<PagedResult<NotificationResponse>>> GetAll(
         [FromQuery] bool? isRead,
         [FromQuery] int page = 1,
         [FromQuery] int pageSize = 20,

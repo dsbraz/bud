@@ -87,7 +87,7 @@ public class CreateMissionMetricValidatorTests
         // Assert
         result.IsValid.Should().BeFalse();
         result.Errors.Should().ContainSingle(e =>
-            e.PropertyName == "TargetText" &&
+            e.PropertyName.Contains("TargetText") &&
             e.ErrorMessage.Contains("1000"));
     }
 
@@ -115,7 +115,7 @@ public class CreateMissionMetricValidatorTests
         // Assert
         result.IsValid.Should().BeFalse();
         result.Errors.Should().ContainSingle(e =>
-            e.PropertyName == "QuantitativeType" &&
+            e.PropertyName.Contains("QuantitativeType") &&
             e.ErrorMessage.Contains("métricas quantitativas"));
     }
 
@@ -139,7 +139,7 @@ public class CreateMissionMetricValidatorTests
         // Assert
         result.IsValid.Should().BeFalse();
         result.Errors.Should().ContainSingle(e =>
-            e.PropertyName == "Unit" &&
+            e.PropertyName.Contains("Unit") &&
             e.ErrorMessage.Contains("métricas quantitativas"));
     }
 
@@ -187,7 +187,7 @@ public class CreateMissionMetricValidatorTests
         // Assert
         result.IsValid.Should().BeFalse();
         result.Errors.Should().ContainSingle(e =>
-            e.PropertyName == "MinValue" &&
+            e.PropertyName.Contains("MinValue") &&
             e.ErrorMessage.Contains("KeepAbove"));
     }
 
@@ -211,7 +211,7 @@ public class CreateMissionMetricValidatorTests
         // Assert
         result.IsValid.Should().BeFalse();
         result.Errors.Should().ContainSingle(e =>
-            e.PropertyName == "MinValue" &&
+            e.PropertyName.Contains("MinValue") &&
             e.ErrorMessage.Contains("maior ou igual a 0"));
     }
 
@@ -283,7 +283,7 @@ public class CreateMissionMetricValidatorTests
         // Assert
         result.IsValid.Should().BeFalse();
         result.Errors.Should().ContainSingle(e =>
-            e.PropertyName == "MaxValue" &&
+            e.PropertyName.Contains("MaxValue") &&
             e.ErrorMessage.Contains("KeepBelow"));
     }
 
@@ -307,7 +307,7 @@ public class CreateMissionMetricValidatorTests
         // Assert
         result.IsValid.Should().BeFalse();
         result.Errors.Should().ContainSingle(e =>
-            e.PropertyName == "MaxValue" &&
+            e.PropertyName.Contains("MaxValue") &&
             e.ErrorMessage.Contains("maior ou igual a 0"));
     }
 
@@ -359,7 +359,7 @@ public class CreateMissionMetricValidatorTests
         // Assert
         result.IsValid.Should().BeFalse();
         result.Errors.Should().ContainSingle(e =>
-            e.PropertyName == "MinValue" &&
+            e.PropertyName.Contains("MinValue") &&
             e.ErrorMessage.Contains("KeepBetween"));
     }
 
@@ -384,7 +384,7 @@ public class CreateMissionMetricValidatorTests
         // Assert
         result.IsValid.Should().BeFalse();
         result.Errors.Should().ContainSingle(e =>
-            e.PropertyName == "MaxValue" &&
+            e.PropertyName.Contains("MaxValue") &&
             e.ErrorMessage.Contains("KeepBetween"));
     }
 
@@ -409,7 +409,7 @@ public class CreateMissionMetricValidatorTests
         // Assert
         result.IsValid.Should().BeFalse();
         result.Errors.Should().ContainSingle(e =>
-            e.PropertyName == "MaxValue" &&
+            e.PropertyName.Contains("MaxValue") &&
             e.ErrorMessage.Contains("valor mínimo"));
     }
 
@@ -434,7 +434,7 @@ public class CreateMissionMetricValidatorTests
         // Assert
         result.IsValid.Should().BeFalse();
         result.Errors.Should().ContainSingle(e =>
-            e.PropertyName == "MaxValue" &&
+            e.PropertyName.Contains("MaxValue") &&
             e.ErrorMessage.Contains("valor mínimo"));
     }
 
@@ -459,7 +459,7 @@ public class CreateMissionMetricValidatorTests
         // Assert
         result.IsValid.Should().BeFalse();
         result.Errors.Should().ContainSingle(e =>
-            e.PropertyName == "MinValue" &&
+            e.PropertyName.Contains("MinValue") &&
             e.ErrorMessage.Contains("maior ou igual a 0"));
     }
 
@@ -509,7 +509,7 @@ public class CreateMissionMetricValidatorTests
         // Assert
         result.IsValid.Should().BeFalse();
         result.Errors.Should().ContainSingle(e =>
-            e.PropertyName == "MaxValue" &&
+            e.PropertyName.Contains("MaxValue") &&
             e.ErrorMessage.Contains("Achieve"));
     }
 
@@ -533,7 +533,7 @@ public class CreateMissionMetricValidatorTests
         // Assert
         result.IsValid.Should().BeFalse();
         result.Errors.Should().ContainSingle(e =>
-            e.PropertyName == "MaxValue" &&
+            e.PropertyName.Contains("MaxValue") &&
             e.ErrorMessage.Contains("maior ou igual a 0"));
     }
 
@@ -583,7 +583,7 @@ public class CreateMissionMetricValidatorTests
         // Assert
         result.IsValid.Should().BeFalse();
         result.Errors.Should().ContainSingle(e =>
-            e.PropertyName == "MaxValue" &&
+            e.PropertyName.Contains("MaxValue") &&
             e.ErrorMessage.Contains("Reduce"));
     }
 
@@ -607,7 +607,7 @@ public class CreateMissionMetricValidatorTests
         // Assert
         result.IsValid.Should().BeFalse();
         result.Errors.Should().ContainSingle(e =>
-            e.PropertyName == "MaxValue" &&
+            e.PropertyName.Contains("MaxValue") &&
             e.ErrorMessage.Contains("maior ou igual a 0"));
     }
 
@@ -634,7 +634,7 @@ public class CreateMissionMetricValidatorTests
 
         // Assert
         result.IsValid.Should().BeFalse();
-        result.Errors.Should().ContainSingle(e => e.PropertyName == "MissionId");
+        result.Errors.Should().ContainSingle(e => e.PropertyName.Contains("MissionId"));
     }
 
     [Theory]
@@ -657,7 +657,7 @@ public class CreateMissionMetricValidatorTests
 
         // Assert
         result.IsValid.Should().BeFalse();
-        result.Errors.Should().Contain(e => e.PropertyName == "Name");
+        result.Errors.Should().Contain(e => e.PropertyName.Contains("Name"));
     }
 
     [Fact]
@@ -678,7 +678,7 @@ public class CreateMissionMetricValidatorTests
         // Assert
         result.IsValid.Should().BeFalse();
         result.Errors.Should().ContainSingle(e =>
-            e.PropertyName == "Name" &&
+            e.PropertyName.Contains("Name") &&
             e.ErrorMessage.Contains("200"));
     }
 

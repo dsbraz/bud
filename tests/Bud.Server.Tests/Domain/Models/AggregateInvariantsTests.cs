@@ -334,7 +334,7 @@ public sealed class AggregateInvariantsTests
     [Fact]
     public void Notification_Create_WithEmptyTitle_ShouldThrow()
     {
-        var act = () => Notification.Create(
+        var act = () => NotificationResponse.Create(
             Guid.NewGuid(),
             Guid.NewGuid(),
             Guid.NewGuid(),

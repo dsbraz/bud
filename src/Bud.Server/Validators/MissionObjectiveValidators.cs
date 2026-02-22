@@ -29,17 +29,18 @@ public sealed class PatchMissionObjectiveValidator : AbstractValidator<PatchObje
 {
     public PatchMissionObjectiveValidator()
     {
-        RuleFor(x => x.Name)
+        RuleFor(x => x.Name.Value)
             .NotEmpty().WithMessage("Nome é obrigatório.")
-            .MaximumLength(200).WithMessage("Nome deve ter no máximo 200 caracteres.");
+            .MaximumLength(200).WithMessage("Nome deve ter no máximo 200 caracteres.")
+            .When(x => x.Name.HasValue);
 
-        RuleFor(x => x.Description)
+        RuleFor(x => x.Description.Value)
             .MaximumLength(1000).WithMessage("Descrição deve ter no máximo 1000 caracteres.")
-            .When(x => !string.IsNullOrEmpty(x.Description));
+            .When(x => x.Description.HasValue && !string.IsNullOrEmpty(x.Description.Value));
 
-        RuleFor(x => x.Dimension)
+        RuleFor(x => x.Dimension.Value)
             .MaximumLength(100).WithMessage("Dimensão deve ter no máximo 100 caracteres.")
-            .When(x => !string.IsNullOrEmpty(x.Dimension));
+            .When(x => x.Dimension.HasValue && !string.IsNullOrEmpty(x.Dimension.Value));
 
     }
 }

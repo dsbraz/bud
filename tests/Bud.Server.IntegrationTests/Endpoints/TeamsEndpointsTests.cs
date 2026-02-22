@@ -600,7 +600,7 @@ public class TeamsEndpointsTests : IClassFixture<CustomWebApplicationFactory>
 
     #endregion
 
-    #region Leader CollaboratorTeam Sync Tests
+    #region Leader CollaboratorTeamResponse Sync Tests
 
     [Fact]
     public async Task Create_ShouldIncludeLeaderInCollaboratorSummaries()
@@ -617,7 +617,7 @@ public class TeamsEndpointsTests : IClassFixture<CustomWebApplicationFactory>
         // Assert: leader should be in collaborators summary projection
         var summariesResponse = await _client.GetAsync($"/api/teams/{team!.Id}/collaborators/lookup");
         summariesResponse.StatusCode.Should().Be(HttpStatusCode.OK);
-        var summaries = await summariesResponse.Content.ReadFromJsonAsync<List<CollaboratorSummaryDto>>();
+        var summaries = await summariesResponse.Content.ReadFromJsonAsync<List<CollaboratorLookupResponse>>();
         summaries.Should().NotBeNull();
         summaries.Should().Contain(c => c.Id == leaderId);
     }

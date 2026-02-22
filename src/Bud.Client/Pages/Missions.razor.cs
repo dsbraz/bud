@@ -10,7 +10,7 @@ public partial class Missions
 {
     // Data
     private PagedResult<Mission>? _missions;
-    private Dictionary<Guid, MissionProgressDto> _missionProgress = new();
+    private Dictionary<Guid, MissionProgressResponse> _missionProgress = new();
     private List<Organization> _organizations = new();
     private List<Workspace> _workspaces = new();
     private List<Team> _teams = new();
@@ -29,9 +29,9 @@ public partial class Missions
     // Card expansion state
     private HashSet<Guid> _expandedMissions = new();
     private Dictionary<Guid, List<Metric>> _missionMetricsCache = new();
-    private Dictionary<Guid, MetricProgressDto> _metricProgressCache = new();
+    private Dictionary<Guid, MetricProgressResponse> _metricProgressCache = new();
     private Dictionary<Guid, List<Objective>> _missionObjectivesCache = new();
-    private Dictionary<Guid, ObjectiveProgressDto> _objectiveProgressCache = new();
+    private Dictionary<Guid, ObjectiveProgressResponse> _objectiveProgressCache = new();
     private HashSet<Guid> _expandedObjectives = new();
 
     // Wizard state
@@ -153,7 +153,7 @@ public partial class Missions
 
         if (_showMyMissions)
         {
-            var collaboratorId = AuthState.Session?.CollaboratorId;
+            var collaboratorId = AuthState.SessionResponse?.CollaboratorId;
             if (collaboratorId.HasValue)
             {
                 result = await Api.GetMyMissionsAsync(_search, 1, 100) ?? new PagedResult<Mission>();
@@ -757,7 +757,7 @@ public partial class Missions
         await UiOps.RunAsync(
             async () =>
             {
-                await Api.CreateMetricCheckinAsync(request);
+                await Api.CreateMetricCheckinAsync(_selectedCheckinMetric!.Id, request);
                 ToastService.ShowSuccess("Check-in criado", "O check-in foi registrado com sucesso.");
                 var missionId = _checkinMission?.Id;
                 CloseCheckinModal();

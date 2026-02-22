@@ -174,7 +174,7 @@ public class CollaboratorsEndpointsTests : IClassFixture<CustomWebApplicationFac
         var response = await _adminClient.GetAsync($"/api/collaborators/{leader.Id}/subordinates");
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
-        var nodes = await response.Content.ReadFromJsonAsync<List<CollaboratorHierarchyNodeDto>>();
+        var nodes = await response.Content.ReadFromJsonAsync<List<CollaboratorSubordinateResponse>>();
         nodes.Should().NotBeNull();
         nodes.Should().HaveCount(1);
         nodes![0].FullName.Should().Be(sub.FullName);
@@ -207,7 +207,7 @@ public class CollaboratorsEndpointsTests : IClassFixture<CustomWebApplicationFac
         var response = await _adminClient.GetAsync($"/api/collaborators/{topLeader.Id}/subordinates");
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
-        var nodes = await response.Content.ReadFromJsonAsync<List<CollaboratorHierarchyNodeDto>>();
+        var nodes = await response.Content.ReadFromJsonAsync<List<CollaboratorSubordinateResponse>>();
         nodes.Should().HaveCount(1);
         nodes![0].FullName.Should().Be(midLeader.FullName);
         nodes[0].Children.Should().HaveCount(1);

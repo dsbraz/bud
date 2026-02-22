@@ -1,5 +1,6 @@
 using Bud.Server.Authorization;
 using Bud.Server.Application.Common;
+using Bud.Server.Application.Mapping;
 
 namespace Bud.Server.Tests.Helpers;
 

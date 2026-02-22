@@ -91,7 +91,7 @@ public sealed class Metric
     public decimal? MaxValue { get; set; }
     public MetricUnit? Unit { get; set; }
     public string? TargetText { get; set; }
-    public Objective? MissionObjective { get; set; }
+    public Objective? Objective { get; set; }
     public List<MetricCheckin> Checkins { get; set; } = [];
 }
 
@@ -147,5 +147,5 @@ public sealed class MissionTemplateMetric
     public decimal? MaxValue { get; set; }
     public MetricUnit? Unit { get; set; }
     public string? TargetText { get; set; }
-    public MissionTemplateObjective? MissionTemplateObjective { get; set; }
+    public MissionTemplateObjective? Objective { get; set; }
 }

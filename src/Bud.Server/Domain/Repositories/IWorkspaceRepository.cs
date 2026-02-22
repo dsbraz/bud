@@ -5,8 +5,8 @@ namespace Bud.Server.Domain.Repositories;
 public interface IWorkspaceRepository
 {
     Task<Workspace?> GetByIdAsync(Guid id, CancellationToken ct = default);
-    Task<Bud.Shared.Contracts.PagedResult<Workspace>> GetAllAsync(Guid? organizationId, string? search, int page, int pageSize, CancellationToken ct = default);
-    Task<Bud.Shared.Contracts.PagedResult<Team>> GetTeamsAsync(Guid workspaceId, int page, int pageSize, CancellationToken ct = default);
+    Task<Bud.Shared.Contracts.Common.PagedResult<Workspace>> GetAllAsync(Guid? organizationId, string? search, int page, int pageSize, CancellationToken ct = default);
+    Task<Bud.Shared.Contracts.Common.PagedResult<Team>> GetTeamsAsync(Guid workspaceId, int page, int pageSize, CancellationToken ct = default);
     Task<bool> ExistsAsync(Guid id, CancellationToken ct = default);
     Task<bool> IsNameUniqueAsync(Guid organizationId, string name, Guid? excludeId = null, CancellationToken ct = default);
     Task<bool> HasMissionsAsync(Guid workspaceId, CancellationToken ct = default);

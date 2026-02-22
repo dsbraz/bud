@@ -1,15 +1,15 @@
-using Bud.Server.Application.Collaborators;
-using Bud.Server.Application.Me;
-using Bud.Server.Application.Metrics;
-using Bud.Server.Application.Objectives;
-using Bud.Server.Application.Missions;
-using Bud.Server.Application.MissionTemplates;
-using Bud.Server.Application.Notifications;
-using Bud.Server.Application.DomainEvents.Notifications;
-using Bud.Server.Application.Organizations;
-using Bud.Server.Application.Sessions;
-using Bud.Server.Application.Teams;
-using Bud.Server.Application.Workspaces;
+using Bud.Server.Application.UseCases.Collaborators;
+using Bud.Server.Application.UseCases.Me;
+using Bud.Server.Application.UseCases.Metrics;
+using Bud.Server.Application.UseCases.Objectives;
+using Bud.Server.Application.UseCases.Missions;
+using Bud.Server.Application.UseCases.Templates;
+using Bud.Server.Application.UseCases.Notifications;
+using Bud.Server.Application.EventHandlers;
+using Bud.Server.Application.UseCases.Organizations;
+using Bud.Server.Application.UseCases.Sessions;
+using Bud.Server.Application.UseCases.Teams;
+using Bud.Server.Application.UseCases.Workspaces;
 using Bud.Server.Authorization;
 using Bud.Server.Domain.Abstractions;
 using Bud.Server.Domain.Events;
@@ -107,14 +107,14 @@ public static class BudApplicationCompositionExtensions
         services.AddScoped<ListMyOrganizations>();
         services.AddScoped<DeleteCurrentSession>();
 
-        services.AddScoped<IMissionTemplateRepository, MissionTemplateRepository>();
+        services.AddScoped<ITemplateRepository, TemplateRepository>();
         services.AddScoped<CreateTemplate>();
         services.AddScoped<PatchTemplate>();
         services.AddScoped<DeleteTemplate>();
         services.AddScoped<GetTemplateById>();
         services.AddScoped<ListTemplates>();
 
-        services.AddScoped<IMyDashboardReadStore, DashboardReadRepository>();
+        services.AddScoped<IMyDashboardReadStore, DashboardReadStore>();
         services.AddScoped<GetMyDashboard>();
 
         services.AddScoped<IMissionProgressService, MissionProgressService>();

@@ -25,7 +25,7 @@ public sealed class BudApiSessionTests
         {
             if (request.RequestUri!.AbsolutePath == "/api/sessions")
             {
-                return JsonResponse(new AuthLoginResponse
+                return JsonResponse(new SessionResponse
                 {
                     Token = "jwt-token",
                     Email = "user@getbud.co",
@@ -57,7 +57,7 @@ public sealed class BudApiSessionTests
         {
             if (request.RequestUri!.AbsolutePath == "/api/sessions")
             {
-                return JsonResponse(new AuthLoginResponse
+                return JsonResponse(new SessionResponse
                 {
                     Token = "jwt-dinamico",
                     Email = "maria@acme.com",
@@ -87,7 +87,7 @@ public sealed class BudApiSessionTests
         {
             if (request.RequestUri!.AbsolutePath == "/api/sessions")
             {
-                return JsonResponse(new AuthLoginResponse
+                return JsonResponse(new SessionResponse
                 {
                     Token = "jwt-token",
                     Email = "user@getbud.co",
@@ -101,7 +101,7 @@ public sealed class BudApiSessionTests
                 request.Headers.Authorization!.Scheme.Should().Be("Bearer");
                 request.Headers.Authorization.Parameter.Should().Be("jwt-token");
 
-                return JsonResponse(new List<OrganizationSummaryDto>
+                return JsonResponse(new List<OrganizationSummaryResponse>
                 {
                     new() { Id = Guid.NewGuid(), Name = "Org 1" }
                 });
@@ -130,7 +130,7 @@ public sealed class BudApiSessionTests
         {
             if (request.RequestUri!.AbsolutePath == "/api/sessions")
             {
-                return JsonResponse(new AuthLoginResponse
+                return JsonResponse(new SessionResponse
                 {
                     Token = "jwt-token",
                     Email = "user@getbud.co",
@@ -140,7 +140,7 @@ public sealed class BudApiSessionTests
 
             if (request.RequestUri.AbsolutePath == "/api/me/organizations")
             {
-                return JsonResponse(new List<OrganizationSummaryDto>
+                return JsonResponse(new List<OrganizationSummaryResponse>
                 {
                     new() { Id = validTenantId, Name = "Org Válida" }
                 });

@@ -189,7 +189,7 @@ public sealed class MissionScopeAccessHandlerTests
             Email = "team-member@example.com",
             OrganizationId = orgId
         });
-        context.CollaboratorTeams.Add(new CollaboratorTeam
+        context.CollaboratorTeams.Add(new CollaboratorTeamResponse
         {
             CollaboratorId = collaboratorId,
             TeamId = teamId,
@@ -237,7 +237,7 @@ public sealed class MissionScopeAccessHandlerTests
             Email = "outsider@example.com",
             OrganizationId = orgId
         });
-        // No CollaboratorTeam link -- collaborator is NOT in the team
+        // No CollaboratorTeamResponse link -- collaborator is NOT in the team
         await context.SaveChangesAsync();
 
         var handler = new MissionScopeAccessHandler(tenantProvider, context);
@@ -284,7 +284,7 @@ public sealed class MissionScopeAccessHandlerTests
             Email = "member@example.com",
             OrganizationId = orgId
         });
-        context.CollaboratorTeams.Add(new CollaboratorTeam
+        context.CollaboratorTeams.Add(new CollaboratorTeamResponse
         {
             CollaboratorId = collaboratorId,
             TeamId = teamId,
@@ -342,7 +342,7 @@ public sealed class MissionScopeAccessHandlerTests
             OrganizationId = orgId
         });
         // Collaborator belongs to a team in a DIFFERENT workspace
-        context.CollaboratorTeams.Add(new CollaboratorTeam
+        context.CollaboratorTeams.Add(new CollaboratorTeamResponse
         {
             CollaboratorId = collaboratorId,
             TeamId = teamInOtherWorkspaceId,

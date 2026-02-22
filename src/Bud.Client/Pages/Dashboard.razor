@@ -93,7 +93,7 @@ else
             <div>
                 <h3 class="dashboard-section-title" style="font-size: var(--font-size-sm); margin-bottom: var(--spacing-3);">Indicadores</h3>
                 <div class="indicators-grid">
-                    @{ var indicators = new (string Label, IndicatorDto Data)[]
+                    @{ var indicators = new (string Label, IndicatorResponse Data)[]
                         {
                             ("Acesso semanal", dashboard.TeamHealth.Indicators.WeeklyAccess),
                             ("Missões atualizadas", dashboard.TeamHealth.Indicators.MissionsUpdated),
@@ -182,7 +182,7 @@ else
 
 @code {
     private MyDashboardResponse? dashboard;
-    private List<TeamSummaryDto>? userTeams;
+    private List<CollaboratorTeamResponse>? userTeams;
     private Guid? selectedTeamId;
 
     protected override async Task OnInitializedAsync()
@@ -195,7 +195,7 @@ else
 
     private async Task LoadUserTeams()
     {
-        if (AuthState.Session?.CollaboratorId is { } collaboratorId)
+        if (AuthState.SessionResponse?.CollaboratorId is { } collaboratorId)
         {
             userTeams = await Api.GetCollaboratorTeamsAsync(collaboratorId);
         }

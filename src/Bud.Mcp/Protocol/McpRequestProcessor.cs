@@ -56,7 +56,7 @@ public sealed class McpRequestProcessor(
                 {
                     return Results.Json(McpJsonRpcDispatcher.CreateErrorResponse(
                         idOrNull,
-                        "Header MCP-Session-Id é obrigatório para este método."));
+                        "Header MCP-SessionResponse-Id é obrigatório para este método."));
                 }
 
                 sessionContext = await sessionStore.GetExistingAsync(requestedSessionId, cancellationToken);
@@ -77,7 +77,7 @@ public sealed class McpRequestProcessor(
 
     private static string? ReadSessionIdHeader(IHeaderDictionary headers)
     {
-        if (!headers.TryGetValue("MCP-Session-Id", out var value))
+        if (!headers.TryGetValue("MCP-SessionResponse-Id", out var value))
         {
             return null;
         }
@@ -90,7 +90,7 @@ public sealed class McpRequestProcessor(
 
         if (!Guid.TryParse(raw, out var parsed))
         {
-            throw new InvalidOperationException("Header MCP-Session-Id deve ser um GUID válido.");
+            throw new InvalidOperationException("Header MCP-SessionResponse-Id deve ser um GUID válido.");
         }
 
         return parsed.ToString();
@@ -98,7 +98,7 @@ public sealed class McpRequestProcessor(
 
     private static void SetSessionHeaders(IHeaderDictionary headers, string sessionId)
     {
-        headers["MCP-Session-Id"] = sessionId;
+        headers["MCP-SessionResponse-Id"] = sessionId;
     }
 
     private static JsonNode? TryGetId(JsonElement root)

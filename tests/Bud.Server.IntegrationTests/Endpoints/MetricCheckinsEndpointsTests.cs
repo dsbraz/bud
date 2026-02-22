@@ -145,10 +145,10 @@ public class MetricCheckinsEndpointsTests : IClassFixture<CustomWebApplicationFa
     {
         // Arrange
         var (_, quantMetric, _, _, client) = await CreateTestSetup();
+        var metricId = quantMetric.Id;
 
         var request = new CreateCheckinRequest
         {
-            MetricId = quantMetric.Id,
             Value = 72m,
             CheckinDate = DateTime.UtcNow,
             ConfidenceLevel = 4,
@@ -156,7 +156,7 @@ public class MetricCheckinsEndpointsTests : IClassFixture<CustomWebApplicationFa
         };
 
         // Act
-        var response = await client.PostAsJsonAsync($"/api/metrics/{request.MetricId}/checkins", request);
+        var response = await client.PostAsJsonAsync($"/api/metrics/{metricId}/checkins", request);
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.Created);
@@ -173,10 +173,10 @@ public class MetricCheckinsEndpointsTests : IClassFixture<CustomWebApplicationFa
     {
         // Arrange
         var (_, _, qualMetric, _, client) = await CreateTestSetup();
+        var metricId = qualMetric.Id;
 
         var request = new CreateCheckinRequest
         {
-            MetricId = qualMetric.Id,
             Text = "Padrões de qualidade melhoraram significativamente",
             CheckinDate = DateTime.UtcNow,
             ConfidenceLevel = 3,
@@ -184,7 +184,7 @@ public class MetricCheckinsEndpointsTests : IClassFixture<CustomWebApplicationFa
         };
 
         // Act
-        var response = await client.PostAsJsonAsync($"/api/metrics/{request.MetricId}/checkins", request);
+        var response = await client.PostAsJsonAsync($"/api/metrics/{metricId}/checkins", request);
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.Created);
@@ -199,17 +199,17 @@ public class MetricCheckinsEndpointsTests : IClassFixture<CustomWebApplicationFa
     {
         // Arrange
         var (_, quantMetric, _, _, client) = await CreateTestSetup();
+        var metricId = quantMetric.Id;
 
         var request = new CreateCheckinRequest
         {
-            MetricId = quantMetric.Id,
             // Value not set — should fail for quantitative
             CheckinDate = DateTime.UtcNow,
             ConfidenceLevel = 3
         };
 
         // Act
-        var response = await client.PostAsJsonAsync($"/api/metrics/{request.MetricId}/checkins", request);
+        var response = await client.PostAsJsonAsync($"/api/metrics/{metricId}/checkins", request);
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
@@ -220,17 +220,17 @@ public class MetricCheckinsEndpointsTests : IClassFixture<CustomWebApplicationFa
     {
         // Arrange
         var (_, _, qualMetric, _, client) = await CreateTestSetup();
+        var metricId = qualMetric.Id;
 
         var request = new CreateCheckinRequest
         {
-            MetricId = qualMetric.Id,
             // Text not set — should fail for qualitative
             CheckinDate = DateTime.UtcNow,
             ConfidenceLevel = 3
         };
 
         // Act
-        var response = await client.PostAsJsonAsync($"/api/metrics/{request.MetricId}/checkins", request);
+        var response = await client.PostAsJsonAsync($"/api/metrics/{metricId}/checkins", request);
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
@@ -241,17 +241,17 @@ public class MetricCheckinsEndpointsTests : IClassFixture<CustomWebApplicationFa
     {
         // Arrange
         var (_, quantMetric, _, _, client) = await CreateTestSetup();
+        var metricId = quantMetric.Id;
 
         var request = new CreateCheckinRequest
         {
-            MetricId = quantMetric.Id,
             Value = 50m,
             CheckinDate = DateTime.UtcNow,
             ConfidenceLevel = 6 // Invalid: must be 1-5
         };
 
         // Act
-        var response = await client.PostAsJsonAsync($"/api/metrics/{request.MetricId}/checkins", request);
+        var response = await client.PostAsJsonAsync($"/api/metrics/{metricId}/checkins", request);
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
@@ -261,18 +261,18 @@ public class MetricCheckinsEndpointsTests : IClassFixture<CustomWebApplicationFa
     public async Task Create_WithNonExistentMetric_ReturnsNotFound()
     {
         // Arrange
-        var (_, quantMetric, _, _, client) = await CreateTestSetup();
+        var (_, _, _, _, client) = await CreateTestSetup();
+        var metricId = Guid.NewGuid();
 
         var request = new CreateCheckinRequest
         {
-            MetricId = Guid.NewGuid(),
             Value = 50m,
             CheckinDate = DateTime.UtcNow,
             ConfidenceLevel = 3
         };
 
         // Act
-        var response = await client.PostAsJsonAsync($"/api/metrics/{request.MetricId}/checkins", request);
+        var response = await client.PostAsJsonAsync($"/api/metrics/{metricId}/checkins", request);
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.NotFound);
@@ -284,16 +284,16 @@ public class MetricCheckinsEndpointsTests : IClassFixture<CustomWebApplicationFa
         // Arrange
         var unauthenticatedClient = _factory.CreateClient();
 
+        var metricId = Guid.NewGuid();
         var request = new CreateCheckinRequest
         {
-            MetricId = Guid.NewGuid(),
             Value = 50m,
             CheckinDate = DateTime.UtcNow,
             ConfidenceLevel = 3
         };
 
         // Act
-        var response = await unauthenticatedClient.PostAsJsonAsync($"/api/metrics/{request.MetricId}/checkins", request);
+        var response = await unauthenticatedClient.PostAsJsonAsync($"/api/metrics/{metricId}/checkins", request);
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
@@ -312,7 +312,6 @@ public class MetricCheckinsEndpointsTests : IClassFixture<CustomWebApplicationFa
         var createResponse = await client.PostAsJsonAsync($"/api/metrics/{quantMetric.Id}/checkins",
             new CreateCheckinRequest
             {
-                MetricId = quantMetric.Id,
                 Value = 50m,
                 CheckinDate = DateTime.UtcNow,
                 ConfidenceLevel = 3,
@@ -370,7 +369,6 @@ public class MetricCheckinsEndpointsTests : IClassFixture<CustomWebApplicationFa
         var createResponse = await client.PostAsJsonAsync($"/api/metrics/{quantMetric.Id}/checkins",
             new CreateCheckinRequest
             {
-                MetricId = quantMetric.Id,
                 Value = 50m,
                 CheckinDate = DateTime.UtcNow,
                 ConfidenceLevel = 3
@@ -409,7 +407,6 @@ public class MetricCheckinsEndpointsTests : IClassFixture<CustomWebApplicationFa
         var createResponse = await client.PostAsJsonAsync($"/api/metrics/{quantMetric.Id}/checkins",
             new CreateCheckinRequest
             {
-                MetricId = quantMetric.Id,
                 Value = 50m,
                 CheckinDate = DateTime.UtcNow,
                 ConfidenceLevel = 3
@@ -450,7 +447,6 @@ public class MetricCheckinsEndpointsTests : IClassFixture<CustomWebApplicationFa
         var createResponse = await client.PostAsJsonAsync($"/api/metrics/{quantMetric.Id}/checkins",
             new CreateCheckinRequest
             {
-                MetricId = quantMetric.Id,
                 Value = 50m,
                 CheckinDate = DateTime.UtcNow,
                 ConfidenceLevel = 3
@@ -481,7 +477,6 @@ public class MetricCheckinsEndpointsTests : IClassFixture<CustomWebApplicationFa
         var createResponse = await client.PostAsJsonAsync($"/api/metrics/{quantMetric.Id}/checkins",
             new CreateCheckinRequest
             {
-                MetricId = quantMetric.Id,
                 Value = 72m,
                 CheckinDate = DateTime.UtcNow,
                 ConfidenceLevel = 4,
@@ -529,7 +524,6 @@ public class MetricCheckinsEndpointsTests : IClassFixture<CustomWebApplicationFa
         await client.PostAsJsonAsync($"/api/metrics/{quantMetric.Id}/checkins",
             new CreateCheckinRequest
             {
-                MetricId = quantMetric.Id,
                 Value = 50m,
                 CheckinDate = DateTime.UtcNow,
                 ConfidenceLevel = 3
@@ -538,7 +532,6 @@ public class MetricCheckinsEndpointsTests : IClassFixture<CustomWebApplicationFa
         await client.PostAsJsonAsync($"/api/metrics/{qualMetric.Id}/checkins",
             new CreateCheckinRequest
             {
-                MetricId = qualMetric.Id,
                 Text = "Progresso qualitativo",
                 CheckinDate = DateTime.UtcNow,
                 ConfidenceLevel = 4
@@ -566,7 +559,6 @@ public class MetricCheckinsEndpointsTests : IClassFixture<CustomWebApplicationFa
             await client.PostAsJsonAsync($"/api/metrics/{quantMetric.Id}/checkins",
                 new CreateCheckinRequest
                 {
-                    MetricId = quantMetric.Id,
                     Value = 10m + i,
                     CheckinDate = DateTime.UtcNow.AddDays(-i),
                     ConfidenceLevel = 3
@@ -647,17 +639,17 @@ public class MetricCheckinsEndpointsTests : IClassFixture<CustomWebApplicationFa
         // Create collaborator in org1 and try to checkin on org2's metric
         var collaborator = await CreateCollaboratorInOrg(org1.Id);
         var tenantClient = _factory.CreateTenantClient(org1.Id, collaborator.Email, collaborator.Id);
+        var metricId = metric.Id;
 
         var request = new CreateCheckinRequest
         {
-            MetricId = metric.Id,
             Value = 50m,
             CheckinDate = DateTime.UtcNow,
             ConfidenceLevel = 3
         };
 
         // Act
-        var response = await tenantClient.PostAsJsonAsync($"/api/metrics/{request.MetricId}/checkins", request);
+        var response = await tenantClient.PostAsJsonAsync($"/api/metrics/{metricId}/checkins", request);
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.NotFound);
@@ -700,10 +692,10 @@ public class MetricCheckinsEndpointsTests : IClassFixture<CustomWebApplicationFa
                 Unit = Bud.Shared.Contracts.MetricUnit.Points
             });
         var metric = (await metricResponse.Content.ReadFromJsonAsync<Metric>())!;
+        var metricId = metric.Id;
 
         var request = new CreateCheckinRequest
         {
-            MetricId = metric.Id,
             Value = 50m,
             CheckinDate = DateTime.UtcNow,
             ConfidenceLevel = 3
@@ -711,12 +703,12 @@ public class MetricCheckinsEndpointsTests : IClassFixture<CustomWebApplicationFa
 
         // Act: Owner should succeed
         var ownerClient = _factory.CreateTenantClient(org.Id, owner.Email, owner.Id);
-        var ownerResponse = await ownerClient.PostAsJsonAsync($"/api/metrics/{request.MetricId}/checkins", request);
+        var ownerResponse = await ownerClient.PostAsJsonAsync($"/api/metrics/{metricId}/checkins", request);
         ownerResponse.StatusCode.Should().Be(HttpStatusCode.Created);
 
         // Act: Other collaborator should fail
         var otherClient = _factory.CreateTenantClient(org.Id, other.Email, other.Id);
-        var otherResponse = await otherClient.PostAsJsonAsync($"/api/metrics/{request.MetricId}/checkins", request);
+        var otherResponse = await otherClient.PostAsJsonAsync($"/api/metrics/{metricId}/checkins", request);
         otherResponse.StatusCode.Should().Be(HttpStatusCode.Forbidden);
     }
 
@@ -749,7 +741,7 @@ public class MetricCheckinsEndpointsTests : IClassFixture<CustomWebApplicationFa
         using (var scope = _factory.Services.CreateScope())
         {
             var dbContext = scope.ServiceProvider.GetRequiredService<Bud.Server.Infrastructure.Persistence.ApplicationDbContext>();
-            dbContext.Set<CollaboratorTeam>().Add(new CollaboratorTeam
+            dbContext.Set<CollaboratorTeamResponse>().Add(new CollaboratorTeamResponse
             {
                 CollaboratorId = member.Id,
                 TeamId = team.Id
@@ -781,10 +773,10 @@ public class MetricCheckinsEndpointsTests : IClassFixture<CustomWebApplicationFa
                 Unit = Bud.Shared.Contracts.MetricUnit.Points
             });
         var metric = (await metricResponse.Content.ReadFromJsonAsync<Metric>())!;
+        var metricId = metric.Id;
 
         var request = new CreateCheckinRequest
         {
-            MetricId = metric.Id,
             Value = 50m,
             CheckinDate = DateTime.UtcNow,
             ConfidenceLevel = 3
@@ -792,12 +784,12 @@ public class MetricCheckinsEndpointsTests : IClassFixture<CustomWebApplicationFa
 
         // Act: Team member should succeed
         var memberClient = _factory.CreateTenantClient(org.Id, member.Email, member.Id);
-        var memberResponse = await memberClient.PostAsJsonAsync($"/api/metrics/{request.MetricId}/checkins", request);
+        var memberResponse = await memberClient.PostAsJsonAsync($"/api/metrics/{metricId}/checkins", request);
         memberResponse.StatusCode.Should().Be(HttpStatusCode.Created);
 
         // Act: Outsider should fail
         var outsiderClient = _factory.CreateTenantClient(org.Id, outsider.Email, outsider.Id);
-        var outsiderResponse = await outsiderClient.PostAsJsonAsync($"/api/metrics/{request.MetricId}/checkins", request);
+        var outsiderResponse = await outsiderClient.PostAsJsonAsync($"/api/metrics/{metricId}/checkins", request);
         outsiderResponse.StatusCode.Should().Be(HttpStatusCode.Forbidden);
     }
 

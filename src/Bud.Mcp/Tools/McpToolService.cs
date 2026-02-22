@@ -163,7 +163,10 @@ public sealed class McpToolService(BudApiClient budApiClient, BudApiSession sess
             "mission_metric_list" => await MissionMetricListAsync(arguments, cancellationToken),
             "mission_metric_update" => await MissionMetricUpdateAsync(arguments, cancellationToken),
             "mission_metric_delete" => await MissionMetricDeleteAsync(arguments, cancellationToken),
-            "metric_checkin_create" => Serialize(await _budApiClient.CreateMetricCheckinAsync(Deserialize<CreateCheckinRequest>(arguments), cancellationToken)),
+            "metric_checkin_create" => Serialize(await _budApiClient.CreateMetricCheckinAsync(
+                ParseGuid(arguments, "metricId"),
+                Deserialize<CreateCheckinRequest>(arguments),
+                cancellationToken)),
             "metric_checkin_get" => Serialize(await _budApiClient.GetMetricCheckinAsync(
                 ParseGuid(arguments, "metricId"),
                 ParseGuid(arguments, "checkinId"),

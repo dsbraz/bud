@@ -37,19 +37,33 @@ public sealed class PatchMissionValidator : AbstractValidator<PatchMissionReques
 {
     public PatchMissionValidator()
     {
-        RuleFor(x => x.Name)
+        RuleFor(x => x.Name.Value)
             .NotEmpty().WithMessage("Nome é obrigatório.")
-            .MaximumLength(200).WithMessage("Nome deve ter no máximo 200 caracteres.");
+            .MaximumLength(200).WithMessage("Nome deve ter no máximo 200 caracteres.")
+            .When(x => x.Name.HasValue);
 
-        RuleFor(x => x.StartDate)
+        RuleFor(x => x.StartDate.Value)
             .NotEmpty().WithMessage("Data de início é obrigatória.");
 
-        RuleFor(x => x.EndDate)
+        RuleFor(x => x.EndDate.Value)
             .NotEmpty().WithMessage("Data de término é obrigatória.")
-            .GreaterThanOrEqualTo(x => x.StartDate).WithMessage("Data de término deve ser igual ou posterior à data de início.");
+            .When(x => x.EndDate.HasValue);
 
-        RuleFor(x => x.Status)
-            .IsInEnum().WithMessage("Status inválido.");
+        RuleFor(x => x.Status.Value)
+            .IsInEnum().WithMessage("Status inválido.")
+            .When(x => x.Status.HasValue);
+
+        RuleFor(x => x)
+            .Must(x =>
+            {
+                if (x.StartDate.HasValue && x.EndDate.HasValue)
+                {
+                    return x.EndDate.Value >= x.StartDate.Value;
+                }
+
+                return true;
+            })
+            .WithMessage("Data de término deve ser igual ou posterior à data de início.");
     }
 }
 
@@ -140,73 +154,33 @@ public sealed class PatchMissionMetricValidator : AbstractValidator<PatchMetricR
 {
     public PatchMissionMetricValidator()
     {
-        RuleFor(x => x.Name)
+        RuleFor(x => x.Name.Value)
             .NotEmpty().WithMessage("Nome é obrigatório.")
-            .MaximumLength(200).WithMessage("Nome deve ter no máximo 200 caracteres.");
+            .MaximumLength(200).WithMessage("Nome deve ter no máximo 200 caracteres.")
+            .When(x => x.Name.HasValue);
 
-        RuleFor(x => x.Type)
-            .IsInEnum().WithMessage("Tipo inválido.");
+        RuleFor(x => x.Type.Value)
+            .IsInEnum().WithMessage("Tipo inválido.")
+            .When(x => x.Type.HasValue);
 
-        When(x => x.Type == MetricType.Qualitative, () =>
-        {
-            RuleFor(x => x.TargetText)
-                .MaximumLength(1000).WithMessage("Texto alvo deve ter no máximo 1000 caracteres.");
-        });
+        RuleFor(x => x.TargetText.Value)
+            .MaximumLength(1000).WithMessage("Texto alvo deve ter no máximo 1000 caracteres.")
+            .When(x => x.TargetText.HasValue && !string.IsNullOrEmpty(x.TargetText.Value));
 
-        When(x => x.Type == MetricType.Quantitative, () =>
-        {
-            RuleFor(x => x.QuantitativeType)
-                .NotNull().WithMessage("Tipo quantitativo é obrigatório para métricas quantitativas.")
-                .IsInEnum().WithMessage("Tipo quantitativo inválido.");
+        RuleFor(x => x.QuantitativeType.Value)
+            .IsInEnum().WithMessage("Tipo quantitativo inválido.")
+            .When(x => x.QuantitativeType.HasValue && x.QuantitativeType.Value.HasValue);
 
-            RuleFor(x => x.Unit)
-                .NotNull().WithMessage("Unidade é obrigatória para métricas quantitativas.")
-                .IsInEnum().WithMessage("Unidade inválida.");
+        RuleFor(x => x.Unit.Value)
+            .IsInEnum().WithMessage("Unidade inválida.")
+            .When(x => x.Unit.HasValue && x.Unit.Value.HasValue);
 
-            // KeepAbove: requires MinValue
-            When(x => x.QuantitativeType == QuantitativeMetricType.KeepAbove, () =>
-            {
-                RuleFor(x => x.MinValue)
-                    .NotNull().WithMessage("Valor mínimo é obrigatório para métricas KeepAbove.")
-                    .GreaterThanOrEqualTo(0).WithMessage("Valor mínimo deve ser maior ou igual a 0.");
-            });
+        RuleFor(x => x.MinValue.Value)
+            .GreaterThanOrEqualTo(0).WithMessage("Valor mínimo deve ser maior ou igual a 0.")
+            .When(x => x.MinValue.HasValue && x.MinValue.Value.HasValue);
 
-            // KeepBelow: requires MaxValue
-            When(x => x.QuantitativeType == QuantitativeMetricType.KeepBelow, () =>
-            {
-                RuleFor(x => x.MaxValue)
-                    .NotNull().WithMessage("Valor máximo é obrigatório para métricas KeepBelow.")
-                    .GreaterThanOrEqualTo(0).WithMessage("Valor máximo deve ser maior ou igual a 0.");
-            });
-
-            // KeepBetween: requires both MinValue and MaxValue, with MinValue < MaxValue
-            When(x => x.QuantitativeType == QuantitativeMetricType.KeepBetween, () =>
-            {
-                RuleFor(x => x.MinValue)
-                    .NotNull().WithMessage("Valor mínimo é obrigatório para métricas KeepBetween.")
-                    .GreaterThanOrEqualTo(0).WithMessage("Valor mínimo deve ser maior ou igual a 0.");
-
-                RuleFor(x => x.MaxValue)
-                    .NotNull().WithMessage("Valor máximo é obrigatório para métricas KeepBetween.")
-                    .GreaterThanOrEqualTo(0).WithMessage("Valor máximo deve ser maior ou igual a 0.")
-                    .GreaterThan(x => x.MinValue ?? 0).WithMessage("Valor máximo deve ser maior que o valor mínimo.");
-            });
-
-            // Achieve: requires MaxValue (target to achieve)
-            When(x => x.QuantitativeType == QuantitativeMetricType.Achieve, () =>
-            {
-                RuleFor(x => x.MaxValue)
-                    .NotNull().WithMessage("Valor máximo é obrigatório para métricas Achieve.")
-                    .GreaterThanOrEqualTo(0).WithMessage("Valor máximo deve ser maior ou igual a 0.");
-            });
-
-            // Reduce: requires MaxValue (target to reduce to)
-            When(x => x.QuantitativeType == QuantitativeMetricType.Reduce, () =>
-            {
-                RuleFor(x => x.MaxValue)
-                    .NotNull().WithMessage("Valor máximo é obrigatório para métricas Reduce.")
-                    .GreaterThanOrEqualTo(0).WithMessage("Valor máximo deve ser maior ou igual a 0.");
-            });
-        });
+        RuleFor(x => x.MaxValue.Value)
+            .GreaterThanOrEqualTo(0).WithMessage("Valor máximo deve ser maior ou igual a 0.")
+            .When(x => x.MaxValue.HasValue && x.MaxValue.Value.HasValue);
     }
 }

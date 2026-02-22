@@ -1,10 +1,11 @@
-using Bud.Server.Application.Sessions;
+using Bud.Server.Application.UseCases.Sessions;
 using Bud.Server.Authorization;
 using Bud.Shared.Contracts;
 using FluentValidation;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
+using Bud.Server.Domain.Model;
 
 namespace Bud.Server.Controllers;
 
@@ -14,7 +15,7 @@ namespace Bud.Server.Controllers;
 public sealed class SessionsController(
     CreateSession createSession,
     DeleteCurrentSession deleteCurrentSession,
-    IValidator<AuthLoginRequest> loginValidator) : ApiControllerBase
+    IValidator<CreateSessionRequest> loginValidator) : ApiControllerBase
 {
     /// <summary>
     /// Realiza login por e-mail e retorna token JWT.
@@ -26,11 +27,11 @@ public sealed class SessionsController(
     [HttpPost]
     [EnableRateLimiting("auth-login")]
     [Consumes("application/json")]
-    [ProducesResponseType(typeof(AuthLoginResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(SessionResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ValidationProblemDetails), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status429TooManyRequests)]
-    public async Task<ActionResult<AuthLoginResponse>> Login(AuthLoginRequest request, CancellationToken cancellationToken)
+    public async Task<ActionResult<SessionResponse>> Login(CreateSessionRequest request, CancellationToken cancellationToken)
     {
         var validationResult = await loginValidator.ValidateAsync(request, cancellationToken);
         if (!validationResult.IsValid)

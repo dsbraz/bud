@@ -5,7 +5,7 @@ namespace Bud.Server.Domain.Repositories;
 public interface INotificationRepository
 {
     Task<Notification?> GetByIdAsync(Guid id, CancellationToken ct = default);
-    Task<Bud.Shared.Contracts.PagedResult<Notification>> GetByRecipientAsync(
+    Task<Bud.Shared.Contracts.Common.PagedResult<Notification>> GetByRecipientAsync(
         Guid recipientId,
         bool? isRead,
         int page,

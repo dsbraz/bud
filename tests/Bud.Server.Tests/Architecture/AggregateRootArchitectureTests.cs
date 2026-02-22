@@ -21,7 +21,7 @@ public sealed class AggregateRootArchitectureTests
             typeof(Mission),
             typeof(Metric),
             typeof(MissionTemplate),
-            typeof(Notification)
+            typeof(NotificationResponse)
         };
 
         var missingMarker = expectedAggregateRoots
@@ -40,7 +40,7 @@ public sealed class AggregateRootArchitectureTests
             typeof(MetricCheckin),
             typeof(MissionTemplateObjective),
             typeof(MissionTemplateMetric),
-            typeof(CollaboratorTeam),
+            typeof(CollaboratorTeamResponse),
             typeof(CollaboratorAccessLog)
         };
 

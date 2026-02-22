@@ -20,8 +20,9 @@ public sealed class PatchWorkspaceValidator : AbstractValidator<PatchWorkspaceRe
 {
     public PatchWorkspaceValidator()
     {
-        RuleFor(x => x.Name)
+        RuleFor(x => x.Name.Value)
             .NotEmpty().WithMessage("Nome é obrigatório.")
-            .MaximumLength(200).WithMessage("Nome deve ter no máximo 200 caracteres.");
+            .MaximumLength(200).WithMessage("Nome deve ter no máximo 200 caracteres.")
+            .When(x => x.Name.HasValue);
     }
 }

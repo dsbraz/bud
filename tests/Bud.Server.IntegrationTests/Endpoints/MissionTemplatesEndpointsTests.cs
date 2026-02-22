@@ -32,11 +32,11 @@ public class MissionTemplatesEndpointsTests : IClassFixture<CustomWebApplication
 
     private async Task<MissionTemplate> CreateTestTemplate()
     {
-        var request = new CreateMissionTemplateRequest
+        var request = new CreateTemplateRequest
         {
             Name = $"Template {Guid.NewGuid():N}",
             Description = "Test template",
-            Metrics = new List<MissionTemplateMetricDto>
+            Metrics = new List<TemplateMetricRequest>
             {
                 new()
                 {
@@ -60,13 +60,13 @@ public class MissionTemplatesEndpointsTests : IClassFixture<CustomWebApplication
     public async Task Create_WithValidRequest_ReturnsCreated()
     {
         // Arrange
-        var request = new CreateMissionTemplateRequest
+        var request = new CreateTemplateRequest
         {
             Name = "Valid Template",
             Description = "A valid mission template",
             MissionNamePattern = "Mission - {name}",
             MissionDescriptionPattern = "Description for {name}",
-            Metrics = new List<MissionTemplateMetricDto>
+            Metrics = new List<TemplateMetricRequest>
             {
                 new()
                 {
@@ -106,12 +106,12 @@ public class MissionTemplatesEndpointsTests : IClassFixture<CustomWebApplication
     {
         // Arrange
         var objectiveId = Guid.NewGuid();
-        var request = new CreateMissionTemplateRequest
+        var request = new CreateTemplateRequest
         {
             Name = "Template com objetivos",
             Objectives =
             [
-                new MissionTemplateObjectiveDto
+                new TemplateObjectiveRequest
                 {
                     Id = objectiveId,
                     Name = "Objetivo estratégico",
@@ -120,12 +120,12 @@ public class MissionTemplatesEndpointsTests : IClassFixture<CustomWebApplication
             ],
             Metrics =
             [
-                new MissionTemplateMetricDto
+                new TemplateMetricRequest
                 {
                     Name = "Métrica vinculada",
                     Type = Bud.Shared.Contracts.MetricType.Quantitative,
                     OrderIndex = 0,
-                    MissionTemplateObjectiveId = objectiveId,
+                    TemplateObjectiveId = objectiveId,
                     QuantitativeType = Bud.Shared.Contracts.QuantitativeMetricType.Achieve,
                     MaxValue = 100,
                     Unit = Bud.Shared.Contracts.MetricUnit.Percentage
@@ -149,7 +149,7 @@ public class MissionTemplatesEndpointsTests : IClassFixture<CustomWebApplication
     public async Task Create_WithEmptyName_ReturnsBadRequest()
     {
         // Arrange
-        var request = new CreateMissionTemplateRequest
+        var request = new CreateTemplateRequest
         {
             Name = "",
             Description = "Template with empty name"
@@ -232,13 +232,13 @@ public class MissionTemplatesEndpointsTests : IClassFixture<CustomWebApplication
         // Arrange
         var created = await CreateTestTemplate();
 
-        var updateRequest = new PatchMissionTemplateRequest
+        var updateRequest = new PatchTemplateRequest
         {
             Name = "Updated Template Name",
             Description = "Updated description",
             MissionNamePattern = "Updated - {name}",
             MissionDescriptionPattern = "Updated desc for {name}",
-            Metrics = new List<MissionTemplateMetricDto>
+            Metrics = new List<TemplateMetricRequest>
             {
                 new()
                 {

@@ -1,12 +1,12 @@
 using System.Security.Claims;
-using Bud.Server.Application.Me;
-using Bud.Server.Application.Missions;
+using Bud.Server.Application.UseCases.Me;
+using Bud.Server.Application.UseCases.Missions;
 using Bud.Server.Authorization;
-using Bud.Server.Domain.Model;
 using Bud.Server.MultiTenancy;
 using Bud.Shared.Contracts;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Bud.Server.Domain.Model;
 
 namespace Bud.Server.Controllers;
 
@@ -24,9 +24,9 @@ public sealed class MeController(
     /// Lista organizações disponíveis para o usuário autenticado.
     /// </summary>
     [HttpGet("organizations")]
-    [ProducesResponseType(typeof(List<OrganizationSummaryDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(List<OrganizationSummaryResponse>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
-    public async Task<ActionResult<List<OrganizationSummaryDto>>> GetOrganizations(CancellationToken cancellationToken)
+    public async Task<ActionResult<List<OrganizationSummaryResponse>>> GetOrganizations(CancellationToken cancellationToken)
     {
         var email = User.FindFirstValue(ClaimTypes.Email) ?? User.FindFirstValue("email");
         if (string.IsNullOrWhiteSpace(email))

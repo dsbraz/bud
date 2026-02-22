@@ -10,7 +10,7 @@ public sealed class MissionProgressDisplayHelperTests
     [Fact]
     public void GetMissionProgressStatusClass_WhenNoCheckins_ShouldReturnNoData()
     {
-        var progress = new MissionProgressDto
+        var progress = new MissionProgressResponse
         {
             MetricsWithCheckins = 0,
             ExpectedProgress = 50,
@@ -25,7 +25,7 @@ public sealed class MissionProgressDisplayHelperTests
     [Fact]
     public void GetMetricProgressStatusClass_WhenMediumProgress_ShouldReturnAtRisk()
     {
-        var progress = new MetricProgressDto
+        var progress = new MetricProgressResponse
         {
             HasCheckins = true,
             Progress = 55

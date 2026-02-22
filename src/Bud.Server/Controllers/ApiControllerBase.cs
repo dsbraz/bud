@@ -2,6 +2,8 @@ using FluentValidation.Results;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Bud.Server.Application.Common;
+using Bud.Server.Application.Mapping;
+using Bud.Server.Domain.Model;
 
 namespace Bud.Server.Controllers;
 

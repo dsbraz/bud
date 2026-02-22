@@ -2,7 +2,8 @@ using Bud.Server.Domain.Repositories;
 using Bud.Server.Application.Ports;
 using System.Security.Claims;
 using Bud.Server.Application.Common;
-using Bud.Server.Application.Metrics;
+using Bud.Server.Application.Mapping;
+using Bud.Server.Application.UseCases.Metrics;
 using Bud.Server.Authorization;
 using Bud.Server.MultiTenancy;
 using Bud.Shared.Contracts;
@@ -68,7 +69,6 @@ public sealed class MetricCheckinWriteUseCasesTests
 
         var request = new CreateCheckinRequest
         {
-            MetricId = metric.Id,
             Text = "ok",
             CheckinDate = DateTime.UtcNow,
             ConfidenceLevel = 3
@@ -145,7 +145,6 @@ public sealed class MetricCheckinWriteUseCasesTests
 
         var request = new CreateCheckinRequest
         {
-            MetricId = metric.Id,
             Value = 10m,
             CheckinDate = DateTime.UtcNow,
             ConfidenceLevel = 3
@@ -218,7 +217,6 @@ public sealed class MetricCheckinWriteUseCasesTests
 
         var request = new CreateCheckinRequest
         {
-            MetricId = metric.Id,
             Value = 10m,
             CheckinDate = DateTime.UtcNow,
             ConfidenceLevel = 3
@@ -237,7 +235,6 @@ public sealed class MetricCheckinWriteUseCasesTests
         var checkin = new MetricCheckin
         {
             Id = Guid.NewGuid(),
-            MetricId = Guid.NewGuid(),
             CollaboratorId = Guid.NewGuid(),
             OrganizationId = Guid.NewGuid(),
             CheckinDate = DateTime.UtcNow,
@@ -288,9 +285,9 @@ public sealed class MetricCheckinWriteUseCasesTests
         var checkin = new MetricCheckin
         {
             Id = Guid.NewGuid(),
-            MetricId = metricId,
             CollaboratorId = Guid.NewGuid(),
             OrganizationId = orgId,
+            MetricId = metricId,
             CheckinDate = DateTime.UtcNow,
             Value = 10m,
             ConfidenceLevel = 3
@@ -353,7 +350,6 @@ public sealed class MetricCheckinWriteUseCasesTests
         var checkin = new MetricCheckin
         {
             Id = Guid.NewGuid(),
-            MetricId = Guid.NewGuid(),
             CollaboratorId = Guid.NewGuid(),
             OrganizationId = Guid.NewGuid(),
             CheckinDate = DateTime.UtcNow,

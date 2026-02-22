@@ -9,13 +9,13 @@ public partial class Organizations
 {
     private CreateOrganizationRequest newOrganization = new();
     private PagedResult<Organization>? organizations;
-    private List<LeaderCollaboratorResponse> leaders = new();
+    private List<CollaboratorLeaderResponse> leaders = new();
     private string? search;
     private bool isSubmitting = false;
     private bool isModalOpen = false;
     private string modalMode = "create"; // "create" ou "edit"
     private Guid? editingOrganizationId = null;
-    private PatchOrganizationRequest editOrganization = new();
+    private OrganizationEditModel editOrganization = new();
     private Guid? deletingOrganizationId = null;
     private System.Threading.Timer? deleteConfirmTimer;
     private const string GlobalAdminOrgName = "getbud.co"; // Organização do admin global
@@ -56,12 +56,12 @@ public partial class Organizations
     {
         try
         {
-            leaders = await Api.GetLeadersAsync(organizationId) ?? new List<LeaderCollaboratorResponse>();
+            leaders = await Api.GetLeadersAsync(organizationId) ?? new List<CollaboratorLeaderResponse>();
         }
         catch (Exception ex)
         {
             Console.Error.WriteLine($"Erro ao carregar líderes: {ex.Message}");
-            leaders = new List<LeaderCollaboratorResponse>();
+            leaders = new List<CollaboratorLeaderResponse>();
         }
     }
 
@@ -86,7 +86,7 @@ public partial class Organizations
     {
         modalMode = "edit";
         editingOrganizationId = org.Id;
-        editOrganization = new PatchOrganizationRequest
+        editOrganization = new OrganizationEditModel
         {
             Name = org.Name,
             OwnerId = org.OwnerId ?? Guid.Empty
@@ -113,7 +113,7 @@ public partial class Organizations
         isModalOpen = false;
         modalMode = "create";
         editingOrganizationId = null;
-        editOrganization = new PatchOrganizationRequest();
+        editOrganization = new OrganizationEditModel();
     }
 
     private async Task CreateOrganization()
@@ -178,7 +178,12 @@ public partial class Organizations
             await UiOps.RunAsync(
                 async () =>
                 {
-                    await Api.UpdateOrganizationAsync(editingOrganizationId.Value, editOrganization);
+                    var request = new PatchOrganizationRequest
+                    {
+                        Name = editOrganization.Name,
+                        OwnerId = editOrganization.OwnerId
+                    };
+                    await Api.UpdateOrganizationAsync(editingOrganizationId.Value, request);
                     await LoadOrganizations();
                     await RefreshAvailableOrganizations();
                     ToastService.ShowSuccess("Organização atualizada com sucesso!", "As alterações foram salvas.");
@@ -308,5 +313,11 @@ public partial class Organizations
         deleteConfirmTimer?.Dispose();
         OrgContext.OnOrganizationChanged -= HandleOrganizationChanged;
         GC.SuppressFinalize(this);
+    }
+
+    private sealed class OrganizationEditModel
+    {
+        public string Name { get; set; } = string.Empty;
+        public Guid OwnerId { get; set; }
     }
 }

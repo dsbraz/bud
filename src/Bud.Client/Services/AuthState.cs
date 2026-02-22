@@ -11,7 +11,7 @@ public sealed class AuthState(IJSRuntime jsRuntime)
     private AuthSession? _session;
 
     public bool IsAuthenticated => _session is not null;
-    public AuthSession? Session => _session;
+    public AuthSession? SessionResponse => _session;
 
     public async Task EnsureInitializedAsync()
     {
@@ -38,7 +38,7 @@ public sealed class AuthState(IJSRuntime jsRuntime)
         }
     }
 
-    public async Task SetSessionAsync(AuthLoginResponse response)
+    public async Task SetSessionAsync(SessionResponse response)
     {
         _session = new AuthSession
         {

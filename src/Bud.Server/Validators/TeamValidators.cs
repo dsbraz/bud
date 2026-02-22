@@ -23,11 +23,13 @@ public sealed class PatchTeamValidator : AbstractValidator<PatchTeamRequest>
 {
     public PatchTeamValidator()
     {
-        RuleFor(x => x.Name)
+        RuleFor(x => x.Name.Value)
             .NotEmpty().WithMessage("Nome é obrigatório.")
-            .MaximumLength(200).WithMessage("Nome deve ter no máximo 200 caracteres.");
+            .MaximumLength(200).WithMessage("Nome deve ter no máximo 200 caracteres.")
+            .When(x => x.Name.HasValue);
 
-        RuleFor(x => x.LeaderId)
-            .NotEmpty().WithMessage("Líder é obrigatório.");
+        RuleFor(x => x.LeaderId.Value)
+            .NotEmpty().WithMessage("Líder é obrigatório.")
+            .When(x => x.LeaderId.HasValue);
     }
 }

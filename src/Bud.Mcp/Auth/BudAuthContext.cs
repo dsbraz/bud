@@ -10,7 +10,7 @@ public sealed record BudAuthContext(
     Guid? CollaboratorId,
     Guid? OrganizationId)
 {
-    public static BudAuthContext FromResponse(AuthLoginResponse response)
+    public static BudAuthContext FromResponse(SessionResponse response)
     {
         return new BudAuthContext(
             response.Token,

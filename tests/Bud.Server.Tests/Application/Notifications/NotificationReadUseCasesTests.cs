@@ -1,7 +1,8 @@
 using Bud.Server.Domain.Repositories;
 using Bud.Server.Domain.Model;
 using Bud.Server.Application.Common;
-using Bud.Server.Application.Notifications;
+using Bud.Server.Application.Mapping;
+using Bud.Server.Application.UseCases.Notifications;
 using Bud.Server.MultiTenancy;
 using Bud.Shared.Contracts;
 using FluentAssertions;
@@ -39,9 +40,9 @@ public sealed class NotificationReadUseCasesTests
         var collaboratorId = Guid.NewGuid();
         _tenantProvider.SetupGet(x => x.CollaboratorId).Returns(collaboratorId);
 
-        var pagedResult = new PagedResult<Notification>
+        var pagedResult = new PagedResult<NotificationResponse>
         {
-            Items = [new Notification { Id = Guid.NewGuid(), Title = "Test", Message = "Msg", Type = NotificationType.MissionCreated }],
+            Items = [new NotificationResponse { Id = Guid.NewGuid(), Title = "Test", Message = "Msg", Type = NotificationType.MissionCreated }],
             Total = 1,
             Page = 1,
             PageSize = 10

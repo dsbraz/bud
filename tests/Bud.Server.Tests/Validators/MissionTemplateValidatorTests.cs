@@ -16,13 +16,13 @@ public sealed class CreateMissionTemplateValidatorTests
     public async Task Validate_ValidRequest_Passes()
     {
         // Arrange
-        var request = new CreateMissionTemplateRequest
+        var request = new CreateTemplateRequest
         {
             Name = "Template de Missão",
             Description = "Descrição do template",
             MissionNamePattern = "Missão {0}",
             MissionDescriptionPattern = "Descrição padrão",
-            Metrics = []
+            Metrics = new List<TemplateMetricRequest>()
         };
 
         // Act
@@ -37,19 +37,19 @@ public sealed class CreateMissionTemplateValidatorTests
     public async Task Validate_ValidRequestWithMetrics_Passes()
     {
         // Arrange
-        var request = new CreateMissionTemplateRequest
+        var request = new CreateTemplateRequest
         {
             Name = "Template com Métricas",
             Metrics =
             [
-                new MissionTemplateMetricDto
+                new TemplateMetricRequest
                 {
                     Name = "Métrica Qualitativa",
                     Type = Bud.Shared.Contracts.MetricType.Qualitative,
                     OrderIndex = 0,
                     TargetText = "Texto alvo"
                 },
-                new MissionTemplateMetricDto
+                new TemplateMetricRequest
                 {
                     Name = "Métrica Quantitativa",
                     Type = Bud.Shared.Contracts.MetricType.Quantitative,
@@ -73,7 +73,7 @@ public sealed class CreateMissionTemplateValidatorTests
     public async Task Validate_MinimalValidRequest_Passes()
     {
         // Arrange
-        var request = new CreateMissionTemplateRequest
+        var request = new CreateTemplateRequest
         {
             Name = "Template Mínimo"
         };
@@ -93,7 +93,7 @@ public sealed class CreateMissionTemplateValidatorTests
     public async Task Validate_EmptyName_Fails(string? name)
     {
         // Arrange
-        var request = new CreateMissionTemplateRequest
+        var request = new CreateTemplateRequest
         {
             Name = name!
         };
@@ -104,7 +104,7 @@ public sealed class CreateMissionTemplateValidatorTests
         // Assert
         result.IsValid.Should().BeFalse();
         result.Errors.Should().Contain(e =>
-            e.PropertyName == "Name" &&
+            e.PropertyName.Contains("Name") &&
             e.ErrorMessage.Contains("Nome é obrigatório"));
     }
 
@@ -112,7 +112,7 @@ public sealed class CreateMissionTemplateValidatorTests
     public async Task Validate_NameExceeding200Chars_Fails()
     {
         // Arrange
-        var request = new CreateMissionTemplateRequest
+        var request = new CreateTemplateRequest
         {
             Name = new string('A', 201)
         };
@@ -123,7 +123,7 @@ public sealed class CreateMissionTemplateValidatorTests
         // Assert
         result.IsValid.Should().BeFalse();
         result.Errors.Should().ContainSingle(e =>
-            e.PropertyName == "Name" &&
+            e.PropertyName.Contains("Name") &&
             e.ErrorMessage.Contains("200"));
     }
 
@@ -131,7 +131,7 @@ public sealed class CreateMissionTemplateValidatorTests
     public async Task Validate_NameExactly200Chars_Passes()
     {
         // Arrange
-        var request = new CreateMissionTemplateRequest
+        var request = new CreateTemplateRequest
         {
             Name = new string('A', 200)
         };
@@ -147,7 +147,7 @@ public sealed class CreateMissionTemplateValidatorTests
     public async Task Validate_DescriptionExceeding1000Chars_Fails()
     {
         // Arrange
-        var request = new CreateMissionTemplateRequest
+        var request = new CreateTemplateRequest
         {
             Name = "Template",
             Description = new string('A', 1001)
@@ -159,7 +159,7 @@ public sealed class CreateMissionTemplateValidatorTests
         // Assert
         result.IsValid.Should().BeFalse();
         result.Errors.Should().ContainSingle(e =>
-            e.PropertyName == "Description" &&
+            e.PropertyName.Contains("Description") &&
             e.ErrorMessage.Contains("1000"));
     }
 
@@ -167,7 +167,7 @@ public sealed class CreateMissionTemplateValidatorTests
     public async Task Validate_DescriptionExactly1000Chars_Passes()
     {
         // Arrange
-        var request = new CreateMissionTemplateRequest
+        var request = new CreateTemplateRequest
         {
             Name = "Template",
             Description = new string('A', 1000)
@@ -184,7 +184,7 @@ public sealed class CreateMissionTemplateValidatorTests
     public async Task Validate_NullDescription_Passes()
     {
         // Arrange
-        var request = new CreateMissionTemplateRequest
+        var request = new CreateTemplateRequest
         {
             Name = "Template",
             Description = null
@@ -201,7 +201,7 @@ public sealed class CreateMissionTemplateValidatorTests
     public async Task Validate_MissionNamePatternExceeding200Chars_Fails()
     {
         // Arrange
-        var request = new CreateMissionTemplateRequest
+        var request = new CreateTemplateRequest
         {
             Name = "Template",
             MissionNamePattern = new string('A', 201)
@@ -213,7 +213,7 @@ public sealed class CreateMissionTemplateValidatorTests
         // Assert
         result.IsValid.Should().BeFalse();
         result.Errors.Should().ContainSingle(e =>
-            e.PropertyName == "MissionNamePattern" &&
+            e.PropertyName.Contains("MissionNamePattern") &&
             e.ErrorMessage.Contains("200"));
     }
 
@@ -221,7 +221,7 @@ public sealed class CreateMissionTemplateValidatorTests
     public async Task Validate_MissionNamePatternExactly200Chars_Passes()
     {
         // Arrange
-        var request = new CreateMissionTemplateRequest
+        var request = new CreateTemplateRequest
         {
             Name = "Template",
             MissionNamePattern = new string('A', 200)
@@ -238,7 +238,7 @@ public sealed class CreateMissionTemplateValidatorTests
     public async Task Validate_NullMissionNamePattern_Passes()
     {
         // Arrange
-        var request = new CreateMissionTemplateRequest
+        var request = new CreateTemplateRequest
         {
             Name = "Template",
             MissionNamePattern = null
@@ -255,7 +255,7 @@ public sealed class CreateMissionTemplateValidatorTests
     public async Task Validate_MissionDescriptionPatternExceeding1000Chars_Fails()
     {
         // Arrange
-        var request = new CreateMissionTemplateRequest
+        var request = new CreateTemplateRequest
         {
             Name = "Template",
             MissionDescriptionPattern = new string('A', 1001)
@@ -267,7 +267,7 @@ public sealed class CreateMissionTemplateValidatorTests
         // Assert
         result.IsValid.Should().BeFalse();
         result.Errors.Should().ContainSingle(e =>
-            e.PropertyName == "MissionDescriptionPattern" &&
+            e.PropertyName.Contains("MissionDescriptionPattern") &&
             e.ErrorMessage.Contains("1000"));
     }
 
@@ -275,7 +275,7 @@ public sealed class CreateMissionTemplateValidatorTests
     public async Task Validate_MissionDescriptionPatternExactly1000Chars_Passes()
     {
         // Arrange
-        var request = new CreateMissionTemplateRequest
+        var request = new CreateTemplateRequest
         {
             Name = "Template",
             MissionDescriptionPattern = new string('A', 1000)
@@ -292,7 +292,7 @@ public sealed class CreateMissionTemplateValidatorTests
     public async Task Validate_NullMissionDescriptionPattern_Passes()
     {
         // Arrange
-        var request = new CreateMissionTemplateRequest
+        var request = new CreateTemplateRequest
         {
             Name = "Template",
             MissionDescriptionPattern = null
@@ -309,12 +309,12 @@ public sealed class CreateMissionTemplateValidatorTests
     public async Task Validate_InvalidMetric_Fails()
     {
         // Arrange
-        var request = new CreateMissionTemplateRequest
+        var request = new CreateTemplateRequest
         {
             Name = "Template",
             Metrics =
             [
-                new MissionTemplateMetricDto
+                new TemplateMetricRequest
                 {
                     Name = "", // Invalid: empty name
                     Type = Bud.Shared.Contracts.MetricType.Qualitative,
@@ -338,12 +338,12 @@ public sealed class CreateMissionTemplateValidatorTests
     public async Task Validate_MetricReferencingUnknownObjective_Fails()
     {
         // Arrange
-        var request = new CreateMissionTemplateRequest
+        var request = new CreateTemplateRequest
         {
             Name = "Template",
             Objectives =
             [
-                new MissionTemplateObjectiveDto
+                new TemplateObjectiveRequest
                 {
                     Id = Guid.NewGuid(),
                     Name = "Objetivo 1",
@@ -352,12 +352,12 @@ public sealed class CreateMissionTemplateValidatorTests
             ],
             Metrics =
             [
-                new MissionTemplateMetricDto
+                new TemplateMetricRequest
                 {
                     Name = "Métrica 1",
                     Type = Bud.Shared.Contracts.MetricType.Qualitative,
                     OrderIndex = 0,
-                    MissionTemplateObjectiveId = Guid.NewGuid()
+                    TemplateObjectiveId = Guid.NewGuid()
                 }
             ]
         };
@@ -383,13 +383,13 @@ public sealed class UpdateMissionTemplateValidatorTests
     public async Task Validate_ValidRequest_Passes()
     {
         // Arrange
-        var request = new PatchMissionTemplateRequest
+        var request = new PatchTemplateRequest
         {
             Name = "Template Atualizado",
             Description = "Descrição atualizada",
             MissionNamePattern = "Missão {0}",
             MissionDescriptionPattern = "Descrição padrão",
-            Metrics = []
+            Metrics = new List<TemplateMetricRequest>()
         };
 
         // Act
@@ -404,19 +404,19 @@ public sealed class UpdateMissionTemplateValidatorTests
     public async Task Validate_ValidRequestWithMetrics_Passes()
     {
         // Arrange
-        var request = new PatchMissionTemplateRequest
+        var request = new PatchTemplateRequest
         {
             Name = "Template com Métricas",
-            Metrics =
-            [
-                new MissionTemplateMetricDto
+            Metrics = new List<TemplateMetricRequest>
+            {
+                new()
                 {
                     Name = "Métrica Qualitativa",
                     Type = Bud.Shared.Contracts.MetricType.Qualitative,
                     OrderIndex = 0,
                     TargetText = "Texto alvo"
                 }
-            ]
+            }
         };
 
         // Act
@@ -434,7 +434,7 @@ public sealed class UpdateMissionTemplateValidatorTests
     public async Task Validate_EmptyName_Fails(string? name)
     {
         // Arrange
-        var request = new PatchMissionTemplateRequest
+        var request = new PatchTemplateRequest
         {
             Name = name!
         };
@@ -445,7 +445,7 @@ public sealed class UpdateMissionTemplateValidatorTests
         // Assert
         result.IsValid.Should().BeFalse();
         result.Errors.Should().Contain(e =>
-            e.PropertyName == "Name" &&
+            e.PropertyName.Contains("Name") &&
             e.ErrorMessage.Contains("Nome é obrigatório"));
     }
 
@@ -453,7 +453,7 @@ public sealed class UpdateMissionTemplateValidatorTests
     public async Task Validate_NameExceeding200Chars_Fails()
     {
         // Arrange
-        var request = new PatchMissionTemplateRequest
+        var request = new PatchTemplateRequest
         {
             Name = new string('A', 201)
         };
@@ -464,7 +464,7 @@ public sealed class UpdateMissionTemplateValidatorTests
         // Assert
         result.IsValid.Should().BeFalse();
         result.Errors.Should().ContainSingle(e =>
-            e.PropertyName == "Name" &&
+            e.PropertyName.Contains("Name") &&
             e.ErrorMessage.Contains("200"));
     }
 
@@ -472,7 +472,7 @@ public sealed class UpdateMissionTemplateValidatorTests
     public async Task Validate_DescriptionExceeding1000Chars_Fails()
     {
         // Arrange
-        var request = new PatchMissionTemplateRequest
+        var request = new PatchTemplateRequest
         {
             Name = "Template",
             Description = new string('A', 1001)
@@ -484,7 +484,7 @@ public sealed class UpdateMissionTemplateValidatorTests
         // Assert
         result.IsValid.Should().BeFalse();
         result.Errors.Should().ContainSingle(e =>
-            e.PropertyName == "Description" &&
+            e.PropertyName.Contains("Description") &&
             e.ErrorMessage.Contains("1000"));
     }
 
@@ -492,7 +492,7 @@ public sealed class UpdateMissionTemplateValidatorTests
     public async Task Validate_NullDescription_Passes()
     {
         // Arrange
-        var request = new PatchMissionTemplateRequest
+        var request = new PatchTemplateRequest
         {
             Name = "Template",
             Description = null
@@ -509,7 +509,7 @@ public sealed class UpdateMissionTemplateValidatorTests
     public async Task Validate_MissionNamePatternExceeding200Chars_Fails()
     {
         // Arrange
-        var request = new PatchMissionTemplateRequest
+        var request = new PatchTemplateRequest
         {
             Name = "Template",
             MissionNamePattern = new string('A', 201)
@@ -521,7 +521,7 @@ public sealed class UpdateMissionTemplateValidatorTests
         // Assert
         result.IsValid.Should().BeFalse();
         result.Errors.Should().ContainSingle(e =>
-            e.PropertyName == "MissionNamePattern" &&
+            e.PropertyName.Contains("MissionNamePattern") &&
             e.ErrorMessage.Contains("200"));
     }
 
@@ -529,7 +529,7 @@ public sealed class UpdateMissionTemplateValidatorTests
     public async Task Validate_NullMissionNamePattern_Passes()
     {
         // Arrange
-        var request = new PatchMissionTemplateRequest
+        var request = new PatchTemplateRequest
         {
             Name = "Template",
             MissionNamePattern = null
@@ -546,7 +546,7 @@ public sealed class UpdateMissionTemplateValidatorTests
     public async Task Validate_MissionDescriptionPatternExceeding1000Chars_Fails()
     {
         // Arrange
-        var request = new PatchMissionTemplateRequest
+        var request = new PatchTemplateRequest
         {
             Name = "Template",
             MissionDescriptionPattern = new string('A', 1001)
@@ -558,7 +558,7 @@ public sealed class UpdateMissionTemplateValidatorTests
         // Assert
         result.IsValid.Should().BeFalse();
         result.Errors.Should().ContainSingle(e =>
-            e.PropertyName == "MissionDescriptionPattern" &&
+            e.PropertyName.Contains("MissionDescriptionPattern") &&
             e.ErrorMessage.Contains("1000"));
     }
 
@@ -566,7 +566,7 @@ public sealed class UpdateMissionTemplateValidatorTests
     public async Task Validate_NullMissionDescriptionPattern_Passes()
     {
         // Arrange
-        var request = new PatchMissionTemplateRequest
+        var request = new PatchTemplateRequest
         {
             Name = "Template",
             MissionDescriptionPattern = null
@@ -583,19 +583,19 @@ public sealed class UpdateMissionTemplateValidatorTests
     public async Task Validate_InvalidMetric_Fails()
     {
         // Arrange
-        var request = new PatchMissionTemplateRequest
+        var request = new PatchTemplateRequest
         {
             Name = "Template",
-            Metrics =
-            [
-                new MissionTemplateMetricDto
+            Metrics = new List<TemplateMetricRequest>
+            {
+                new()
                 {
                     Name = "", // Invalid: empty name
                     Type = Bud.Shared.Contracts.MetricType.Qualitative,
                     OrderIndex = 0,
                     TargetText = "Texto alvo"
                 }
-            ]
+            }
         };
 
         // Act
@@ -612,28 +612,28 @@ public sealed class UpdateMissionTemplateValidatorTests
     public async Task Validate_MetricReferencingUnknownObjective_Fails()
     {
         // Arrange
-        var request = new PatchMissionTemplateRequest
+        var request = new PatchTemplateRequest
         {
             Name = "Template",
-            Objectives =
-            [
-                new MissionTemplateObjectiveDto
+            Objectives = new List<TemplateObjectiveRequest>
+            {
+                new()
                 {
                     Id = Guid.NewGuid(),
                     Name = "Objetivo 1",
                     OrderIndex = 0
                 }
-            ],
-            Metrics =
-            [
-                new MissionTemplateMetricDto
+            },
+            Metrics = new List<TemplateMetricRequest>
+            {
+                new()
                 {
                     Name = "Métrica 1",
                     Type = Bud.Shared.Contracts.MetricType.Qualitative,
                     OrderIndex = 0,
-                    MissionTemplateObjectiveId = Guid.NewGuid()
+                    TemplateObjectiveId = Guid.NewGuid()
                 }
-            ]
+            }
         };
 
         // Act
@@ -659,7 +659,7 @@ public sealed class MissionTemplateMetricDtoValidatorTests
     public async Task Validate_ValidQuantitativeMetric_Passes()
     {
         // Arrange
-        var dto = new MissionTemplateMetricDto
+        var dto = new TemplateMetricRequest
         {
             Name = "Story Points",
             Type = Bud.Shared.Contracts.MetricType.Quantitative,
@@ -681,7 +681,7 @@ public sealed class MissionTemplateMetricDtoValidatorTests
     public async Task Validate_ValidQualitativeMetric_Passes()
     {
         // Arrange
-        var dto = new MissionTemplateMetricDto
+        var dto = new TemplateMetricRequest
         {
             Name = "Qualidade do Código",
             Type = Bud.Shared.Contracts.MetricType.Qualitative,
@@ -704,7 +704,7 @@ public sealed class MissionTemplateMetricDtoValidatorTests
     public async Task Validate_EmptyName_Fails(string? name)
     {
         // Arrange
-        var dto = new MissionTemplateMetricDto
+        var dto = new TemplateMetricRequest
         {
             Name = name!,
             Type = Bud.Shared.Contracts.MetricType.Qualitative,
@@ -718,7 +718,7 @@ public sealed class MissionTemplateMetricDtoValidatorTests
         // Assert
         result.IsValid.Should().BeFalse();
         result.Errors.Should().Contain(e =>
-            e.PropertyName == "Name" &&
+            e.PropertyName.Contains("Name") &&
             e.ErrorMessage.Contains("Nome é obrigatório"));
     }
 
@@ -726,7 +726,7 @@ public sealed class MissionTemplateMetricDtoValidatorTests
     public async Task Validate_NameExceeding200Chars_Fails()
     {
         // Arrange
-        var dto = new MissionTemplateMetricDto
+        var dto = new TemplateMetricRequest
         {
             Name = new string('A', 201),
             Type = Bud.Shared.Contracts.MetricType.Qualitative,
@@ -740,7 +740,7 @@ public sealed class MissionTemplateMetricDtoValidatorTests
         // Assert
         result.IsValid.Should().BeFalse();
         result.Errors.Should().ContainSingle(e =>
-            e.PropertyName == "Name" &&
+            e.PropertyName.Contains("Name") &&
             e.ErrorMessage.Contains("200"));
     }
 
@@ -748,7 +748,7 @@ public sealed class MissionTemplateMetricDtoValidatorTests
     public async Task Validate_NameExactly200Chars_Passes()
     {
         // Arrange
-        var dto = new MissionTemplateMetricDto
+        var dto = new TemplateMetricRequest
         {
             Name = new string('A', 200),
             Type = Bud.Shared.Contracts.MetricType.Qualitative,
@@ -767,7 +767,7 @@ public sealed class MissionTemplateMetricDtoValidatorTests
     public async Task Validate_InvalidType_Fails()
     {
         // Arrange
-        var dto = new MissionTemplateMetricDto
+        var dto = new TemplateMetricRequest
         {
             Name = "Métrica",
             Type = (Bud.Shared.Contracts.MetricType)99,
@@ -780,7 +780,7 @@ public sealed class MissionTemplateMetricDtoValidatorTests
         // Assert
         result.IsValid.Should().BeFalse();
         result.Errors.Should().Contain(e =>
-            e.PropertyName == "Type" &&
+            e.PropertyName.Contains("Type") &&
             e.ErrorMessage.Contains("Tipo inválido"));
     }
 
@@ -788,7 +788,7 @@ public sealed class MissionTemplateMetricDtoValidatorTests
     public async Task Validate_NegativeOrderIndex_Fails()
     {
         // Arrange
-        var dto = new MissionTemplateMetricDto
+        var dto = new TemplateMetricRequest
         {
             Name = "Métrica",
             Type = Bud.Shared.Contracts.MetricType.Qualitative,
@@ -802,7 +802,7 @@ public sealed class MissionTemplateMetricDtoValidatorTests
         // Assert
         result.IsValid.Should().BeFalse();
         result.Errors.Should().ContainSingle(e =>
-            e.PropertyName == "OrderIndex" &&
+            e.PropertyName.Contains("OrderIndex") &&
             e.ErrorMessage.Contains("maior ou igual a 0"));
     }
 
@@ -810,7 +810,7 @@ public sealed class MissionTemplateMetricDtoValidatorTests
     public async Task Validate_ZeroOrderIndex_Passes()
     {
         // Arrange
-        var dto = new MissionTemplateMetricDto
+        var dto = new TemplateMetricRequest
         {
             Name = "Métrica",
             Type = Bud.Shared.Contracts.MetricType.Qualitative,
@@ -833,7 +833,7 @@ public sealed class MissionTemplateMetricDtoValidatorTests
     public async Task Validate_QualitativeWithoutTargetText_Passes()
     {
         // Arrange
-        var dto = new MissionTemplateMetricDto
+        var dto = new TemplateMetricRequest
         {
             Name = "Métrica Qualitativa",
             Type = Bud.Shared.Contracts.MetricType.Qualitative,
@@ -852,7 +852,7 @@ public sealed class MissionTemplateMetricDtoValidatorTests
     public async Task Validate_QualitativeWithEmptyTargetText_Passes()
     {
         // Arrange
-        var dto = new MissionTemplateMetricDto
+        var dto = new TemplateMetricRequest
         {
             Name = "Métrica Qualitativa",
             Type = Bud.Shared.Contracts.MetricType.Qualitative,
@@ -871,7 +871,7 @@ public sealed class MissionTemplateMetricDtoValidatorTests
     public async Task Validate_QualitativeWithTargetTextExceeding1000Chars_Fails()
     {
         // Arrange
-        var dto = new MissionTemplateMetricDto
+        var dto = new TemplateMetricRequest
         {
             Name = "Métrica Qualitativa",
             Type = Bud.Shared.Contracts.MetricType.Qualitative,
@@ -885,7 +885,7 @@ public sealed class MissionTemplateMetricDtoValidatorTests
         // Assert
         result.IsValid.Should().BeFalse();
         result.Errors.Should().ContainSingle(e =>
-            e.PropertyName == "TargetText" &&
+            e.PropertyName.Contains("TargetText") &&
             e.ErrorMessage.Contains("1000"));
     }
 
@@ -893,7 +893,7 @@ public sealed class MissionTemplateMetricDtoValidatorTests
     public async Task Validate_QualitativeWithTargetTextExactly1000Chars_Passes()
     {
         // Arrange
-        var dto = new MissionTemplateMetricDto
+        var dto = new TemplateMetricRequest
         {
             Name = "Métrica Qualitativa",
             Type = Bud.Shared.Contracts.MetricType.Qualitative,
@@ -916,7 +916,7 @@ public sealed class MissionTemplateMetricDtoValidatorTests
     public async Task Validate_QuantitativeWithoutQuantitativeType_Fails()
     {
         // Arrange
-        var dto = new MissionTemplateMetricDto
+        var dto = new TemplateMetricRequest
         {
             Name = "Métrica Quantitativa",
             Type = Bud.Shared.Contracts.MetricType.Quantitative,
@@ -932,7 +932,7 @@ public sealed class MissionTemplateMetricDtoValidatorTests
         // Assert
         result.IsValid.Should().BeFalse();
         result.Errors.Should().Contain(e =>
-            e.PropertyName == "QuantitativeType" &&
+            e.PropertyName.Contains("QuantitativeType") &&
             e.ErrorMessage.Contains("métricas quantitativas"));
     }
 
@@ -940,7 +940,7 @@ public sealed class MissionTemplateMetricDtoValidatorTests
     public async Task Validate_QuantitativeWithInvalidQuantitativeType_Fails()
     {
         // Arrange
-        var dto = new MissionTemplateMetricDto
+        var dto = new TemplateMetricRequest
         {
             Name = "Métrica Quantitativa",
             Type = Bud.Shared.Contracts.MetricType.Quantitative,
@@ -956,7 +956,7 @@ public sealed class MissionTemplateMetricDtoValidatorTests
         // Assert
         result.IsValid.Should().BeFalse();
         result.Errors.Should().Contain(e =>
-            e.PropertyName == "QuantitativeType" &&
+            e.PropertyName.Contains("QuantitativeType") &&
             e.ErrorMessage.Contains("Tipo quantitativo inválido"));
     }
 
@@ -964,7 +964,7 @@ public sealed class MissionTemplateMetricDtoValidatorTests
     public async Task Validate_QuantitativeWithoutUnit_Fails()
     {
         // Arrange
-        var dto = new MissionTemplateMetricDto
+        var dto = new TemplateMetricRequest
         {
             Name = "Métrica Quantitativa",
             Type = Bud.Shared.Contracts.MetricType.Quantitative,
@@ -980,7 +980,7 @@ public sealed class MissionTemplateMetricDtoValidatorTests
         // Assert
         result.IsValid.Should().BeFalse();
         result.Errors.Should().Contain(e =>
-            e.PropertyName == "Unit" &&
+            e.PropertyName.Contains("Unit") &&
             e.ErrorMessage.Contains("métricas quantitativas"));
     }
 
@@ -988,7 +988,7 @@ public sealed class MissionTemplateMetricDtoValidatorTests
     public async Task Validate_QuantitativeWithInvalidUnit_Fails()
     {
         // Arrange
-        var dto = new MissionTemplateMetricDto
+        var dto = new TemplateMetricRequest
         {
             Name = "Métrica Quantitativa",
             Type = Bud.Shared.Contracts.MetricType.Quantitative,
@@ -1004,7 +1004,7 @@ public sealed class MissionTemplateMetricDtoValidatorTests
         // Assert
         result.IsValid.Should().BeFalse();
         result.Errors.Should().Contain(e =>
-            e.PropertyName == "Unit" &&
+            e.PropertyName.Contains("Unit") &&
             e.ErrorMessage.Contains("Unidade inválida"));
     }
 
@@ -1016,7 +1016,7 @@ public sealed class MissionTemplateMetricDtoValidatorTests
     public async Task Validate_KeepAboveWithValidMinValue_Passes()
     {
         // Arrange
-        var dto = new MissionTemplateMetricDto
+        var dto = new TemplateMetricRequest
         {
             Name = "Story Points",
             Type = Bud.Shared.Contracts.MetricType.Quantitative,
@@ -1038,7 +1038,7 @@ public sealed class MissionTemplateMetricDtoValidatorTests
     public async Task Validate_KeepAboveWithZeroMinValue_Passes()
     {
         // Arrange
-        var dto = new MissionTemplateMetricDto
+        var dto = new TemplateMetricRequest
         {
             Name = "Story Points",
             Type = Bud.Shared.Contracts.MetricType.Quantitative,
@@ -1059,7 +1059,7 @@ public sealed class MissionTemplateMetricDtoValidatorTests
     public async Task Validate_KeepAboveWithoutMinValue_Fails()
     {
         // Arrange
-        var dto = new MissionTemplateMetricDto
+        var dto = new TemplateMetricRequest
         {
             Name = "Story Points",
             Type = Bud.Shared.Contracts.MetricType.Quantitative,
@@ -1075,7 +1075,7 @@ public sealed class MissionTemplateMetricDtoValidatorTests
         // Assert
         result.IsValid.Should().BeFalse();
         result.Errors.Should().ContainSingle(e =>
-            e.PropertyName == "MinValue" &&
+            e.PropertyName.Contains("MinValue") &&
             e.ErrorMessage.Contains("KeepAbove"));
     }
 
@@ -1083,7 +1083,7 @@ public sealed class MissionTemplateMetricDtoValidatorTests
     public async Task Validate_KeepAboveWithNegativeMinValue_Fails()
     {
         // Arrange
-        var dto = new MissionTemplateMetricDto
+        var dto = new TemplateMetricRequest
         {
             Name = "Story Points",
             Type = Bud.Shared.Contracts.MetricType.Quantitative,
@@ -1099,7 +1099,7 @@ public sealed class MissionTemplateMetricDtoValidatorTests
         // Assert
         result.IsValid.Should().BeFalse();
         result.Errors.Should().ContainSingle(e =>
-            e.PropertyName == "MinValue" &&
+            e.PropertyName.Contains("MinValue") &&
             e.ErrorMessage.Contains("maior ou igual a 0"));
     }
 
@@ -1111,7 +1111,7 @@ public sealed class MissionTemplateMetricDtoValidatorTests
     public async Task Validate_KeepBelowWithValidMaxValue_Passes()
     {
         // Arrange
-        var dto = new MissionTemplateMetricDto
+        var dto = new TemplateMetricRequest
         {
             Name = "Taxa de Erro",
             Type = Bud.Shared.Contracts.MetricType.Quantitative,
@@ -1133,7 +1133,7 @@ public sealed class MissionTemplateMetricDtoValidatorTests
     public async Task Validate_KeepBelowWithZeroMaxValue_Passes()
     {
         // Arrange
-        var dto = new MissionTemplateMetricDto
+        var dto = new TemplateMetricRequest
         {
             Name = "Taxa de Erro",
             Type = Bud.Shared.Contracts.MetricType.Quantitative,
@@ -1154,7 +1154,7 @@ public sealed class MissionTemplateMetricDtoValidatorTests
     public async Task Validate_KeepBelowWithoutMaxValue_Fails()
     {
         // Arrange
-        var dto = new MissionTemplateMetricDto
+        var dto = new TemplateMetricRequest
         {
             Name = "Taxa de Erro",
             Type = Bud.Shared.Contracts.MetricType.Quantitative,
@@ -1170,7 +1170,7 @@ public sealed class MissionTemplateMetricDtoValidatorTests
         // Assert
         result.IsValid.Should().BeFalse();
         result.Errors.Should().ContainSingle(e =>
-            e.PropertyName == "MaxValue" &&
+            e.PropertyName.Contains("MaxValue") &&
             e.ErrorMessage.Contains("KeepBelow"));
     }
 
@@ -1178,7 +1178,7 @@ public sealed class MissionTemplateMetricDtoValidatorTests
     public async Task Validate_KeepBelowWithNegativeMaxValue_Fails()
     {
         // Arrange
-        var dto = new MissionTemplateMetricDto
+        var dto = new TemplateMetricRequest
         {
             Name = "Taxa de Erro",
             Type = Bud.Shared.Contracts.MetricType.Quantitative,
@@ -1194,7 +1194,7 @@ public sealed class MissionTemplateMetricDtoValidatorTests
         // Assert
         result.IsValid.Should().BeFalse();
         result.Errors.Should().ContainSingle(e =>
-            e.PropertyName == "MaxValue" &&
+            e.PropertyName.Contains("MaxValue") &&
             e.ErrorMessage.Contains("maior ou igual a 0"));
     }
 
@@ -1206,7 +1206,7 @@ public sealed class MissionTemplateMetricDtoValidatorTests
     public async Task Validate_KeepBetweenWithValidValues_Passes()
     {
         // Arrange
-        var dto = new MissionTemplateMetricDto
+        var dto = new TemplateMetricRequest
         {
             Name = "Tempo de Resposta",
             Type = Bud.Shared.Contracts.MetricType.Quantitative,
@@ -1229,7 +1229,7 @@ public sealed class MissionTemplateMetricDtoValidatorTests
     public async Task Validate_KeepBetweenWithoutMinValue_Fails()
     {
         // Arrange
-        var dto = new MissionTemplateMetricDto
+        var dto = new TemplateMetricRequest
         {
             Name = "Tempo de Resposta",
             Type = Bud.Shared.Contracts.MetricType.Quantitative,
@@ -1246,7 +1246,7 @@ public sealed class MissionTemplateMetricDtoValidatorTests
         // Assert
         result.IsValid.Should().BeFalse();
         result.Errors.Should().Contain(e =>
-            e.PropertyName == "MinValue" &&
+            e.PropertyName.Contains("MinValue") &&
             e.ErrorMessage.Contains("KeepBetween"));
     }
 
@@ -1254,7 +1254,7 @@ public sealed class MissionTemplateMetricDtoValidatorTests
     public async Task Validate_KeepBetweenWithoutMaxValue_Fails()
     {
         // Arrange
-        var dto = new MissionTemplateMetricDto
+        var dto = new TemplateMetricRequest
         {
             Name = "Tempo de Resposta",
             Type = Bud.Shared.Contracts.MetricType.Quantitative,
@@ -1271,7 +1271,7 @@ public sealed class MissionTemplateMetricDtoValidatorTests
         // Assert
         result.IsValid.Should().BeFalse();
         result.Errors.Should().Contain(e =>
-            e.PropertyName == "MaxValue" &&
+            e.PropertyName.Contains("MaxValue") &&
             e.ErrorMessage.Contains("KeepBetween"));
     }
 
@@ -1279,7 +1279,7 @@ public sealed class MissionTemplateMetricDtoValidatorTests
     public async Task Validate_KeepBetweenWithMinValueGreaterThanMaxValue_Fails()
     {
         // Arrange
-        var dto = new MissionTemplateMetricDto
+        var dto = new TemplateMetricRequest
         {
             Name = "Tempo de Resposta",
             Type = Bud.Shared.Contracts.MetricType.Quantitative,
@@ -1296,7 +1296,7 @@ public sealed class MissionTemplateMetricDtoValidatorTests
         // Assert
         result.IsValid.Should().BeFalse();
         result.Errors.Should().Contain(e =>
-            e.PropertyName == "MaxValue" &&
+            e.PropertyName.Contains("MaxValue") &&
             e.ErrorMessage.Contains("valor mínimo"));
     }
 
@@ -1304,7 +1304,7 @@ public sealed class MissionTemplateMetricDtoValidatorTests
     public async Task Validate_KeepBetweenWithEqualMinAndMaxValues_Fails()
     {
         // Arrange
-        var dto = new MissionTemplateMetricDto
+        var dto = new TemplateMetricRequest
         {
             Name = "Tempo de Resposta",
             Type = Bud.Shared.Contracts.MetricType.Quantitative,
@@ -1321,7 +1321,7 @@ public sealed class MissionTemplateMetricDtoValidatorTests
         // Assert
         result.IsValid.Should().BeFalse();
         result.Errors.Should().Contain(e =>
-            e.PropertyName == "MaxValue" &&
+            e.PropertyName.Contains("MaxValue") &&
             e.ErrorMessage.Contains("valor mínimo"));
     }
 
@@ -1329,7 +1329,7 @@ public sealed class MissionTemplateMetricDtoValidatorTests
     public async Task Validate_KeepBetweenWithNegativeMinValue_Fails()
     {
         // Arrange
-        var dto = new MissionTemplateMetricDto
+        var dto = new TemplateMetricRequest
         {
             Name = "Tempo de Resposta",
             Type = Bud.Shared.Contracts.MetricType.Quantitative,
@@ -1346,7 +1346,7 @@ public sealed class MissionTemplateMetricDtoValidatorTests
         // Assert
         result.IsValid.Should().BeFalse();
         result.Errors.Should().Contain(e =>
-            e.PropertyName == "MinValue" &&
+            e.PropertyName.Contains("MinValue") &&
             e.ErrorMessage.Contains("maior ou igual a 0"));
     }
 
@@ -1354,7 +1354,7 @@ public sealed class MissionTemplateMetricDtoValidatorTests
     public async Task Validate_KeepBetweenWithNegativeMaxValue_Fails()
     {
         // Arrange
-        var dto = new MissionTemplateMetricDto
+        var dto = new TemplateMetricRequest
         {
             Name = "Tempo de Resposta",
             Type = Bud.Shared.Contracts.MetricType.Quantitative,
@@ -1371,7 +1371,7 @@ public sealed class MissionTemplateMetricDtoValidatorTests
         // Assert
         result.IsValid.Should().BeFalse();
         result.Errors.Should().Contain(e =>
-            e.PropertyName == "MaxValue" &&
+            e.PropertyName.Contains("MaxValue") &&
             e.ErrorMessage.Contains("maior ou igual a 0"));
     }
 
@@ -1383,7 +1383,7 @@ public sealed class MissionTemplateMetricDtoValidatorTests
     public async Task Validate_AchieveWithValidMaxValue_Passes()
     {
         // Arrange
-        var dto = new MissionTemplateMetricDto
+        var dto = new TemplateMetricRequest
         {
             Name = "Meta de Vendas",
             Type = Bud.Shared.Contracts.MetricType.Quantitative,
@@ -1405,7 +1405,7 @@ public sealed class MissionTemplateMetricDtoValidatorTests
     public async Task Validate_AchieveWithZeroMaxValue_Passes()
     {
         // Arrange
-        var dto = new MissionTemplateMetricDto
+        var dto = new TemplateMetricRequest
         {
             Name = "Meta de Vendas",
             Type = Bud.Shared.Contracts.MetricType.Quantitative,
@@ -1426,7 +1426,7 @@ public sealed class MissionTemplateMetricDtoValidatorTests
     public async Task Validate_AchieveWithoutMaxValue_Fails()
     {
         // Arrange
-        var dto = new MissionTemplateMetricDto
+        var dto = new TemplateMetricRequest
         {
             Name = "Meta de Vendas",
             Type = Bud.Shared.Contracts.MetricType.Quantitative,
@@ -1442,7 +1442,7 @@ public sealed class MissionTemplateMetricDtoValidatorTests
         // Assert
         result.IsValid.Should().BeFalse();
         result.Errors.Should().ContainSingle(e =>
-            e.PropertyName == "MaxValue" &&
+            e.PropertyName.Contains("MaxValue") &&
             e.ErrorMessage.Contains("Achieve"));
     }
 
@@ -1450,7 +1450,7 @@ public sealed class MissionTemplateMetricDtoValidatorTests
     public async Task Validate_AchieveWithNegativeMaxValue_Fails()
     {
         // Arrange
-        var dto = new MissionTemplateMetricDto
+        var dto = new TemplateMetricRequest
         {
             Name = "Meta de Vendas",
             Type = Bud.Shared.Contracts.MetricType.Quantitative,
@@ -1466,7 +1466,7 @@ public sealed class MissionTemplateMetricDtoValidatorTests
         // Assert
         result.IsValid.Should().BeFalse();
         result.Errors.Should().ContainSingle(e =>
-            e.PropertyName == "MaxValue" &&
+            e.PropertyName.Contains("MaxValue") &&
             e.ErrorMessage.Contains("maior ou igual a 0"));
     }
 
@@ -1478,7 +1478,7 @@ public sealed class MissionTemplateMetricDtoValidatorTests
     public async Task Validate_ReduceWithValidMaxValue_Passes()
     {
         // Arrange
-        var dto = new MissionTemplateMetricDto
+        var dto = new TemplateMetricRequest
         {
             Name = "Redução de Custos",
             Type = Bud.Shared.Contracts.MetricType.Quantitative,
@@ -1500,7 +1500,7 @@ public sealed class MissionTemplateMetricDtoValidatorTests
     public async Task Validate_ReduceWithZeroMaxValue_Passes()
     {
         // Arrange
-        var dto = new MissionTemplateMetricDto
+        var dto = new TemplateMetricRequest
         {
             Name = "Redução de Custos",
             Type = Bud.Shared.Contracts.MetricType.Quantitative,
@@ -1521,7 +1521,7 @@ public sealed class MissionTemplateMetricDtoValidatorTests
     public async Task Validate_ReduceWithoutMaxValue_Fails()
     {
         // Arrange
-        var dto = new MissionTemplateMetricDto
+        var dto = new TemplateMetricRequest
         {
             Name = "Redução de Custos",
             Type = Bud.Shared.Contracts.MetricType.Quantitative,
@@ -1537,7 +1537,7 @@ public sealed class MissionTemplateMetricDtoValidatorTests
         // Assert
         result.IsValid.Should().BeFalse();
         result.Errors.Should().ContainSingle(e =>
-            e.PropertyName == "MaxValue" &&
+            e.PropertyName.Contains("MaxValue") &&
             e.ErrorMessage.Contains("Reduce"));
     }
 
@@ -1545,7 +1545,7 @@ public sealed class MissionTemplateMetricDtoValidatorTests
     public async Task Validate_ReduceWithNegativeMaxValue_Fails()
     {
         // Arrange
-        var dto = new MissionTemplateMetricDto
+        var dto = new TemplateMetricRequest
         {
             Name = "Redução de Custos",
             Type = Bud.Shared.Contracts.MetricType.Quantitative,
@@ -1561,7 +1561,7 @@ public sealed class MissionTemplateMetricDtoValidatorTests
         // Assert
         result.IsValid.Should().BeFalse();
         result.Errors.Should().ContainSingle(e =>
-            e.PropertyName == "MaxValue" &&
+            e.PropertyName.Contains("MaxValue") &&
             e.ErrorMessage.Contains("maior ou igual a 0"));
     }
 
@@ -1578,7 +1578,7 @@ public sealed class MissionTemplateMetricDtoValidatorTests
     public async Task Validate_QuantitativeWithAllValidUnits_Passes(Bud.Shared.Contracts.MetricUnit unit)
     {
         // Arrange
-        var dto = new MissionTemplateMetricDto
+        var dto = new TemplateMetricRequest
         {
             Name = "Métrica",
             Type = Bud.Shared.Contracts.MetricType.Quantitative,
@@ -1604,7 +1604,7 @@ public sealed class MissionTemplateMetricDtoValidatorTests
     public async Task Validate_QuantitativeWithAllValidTypes_PassesTypeValidation(Bud.Shared.Contracts.QuantitativeMetricType quantitativeType)
     {
         // Arrange
-        var dto = new MissionTemplateMetricDto
+        var dto = new TemplateMetricRequest
         {
             Name = "Métrica",
             Type = Bud.Shared.Contracts.MetricType.Quantitative,
@@ -1620,7 +1620,7 @@ public sealed class MissionTemplateMetricDtoValidatorTests
 
         // Assert
         result.Errors.Should().NotContain(e =>
-            e.PropertyName == "QuantitativeType" &&
+            e.PropertyName.Contains("QuantitativeType") &&
             e.ErrorMessage.Contains("Tipo quantitativo inválido"));
     }
 

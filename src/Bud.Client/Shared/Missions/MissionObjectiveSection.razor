@@ -30,8 +30,8 @@
             {
                 <MissionMetricRow Mission="Mission"
                                   Metric="metric"
-                                  MissionProgress="MissionProgress"
-                                  MetricProgress="@(MetricProgressCache.GetValueOrDefault(metric.Id))"
+                                  MissionProgressResponse="MissionProgressResponse"
+                                  MetricProgressResponse="@(MetricProgressCache.GetValueOrDefault(metric.Id))"
                                   OnCheckinClick="OnCheckinClick"
                                   OnHistoryClick="OnHistoryClick" />
             }
@@ -46,17 +46,17 @@
 @code {
     [Parameter, EditorRequired] public Mission Mission { get; set; } = default!;
     [Parameter, EditorRequired] public Objective Objective { get; set; } = default!;
-    [Parameter] public ObjectiveProgressDto? ObjectiveProgress { get; set; }
-    [Parameter] public MissionProgressDto? MissionProgress { get; set; }
+    [Parameter] public ObjectiveProgressResponse? ObjectiveProgressResponse { get; set; }
+    [Parameter] public MissionProgressResponse? MissionProgressResponse { get; set; }
     [Parameter] public List<Metric> ObjectiveMetrics { get; set; } = [];
-    [Parameter] public Dictionary<Guid, MetricProgressDto> MetricProgressCache { get; set; } = new();
+    [Parameter] public Dictionary<Guid, MetricProgressResponse> MetricProgressCache { get; set; } = new();
     [Parameter] public bool IsExpanded { get; set; }
     [Parameter] public EventCallback OnToggleExpand { get; set; }
     [Parameter] public EventCallback<Metric> OnCheckinClick { get; set; }
     [Parameter] public EventCallback<Metric> OnHistoryClick { get; set; }
 
-    private int ProgressPercent => (int)(ObjectiveProgress?.OverallProgress ?? 0);
-    private decimal ExpectedProgress => MissionProgress?.ExpectedProgress ?? 0m;
+    private int ProgressPercent => (int)(ObjectiveProgressResponse?.OverallProgress ?? 0);
+    private decimal ExpectedProgress => MissionProgressResponse?.ExpectedProgress ?? 0m;
     private string GetProgressStatusClass()
     {
         if (ProgressPercent >= (int)ExpectedProgress) return "on-track";

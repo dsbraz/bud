@@ -1,6 +1,7 @@
 using System.Security.Claims;
 using Bud.Server.Application.Common;
-using Bud.Server.Application.Objectives;
+using Bud.Server.Application.Mapping;
+using Bud.Server.Application.UseCases.Objectives;
 using Bud.Server.Authorization;
 using Bud.Server.Domain.Model;
 using Bud.Server.Domain.Repositories;

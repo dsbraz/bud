@@ -149,7 +149,7 @@ public sealed class DashboardEndpointsTests : IClassFixture<CustomWebApplication
         };
         dbContext.Collaborators.Add(member);
 
-        dbContext.Set<CollaboratorTeam>().Add(new CollaboratorTeam
+        dbContext.Set<CollaboratorTeamResponse>().Add(new CollaboratorTeamResponse
         {
             CollaboratorId = member.Id,
             TeamId = teamId

@@ -1,10 +1,10 @@
-using Bud.Server.Application.Workspaces;
+using Bud.Server.Application.UseCases.Workspaces;
 using Bud.Server.Authorization;
 using Bud.Shared.Contracts;
-using Bud.Server.Domain.Model;
 using FluentValidation;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Bud.Server.Domain.Model;
 
 namespace Bud.Server.Controllers;
 
@@ -31,7 +31,7 @@ public sealed class WorkspacesController(
     /// <response code="403">Sem permissão para criar workspace.</response>
     [HttpPost]
     [Consumes("application/json")]
-    [ProducesResponseType(typeof(Workspace), StatusCodes.Status201Created)]
+    [ProducesResponseType(typeof(WorkspaceResponse), StatusCodes.Status201Created)]
     [ProducesResponseType(typeof(ValidationProblemDetails), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status403Forbidden)]
@@ -56,7 +56,7 @@ public sealed class WorkspacesController(
     /// <response code="403">Sem permissão para atualizar workspace.</response>
     [HttpPatch("{id:guid}")]
     [Consumes("application/json")]
-    [ProducesResponseType(typeof(Workspace), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(WorkspaceResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status403Forbidden)]
     [ProducesResponseType(typeof(ValidationProblemDetails), StatusCodes.Status400BadRequest)]
@@ -94,7 +94,7 @@ public sealed class WorkspacesController(
     /// <response code="200">Workspace encontrado.</response>
     /// <response code="404">Workspace não encontrado.</response>
     [HttpGet("{id:guid}")]
-    [ProducesResponseType(typeof(Workspace), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(WorkspaceResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
     public async Task<ActionResult<Workspace>> GetById(Guid id, CancellationToken cancellationToken)
     {

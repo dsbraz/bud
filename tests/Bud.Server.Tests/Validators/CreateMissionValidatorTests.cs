@@ -55,7 +55,7 @@ public class CreateMissionValidatorTests
 
         // Assert
         result.IsValid.Should().BeFalse();
-        result.Errors.Should().ContainSingle(e => e.PropertyName == "Name");
+        result.Errors.Should().ContainSingle(e => e.PropertyName.Contains("Name"));
     }
 
     [Fact]
@@ -78,7 +78,7 @@ public class CreateMissionValidatorTests
         // Assert
         result.IsValid.Should().BeFalse();
         result.Errors.Should().ContainSingle(e =>
-            e.PropertyName == "Name" &&
+            e.PropertyName.Contains("Name") &&
             e.ErrorMessage.Contains("200"));
     }
 
@@ -106,7 +106,7 @@ public class CreateMissionValidatorTests
         // Assert
         result.IsValid.Should().BeFalse();
         result.Errors.Should().ContainSingle(e =>
-            e.PropertyName == "EndDate" &&
+            e.PropertyName.Contains("EndDate") &&
             e.ErrorMessage.Contains("data de início"));
     }
 
@@ -174,7 +174,7 @@ public class CreateMissionValidatorTests
 
         // Assert
         result.IsValid.Should().BeFalse();
-        result.Errors.Should().Contain(e => e.PropertyName == "StartDate");
+        result.Errors.Should().Contain(e => e.PropertyName.Contains("StartDate"));
     }
 
     [Fact]
@@ -196,7 +196,7 @@ public class CreateMissionValidatorTests
 
         // Assert
         result.IsValid.Should().BeFalse();
-        result.Errors.Should().Contain(e => e.PropertyName == "EndDate");
+        result.Errors.Should().Contain(e => e.PropertyName.Contains("EndDate"));
     }
 
     #endregion
@@ -244,7 +244,7 @@ public class CreateMissionValidatorTests
 
         // Assert
         result.IsValid.Should().BeFalse();
-        result.Errors.Should().ContainSingle(e => e.PropertyName == "ScopeId");
+        result.Errors.Should().ContainSingle(e => e.PropertyName.Contains("ScopeId"));
     }
 
     #endregion

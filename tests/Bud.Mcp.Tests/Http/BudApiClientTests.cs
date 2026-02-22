@@ -40,7 +40,7 @@ public sealed class BudApiClientTests
         {
             if (request.RequestUri!.AbsolutePath == "/api/sessions")
             {
-                return JsonResponse(new AuthLoginResponse
+                return JsonResponse(new SessionResponse
                 {
                     Token = "jwt-token",
                     Email = "user@getbud.co",
@@ -50,7 +50,7 @@ public sealed class BudApiClientTests
 
             if (request.RequestUri.AbsolutePath == "/api/me/organizations")
             {
-                return JsonResponse(new List<OrganizationSummaryDto>
+                return JsonResponse(new List<OrganizationSummaryResponse>
                 {
                     new() { Id = tenantId, Name = "Org 1" }
                 });
@@ -113,7 +113,7 @@ public sealed class BudApiClientTests
         {
             if (request.RequestUri!.AbsolutePath == "/api/sessions")
             {
-                return JsonResponse(new AuthLoginResponse
+                return JsonResponse(new SessionResponse
                 {
                     Token = "jwt-token",
                     Email = "user@getbud.co",
