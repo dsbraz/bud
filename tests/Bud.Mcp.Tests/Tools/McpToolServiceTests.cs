@@ -222,7 +222,7 @@ public sealed class McpToolServiceTests
         var tenantId = Guid.NewGuid();
         var handler = new StubHttpMessageHandler(request =>
         {
-            if (request.RequestUri!.AbsolutePath == "/api/auth/login")
+            if (request.RequestUri!.AbsolutePath == "/api/sessions")
             {
                 return JsonResponse(new AuthLoginResponse
                 {
@@ -232,7 +232,7 @@ public sealed class McpToolServiceTests
                 });
             }
 
-            if (request.RequestUri.AbsolutePath == "/api/auth/my-organizations")
+            if (request.RequestUri.AbsolutePath == "/api/me/organizations")
             {
                 return JsonResponse(new List<OrganizationSummaryDto>
                 {
@@ -257,7 +257,7 @@ public sealed class McpToolServiceTests
 
         var handler = new StubHttpMessageHandler(request =>
         {
-            if (request.RequestUri!.AbsolutePath == "/api/auth/login")
+            if (request.RequestUri!.AbsolutePath == "/api/sessions")
             {
                 return JsonResponse(new AuthLoginResponse
                 {
@@ -268,7 +268,7 @@ public sealed class McpToolServiceTests
                 });
             }
 
-            if (request.RequestUri.AbsolutePath == "/api/auth/my-organizations")
+            if (request.RequestUri.AbsolutePath == "/api/me/organizations")
             {
                 return JsonResponse(new List<OrganizationSummaryDto>
                 {
@@ -276,7 +276,7 @@ public sealed class McpToolServiceTests
                 });
             }
 
-            if (request.Method == HttpMethod.Put && request.RequestUri.AbsolutePath == $"/api/missions/{missionId}")
+            if (request.Method == HttpMethod.Patch && request.RequestUri.AbsolutePath == $"/api/missions/{missionId}")
             {
                 return JsonResponse(new Mission
                 {

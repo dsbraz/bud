@@ -33,7 +33,7 @@ public partial class Collaborators
     // Estado do modal de edição
     private bool isEditModalOpen = false;
     private Collaborator? selectedCollaborator = null;
-    private UpdateCollaboratorRequest editCollaborator = new();
+    private PatchCollaboratorRequest editCollaborator = new();
     private string? editLeaderId;
     private List<TeamSummaryDto> availableTeamsForEdit = new();
     private List<TeamSummaryDto> assignedTeamsForEdit = new();
@@ -236,7 +236,7 @@ public partial class Collaborators
                 // Assign teams if any were selected
                 if (created != null && createTeamsModified && assignedTeamsForCreate.Count > 0)
                 {
-                    await Api.UpdateCollaboratorTeamsAsync(created.Id, new UpdateCollaboratorTeamsRequest
+                    await Api.UpdateCollaboratorTeamsAsync(created.Id, new PatchCollaboratorTeamsRequest
                     {
                         TeamIds = assignedTeamsForCreate.Select(t => t.Id).ToList()
                     });
@@ -257,7 +257,7 @@ public partial class Collaborators
     private async Task OpenEditModal(Collaborator collaborator)
     {
         selectedCollaborator = collaborator;
-        editCollaborator = new UpdateCollaboratorRequest
+        editCollaborator = new PatchCollaboratorRequest
         {
             FullName = collaborator.FullName,
             Email = collaborator.Email,
@@ -323,7 +323,7 @@ public partial class Collaborators
                     // Update teams if modified
                     if (teamsModified)
                     {
-                        await Api.UpdateCollaboratorTeamsAsync(selectedCollaborator.Id, new UpdateCollaboratorTeamsRequest
+                        await Api.UpdateCollaboratorTeamsAsync(selectedCollaborator.Id, new PatchCollaboratorTeamsRequest
                         {
                             TeamIds = assignedTeamsForEdit.Select(t => t.Id).ToList()
                         });

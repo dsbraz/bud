@@ -49,7 +49,7 @@ public class MissionTemplatesEndpointsTests : IClassFixture<CustomWebApplication
                 }
             }
         };
-        var response = await _client.PostAsJsonAsync("/api/mission-templates", request);
+        var response = await _client.PostAsJsonAsync("/api/templates", request);
         response.EnsureSuccessStatusCode();
         return (await response.Content.ReadFromJsonAsync<MissionTemplate>())!;
     }
@@ -88,7 +88,7 @@ public class MissionTemplatesEndpointsTests : IClassFixture<CustomWebApplication
         };
 
         // Act
-        var response = await _client.PostAsJsonAsync("/api/mission-templates", request);
+        var response = await _client.PostAsJsonAsync("/api/templates", request);
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.Created);
@@ -134,7 +134,7 @@ public class MissionTemplatesEndpointsTests : IClassFixture<CustomWebApplication
         };
 
         // Act
-        var response = await _client.PostAsJsonAsync("/api/mission-templates", request);
+        var response = await _client.PostAsJsonAsync("/api/templates", request);
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.Created);
@@ -156,7 +156,7 @@ public class MissionTemplatesEndpointsTests : IClassFixture<CustomWebApplication
         };
 
         // Act
-        var response = await _client.PostAsJsonAsync("/api/mission-templates", request);
+        var response = await _client.PostAsJsonAsync("/api/templates", request);
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
@@ -173,7 +173,7 @@ public class MissionTemplatesEndpointsTests : IClassFixture<CustomWebApplication
         var created = await CreateTestTemplate();
 
         // Act
-        var response = await _client.GetAsync($"/api/mission-templates/{created.Id}");
+        var response = await _client.GetAsync($"/api/templates/{created.Id}");
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.OK);
@@ -192,7 +192,7 @@ public class MissionTemplatesEndpointsTests : IClassFixture<CustomWebApplication
         var nonExistingId = Guid.NewGuid();
 
         // Act
-        var response = await _client.GetAsync($"/api/mission-templates/{nonExistingId}");
+        var response = await _client.GetAsync($"/api/templates/{nonExistingId}");
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.NotFound);
@@ -210,7 +210,7 @@ public class MissionTemplatesEndpointsTests : IClassFixture<CustomWebApplication
         await CreateTestTemplate();
 
         // Act
-        var response = await _client.GetAsync("/api/mission-templates?page=1&pageSize=10");
+        var response = await _client.GetAsync("/api/templates?page=1&pageSize=10");
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.OK);
@@ -232,7 +232,7 @@ public class MissionTemplatesEndpointsTests : IClassFixture<CustomWebApplication
         // Arrange
         var created = await CreateTestTemplate();
 
-        var updateRequest = new UpdateMissionTemplateRequest
+        var updateRequest = new PatchMissionTemplateRequest
         {
             Name = "Updated Template Name",
             Description = "Updated description",
@@ -254,7 +254,7 @@ public class MissionTemplatesEndpointsTests : IClassFixture<CustomWebApplication
         };
 
         // Act
-        var response = await _client.PutAsJsonAsync($"/api/mission-templates/{created.Id}", updateRequest);
+        var response = await _client.PatchAsJsonAsync($"/api/templates/{created.Id}", updateRequest);
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.OK);
@@ -278,13 +278,13 @@ public class MissionTemplatesEndpointsTests : IClassFixture<CustomWebApplication
         var created = await CreateTestTemplate();
 
         // Act
-        var response = await _client.DeleteAsync($"/api/mission-templates/{created.Id}");
+        var response = await _client.DeleteAsync($"/api/templates/{created.Id}");
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.NoContent);
 
         // Verify it's deleted
-        var getResponse = await _client.GetAsync($"/api/mission-templates/{created.Id}");
+        var getResponse = await _client.GetAsync($"/api/templates/{created.Id}");
         getResponse.StatusCode.Should().Be(HttpStatusCode.NotFound);
     }
 
@@ -299,7 +299,7 @@ public class MissionTemplatesEndpointsTests : IClassFixture<CustomWebApplication
         var unauthenticatedClient = _factory.CreateClient();
 
         // Act
-        var response = await unauthenticatedClient.GetAsync("/api/mission-templates");
+        var response = await unauthenticatedClient.GetAsync("/api/templates");
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);

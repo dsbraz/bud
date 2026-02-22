@@ -1,5 +1,5 @@
 using Bud.Server.Application.Common;
-using Bud.Server.Application.Projections;
+using Bud.Server.Domain.ReadModels;
 using Bud.Server.Application.Teams;
 using Bud.Server.Domain.Model;
 using Bud.Server.Domain.Repositories;
@@ -30,7 +30,7 @@ public sealed class TeamReadUseCasesTests
                 LeaderId = Guid.NewGuid()
             });
 
-        var useCase = new ViewTeamDetails(_teamRepository.Object);
+        var useCase = new GetTeamById(_teamRepository.Object);
 
         var result = await useCase.ExecuteAsync(teamId);
 
@@ -45,7 +45,7 @@ public sealed class TeamReadUseCasesTests
             .Setup(repository => repository.GetByIdAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync((Team?)null);
 
-        var useCase = new ViewTeamDetails(_teamRepository.Object);
+        var useCase = new GetTeamById(_teamRepository.Object);
 
         var result = await useCase.ExecuteAsync(Guid.NewGuid());
 
@@ -65,7 +65,7 @@ public sealed class TeamReadUseCasesTests
             .Setup(repository => repository.GetCollaboratorSummariesAsync(teamId, It.IsAny<CancellationToken>()))
             .ReturnsAsync([]);
 
-        var useCase = new ListTeamCollaboratorSummaries(_teamRepository.Object);
+        var useCase = new ListTeamCollaboratorOptions(_teamRepository.Object);
 
         var result = await useCase.ExecuteAsync(teamId);
 
@@ -94,7 +94,7 @@ public sealed class TeamReadUseCasesTests
             .Setup(repository => repository.GetAvailableCollaboratorsAsync(teamId, organizationId, "ana", 50, It.IsAny<CancellationToken>()))
             .ReturnsAsync([]);
 
-        var useCase = new ListAvailableTeamCollaborators(_teamRepository.Object);
+        var useCase = new ListAvailableCollaboratorsForTeam(_teamRepository.Object);
 
         var result = await useCase.ExecuteAsync(teamId, "ana");
 

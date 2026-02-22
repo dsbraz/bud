@@ -15,7 +15,7 @@ public partial class Organizations
     private bool isModalOpen = false;
     private string modalMode = "create"; // "create" ou "edit"
     private Guid? editingOrganizationId = null;
-    private UpdateOrganizationRequest editOrganization = new();
+    private PatchOrganizationRequest editOrganization = new();
     private Guid? deletingOrganizationId = null;
     private System.Threading.Timer? deleteConfirmTimer;
     private const string GlobalAdminOrgName = "getbud.co"; // Organização do admin global
@@ -86,7 +86,7 @@ public partial class Organizations
     {
         modalMode = "edit";
         editingOrganizationId = org.Id;
-        editOrganization = new UpdateOrganizationRequest
+        editOrganization = new PatchOrganizationRequest
         {
             Name = org.Name,
             OwnerId = org.OwnerId ?? Guid.Empty
@@ -113,7 +113,7 @@ public partial class Organizations
         isModalOpen = false;
         modalMode = "create";
         editingOrganizationId = null;
-        editOrganization = new UpdateOrganizationRequest();
+        editOrganization = new PatchOrganizationRequest();
     }
 
     private async Task CreateOrganization()

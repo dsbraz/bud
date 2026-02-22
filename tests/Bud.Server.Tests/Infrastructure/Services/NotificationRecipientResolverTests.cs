@@ -1,5 +1,6 @@
-using Bud.Server.Infrastructure.Services;
+using Bud.Server.Application.Ports;
 using Bud.Server.Infrastructure.Persistence;
+using Bud.Server.Infrastructure.Services;
 using Bud.Server.Tests.Helpers;
 using Bud.Server.Domain.Model;
 using FluentAssertions;
@@ -235,7 +236,7 @@ public class NotificationRecipientResolverTests
         };
         context.Missions.Add(mission);
 
-        var metric = new MissionMetric
+        var metric = new Metric
         {
             Id = Guid.NewGuid(),
             MissionId = mission.Id,

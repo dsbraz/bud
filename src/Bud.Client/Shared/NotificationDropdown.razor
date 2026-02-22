@@ -75,7 +75,7 @@
         isLoading = true;
         try
         {
-            var result = await Api.GetNotificationsAsync(1, 20);
+            var result = await Api.GetNotificationsAsync(page: 1, pageSize: 20);
             if (result?.Items != null)
             {
                 notifications = result.Items.ToList();

@@ -20,7 +20,7 @@ public sealed class WorkspaceReadUseCasesTests
         _wsRepo.Setup(r => r.GetByIdAsync(workspaceId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(new Workspace { Id = workspaceId, Name = "Plataforma", OrganizationId = Guid.NewGuid() });
 
-        var useCase = new ViewWorkspaceDetails(_wsRepo.Object);
+        var useCase = new GetWorkspaceById(_wsRepo.Object);
 
         var result = await useCase.ExecuteAsync(workspaceId);
 
@@ -33,7 +33,7 @@ public sealed class WorkspaceReadUseCasesTests
     {
         _wsRepo.Setup(r => r.GetByIdAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>())).ReturnsAsync((Workspace?)null);
 
-        var useCase = new ViewWorkspaceDetails(_wsRepo.Object);
+        var useCase = new GetWorkspaceById(_wsRepo.Object);
 
         var result = await useCase.ExecuteAsync(Guid.NewGuid());
 

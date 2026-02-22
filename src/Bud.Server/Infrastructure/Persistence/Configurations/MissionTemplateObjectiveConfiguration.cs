@@ -14,16 +14,14 @@ public sealed class MissionTemplateObjectiveConfiguration : IEntityTypeConfigura
         builder.Property(mto => mto.Description)
             .HasMaxLength(1000);
 
+        builder.Property(mto => mto.Dimension)
+            .HasMaxLength(100);
+
         builder.HasOne(mto => mto.Organization)
             .WithMany()
             .HasForeignKey(mto => mto.OrganizationId)
             .OnDelete(DeleteBehavior.Restrict)
             .IsRequired();
-
-        builder.HasOne(mto => mto.ObjectiveDimension)
-            .WithMany()
-            .HasForeignKey(mto => mto.ObjectiveDimensionId)
-            .OnDelete(DeleteBehavior.Restrict);
 
         builder.HasIndex(mto => mto.OrganizationId);
         builder.HasIndex(mto => mto.MissionTemplateId);

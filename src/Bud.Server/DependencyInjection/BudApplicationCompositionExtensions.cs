@@ -1,14 +1,13 @@
-using Bud.Server.Application.Auth;
 using Bud.Server.Application.Collaborators;
-using Bud.Server.Application.Dashboard;
-using Bud.Server.Application.MetricCheckins;
-using Bud.Server.Application.MissionMetrics;
-using Bud.Server.Application.MissionObjectives;
+using Bud.Server.Application.Me;
+using Bud.Server.Application.Metrics;
+using Bud.Server.Application.Objectives;
 using Bud.Server.Application.Missions;
 using Bud.Server.Application.MissionTemplates;
-using Bud.Server.Application.ObjectiveDimensions;
 using Bud.Server.Application.Notifications;
+using Bud.Server.Application.DomainEvents.Notifications;
 using Bud.Server.Application.Organizations;
+using Bud.Server.Application.Sessions;
 using Bud.Server.Application.Teams;
 using Bud.Server.Application.Workspaces;
 using Bud.Server.Authorization;
@@ -17,6 +16,7 @@ using Bud.Server.Domain.Events;
 using Bud.Server.Domain.Repositories;
 using Bud.Server.Infrastructure.Repositories;
 using Bud.Server.Infrastructure.Services;
+using Bud.Server.Application.Ports;
 
 namespace Bud.Server.DependencyInjection;
 
@@ -28,99 +28,94 @@ public static class BudApplicationCompositionExtensions
 
         services.AddScoped<IOrganizationRepository, OrganizationRepository>();
         services.AddScoped<ICollaboratorRepository, CollaboratorRepository>();
-        services.AddScoped<RegisterOrganization>();
-        services.AddScoped<RenameOrganization>();
+        services.AddScoped<CreateOrganization>();
+        services.AddScoped<PatchOrganization>();
         services.AddScoped<DeleteOrganization>();
-        services.AddScoped<ViewOrganizationDetails>();
+        services.AddScoped<GetOrganizationById>();
         services.AddScoped<ListOrganizations>();
         services.AddScoped<ListOrganizationWorkspaces>();
         services.AddScoped<ListOrganizationCollaborators>();
 
         services.AddScoped<IWorkspaceRepository, WorkspaceRepository>();
         services.AddScoped<CreateWorkspace>();
-        services.AddScoped<RenameWorkspace>();
+        services.AddScoped<PatchWorkspace>();
         services.AddScoped<DeleteWorkspace>();
-        services.AddScoped<ViewWorkspaceDetails>();
+        services.AddScoped<GetWorkspaceById>();
         services.AddScoped<ListWorkspaces>();
         services.AddScoped<ListWorkspaceTeams>();
 
         services.AddScoped<ITeamRepository, TeamRepository>();
         services.AddScoped<CreateTeam>();
-        services.AddScoped<UpdateTeam>();
+        services.AddScoped<PatchTeam>();
         services.AddScoped<DeleteTeam>();
-        services.AddScoped<ViewTeamDetails>();
+        services.AddScoped<GetTeamById>();
         services.AddScoped<ListTeams>();
         services.AddScoped<ListSubTeams>();
         services.AddScoped<ListTeamCollaborators>();
-        services.AddScoped<ListTeamCollaboratorSummaries>();
-        services.AddScoped<UpdateTeamCollaborators>();
-        services.AddScoped<ListAvailableTeamCollaborators>();
+        services.AddScoped<ListTeamCollaboratorOptions>();
+        services.AddScoped<PatchTeamCollaborators>();
+        services.AddScoped<ListAvailableCollaboratorsForTeam>();
 
         services.AddScoped<CreateCollaborator>();
-        services.AddScoped<UpdateCollaboratorProfile>();
+        services.AddScoped<PatchCollaborator>();
         services.AddScoped<DeleteCollaborator>();
-        services.AddScoped<ViewCollaboratorProfile>();
-        services.AddScoped<ListLeaders>();
+        services.AddScoped<GetCollaboratorById>();
+        services.AddScoped<ListLeaderCollaborators>();
         services.AddScoped<ListCollaborators>();
         services.AddScoped<GetCollaboratorHierarchy>();
         services.AddScoped<ListCollaboratorTeams>();
-        services.AddScoped<UpdateCollaboratorTeams>();
-        services.AddScoped<ListAvailableCollaboratorTeams>();
-        services.AddScoped<ListCollaboratorSummaries>();
+        services.AddScoped<PatchCollaboratorTeams>();
+        services.AddScoped<ListAvailableTeamsForCollaborator>();
+        services.AddScoped<ListCollaboratorOptions>();
 
         services.AddScoped<IMissionRepository, MissionRepository>();
-        services.AddScoped<PlanMission>();
-        services.AddScoped<ReplanMission>();
+        services.AddScoped<CreateMission>();
+        services.AddScoped<PatchMission>();
         services.AddScoped<DeleteMission>();
-        services.AddScoped<ViewMissionDetails>();
+        services.AddScoped<GetMissionById>();
         services.AddScoped<ListMissionsByScope>();
         services.AddScoped<ListCollaboratorMissions>();
         services.AddScoped<ListMissionProgress>();
         services.AddScoped<ListMissionMetrics>();
 
-        services.AddScoped<IMissionObjectiveRepository, MissionObjectiveRepository>();
-        services.AddScoped<DefineMissionObjective>();
-        services.AddScoped<ReviseMissionObjective>();
-        services.AddScoped<RemoveMissionObjective>();
-        services.AddScoped<ViewMissionObjectiveDetails>();
-        services.AddScoped<ListMissionObjectives>();
-        services.AddScoped<CalculateMissionObjectiveProgress>();
+        services.AddScoped<IObjectiveRepository, ObjectiveRepository>();
+        services.AddScoped<CreateObjective>();
+        services.AddScoped<PatchObjective>();
+        services.AddScoped<DeleteObjective>();
+        services.AddScoped<GetObjectiveById>();
+        services.AddScoped<ListObjectives>();
+        services.AddScoped<ListObjectivesByMission>();
+        services.AddScoped<ListObjectiveMetrics>();
+        services.AddScoped<ListObjectiveProgress>();
 
-        services.AddScoped<IMissionMetricRepository, MissionMetricRepository>();
-        services.AddScoped<DefineMissionMetric>();
-        services.AddScoped<ReviseMissionMetricDefinition>();
-        services.AddScoped<RemoveMissionMetric>();
-        services.AddScoped<ViewMissionMetricDetails>();
-        services.AddScoped<BrowseMissionMetrics>();
-        services.AddScoped<CalculateMissionMetricProgress>();
+        services.AddScoped<IMetricRepository, MetricRepository>();
+        services.AddScoped<CreateMetric>();
+        services.AddScoped<PatchMetric>();
+        services.AddScoped<DeleteMetric>();
+        services.AddScoped<GetMetricById>();
+        services.AddScoped<ListMetrics>();
+        services.AddScoped<ListMetricProgress>();
 
-        services.AddScoped<IMetricCheckinRepository, MetricCheckinRepository>();
-        services.AddScoped<RegisterMetricCheckin>();
-        services.AddScoped<CorrectMetricCheckin>();
+        services.AddScoped<CreateMetricCheckin>();
+        services.AddScoped<PatchMetricCheckin>();
         services.AddScoped<DeleteMetricCheckin>();
-        services.AddScoped<ViewMetricCheckinDetails>();
-        services.AddScoped<ListMetricCheckinHistory>();
+        services.AddScoped<GetMetricCheckinById>();
+        services.AddScoped<ListMetricCheckins>();
 
         services.AddScoped<IAuthService, AuthService>();
-        services.AddScoped<AuthenticateCollaborator>();
-        services.AddScoped<ListAvailableOrganizations>();
+        services.AddScoped<CreateSession>();
+        services.AddScoped<ListMyOrganizations>();
+        services.AddScoped<DeleteCurrentSession>();
 
         services.AddScoped<IMissionTemplateRepository, MissionTemplateRepository>();
-        services.AddScoped<CreateStrategicMissionTemplate>();
-        services.AddScoped<ReviseStrategicMissionTemplate>();
-        services.AddScoped<RemoveStrategicMissionTemplate>();
-        services.AddScoped<ViewStrategicMissionTemplate>();
-        services.AddScoped<ListMissionTemplates>();
+        services.AddScoped<CreateTemplate>();
+        services.AddScoped<PatchTemplate>();
+        services.AddScoped<DeleteTemplate>();
+        services.AddScoped<GetTemplateById>();
+        services.AddScoped<ListTemplates>();
 
-        services.AddScoped<IObjectiveDimensionRepository, ObjectiveDimensionRepository>();
-        services.AddScoped<RegisterStrategicDimension>();
-        services.AddScoped<RenameStrategicDimension>();
-        services.AddScoped<RemoveStrategicDimension>();
-        services.AddScoped<ViewStrategicDimensionDetails>();
-        services.AddScoped<ListStrategicDimensions>();
-
-        services.AddScoped<IDashboardReadRepository, DashboardReadRepository>();
-        services.AddScoped<GetCollaboratorDashboard>();
+        services.AddScoped<IMyDashboardReadStore, DashboardReadRepository>();
+        services.AddScoped<GetMyDashboard>();
 
         services.AddScoped<IMissionProgressService, MissionProgressService>();
         services.AddScoped<IMissionScopeResolver, MissionScopeResolver>();
@@ -133,9 +128,8 @@ public static class BudApplicationCompositionExtensions
         services.AddScoped<IDomainEventConsumer<MissionDeletedDomainEvent>, MissionDeletedDomainEventConsumer>();
         services.AddScoped<IDomainEventConsumer<MetricCheckinCreatedDomainEvent>, MetricCheckinCreatedDomainEventConsumer>();
         services.AddScoped<ListNotifications>();
-        services.AddScoped<GetUnreadNotificationCount>();
-        services.AddScoped<MarkNotificationAsRead>();
-        services.AddScoped<MarkAllNotificationsAsRead>();
+        services.AddScoped<PatchNotification>();
+        services.AddScoped<PatchNotifications>();
 
         return services;
     }

@@ -7,7 +7,7 @@ namespace Bud.Server.Application.Missions;
 
 public sealed class ListCollaboratorMissions(IMissionRepository missionRepository)
 {
-    public async Task<Result<PagedResult<Mission>>> ExecuteAsync(
+    public async Task<Result<Bud.Shared.Contracts.PagedResult<Mission>>> ExecuteAsync(
         Guid collaboratorId,
         string? search,
         int page,
@@ -19,7 +19,7 @@ public sealed class ListCollaboratorMissions(IMissionRepository missionRepositor
         var collaborator = await missionRepository.FindCollaboratorForMyMissionsAsync(collaboratorId, cancellationToken);
         if (collaborator is null)
         {
-            return Result<PagedResult<Mission>>.NotFound("Colaborador não encontrado.");
+            return Result<Bud.Shared.Contracts.PagedResult<Mission>>.NotFound("Colaborador não encontrado.");
         }
 
         var teamIds = await missionRepository.GetCollaboratorTeamIdsAsync(collaboratorId, collaborator.TeamId, cancellationToken);
@@ -35,6 +35,6 @@ public sealed class ListCollaboratorMissions(IMissionRepository missionRepositor
             pageSize,
             cancellationToken);
 
-        return Result<PagedResult<Mission>>.Success(result);
+        return Result<Bud.Shared.Contracts.PagedResult<Mission>>.Success(result.MapPaged(x => x));
     }
 }

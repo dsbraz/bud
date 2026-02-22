@@ -85,12 +85,12 @@ public sealed class TeamWriteUseCasesTests
             .Setup(repository => repository.GetByIdWithCollaboratorTeamsAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync((Team?)null);
 
-        var useCase = new UpdateTeam(
+        var useCase = new PatchTeam(
             _teamRepository.Object,
             _collaboratorRepository.Object,
             _authorizationGateway.Object);
 
-        var request = new UpdateTeamRequest { Name = "Novo Team", LeaderId = Guid.NewGuid() };
+        var request = new PatchTeamRequest { Name = "Novo Team", LeaderId = Guid.NewGuid() };
 
         var result = await useCase.ExecuteAsync(User, Guid.NewGuid(), request);
 
@@ -116,12 +116,12 @@ public sealed class TeamWriteUseCasesTests
             .Setup(gateway => gateway.CanWriteOrganizationAsync(User, team.OrganizationId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(false);
 
-        var useCase = new UpdateTeam(
+        var useCase = new PatchTeam(
             _teamRepository.Object,
             _collaboratorRepository.Object,
             _authorizationGateway.Object);
 
-        var request = new UpdateTeamRequest { Name = "Novo Team", LeaderId = Guid.NewGuid() };
+        var request = new PatchTeamRequest { Name = "Novo Team", LeaderId = Guid.NewGuid() };
 
         var result = await useCase.ExecuteAsync(User, team.Id, request);
 
@@ -204,12 +204,12 @@ public sealed class TeamWriteUseCasesTests
             .Setup(repository => repository.CountByIdsAndOrganizationAsync(It.IsAny<List<Guid>>(), team.OrganizationId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(1);
 
-        var useCase = new UpdateTeamCollaborators(
+        var useCase = new PatchTeamCollaborators(
             _teamRepository.Object,
             _collaboratorRepository.Object,
             _authorizationGateway.Object);
 
-        var request = new UpdateTeamCollaboratorsRequest { CollaboratorIds = [leaderId] };
+        var request = new PatchTeamCollaboratorsRequest { CollaboratorIds = [leaderId] };
 
         var result = await useCase.ExecuteAsync(User, team.Id, request);
 
@@ -235,12 +235,12 @@ public sealed class TeamWriteUseCasesTests
             .Setup(gateway => gateway.IsOrganizationOwnerAsync(User, team.OrganizationId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(false);
 
-        var useCase = new UpdateTeamCollaborators(
+        var useCase = new PatchTeamCollaborators(
             _teamRepository.Object,
             _collaboratorRepository.Object,
             _authorizationGateway.Object);
 
-        var request = new UpdateTeamCollaboratorsRequest { CollaboratorIds = [] };
+        var request = new PatchTeamCollaboratorsRequest { CollaboratorIds = [] };
 
         var result = await useCase.ExecuteAsync(User, team.Id, request);
 

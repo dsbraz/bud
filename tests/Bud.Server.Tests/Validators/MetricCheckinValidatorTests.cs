@@ -12,9 +12,9 @@ public class CreateMetricCheckinValidatorTests
     [Fact]
     public async Task Validate_ValidRequest_Passes()
     {
-        var request = new CreateMetricCheckinRequest
+        var request = new CreateCheckinRequest
         {
-            MissionMetricId = Guid.NewGuid(),
+            MetricId = Guid.NewGuid(),
             Value = 42m,
             CheckinDate = DateTime.UtcNow,
             ConfidenceLevel = 3,
@@ -29,9 +29,9 @@ public class CreateMetricCheckinValidatorTests
     [Fact]
     public async Task Validate_EmptyMissionMetricId_Fails()
     {
-        var request = new CreateMetricCheckinRequest
+        var request = new CreateCheckinRequest
         {
-            MissionMetricId = Guid.Empty,
+            MetricId = Guid.Empty,
             CheckinDate = DateTime.UtcNow,
             ConfidenceLevel = 3
         };
@@ -39,15 +39,15 @@ public class CreateMetricCheckinValidatorTests
         var result = await _validator.ValidateAsync(request);
 
         result.IsValid.Should().BeFalse();
-        result.Errors.Should().Contain(e => e.PropertyName == "MissionMetricId");
+        result.Errors.Should().Contain(e => e.PropertyName == "MetricId");
     }
 
     [Fact]
     public async Task Validate_EmptyCheckinDate_Fails()
     {
-        var request = new CreateMetricCheckinRequest
+        var request = new CreateCheckinRequest
         {
-            MissionMetricId = Guid.NewGuid(),
+            MetricId = Guid.NewGuid(),
             CheckinDate = default,
             ConfidenceLevel = 3
         };
@@ -65,9 +65,9 @@ public class CreateMetricCheckinValidatorTests
     [InlineData(10)]
     public async Task Validate_ConfidenceLevelOutOfRange_Fails(int confidenceLevel)
     {
-        var request = new CreateMetricCheckinRequest
+        var request = new CreateCheckinRequest
         {
-            MissionMetricId = Guid.NewGuid(),
+            MetricId = Guid.NewGuid(),
             CheckinDate = DateTime.UtcNow,
             ConfidenceLevel = confidenceLevel
         };
@@ -86,9 +86,9 @@ public class CreateMetricCheckinValidatorTests
     [InlineData(5)]
     public async Task Validate_ConfidenceLevelInRange_Passes(int confidenceLevel)
     {
-        var request = new CreateMetricCheckinRequest
+        var request = new CreateCheckinRequest
         {
-            MissionMetricId = Guid.NewGuid(),
+            MetricId = Guid.NewGuid(),
             CheckinDate = DateTime.UtcNow,
             ConfidenceLevel = confidenceLevel
         };
@@ -101,9 +101,9 @@ public class CreateMetricCheckinValidatorTests
     [Fact]
     public async Task Validate_NoteTooLong_Fails()
     {
-        var request = new CreateMetricCheckinRequest
+        var request = new CreateCheckinRequest
         {
-            MissionMetricId = Guid.NewGuid(),
+            MetricId = Guid.NewGuid(),
             CheckinDate = DateTime.UtcNow,
             ConfidenceLevel = 3,
             Note = new string('a', 1001)
@@ -120,9 +120,9 @@ public class CreateMetricCheckinValidatorTests
     [Fact]
     public async Task Validate_TextTooLong_Fails()
     {
-        var request = new CreateMetricCheckinRequest
+        var request = new CreateCheckinRequest
         {
-            MissionMetricId = Guid.NewGuid(),
+            MetricId = Guid.NewGuid(),
             CheckinDate = DateTime.UtcNow,
             ConfidenceLevel = 3,
             Text = new string('a', 1001)
@@ -139,9 +139,9 @@ public class CreateMetricCheckinValidatorTests
     [Fact]
     public async Task Validate_NullNoteAndText_Passes()
     {
-        var request = new CreateMetricCheckinRequest
+        var request = new CreateCheckinRequest
         {
-            MissionMetricId = Guid.NewGuid(),
+            MetricId = Guid.NewGuid(),
             CheckinDate = DateTime.UtcNow,
             ConfidenceLevel = 2,
             Note = null,
@@ -156,12 +156,12 @@ public class CreateMetricCheckinValidatorTests
 
 public class UpdateMetricCheckinValidatorTests
 {
-    private readonly UpdateMetricCheckinValidator _validator = new();
+    private readonly PatchMetricCheckinValidator _validator = new();
 
     [Fact]
     public async Task Validate_ValidRequest_Passes()
     {
-        var request = new UpdateMetricCheckinRequest
+        var request = new PatchCheckinRequest
         {
             Value = 50m,
             CheckinDate = DateTime.UtcNow,
@@ -177,7 +177,7 @@ public class UpdateMetricCheckinValidatorTests
     [Fact]
     public async Task Validate_EmptyCheckinDate_Fails()
     {
-        var request = new UpdateMetricCheckinRequest
+        var request = new PatchCheckinRequest
         {
             CheckinDate = default,
             ConfidenceLevel = 3
@@ -194,7 +194,7 @@ public class UpdateMetricCheckinValidatorTests
     [InlineData(6)]
     public async Task Validate_ConfidenceLevelOutOfRange_Fails(int confidenceLevel)
     {
-        var request = new UpdateMetricCheckinRequest
+        var request = new PatchCheckinRequest
         {
             CheckinDate = DateTime.UtcNow,
             ConfidenceLevel = confidenceLevel
@@ -209,7 +209,7 @@ public class UpdateMetricCheckinValidatorTests
     [Fact]
     public async Task Validate_NoteTooLong_Fails()
     {
-        var request = new UpdateMetricCheckinRequest
+        var request = new PatchCheckinRequest
         {
             CheckinDate = DateTime.UtcNow,
             ConfidenceLevel = 3,
@@ -225,7 +225,7 @@ public class UpdateMetricCheckinValidatorTests
     [Fact]
     public async Task Validate_TextTooLong_Fails()
     {
-        var request = new UpdateMetricCheckinRequest
+        var request = new PatchCheckinRequest
         {
             CheckinDate = DateTime.UtcNow,
             ConfidenceLevel = 3,

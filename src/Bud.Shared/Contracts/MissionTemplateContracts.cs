@@ -40,5 +40,5 @@ public sealed class MissionTemplateObjectiveDto
     /// <summary>Índice de ordenação do objetivo no template.</summary>
     public int OrderIndex { get; set; }
     /// <summary>Identificador opcional da dimensão do objetivo.</summary>
-    public Guid? ObjectiveDimensionId { get; set; }
+    public string? Dimension { get; set; }
 }

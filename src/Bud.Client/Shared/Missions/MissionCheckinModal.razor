@@ -51,26 +51,26 @@
 
 @code {
     [Parameter] public bool IsOpen { get; set; }
-    [Parameter] public MissionMetric? Metric { get; set; }
+    [Parameter] public Metric? Metric { get; set; }
     [Parameter] public EventCallback OnClose { get; set; }
-    [Parameter] public EventCallback<CreateMetricCheckinRequest> OnSubmit { get; set; }
+    [Parameter] public EventCallback<CreateCheckinRequest> OnSubmit { get; set; }
 
-    private CreateMetricCheckinRequest checkinRequest = new() { ConfidenceLevel = 3 };
-    private MissionMetric? previousMetric;
+    private CreateCheckinRequest checkinRequest = new() { ConfidenceLevel = 3 };
+    private Metric? previousMetric;
 
     protected override void OnParametersSet()
     {
         if (Metric != previousMetric)
         {
             previousMetric = Metric;
-            checkinRequest = new CreateMetricCheckinRequest { ConfidenceLevel = 3 };
+            checkinRequest = new CreateCheckinRequest { ConfidenceLevel = 3 };
         }
     }
 
     private async Task HandleSubmit()
     {
         if (Metric is null) return;
-        checkinRequest.MissionMetricId = Metric.Id;
+        checkinRequest.MetricId = Metric.Id;
         checkinRequest.CheckinDate = DateTime.UtcNow;
         await OnSubmit.InvokeAsync(checkinRequest);
     }

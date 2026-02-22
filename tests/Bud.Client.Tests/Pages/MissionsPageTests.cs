@@ -81,8 +81,7 @@ public sealed class MissionsPageTests : TestContext
             if (path.StartsWith("/api/workspaces", StringComparison.Ordinal) ||
                 path.StartsWith("/api/teams", StringComparison.Ordinal) ||
                 path.StartsWith("/api/collaborators", StringComparison.Ordinal) ||
-                path.StartsWith("/api/mission-templates", StringComparison.Ordinal) ||
-                path.StartsWith("/api/objective-dimensions", StringComparison.Ordinal))
+                path.StartsWith("/api/templates", StringComparison.Ordinal))
             {
                 return Json("""{"items":[],"total":0,"page":1,"pageSize":100}""");
             }

@@ -21,7 +21,7 @@ public sealed class WorkspaceWriteUseCasesTests
     private CreateWorkspace CreateCreateWorkspace()
         => new(_wsRepo.Object, _orgRepo.Object, _authGateway.Object);
 
-    private RenameWorkspace CreateRenameWorkspace()
+    private PatchWorkspace CreatePatchWorkspace()
         => new(_wsRepo.Object, _authGateway.Object);
 
     private DeleteWorkspace CreateDeleteWorkspace()
@@ -53,9 +53,9 @@ public sealed class WorkspaceWriteUseCasesTests
     {
         _wsRepo.Setup(r => r.GetByIdAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>())).ReturnsAsync((Workspace?)null);
 
-        var useCase = CreateRenameWorkspace();
+        var useCase = CreatePatchWorkspace();
 
-        var result = await useCase.ExecuteAsync(User, Guid.NewGuid(), new UpdateWorkspaceRequest { Name = "Novo Nome" });
+        var result = await useCase.ExecuteAsync(User, Guid.NewGuid(), new PatchWorkspaceRequest { Name = "Novo Nome" });
 
         result.IsSuccess.Should().BeFalse();
         result.ErrorType.Should().Be(ErrorType.NotFound);

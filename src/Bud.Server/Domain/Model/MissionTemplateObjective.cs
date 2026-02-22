@@ -11,8 +11,7 @@ public sealed class MissionTemplateObjective : ITenantEntity
     public string Name { get; set; } = string.Empty;
     public string? Description { get; set; }
     public int OrderIndex { get; set; }
-    public Guid? ObjectiveDimensionId { get; set; }
-    public ObjectiveDimension? ObjectiveDimension { get; set; }
+    public string? Dimension { get; set; }
 
     public ICollection<MissionTemplateMetric> Metrics { get; set; } = [];
 
@@ -23,7 +22,7 @@ public sealed class MissionTemplateObjective : ITenantEntity
         string name,
         string? description,
         int orderIndex,
-        Guid? objectiveDimensionId)
+        string? dimension)
     {
         if (string.IsNullOrWhiteSpace(name))
         {
@@ -48,7 +47,7 @@ public sealed class MissionTemplateObjective : ITenantEntity
             Name = name.Trim(),
             Description = string.IsNullOrWhiteSpace(description) ? null : description.Trim(),
             OrderIndex = orderIndex,
-            ObjectiveDimensionId = objectiveDimensionId
+            Dimension = string.IsNullOrWhiteSpace(dimension) ? null : dimension.Trim()
         };
     }
 }

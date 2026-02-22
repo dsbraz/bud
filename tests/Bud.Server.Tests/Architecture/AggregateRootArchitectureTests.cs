@@ -19,7 +19,9 @@ public sealed class AggregateRootArchitectureTests
             typeof(Team),
             typeof(Collaborator),
             typeof(Mission),
-            typeof(MissionTemplate)
+            typeof(Metric),
+            typeof(MissionTemplate),
+            typeof(Notification)
         };
 
         var missingMarker = expectedAggregateRoots
@@ -35,12 +37,10 @@ public sealed class AggregateRootArchitectureTests
     {
         var nonRoots = new[]
         {
-            typeof(MissionMetric),
             typeof(MetricCheckin),
             typeof(MissionTemplateObjective),
             typeof(MissionTemplateMetric),
             typeof(CollaboratorTeam),
-            typeof(Notification),
             typeof(CollaboratorAccessLog)
         };
 

@@ -16,9 +16,9 @@ public sealed class CreateWorkspaceValidator : AbstractValidator<CreateWorkspace
     }
 }
 
-public sealed class UpdateWorkspaceValidator : AbstractValidator<UpdateWorkspaceRequest>
+public sealed class PatchWorkspaceValidator : AbstractValidator<PatchWorkspaceRequest>
 {
-    public UpdateWorkspaceValidator()
+    public PatchWorkspaceValidator()
     {
         RuleFor(x => x.Name)
             .NotEmpty().WithMessage("Nome é obrigatório.")

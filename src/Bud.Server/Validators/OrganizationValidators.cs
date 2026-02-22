@@ -18,9 +18,9 @@ public sealed class CreateOrganizationValidator : AbstractValidator<CreateOrgani
     }
 }
 
-public sealed class UpdateOrganizationValidator : AbstractValidator<UpdateOrganizationRequest>
+public sealed class PatchOrganizationValidator : AbstractValidator<PatchOrganizationRequest>
 {
-    public UpdateOrganizationValidator()
+    public PatchOrganizationValidator()
     {
         RuleFor(x => x.Name)
             .NotEmpty().WithMessage("O domínio é obrigatório.")

@@ -85,14 +85,14 @@ public class CollaboratorsEndpointsTests : IClassFixture<CustomWebApplicationFac
         var target = await CreateCollaborator(org.Id);
         var tenantClient = _factory.CreateTenantClient(org.Id, nonOwner.Email, nonOwner.Id);
 
-        var request = new UpdateCollaboratorRequest
+        var request = new PatchCollaboratorRequest
         {
             FullName = "Colaborador Atualizado",
             Email = $"atualizado-{Guid.NewGuid():N}@test.com",
             Role = Bud.Shared.Contracts.CollaboratorRole.IndividualContributor
         };
 
-        var response = await tenantClient.PutAsJsonAsync($"/api/collaborators/{target.Id}", request);
+        var response = await tenantClient.PatchAsJsonAsync($"/api/collaborators/{target.Id}", request);
 
         response.StatusCode.Should().Be(HttpStatusCode.Forbidden);
     }

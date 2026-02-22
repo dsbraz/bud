@@ -793,38 +793,30 @@ Referência completa com exemplos interativos disponível em `/swagger` (ambient
 
 ### Mission Objectives (CRUD)
 
-- `POST /api/mission-objectives`
-- `GET /api/mission-objectives` — listagem paginada (filtro por `missionId`)
-- `GET /api/mission-objectives/{id}`
-- `PUT /api/mission-objectives/{id}`
-- `DELETE /api/mission-objectives/{id}`
-- `GET /api/mission-objectives/progress`
-- Campo opcional nos payloads de criação/atualização: `objectiveDimensionId` (GUID de `/api/objective-dimensions`).
-
-### Objective Dimensions (CRUD)
-
-- `POST /api/objective-dimensions`
-- `GET /api/objective-dimensions` — listagem paginada
-- `GET /api/objective-dimensions/{id}`
-- `PUT /api/objective-dimensions/{id}`
-- `DELETE /api/objective-dimensions/{id}`
+- `POST /api/objectives`
+- `GET /api/objectives` — listagem paginada (filtro por `missionId`)
+- `GET /api/objectives/{id}`
+- `PATCH /api/objectives/{id}`
+- `DELETE /api/objectives/{id}`
+- `GET /api/objectives/progress`
+- Campo opcional nos payloads de criação/atualização: `dimension` (texto livre de até 100 caracteres).
 
 ### Mission Metrics (CRUD)
 
-- `POST /api/mission-metrics`
-- `GET /api/mission-metrics` — listagem paginada
-- `GET /api/mission-metrics/{id}`
-- `PUT /api/mission-metrics/{id}`
-- `DELETE /api/mission-metrics/{id}`
-- `GET /api/mission-metrics/progress`
+- `POST /api/metrics`
+- `GET /api/metrics` — listagem paginada
+- `GET /api/metrics/{id}`
+- `PATCH /api/metrics/{id}`
+- `DELETE /api/metrics/{id}`
+- `GET /api/metrics/progress`
 
 ### Metric Checkins (CRUD)
 
-- `POST /api/metric-checkins`
-- `GET /api/metric-checkins` — listagem paginada
-- `GET /api/metric-checkins/{id}`
-- `PUT /api/metric-checkins/{id}`
-- `DELETE /api/metric-checkins/{id}`
+- `POST /api/checkins`
+- `GET /api/checkins` — listagem paginada
+- `GET /api/checkins/{id}`
+- `PATCH /api/checkins/{id}`
+- `DELETE /api/checkins/{id}`
 
 ### Mission Templates (CRUD)
 

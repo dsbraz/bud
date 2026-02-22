@@ -1,5 +1,6 @@
 using Bud.Server.Infrastructure.Persistence;
-using Bud.Server.Application.Projections;
+using Bud.Server.Application.Ports;
+using Bud.Server.Domain.ReadModels;
 using Bud.Server.Domain.Model;
 using Microsoft.EntityFrameworkCore;
 using Bud.Server.Application.Common;
@@ -32,11 +33,11 @@ public sealed class MissionProgressService(ApplicationDbContext dbContext) : IMi
         // GroupBy+OrderBy+First which doesn't translate to SQL in PostgreSQL)
         var allCheckins = await dbContext.MetricCheckins
             .AsNoTracking()
-            .Where(c => allMetricIds.Contains(c.MissionMetricId))
+            .Where(c => allMetricIds.Contains(c.MetricId))
             .ToListAsync(cancellationToken);
 
         var latestCheckinByMetric = allCheckins
-            .GroupBy(c => c.MissionMetricId)
+            .GroupBy(c => c.MetricId)
             .ToDictionary(g => g.Key, g => g.OrderBy(c => c.CheckinDate).Last());
 
         // Build first check-in map for Reduce-type metrics (needed for baseline)
@@ -47,8 +48,8 @@ public sealed class MissionProgressService(ApplicationDbContext dbContext) : IMi
             .ToHashSet();
 
         var firstCheckins = allCheckins
-            .Where(c => reduceMetricIds.Contains(c.MissionMetricId))
-            .GroupBy(c => c.MissionMetricId)
+            .Where(c => reduceMetricIds.Contains(c.MetricId))
+            .GroupBy(c => c.MetricId)
             .ToDictionary(g => g.Key, g => g.OrderBy(c => c.CheckinDate).First());
 
         var now = DateTime.UtcNow;
@@ -131,11 +132,11 @@ public sealed class MissionProgressService(ApplicationDbContext dbContext) : IMi
 
         var allCheckins = await dbContext.MetricCheckins
             .AsNoTracking()
-            .Where(c => metricIds.Contains(c.MissionMetricId))
+            .Where(c => metricIds.Contains(c.MetricId))
             .ToListAsync(cancellationToken);
 
         var latestCheckinByMetric = allCheckins
-            .GroupBy(c => c.MissionMetricId)
+            .GroupBy(c => c.MetricId)
             .ToDictionary(g => g.Key, g => g.OrderBy(c => c.CheckinDate).Last());
 
         var reduceMetricIds = metrics
@@ -144,8 +145,8 @@ public sealed class MissionProgressService(ApplicationDbContext dbContext) : IMi
             .ToHashSet();
 
         var firstCheckins = allCheckins
-            .Where(c => reduceMetricIds.Contains(c.MissionMetricId))
-            .GroupBy(c => c.MissionMetricId)
+            .Where(c => reduceMetricIds.Contains(c.MetricId))
+            .GroupBy(c => c.MetricId)
             .ToDictionary(g => g.Key, g => g.OrderBy(c => c.CheckinDate).First());
 
         var collaboratorIds = latestCheckinByMetric.Values
@@ -196,7 +197,7 @@ public sealed class MissionProgressService(ApplicationDbContext dbContext) : IMi
     }
 
     public static decimal CalculateMetricProgress(
-        MissionMetric metric,
+        Metric metric,
         MetricCheckin latestCheckin,
         Dictionary<Guid, MetricCheckin> firstCheckins)
     {
@@ -341,18 +342,18 @@ public sealed class MissionProgressService(ApplicationDbContext dbContext) : IMi
 
         var metrics = await dbContext.MissionMetrics
             .AsNoTracking()
-            .Where(m => m.MissionObjectiveId.HasValue && objectiveIds.Contains(m.MissionObjectiveId.Value))
+            .Where(m => m.ObjectiveId.HasValue && objectiveIds.Contains(m.ObjectiveId.Value))
             .ToListAsync(cancellationToken);
 
         var metricIds = metrics.Select(m => m.Id).ToList();
 
         var allCheckins = await dbContext.MetricCheckins
             .AsNoTracking()
-            .Where(c => metricIds.Contains(c.MissionMetricId))
+            .Where(c => metricIds.Contains(c.MetricId))
             .ToListAsync(cancellationToken);
 
         var latestCheckinByMetric = allCheckins
-            .GroupBy(c => c.MissionMetricId)
+            .GroupBy(c => c.MetricId)
             .ToDictionary(g => g.Key, g => g.OrderBy(c => c.CheckinDate).Last());
 
         var reduceMetricIds = metrics
@@ -361,8 +362,8 @@ public sealed class MissionProgressService(ApplicationDbContext dbContext) : IMi
             .ToHashSet();
 
         var firstCheckins = allCheckins
-            .Where(c => reduceMetricIds.Contains(c.MissionMetricId))
-            .GroupBy(c => c.MissionMetricId)
+            .Where(c => reduceMetricIds.Contains(c.MetricId))
+            .GroupBy(c => c.MetricId)
             .ToDictionary(g => g.Key, g => g.OrderBy(c => c.CheckinDate).First());
 
         var oneWeekAgo = DateTime.UtcNow.AddDays(-7);
@@ -370,7 +371,7 @@ public sealed class MissionProgressService(ApplicationDbContext dbContext) : IMi
 
         foreach (var objectiveId in objectiveIds)
         {
-            var objectiveMetrics = metrics.Where(m => m.MissionObjectiveId == objectiveId).ToList();
+            var objectiveMetrics = metrics.Where(m => m.ObjectiveId == objectiveId).ToList();
             results.Add(CalculateObjectiveProgress(
                 objectiveId, objectiveMetrics, latestCheckinByMetric, firstCheckins, oneWeekAgo));
         }
@@ -379,14 +380,14 @@ public sealed class MissionProgressService(ApplicationDbContext dbContext) : IMi
     }
 
     private static List<ObjectiveProgressSnapshot> BuildObjectiveProgress(
-        ICollection<MissionMetric> allMetrics,
+        ICollection<Metric> allMetrics,
         Dictionary<Guid, MetricCheckin> latestCheckinByMetric,
         Dictionary<Guid, MetricCheckin> firstCheckins,
         DateTime oneWeekAgo)
     {
         var objectiveIds = allMetrics
-            .Where(m => m.MissionObjectiveId.HasValue)
-            .Select(m => m.MissionObjectiveId!.Value)
+            .Where(m => m.ObjectiveId.HasValue)
+            .Select(m => m.ObjectiveId!.Value)
             .Distinct()
             .ToList();
 
@@ -398,7 +399,7 @@ public sealed class MissionProgressService(ApplicationDbContext dbContext) : IMi
         return objectiveIds.Select(objectiveId =>
         {
             var objectiveMetrics = allMetrics
-                .Where(m => m.MissionObjectiveId == objectiveId)
+                .Where(m => m.ObjectiveId == objectiveId)
                 .ToList();
             return CalculateObjectiveProgress(
                 objectiveId, objectiveMetrics, latestCheckinByMetric, firstCheckins, oneWeekAgo);
@@ -407,7 +408,7 @@ public sealed class MissionProgressService(ApplicationDbContext dbContext) : IMi
 
     private static ObjectiveProgressSnapshot CalculateObjectiveProgress(
         Guid objectiveId,
-        List<MissionMetric> metrics,
+        List<Metric> metrics,
         Dictionary<Guid, MetricCheckin> latestCheckinByMetric,
         Dictionary<Guid, MetricCheckin> firstCheckins,
         DateTime oneWeekAgo)

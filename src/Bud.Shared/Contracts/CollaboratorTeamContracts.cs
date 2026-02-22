@@ -3,12 +3,12 @@ using Bud.Shared.Contracts;
 
 namespace Bud.Shared.Contracts;
 
-public sealed class UpdateCollaboratorTeamsRequest
+public sealed class PatchCollaboratorTeamsRequest
 {
     public List<Guid> TeamIds { get; set; } = new();
 }
 
-public sealed class UpdateTeamCollaboratorsRequest
+public sealed class PatchTeamCollaboratorsRequest
 {
     public List<Guid> CollaboratorIds { get; set; } = new();
 }

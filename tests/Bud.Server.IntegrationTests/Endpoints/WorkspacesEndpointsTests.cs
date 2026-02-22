@@ -233,13 +233,13 @@ public class WorkspacesEndpointsTests : IClassFixture<CustomWebApplicationFactor
             });
         var workspace = (await createResponse.Content.ReadFromJsonAsync<Workspace>())!;
 
-        var updateRequest = new UpdateWorkspaceRequest
+        var updateRequest = new PatchWorkspaceRequest
         {
             Name = "Updated Name"
         };
 
         // Act
-        var response = await _adminClient.PutAsJsonAsync($"/api/workspaces/{workspace.Id}", updateRequest);
+        var response = await _adminClient.PatchAsJsonAsync($"/api/workspaces/{workspace.Id}", updateRequest);
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.OK);
@@ -264,13 +264,13 @@ public class WorkspacesEndpointsTests : IClassFixture<CustomWebApplicationFactor
         var collaborator = await CreateNonOwnerCollaborator(org.Id);
         var tenantClient = _factory.CreateTenantClient(org.Id, collaborator.Email, collaborator.Id);
 
-        var updateRequest = new UpdateWorkspaceRequest
+        var updateRequest = new PatchWorkspaceRequest
         {
             Name = "Should Not Update"
         };
 
         // Act
-        var response = await tenantClient.PutAsJsonAsync($"/api/workspaces/{targetWs.Id}", updateRequest);
+        var response = await tenantClient.PatchAsJsonAsync($"/api/workspaces/{targetWs.Id}", updateRequest);
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.Forbidden);

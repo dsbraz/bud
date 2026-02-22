@@ -17,7 +17,6 @@ public partial class MissionTemplates : IDisposable
 
     // Data
     private PagedResult<MissionTemplate>? _templates;
-    private IReadOnlyList<ObjectiveDimension> _objectiveDimensions = [];
 
     // Filter
     private string? _search;
@@ -36,7 +35,6 @@ public partial class MissionTemplates : IDisposable
     protected override async Task OnInitializedAsync()
     {
         await LoadTemplates();
-        await LoadObjectiveDimensions();
         OrgContext.OnOrganizationChanged += HandleOrganizationChanged;
     }
 
@@ -50,7 +48,6 @@ public partial class MissionTemplates : IDisposable
         try
         {
             await LoadTemplates();
-            await LoadObjectiveDimensions();
             await InvokeAsync(StateHasChanged);
         }
         catch (Exception ex)
@@ -72,11 +69,6 @@ public partial class MissionTemplates : IDisposable
     private async Task LoadTemplates()
     {
         _templates = await Api.GetMissionTemplatesAsync(_search, 1, 20) ?? new PagedResult<MissionTemplate>();
-    }
-
-    private async Task LoadObjectiveDimensions()
-    {
-        _objectiveDimensions = (await Api.GetObjectiveDimensionsAsync(null, 1, 200))?.Items ?? [];
     }
 
     // ---- Filter ----
@@ -122,7 +114,7 @@ public partial class MissionTemplates : IDisposable
                 o.Name,
                 o.Description,
                 o.Id,
-                o.ObjectiveDimensionId))
+                o.Dimension))
             .ToList();
 
         var metrics = template.Metrics
@@ -223,10 +215,10 @@ public partial class MissionTemplates : IDisposable
         };
     }
 
-    private UpdateMissionTemplateRequest BuildUpdateRequest(MissionWizardResult result)
+    private PatchMissionTemplateRequest BuildUpdateRequest(MissionWizardResult result)
     {
         var (objectives, metrics) = BuildTemplatePayload(result);
-        return new UpdateMissionTemplateRequest
+        return new PatchMissionTemplateRequest
         {
             Name = result.Name.Trim(),
             Description = string.IsNullOrWhiteSpace(result.Description) ? null : result.Description.Trim(),
@@ -250,7 +242,7 @@ public partial class MissionTemplates : IDisposable
                     Id = objectiveId,
                     Name = objective.Name,
                     Description = objective.Description,
-                    ObjectiveDimensionId = objective.ObjectiveDimensionId,
+                    Dimension = objective.Dimension,
                     OrderIndex = index
                 };
             })

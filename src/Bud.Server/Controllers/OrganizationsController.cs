@@ -13,15 +13,15 @@ namespace Bud.Server.Controllers;
 [Route("api/organizations")]
 [Produces("application/json")]
 public sealed class OrganizationsController(
-    RegisterOrganization registerOrganization,
-    RenameOrganization renameOrganization,
+    CreateOrganization createOrganization,
+    PatchOrganization patchOrganization,
     DeleteOrganization deleteOrganization,
-    ViewOrganizationDetails viewOrganizationDetails,
+    GetOrganizationById getOrganizationById,
     ListOrganizations listOrganizations,
     ListOrganizationWorkspaces listOrganizationWorkspaces,
     ListOrganizationCollaborators listOrganizationCollaborators,
     IValidator<CreateOrganizationRequest> createValidator,
-    IValidator<UpdateOrganizationRequest> updateValidator) : ApiControllerBase
+    IValidator<PatchOrganizationRequest> updateValidator) : ApiControllerBase
 {
     /// <summary>
     /// Cria uma organização.
@@ -44,7 +44,7 @@ public sealed class OrganizationsController(
             return ValidationProblemFrom(validationResult);
         }
 
-        var result = await registerOrganization.ExecuteAsync(request, cancellationToken);
+        var result = await createOrganization.ExecuteAsync(request, cancellationToken);
         return FromResult(result, organization => CreatedAtAction(nameof(GetById), new { id = organization.Id }, organization));
     }
 
@@ -55,14 +55,14 @@ public sealed class OrganizationsController(
     /// <response code="400">Payload inválido.</response>
     /// <response code="404">Organização não encontrada.</response>
     /// <response code="403">Acesso restrito a administrador global.</response>
-    [HttpPut("{id:guid}")]
+    [HttpPatch("{id:guid}")]
     [Authorize(Policy = AuthorizationPolicies.GlobalAdmin)]
     [Consumes("application/json")]
     [ProducesResponseType(typeof(Organization), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
     [ProducesResponseType(typeof(ValidationProblemDetails), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status403Forbidden)]
-    public async Task<ActionResult<Organization>> Update(Guid id, UpdateOrganizationRequest request, CancellationToken cancellationToken)
+    public async Task<ActionResult<Organization>> Update(Guid id, PatchOrganizationRequest request, CancellationToken cancellationToken)
     {
         var validationResult = await updateValidator.ValidateAsync(request, cancellationToken);
         if (!validationResult.IsValid)
@@ -70,7 +70,7 @@ public sealed class OrganizationsController(
             return ValidationProblemFrom(validationResult);
         }
 
-        var result = await renameOrganization.ExecuteAsync(id, request, cancellationToken);
+        var result = await patchOrganization.ExecuteAsync(id, request, cancellationToken);
         return FromResultOk(result);
     }
 
@@ -103,7 +103,7 @@ public sealed class OrganizationsController(
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
     public async Task<ActionResult<Organization>> GetById(Guid id, CancellationToken cancellationToken)
     {
-        var result = await viewOrganizationDetails.ExecuteAsync(id, cancellationToken);
+        var result = await getOrganizationById.ExecuteAsync(id, cancellationToken);
         return FromResultOk(result);
     }
 

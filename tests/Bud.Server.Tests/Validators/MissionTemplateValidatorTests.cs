@@ -373,17 +373,17 @@ public sealed class CreateMissionTemplateValidatorTests
 
 #endregion
 
-#region UpdateMissionTemplateValidator Tests
+#region PatchMissionTemplateValidator Tests
 
 public sealed class UpdateMissionTemplateValidatorTests
 {
-    private readonly UpdateMissionTemplateValidator _validator = new();
+    private readonly PatchMissionTemplateValidator _validator = new();
 
     [Fact]
     public async Task Validate_ValidRequest_Passes()
     {
         // Arrange
-        var request = new UpdateMissionTemplateRequest
+        var request = new PatchMissionTemplateRequest
         {
             Name = "Template Atualizado",
             Description = "Descrição atualizada",
@@ -404,7 +404,7 @@ public sealed class UpdateMissionTemplateValidatorTests
     public async Task Validate_ValidRequestWithMetrics_Passes()
     {
         // Arrange
-        var request = new UpdateMissionTemplateRequest
+        var request = new PatchMissionTemplateRequest
         {
             Name = "Template com Métricas",
             Metrics =
@@ -434,7 +434,7 @@ public sealed class UpdateMissionTemplateValidatorTests
     public async Task Validate_EmptyName_Fails(string? name)
     {
         // Arrange
-        var request = new UpdateMissionTemplateRequest
+        var request = new PatchMissionTemplateRequest
         {
             Name = name!
         };
@@ -453,7 +453,7 @@ public sealed class UpdateMissionTemplateValidatorTests
     public async Task Validate_NameExceeding200Chars_Fails()
     {
         // Arrange
-        var request = new UpdateMissionTemplateRequest
+        var request = new PatchMissionTemplateRequest
         {
             Name = new string('A', 201)
         };
@@ -472,7 +472,7 @@ public sealed class UpdateMissionTemplateValidatorTests
     public async Task Validate_DescriptionExceeding1000Chars_Fails()
     {
         // Arrange
-        var request = new UpdateMissionTemplateRequest
+        var request = new PatchMissionTemplateRequest
         {
             Name = "Template",
             Description = new string('A', 1001)
@@ -492,7 +492,7 @@ public sealed class UpdateMissionTemplateValidatorTests
     public async Task Validate_NullDescription_Passes()
     {
         // Arrange
-        var request = new UpdateMissionTemplateRequest
+        var request = new PatchMissionTemplateRequest
         {
             Name = "Template",
             Description = null
@@ -509,7 +509,7 @@ public sealed class UpdateMissionTemplateValidatorTests
     public async Task Validate_MissionNamePatternExceeding200Chars_Fails()
     {
         // Arrange
-        var request = new UpdateMissionTemplateRequest
+        var request = new PatchMissionTemplateRequest
         {
             Name = "Template",
             MissionNamePattern = new string('A', 201)
@@ -529,7 +529,7 @@ public sealed class UpdateMissionTemplateValidatorTests
     public async Task Validate_NullMissionNamePattern_Passes()
     {
         // Arrange
-        var request = new UpdateMissionTemplateRequest
+        var request = new PatchMissionTemplateRequest
         {
             Name = "Template",
             MissionNamePattern = null
@@ -546,7 +546,7 @@ public sealed class UpdateMissionTemplateValidatorTests
     public async Task Validate_MissionDescriptionPatternExceeding1000Chars_Fails()
     {
         // Arrange
-        var request = new UpdateMissionTemplateRequest
+        var request = new PatchMissionTemplateRequest
         {
             Name = "Template",
             MissionDescriptionPattern = new string('A', 1001)
@@ -566,7 +566,7 @@ public sealed class UpdateMissionTemplateValidatorTests
     public async Task Validate_NullMissionDescriptionPattern_Passes()
     {
         // Arrange
-        var request = new UpdateMissionTemplateRequest
+        var request = new PatchMissionTemplateRequest
         {
             Name = "Template",
             MissionDescriptionPattern = null
@@ -583,7 +583,7 @@ public sealed class UpdateMissionTemplateValidatorTests
     public async Task Validate_InvalidMetric_Fails()
     {
         // Arrange
-        var request = new UpdateMissionTemplateRequest
+        var request = new PatchMissionTemplateRequest
         {
             Name = "Template",
             Metrics =
@@ -612,7 +612,7 @@ public sealed class UpdateMissionTemplateValidatorTests
     public async Task Validate_MetricReferencingUnknownObjective_Fails()
     {
         // Arrange
-        var request = new UpdateMissionTemplateRequest
+        var request = new PatchMissionTemplateRequest
         {
             Name = "Template",
             Objectives =

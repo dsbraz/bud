@@ -53,22 +53,13 @@ public sealed class TeamsPageTests : TestContext
 
             if (path.StartsWith("/api/collaborators", StringComparison.Ordinal))
             {
+                if (path.Contains("/leaders", StringComparison.Ordinal) ||
+                    path.Contains("/lookup", StringComparison.Ordinal))
+                {
+                    return Json("[]");
+                }
+
                 return Json("""{"items":[],"total":0,"page":1,"pageSize":100}""");
-            }
-
-            if (path.StartsWith("/api/leaders", StringComparison.Ordinal))
-            {
-                return Json("[]");
-            }
-
-            if (path.StartsWith("/api/team-collaborators", StringComparison.Ordinal))
-            {
-                return Json("[]");
-            }
-
-            if (path.StartsWith("/api/collaborator-summaries", StringComparison.Ordinal))
-            {
-                return Json("[]");
             }
 
             return new HttpResponseMessage(HttpStatusCode.NotFound);

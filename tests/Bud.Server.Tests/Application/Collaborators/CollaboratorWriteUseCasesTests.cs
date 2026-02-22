@@ -55,11 +55,11 @@ public sealed class CollaboratorWriteUseCasesTests
             .Setup(repository => repository.GetByIdAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync((Collaborator?)null);
 
-        var useCase = new UpdateCollaboratorProfile(
+        var useCase = new PatchCollaborator(
             _collaboratorRepository.Object,
             _authorizationGateway.Object);
 
-        var request = new UpdateCollaboratorRequest
+        var request = new PatchCollaboratorRequest
         {
             FullName = "User",
             Email = "user@test.com",
@@ -159,11 +159,11 @@ public sealed class CollaboratorWriteUseCasesTests
             .Setup(gateway => gateway.IsOrganizationOwnerAsync(User, collaborator.OrganizationId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(true);
 
-        var useCase = new UpdateCollaboratorTeams(
+        var useCase = new PatchCollaboratorTeams(
             _collaboratorRepository.Object,
             _authorizationGateway.Object);
 
-        var request = new UpdateCollaboratorTeamsRequest { TeamIds = [] };
+        var request = new PatchCollaboratorTeamsRequest { TeamIds = [] };
 
         var result = await useCase.ExecuteAsync(User, collaborator.Id, request);
 
@@ -189,11 +189,11 @@ public sealed class CollaboratorWriteUseCasesTests
             .Setup(gateway => gateway.IsOrganizationOwnerAsync(User, collaborator.OrganizationId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(false);
 
-        var useCase = new UpdateCollaboratorTeams(
+        var useCase = new PatchCollaboratorTeams(
             _collaboratorRepository.Object,
             _authorizationGateway.Object);
 
-        var request = new UpdateCollaboratorTeamsRequest { TeamIds = [] };
+        var request = new PatchCollaboratorTeamsRequest { TeamIds = [] };
 
         var result = await useCase.ExecuteAsync(User, collaborator.Id, request);
 

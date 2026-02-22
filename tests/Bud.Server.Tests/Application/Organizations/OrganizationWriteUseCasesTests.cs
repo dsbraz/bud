@@ -23,10 +23,10 @@ public sealed class OrganizationWriteUseCasesTests
             OrganizationName = protectedOrgName
         });
 
-    private RegisterOrganization CreateRegisterOrganization()
+    private CreateOrganization CreateRegisterOrganization()
         => new(_orgRepo.Object, _collabRepo.Object);
 
-    private RenameOrganization CreateRenameOrganization(string protectedOrgName = "getbud.co")
+    private PatchOrganization CreateRenameOrganization(string protectedOrgName = "getbud.co")
         => new(_orgRepo.Object, _collabRepo.Object, CreateSettings(protectedOrgName));
 
     private DeleteOrganization CreateDeleteOrganization(string protectedOrgName = "getbud.co")
@@ -107,7 +107,7 @@ public sealed class OrganizationWriteUseCasesTests
         var useCase = CreateRenameOrganization();
 
         // Act
-        var result = await useCase.ExecuteAsync(Guid.NewGuid(), new UpdateOrganizationRequest { Name = "New Name" });
+        var result = await useCase.ExecuteAsync(Guid.NewGuid(), new PatchOrganizationRequest { Name = "New Name" });
 
         // Assert
         result.IsSuccess.Should().BeFalse();
@@ -126,7 +126,7 @@ public sealed class OrganizationWriteUseCasesTests
         var useCase = CreateRenameOrganization("getbud.co");
 
         // Act
-        var result = await useCase.ExecuteAsync(orgId, new UpdateOrganizationRequest { Name = "New Name" });
+        var result = await useCase.ExecuteAsync(orgId, new PatchOrganizationRequest { Name = "New Name" });
 
         // Assert
         result.IsSuccess.Should().BeFalse();
@@ -146,7 +146,7 @@ public sealed class OrganizationWriteUseCasesTests
         var useCase = CreateRenameOrganization();
 
         // Act
-        var result = await useCase.ExecuteAsync(orgId, new UpdateOrganizationRequest { Name = "New Name", OwnerId = Guid.NewGuid() });
+        var result = await useCase.ExecuteAsync(orgId, new PatchOrganizationRequest { Name = "New Name", OwnerId = Guid.NewGuid() });
 
         // Assert
         result.IsSuccess.Should().BeFalse();
@@ -168,7 +168,7 @@ public sealed class OrganizationWriteUseCasesTests
         var useCase = CreateRenameOrganization();
 
         // Act
-        var result = await useCase.ExecuteAsync(orgId, new UpdateOrganizationRequest { Name = "New Name", OwnerId = nonLeaderId });
+        var result = await useCase.ExecuteAsync(orgId, new PatchOrganizationRequest { Name = "New Name", OwnerId = nonLeaderId });
 
         // Assert
         result.IsSuccess.Should().BeFalse();

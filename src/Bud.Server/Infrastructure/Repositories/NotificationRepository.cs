@@ -1,9 +1,9 @@
-using Bud.Server.Application.Projections;
 using Bud.Server.Application.Common;
 using Bud.Server.Infrastructure.Persistence;
-using Bud.Shared.Contracts;
 using Bud.Server.Domain.Model;
 using Microsoft.EntityFrameworkCore;
+
+using Bud.Shared.Contracts;
 
 namespace Bud.Server.Infrastructure.Repositories;
 
@@ -13,8 +13,12 @@ public sealed class NotificationRepository(ApplicationDbContext dbContext) : INo
         => await dbContext.Notifications
             .FirstOrDefaultAsync(n => n.Id == id, ct);
 
-    public async Task<PagedResult<NotificationSummary>> GetByRecipientAsync(
-        Guid recipientId, int page, int pageSize, CancellationToken ct = default)
+    public async Task<PagedResult<Notification>> GetByRecipientAsync(
+        Guid recipientId,
+        bool? isRead,
+        int page,
+        int pageSize,
+        CancellationToken ct = default)
     {
         (page, pageSize) = PaginationNormalizer.Normalize(page, pageSize);
 
@@ -23,25 +27,19 @@ public sealed class NotificationRepository(ApplicationDbContext dbContext) : INo
             .Where(n => n.RecipientCollaboratorId == recipientId)
             .OrderByDescending(n => n.CreatedAtUtc);
 
+        if (isRead.HasValue)
+        {
+            query = query.Where(n => n.IsRead == isRead.Value)
+                .OrderByDescending(n => n.CreatedAtUtc);
+        }
+
         var total = await query.CountAsync(ct);
         var items = await query
             .Skip((page - 1) * pageSize)
             .Take(pageSize)
-            .Select(n => new NotificationSummary
-            {
-                Id = n.Id,
-                Title = n.Title,
-                Message = n.Message,
-                Type = n.Type.ToString(),
-                IsRead = n.IsRead,
-                CreatedAtUtc = n.CreatedAtUtc,
-                ReadAtUtc = n.ReadAtUtc,
-                RelatedEntityId = n.RelatedEntityId,
-                RelatedEntityType = n.RelatedEntityType
-            })
             .ToListAsync(ct);
 
-        return new PagedResult<NotificationSummary>
+        return new PagedResult<Notification>
         {
             Items = items,
             Total = total,
@@ -49,11 +47,6 @@ public sealed class NotificationRepository(ApplicationDbContext dbContext) : INo
             PageSize = pageSize
         };
     }
-
-    public async Task<int> GetUnreadCountAsync(Guid recipientId, CancellationToken ct = default)
-        => await dbContext.Notifications
-            .AsNoTracking()
-            .CountAsync(n => n.RecipientCollaboratorId == recipientId && !n.IsRead, ct);
 
     public async Task MarkAllAsReadAsync(Guid recipientId, CancellationToken ct = default)
         => await dbContext.Notifications

@@ -12,7 +12,7 @@ public sealed class CreateMissionObjectiveValidatorTests
     [Fact]
     public async Task Validate_WithValidRequest_Passes()
     {
-        var request = new CreateMissionObjectiveRequest
+        var request = new CreateObjectiveRequest
         {
             MissionId = Guid.NewGuid(),
             Name = "Objetivo 1",
@@ -28,7 +28,7 @@ public sealed class CreateMissionObjectiveValidatorTests
     [Fact]
     public async Task Validate_WithEmptyMissionId_Fails()
     {
-        var request = new CreateMissionObjectiveRequest
+        var request = new CreateObjectiveRequest
         {
             MissionId = Guid.Empty,
             Name = "Objetivo"
@@ -48,7 +48,7 @@ public sealed class CreateMissionObjectiveValidatorTests
     [InlineData(null)]
     public async Task Validate_WithEmptyName_Fails(string? name)
     {
-        var request = new CreateMissionObjectiveRequest
+        var request = new CreateObjectiveRequest
         {
             MissionId = Guid.NewGuid(),
             Name = name!
@@ -63,7 +63,7 @@ public sealed class CreateMissionObjectiveValidatorTests
     [Fact]
     public async Task Validate_WithNameLongerThan200_Fails()
     {
-        var request = new CreateMissionObjectiveRequest
+        var request = new CreateObjectiveRequest
         {
             MissionId = Guid.NewGuid(),
             Name = new string('A', 201)
@@ -80,7 +80,7 @@ public sealed class CreateMissionObjectiveValidatorTests
     [Fact]
     public async Task Validate_WithDescriptionLongerThan1000_Fails()
     {
-        var request = new CreateMissionObjectiveRequest
+        var request = new CreateObjectiveRequest
         {
             MissionId = Guid.NewGuid(),
             Name = "Objetivo",
@@ -98,7 +98,7 @@ public sealed class CreateMissionObjectiveValidatorTests
     [Fact]
     public async Task Validate_WithNullDescription_Passes()
     {
-        var request = new CreateMissionObjectiveRequest
+        var request = new CreateObjectiveRequest
         {
             MissionId = Guid.NewGuid(),
             Name = "Objetivo",
@@ -114,12 +114,12 @@ public sealed class CreateMissionObjectiveValidatorTests
 
 public sealed class UpdateMissionObjectiveValidatorTests
 {
-    private readonly UpdateMissionObjectiveValidator _validator = new();
+    private readonly PatchMissionObjectiveValidator _validator = new();
 
     [Fact]
     public async Task Validate_WithValidRequest_Passes()
     {
-        var request = new UpdateMissionObjectiveRequest
+        var request = new PatchObjectiveRequest
         {
             Name = "Objetivo Atualizado",
             Description = "Nova descrição"
@@ -136,7 +136,7 @@ public sealed class UpdateMissionObjectiveValidatorTests
     [InlineData(null)]
     public async Task Validate_WithEmptyName_Fails(string? name)
     {
-        var request = new UpdateMissionObjectiveRequest
+        var request = new PatchObjectiveRequest
         {
             Name = name!
         };
@@ -150,7 +150,7 @@ public sealed class UpdateMissionObjectiveValidatorTests
     [Fact]
     public async Task Validate_WithNameLongerThan200_Fails()
     {
-        var request = new UpdateMissionObjectiveRequest
+        var request = new PatchObjectiveRequest
         {
             Name = new string('A', 201)
         };
@@ -166,7 +166,7 @@ public sealed class UpdateMissionObjectiveValidatorTests
     [Fact]
     public async Task Validate_WithDescriptionLongerThan1000_Fails()
     {
-        var request = new UpdateMissionObjectiveRequest
+        var request = new PatchObjectiveRequest
         {
             Name = "Objetivo",
             Description = new string('A', 1001)

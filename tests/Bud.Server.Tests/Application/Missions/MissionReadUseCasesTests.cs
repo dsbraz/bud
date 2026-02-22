@@ -1,8 +1,8 @@
-using Bud.Server.Infrastructure.Services;
+using Bud.Server.Application.Ports;
 using Bud.Server.Domain.Repositories;
 using Bud.Server.Application.Common;
 using Bud.Server.Application.Missions;
-using Bud.Server.Application.Projections;
+using Bud.Server.Domain.ReadModels;
 
 using Bud.Shared.Contracts;
 using Bud.Server.Domain.Model;
@@ -17,7 +17,7 @@ public sealed class MissionReadUseCasesTests
     private readonly Mock<IMissionRepository> _repo = new();
     private readonly Mock<IMissionProgressService> _progressService = new();
 
-    private ViewMissionDetails CreateGetMissionById()
+    private GetMissionById CreateGetMissionById()
         => new(_repo.Object);
 
     private ListMissionProgress CreateListMissionProgress()

@@ -1,9 +1,9 @@
-using Bud.Server.Application.Projections;
 using Bud.Server.Infrastructure.Querying;
 using Bud.Server.Infrastructure.Persistence;
-using Bud.Shared.Contracts;
 using Bud.Server.Domain.Model;
 using Microsoft.EntityFrameworkCore;
+
+using Bud.Shared.Contracts;
 
 namespace Bud.Server.Infrastructure.Repositories;
 
@@ -40,9 +40,10 @@ public sealed class CollaboratorRepository(ApplicationDbContext dbContext) : ICo
         return new PagedResult<Collaborator> { Items = items, Total = total, Page = page, PageSize = pageSize };
     }
 
-    public async Task<List<LeaderCollaborator>> GetLeadersAsync(Guid? organizationId, CancellationToken ct = default)
+    public async Task<List<Collaborator>> GetLeadersAsync(Guid? organizationId, CancellationToken ct = default)
     {
         var query = dbContext.Collaborators
+            .AsNoTracking()
             .Include(c => c.Organization)
             .Include(c => c.Team!)
                 .ThenInclude(t => t.Workspace)
@@ -55,51 +56,40 @@ public sealed class CollaboratorRepository(ApplicationDbContext dbContext) : ICo
 
         return await query
             .OrderBy(c => c.FullName)
-            .Select(c => new LeaderCollaborator
-            {
-                Id = c.Id,
-                FullName = c.FullName,
-                Email = c.Email,
-                TeamName = c.Team != null ? c.Team.Name : null,
-                WorkspaceName = c.Team != null && c.Team.Workspace != null ? c.Team.Workspace.Name : null,
-                OrganizationName = c.Organization.Name
-            })
             .ToListAsync(ct);
     }
 
-    public async Task<List<CollaboratorHierarchyNode>> GetSubordinatesAsync(
+    public async Task<List<Collaborator>> GetSubordinatesAsync(
         Guid collaboratorId, int maxDepth, CancellationToken ct = default)
     {
         var allSubordinates = await dbContext.Collaborators
             .AsNoTracking()
             .Where(c => c.LeaderId != null)
+            .Include(c => c.Leader)
             .ToListAsync(ct);
 
         var childrenByLeader = allSubordinates
             .GroupBy(c => c.LeaderId!.Value)
-            .ToDictionary(g => g.Key, g => g.OrderBy(c => c.FullName).ToList());
+            .ToDictionary(group => group.Key, group => group.OrderBy(c => c.FullName).ToList());
 
-        return BuildSubordinateTree(childrenByLeader, collaboratorId, 0, maxDepth);
+        var result = new List<Collaborator>();
+        CollectSubordinates(collaboratorId, 0, maxDepth, childrenByLeader, result);
+        return result;
     }
 
-    public async Task<List<TeamSummary>> GetTeamsAsync(Guid collaboratorId, CancellationToken ct = default)
+    public async Task<List<Team>> GetTeamsAsync(Guid collaboratorId, CancellationToken ct = default)
     {
         return await dbContext.CollaboratorTeams
             .AsNoTracking()
             .Where(ct2 => ct2.CollaboratorId == collaboratorId)
             .Include(ct2 => ct2.Team)
                 .ThenInclude(t => t.Workspace)
-            .Select(ct2 => new TeamSummary
-            {
-                Id = ct2.Team.Id,
-                Name = ct2.Team.Name,
-                WorkspaceName = ct2.Team.Workspace.Name
-            })
+            .Select(ct2 => ct2.Team)
             .OrderBy(t => t.Name)
             .ToListAsync(ct);
     }
 
-    public async Task<List<TeamSummary>> GetAvailableTeamsAsync(
+    public async Task<List<Team>> GetAvailableTeamsAsync(
         Guid collaboratorId, Guid organizationId, string? search, int limit, CancellationToken ct = default)
     {
         var currentTeamIds = await dbContext.CollaboratorTeams
@@ -119,18 +109,12 @@ public sealed class CollaboratorRepository(ApplicationDbContext dbContext) : ICo
         }
 
         return await query
-            .Select(t => new TeamSummary
-            {
-                Id = t.Id,
-                Name = t.Name,
-                WorkspaceName = t.Workspace.Name
-            })
             .OrderBy(t => t.Name)
             .Take(limit)
             .ToListAsync(ct);
     }
 
-    public async Task<List<CollaboratorSummary>> GetSummariesAsync(string? search, int limit, CancellationToken ct = default)
+    public async Task<List<Collaborator>> GetSummariesAsync(string? search, int limit, CancellationToken ct = default)
     {
         var query = dbContext.Collaborators.AsNoTracking();
 
@@ -140,13 +124,6 @@ public sealed class CollaboratorRepository(ApplicationDbContext dbContext) : ICo
         }
 
         return await query
-            .Select(c => new CollaboratorSummary
-            {
-                Id = c.Id,
-                FullName = c.FullName,
-                Email = c.Email,
-                Role = c.Role
-            })
             .OrderBy(c => c.FullName)
             .Take(limit)
             .ToListAsync(ct);
@@ -205,40 +182,22 @@ public sealed class CollaboratorRepository(ApplicationDbContext dbContext) : ICo
     public async Task SaveChangesAsync(CancellationToken ct = default)
         => await dbContext.SaveChangesAsync(ct);
 
-    private static List<CollaboratorHierarchyNode> BuildSubordinateTree(
-        Dictionary<Guid, List<Collaborator>> childrenByLeader,
-        Guid parentId,
-        int currentDepth,
-        int maxDepth)
+    private static void CollectSubordinates(
+        Guid leaderId,
+        int depth,
+        int maxDepth,
+        IReadOnlyDictionary<Guid, List<Collaborator>> childrenByLeader,
+        List<Collaborator> acc)
     {
-        if (currentDepth >= maxDepth || !childrenByLeader.TryGetValue(parentId, out var children))
+        if (depth >= maxDepth || !childrenByLeader.TryGetValue(leaderId, out var children))
         {
-            return [];
+            return;
         }
 
-        return children.Select(c => new CollaboratorHierarchyNode
+        foreach (var child in children)
         {
-            Id = c.Id,
-            FullName = c.FullName,
-            Initials = GetInitials(c.FullName),
-            Role = c.Role == Bud.Server.Domain.Model.CollaboratorRole.Leader ? "Líder" : "Contribuidor individual",
-            Children = BuildSubordinateTree(childrenByLeader, c.Id, currentDepth + 1, maxDepth)
-        }).ToList();
-    }
-
-    private static string GetInitials(string fullName)
-    {
-        var parts = fullName.Split(' ', StringSplitOptions.RemoveEmptyEntries);
-        if (parts.Length == 0)
-        {
-            return "?";
+            acc.Add(child);
+            CollectSubordinates(child.Id, depth + 1, maxDepth, childrenByLeader, acc);
         }
-
-        if (parts.Length == 1)
-        {
-            return parts[0][..1].ToUpperInvariant();
-        }
-
-        return $"{parts[0][..1]}{parts[^1][..1]}".ToUpperInvariant();
     }
 }

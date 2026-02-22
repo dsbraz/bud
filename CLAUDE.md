@@ -125,7 +125,7 @@ Bud is an ASP.NET Core 10 application with a Blazor WebAssembly frontend, using 
 ## Project Structure
 
 - **Bud.Server** (`src/Bud.Server`): ASP.NET Core API hosting both the API endpoints and the Blazor WebAssembly app
-  - `Controllers/`: REST endpoints for auth, organizations, workspaces, teams, collaborators, missions, mission-objectives, mission-metrics, metric-checkins, mission-templates, objective-dimensions, dashboard, notifications
+  - `Controllers/`: REST endpoints for auth, organizations, workspaces, teams, collaborators, missions, objectives, metrics, checkins, mission-templates, dashboard, notifications
   - `Application/`: commands/queries organized by domain (Auth, Collaborators, Dashboard, MetricCheckins, MissionMetrics, MissionObjectives, MissionTemplates, Missions, Notifications, Organizations, Teams, Workspaces)
     - `Application/Common/`: `Result`, `ErrorType`, `PaginationNormalizer`
     - `Application/Notifications/`: `NotificationOrchestrator`
@@ -252,7 +252,7 @@ Organization
 
 Mission (can be scoped to Organization, Workspace, Team, or Collaborator)
   ├── MissionObjective(s) (hierarchical via ParentObjectiveId)
-  │   ├── ObjectiveDimension (optional classification via ObjectiveDimensionId)
+  │   ├── Dimension (optional classification text stored in the objective itself)
   │   └── MissionMetric(s) (metrics linked to objectives)
   │       └── MetricCheckin(s)
   └── MissionMetric(s) (direct metrics, MissionObjectiveId = null)
@@ -272,7 +272,6 @@ CollaboratorAccessLog (tenant-scoped, audit trail)
 - Mission → MissionObjective = `Cascade`; MissionObjective → MissionMetric = `Cascade`
 - Mission → Organization/Workspace/Team/Collaborator = `Restrict` (repositories validate and return Conflict before deletion)
 - MissionTemplate → Organization = `Restrict`; MissionTemplate → Metrics/Objectives = `Cascade`
-- ObjectiveDimension uses `Restrict` on both MissionObjective and MissionTemplateObjective (repositories validate before deletion)
 
 ### Multi-Tenancy
 

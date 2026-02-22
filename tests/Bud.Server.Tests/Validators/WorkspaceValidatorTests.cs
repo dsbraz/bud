@@ -8,7 +8,7 @@ namespace Bud.Server.Tests.Validators;
 public class WorkspaceValidatorTests
 {
     private readonly CreateWorkspaceValidator _createValidator = new();
-    private readonly UpdateWorkspaceValidator _updateValidator = new();
+    private readonly PatchWorkspaceValidator _updateValidator = new();
 
     #region CreateWorkspaceValidator Tests
 
@@ -58,12 +58,12 @@ public class WorkspaceValidatorTests
 
     #endregion
 
-    #region UpdateWorkspaceValidator Tests
+    #region PatchWorkspaceValidator Tests
 
     [Fact]
     public async Task UpdateWorkspace_WithValidName_ShouldPass()
     {
-        var request = new UpdateWorkspaceRequest
+        var request = new PatchWorkspaceRequest
         {
             Name = "Updated Name"
         };
@@ -76,7 +76,7 @@ public class WorkspaceValidatorTests
     [Fact]
     public async Task UpdateWorkspace_WithEmptyName_ShouldFail()
     {
-        var request = new UpdateWorkspaceRequest
+        var request = new PatchWorkspaceRequest
         {
             Name = ""
         };

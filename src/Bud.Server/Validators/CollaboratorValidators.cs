@@ -49,11 +49,11 @@ public sealed class CreateCollaboratorValidator : AbstractValidator<CreateCollab
     }
 }
 
-public sealed class UpdateCollaboratorValidator : AbstractValidator<UpdateCollaboratorRequest>
+public sealed class PatchCollaboratorValidator : AbstractValidator<PatchCollaboratorRequest>
 {
     private readonly ICollaboratorRepository _collaboratorRepository;
 
-    public UpdateCollaboratorValidator(ICollaboratorRepository collaboratorRepository)
+    public PatchCollaboratorValidator(ICollaboratorRepository collaboratorRepository)
     {
         _collaboratorRepository = collaboratorRepository;
 

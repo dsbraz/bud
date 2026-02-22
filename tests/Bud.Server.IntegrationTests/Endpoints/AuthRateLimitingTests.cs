@@ -21,7 +21,7 @@ public sealed class AuthRateLimitingTests(CustomWebApplicationFactory factory)
         var responses = new List<HttpResponseMessage>();
         for (var i = 0; i < 12; i++)
         {
-            responses.Add(await client.PostAsJsonAsync("/api/auth/login", payload));
+            responses.Add(await client.PostAsJsonAsync("/api/sessions", payload));
         }
 
         // Assert — first 10 should pass (non-429), remaining should be 429

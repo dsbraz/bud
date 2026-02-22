@@ -14,10 +14,10 @@ public sealed class NotificationWriteUseCasesTests
     private readonly Mock<INotificationRepository> _repo = new();
     private readonly Mock<ITenantProvider> _tenantProvider = new();
 
-    private MarkNotificationAsRead CreateMarkAsReadUseCase()
+    private PatchNotification CreateMarkAsReadUseCase()
         => new(_repo.Object, _tenantProvider.Object);
 
-    private MarkAllNotificationsAsRead CreateMarkAllAsReadUseCase()
+    private PatchNotifications CreateMarkAllAsReadUseCase()
         => new(_repo.Object, _tenantProvider.Object);
 
     #region MarkAsReadAsync

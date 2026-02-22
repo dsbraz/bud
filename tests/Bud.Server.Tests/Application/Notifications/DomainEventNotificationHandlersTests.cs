@@ -1,7 +1,7 @@
-using Bud.Server.Application.Notifications;
+using Bud.Server.Application.DomainEvents.Notifications;
 using Bud.Server.Domain.Events;
 using Bud.Server.Domain.Repositories;
-using Bud.Server.Infrastructure.Services;
+using Bud.Server.Application.Ports;
 using Moq;
 using Xunit;
 
@@ -97,7 +97,7 @@ public sealed class DomainEventNotificationHandlersTests
         orchestratorMock.Verify(
             o => o.NotifyMetricCheckinCreatedAsync(
                 domainEvent.CheckinId,
-                domainEvent.MissionMetricId,
+                domainEvent.MetricId,
                 domainEvent.OrganizationId,
                 domainEvent.ExcludeCollaboratorId,
                 It.IsAny<CancellationToken>()),

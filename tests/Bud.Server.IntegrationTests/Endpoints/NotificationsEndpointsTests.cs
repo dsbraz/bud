@@ -86,7 +86,7 @@ public class NotificationsEndpointsTests : IClassFixture<CustomWebApplicationFac
     }
 
     [Fact]
-    public async Task GetUnreadCount_ReturnsCorrectCount()
+    public async Task GetAll_WithIsReadFalseFilter_ReturnsOnlyUnread()
     {
         // Arrange
         var (orgId, collaboratorId, client) = await SetupTenantUser();
@@ -94,13 +94,14 @@ public class NotificationsEndpointsTests : IClassFixture<CustomWebApplicationFac
         await SeedNotifications(orgId, collaboratorId, 2, read: true);
 
         // Act
-        var response = await client.GetAsync("/api/notifications/unread-count");
+        var response = await client.GetAsync("/api/notifications?isRead=false&page=1&pageSize=10");
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.OK);
-        var result = await response.Content.ReadFromJsonAsync<UnreadCountResponse>();
+        var result = await response.Content.ReadFromJsonAsync<PagedResult<NotificationDto>>();
         result.Should().NotBeNull();
-        result!.Count.Should().Be(3);
+        result!.Total.Should().Be(3);
+        result.Items.Should().OnlyContain(n => !n.IsRead);
     }
 
     [Fact]
@@ -130,7 +131,7 @@ public class NotificationsEndpointsTests : IClassFixture<CustomWebApplicationFac
         }
 
         // Act
-        var response = await client.PutAsync($"/api/notifications/{notificationId}/read", null);
+        var response = await client.PatchAsync($"/api/notifications/{notificationId}", null);
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.NoContent);
@@ -151,15 +152,15 @@ public class NotificationsEndpointsTests : IClassFixture<CustomWebApplicationFac
         await SeedNotifications(orgId, collaboratorId, 3, read: false);
 
         // Act
-        var response = await client.PutAsync("/api/notifications/read-all", null);
+        var response = await client.PatchAsync("/api/notifications", null);
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.NoContent);
 
         // Verify unread count is 0
-        var countResponse = await client.GetAsync("/api/notifications/unread-count");
-        var result = await countResponse.Content.ReadFromJsonAsync<UnreadCountResponse>();
-        result!.Count.Should().Be(0);
+        var listResponse = await client.GetAsync("/api/notifications?isRead=false&page=1&pageSize=10");
+        var result = await listResponse.Content.ReadFromJsonAsync<PagedResult<NotificationDto>>();
+        result!.Total.Should().Be(0);
     }
 
     [Fact]
@@ -169,7 +170,7 @@ public class NotificationsEndpointsTests : IClassFixture<CustomWebApplicationFac
         var (_, _, client) = await SetupTenantUser();
 
         // Act
-        var response = await client.PutAsync($"/api/notifications/{Guid.NewGuid()}/read", null);
+        var response = await client.PatchAsync($"/api/notifications/{Guid.NewGuid()}", null);
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.NotFound);

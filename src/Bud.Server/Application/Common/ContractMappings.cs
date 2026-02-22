@@ -1,4 +1,5 @@
-using Bud.Server.Application.Projections;
+using Bud.Server.Domain.ReadModels;
+using Bud.Server.Domain.Model;
 using Bud.Shared.Contracts;
 
 namespace Bud.Server.Application.Common;
@@ -44,7 +45,34 @@ internal static class ContractMappings
         };
     }
 
+    public static NotificationDto ToContract(this Notification source)
+    {
+        return new NotificationDto
+        {
+            Id = source.Id,
+            Title = source.Title,
+            Message = source.Message,
+            Type = source.Type.ToString(),
+            IsRead = source.IsRead,
+            CreatedAtUtc = source.CreatedAtUtc,
+            ReadAtUtc = source.ReadAtUtc,
+            RelatedEntityId = source.RelatedEntityId,
+            RelatedEntityType = source.RelatedEntityType
+        };
+    }
+
     public static CollaboratorSummaryDto ToContract(this CollaboratorSummary source)
+    {
+        return new CollaboratorSummaryDto
+        {
+            Id = source.Id,
+            FullName = source.FullName,
+            Email = source.Email,
+            Role = source.Role.ToShared()
+        };
+    }
+
+    public static CollaboratorSummaryDto ToContract(this Collaborator source)
     {
         return new CollaboratorSummaryDto
         {
@@ -65,6 +93,16 @@ internal static class ContractMappings
         };
     }
 
+    public static TeamSummaryDto ToContract(this Team source)
+    {
+        return new TeamSummaryDto
+        {
+            Id = source.Id,
+            Name = source.Name,
+            WorkspaceName = source.Workspace?.Name ?? string.Empty
+        };
+    }
+
     public static LeaderCollaboratorResponse ToContract(this LeaderCollaborator source)
     {
         return new LeaderCollaboratorResponse
@@ -75,6 +113,19 @@ internal static class ContractMappings
             TeamName = source.TeamName,
             WorkspaceName = source.WorkspaceName,
             OrganizationName = source.OrganizationName
+        };
+    }
+
+    public static LeaderCollaboratorResponse ToContractAsLeader(this Collaborator source)
+    {
+        return new LeaderCollaboratorResponse
+        {
+            Id = source.Id,
+            FullName = source.FullName,
+            Email = source.Email,
+            TeamName = source.Team?.Name,
+            WorkspaceName = source.Team?.Workspace?.Name,
+            OrganizationName = source.Organization?.Name ?? string.Empty
         };
     }
 
@@ -227,4 +278,5 @@ internal static class ContractMappings
             PageSize = source.PageSize
         };
     }
+
 }

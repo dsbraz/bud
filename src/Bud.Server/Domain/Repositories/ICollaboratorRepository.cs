@@ -1,5 +1,3 @@
-using Bud.Server.Application.Projections;
-using Bud.Shared.Contracts;
 using Bud.Server.Domain.Model;
 
 namespace Bud.Server.Domain.Repositories;
@@ -8,12 +6,12 @@ public interface ICollaboratorRepository
 {
     Task<Collaborator?> GetByIdAsync(Guid id, CancellationToken ct = default);
     Task<Collaborator?> GetByIdWithCollaboratorTeamsAsync(Guid id, CancellationToken ct = default);
-    Task<PagedResult<Collaborator>> GetAllAsync(Guid? teamId, string? search, int page, int pageSize, CancellationToken ct = default);
-    Task<List<LeaderCollaborator>> GetLeadersAsync(Guid? organizationId, CancellationToken ct = default);
-    Task<List<CollaboratorHierarchyNode>> GetSubordinatesAsync(Guid collaboratorId, int maxDepth, CancellationToken ct = default);
-    Task<List<TeamSummary>> GetTeamsAsync(Guid collaboratorId, CancellationToken ct = default);
-    Task<List<TeamSummary>> GetAvailableTeamsAsync(Guid collaboratorId, Guid organizationId, string? search, int limit, CancellationToken ct = default);
-    Task<List<CollaboratorSummary>> GetSummariesAsync(string? search, int limit, CancellationToken ct = default);
+    Task<Bud.Shared.Contracts.PagedResult<Collaborator>> GetAllAsync(Guid? teamId, string? search, int page, int pageSize, CancellationToken ct = default);
+    Task<List<Collaborator>> GetLeadersAsync(Guid? organizationId, CancellationToken ct = default);
+    Task<List<Collaborator>> GetSubordinatesAsync(Guid collaboratorId, int maxDepth, CancellationToken ct = default);
+    Task<List<Team>> GetTeamsAsync(Guid collaboratorId, CancellationToken ct = default);
+    Task<List<Team>> GetAvailableTeamsAsync(Guid collaboratorId, Guid organizationId, string? search, int limit, CancellationToken ct = default);
+    Task<List<Collaborator>> GetSummariesAsync(string? search, int limit, CancellationToken ct = default);
     Task<bool> ExistsAsync(Guid id, CancellationToken ct = default);
     Task<bool> IsEmailUniqueAsync(string email, Guid? excludeId, CancellationToken ct = default);
     Task<bool> HasSubordinatesAsync(Guid collaboratorId, CancellationToken ct = default);

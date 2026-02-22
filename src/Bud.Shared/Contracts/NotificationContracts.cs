@@ -30,10 +30,3 @@ public sealed class NotificationDto
     /// <summary>Tipo da entidade relacionada (ex: Mission, MetricCheckin).</summary>
     public string? RelatedEntityType { get; set; }
 }
-
-/// <summary>Resposta com a contagem de notificações não lidas.</summary>
-public sealed class UnreadCountResponse
-{
-    /// <summary>Quantidade de notificações não lidas.</summary>
-    public int Count { get; set; }
-}

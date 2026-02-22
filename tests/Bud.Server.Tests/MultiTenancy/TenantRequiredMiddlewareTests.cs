@@ -52,9 +52,9 @@ public sealed class TenantRequiredMiddlewareTests
     [Theory]
     [InlineData("/swagger")]
     [InlineData("/health")]
-    [InlineData("/api/auth/login")]
-    [InlineData("/api/auth/logout")]
-    [InlineData("/api/auth/my-organizations")]
+    [InlineData("/api/sessions")]
+    [InlineData("/api/sessions/current")]
+    [InlineData("/api/me/organizations")]
     public async Task InvokeAsync_NonApiOrExcludedPath_CallsNext(string path)
     {
         // Arrange

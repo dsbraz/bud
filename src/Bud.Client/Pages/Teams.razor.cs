@@ -32,7 +32,7 @@ public partial class Teams
     // Estado do modal de edição
     private bool isEditModalOpen = false;
     private Team? selectedTeam = null;
-    private UpdateTeamRequest editTeam = new();
+    private PatchTeamRequest editTeam = new();
     private string? editParentTeamId;
     private List<Team> editParentTeams = new();
     private List<LeaderCollaboratorResponse> editLeaders = new();
@@ -237,7 +237,7 @@ public partial class Teams
 
                 if (createdTeam != null && assignedCollaboratorsForCreate.Count > 0)
                 {
-                    await Api.UpdateTeamCollaboratorsAsync(createdTeam.Id, new UpdateTeamCollaboratorsRequest
+                    await Api.UpdateTeamCollaboratorsAsync(createdTeam.Id, new PatchTeamCollaboratorsRequest
                     {
                         CollaboratorIds = assignedCollaboratorsForCreate.Select(c => c.Id).ToList()
                     });
@@ -261,7 +261,7 @@ public partial class Teams
     private async Task OpenEditModal(Team team)
     {
         selectedTeam = team;
-        editTeam = new UpdateTeamRequest
+        editTeam = new PatchTeamRequest
         {
             Name = team.Name,
             ParentTeamId = team.ParentTeamId
@@ -296,7 +296,7 @@ public partial class Teams
         collaboratorsModified = false;
     }
 
-    private async Task UpdateTeam()
+    private async Task PatchTeam()
     {
         if (selectedTeam == null) return;
 
@@ -323,7 +323,7 @@ public partial class Teams
                 {
                     if (collaboratorsModified)
                     {
-                        await Api.UpdateTeamCollaboratorsAsync(selectedTeam.Id, new UpdateTeamCollaboratorsRequest
+                        await Api.UpdateTeamCollaboratorsAsync(selectedTeam.Id, new PatchTeamCollaboratorsRequest
                         {
                             CollaboratorIds = assignedCollaboratorsForEdit.Select(c => c.Id).ToList()
                         });

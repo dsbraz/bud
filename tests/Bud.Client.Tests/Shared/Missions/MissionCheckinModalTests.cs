@@ -9,7 +9,7 @@ namespace Bud.Client.Tests.Shared.Missions;
 
 public sealed class MissionCheckinModalTests : TestContext
 {
-    private static MissionMetric CreateQuantitativeMetric() => new()
+    private static Metric CreateQuantitativeMetric() => new()
     {
         Id = Guid.NewGuid(),
         Name = "Sales Target",
@@ -19,7 +19,7 @@ public sealed class MissionCheckinModalTests : TestContext
         Unit = MetricUnit.Integer
     };
 
-    private static MissionMetric CreateQualitativeMetric() => new()
+    private static Metric CreateQualitativeMetric() => new()
     {
         Id = Guid.NewGuid(),
         Name = "Team Culture",
@@ -72,18 +72,18 @@ public sealed class MissionCheckinModalTests : TestContext
     [Fact]
     public void Click_Submit_ShouldInvokeOnSubmitCallback()
     {
-        CreateMetricCheckinRequest? submitted = null;
+        CreateCheckinRequest? submitted = null;
         var metric = CreateQuantitativeMetric();
 
         var cut = RenderComponent<MissionCheckinModal>(parameters => parameters
             .Add(p => p.IsOpen, true)
             .Add(p => p.Metric, metric)
-            .Add(p => p.OnSubmit, EventCallback.Factory.Create<CreateMetricCheckinRequest>(this, r => submitted = r)));
+            .Add(p => p.OnSubmit, EventCallback.Factory.Create<CreateCheckinRequest>(this, r => submitted = r)));
 
         var submitButton = cut.Find("button.button.primary");
         submitButton.Click();
 
         submitted.Should().NotBeNull();
-        submitted!.MissionMetricId.Should().Be(metric.Id);
+        submitted!.MetricId.Should().Be(metric.Id);
     }
 }

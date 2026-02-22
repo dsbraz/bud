@@ -3,7 +3,7 @@ using FluentValidation;
 
 namespace Bud.Server.Validators;
 
-public sealed class CreateMissionObjectiveValidator : AbstractValidator<CreateMissionObjectiveRequest>
+public sealed class CreateMissionObjectiveValidator : AbstractValidator<CreateObjectiveRequest>
 {
     public CreateMissionObjectiveValidator()
     {
@@ -18,12 +18,16 @@ public sealed class CreateMissionObjectiveValidator : AbstractValidator<CreateMi
             .MaximumLength(1000).WithMessage("Descrição deve ter no máximo 1000 caracteres.")
             .When(x => !string.IsNullOrEmpty(x.Description));
 
+        RuleFor(x => x.Dimension)
+            .MaximumLength(100).WithMessage("Dimensão deve ter no máximo 100 caracteres.")
+            .When(x => !string.IsNullOrEmpty(x.Dimension));
+
     }
 }
 
-public sealed class UpdateMissionObjectiveValidator : AbstractValidator<UpdateMissionObjectiveRequest>
+public sealed class PatchMissionObjectiveValidator : AbstractValidator<PatchObjectiveRequest>
 {
-    public UpdateMissionObjectiveValidator()
+    public PatchMissionObjectiveValidator()
     {
         RuleFor(x => x.Name)
             .NotEmpty().WithMessage("Nome é obrigatório.")
@@ -32,6 +36,10 @@ public sealed class UpdateMissionObjectiveValidator : AbstractValidator<UpdateMi
         RuleFor(x => x.Description)
             .MaximumLength(1000).WithMessage("Descrição deve ter no máximo 1000 caracteres.")
             .When(x => !string.IsNullOrEmpty(x.Description));
+
+        RuleFor(x => x.Dimension)
+            .MaximumLength(100).WithMessage("Dimensão deve ter no máximo 100 caracteres.")
+            .When(x => !string.IsNullOrEmpty(x.Dimension));
 
     }
 }

@@ -1,7 +1,7 @@
 using Bud.Server.Domain.Repositories;
+using Bud.Server.Domain.Model;
 using Bud.Server.Application.Common;
 using Bud.Server.Application.Notifications;
-using Bud.Server.Application.Projections;
 using Bud.Server.MultiTenancy;
 using Bud.Shared.Contracts;
 using FluentAssertions;
@@ -18,9 +18,6 @@ public sealed class NotificationReadUseCasesTests
     private ListNotifications CreateListUseCase()
         => new(_repo.Object, _tenantProvider.Object);
 
-    private GetUnreadNotificationCount CreateUnreadCountUseCase()
-        => new(_repo.Object, _tenantProvider.Object);
-
     #region GetMyNotificationsAsync
 
     [Fact]
@@ -28,12 +25,12 @@ public sealed class NotificationReadUseCasesTests
     {
         _tenantProvider.SetupGet(x => x.CollaboratorId).Returns((Guid?)null);
 
-        var result = await CreateListUseCase().ExecuteAsync(1, 10);
+        var result = await CreateListUseCase().ExecuteAsync(null, 1, 10);
 
         result.IsSuccess.Should().BeFalse();
         result.ErrorType.Should().Be(ErrorType.Forbidden);
         result.Error.Should().Be("Colaborador não identificado.");
-        _repo.Verify(r => r.GetByRecipientAsync(It.IsAny<Guid>(), It.IsAny<int>(), It.IsAny<int>(), It.IsAny<CancellationToken>()), Times.Never);
+        _repo.Verify(r => r.GetByRecipientAsync(It.IsAny<Guid>(), It.IsAny<bool?>(), It.IsAny<int>(), It.IsAny<int>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
     [Fact]
@@ -42,51 +39,22 @@ public sealed class NotificationReadUseCasesTests
         var collaboratorId = Guid.NewGuid();
         _tenantProvider.SetupGet(x => x.CollaboratorId).Returns(collaboratorId);
 
-        var pagedResult = new PagedResult<NotificationSummary>
+        var pagedResult = new PagedResult<Notification>
         {
-            Items = [new NotificationSummary { Id = Guid.NewGuid(), Title = "Test", Message = "Msg", Type = "MissionCreated" }],
+            Items = [new Notification { Id = Guid.NewGuid(), Title = "Test", Message = "Msg", Type = NotificationType.MissionCreated }],
             Total = 1,
             Page = 1,
             PageSize = 10
         };
-        _repo.Setup(r => r.GetByRecipientAsync(collaboratorId, 1, 10, It.IsAny<CancellationToken>()))
+        _repo.Setup(r => r.GetByRecipientAsync(collaboratorId, null, 1, 10, It.IsAny<CancellationToken>()))
             .ReturnsAsync(pagedResult);
 
-        var result = await CreateListUseCase().ExecuteAsync(1, 10);
+        var result = await CreateListUseCase().ExecuteAsync(null, 1, 10);
 
         result.IsSuccess.Should().BeTrue();
         result.Value!.Items.Should().HaveCount(1);
         result.Value.Total.Should().Be(1);
-        _repo.Verify(r => r.GetByRecipientAsync(collaboratorId, 1, 10, It.IsAny<CancellationToken>()), Times.Once);
-    }
-
-    #endregion
-
-    #region GetUnreadCountAsync
-
-    [Fact]
-    public async Task GetUnreadCountAsync_WithoutCollaborator_ReturnsForbidden()
-    {
-        _tenantProvider.SetupGet(x => x.CollaboratorId).Returns((Guid?)null);
-
-        var result = await CreateUnreadCountUseCase().ExecuteAsync();
-
-        result.IsSuccess.Should().BeFalse();
-        result.ErrorType.Should().Be(ErrorType.Forbidden);
-    }
-
-    [Fact]
-    public async Task GetUnreadCountAsync_ReturnsCount()
-    {
-        var collaboratorId = Guid.NewGuid();
-        _tenantProvider.SetupGet(x => x.CollaboratorId).Returns(collaboratorId);
-        _repo.Setup(r => r.GetUnreadCountAsync(collaboratorId, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(5);
-
-        var result = await CreateUnreadCountUseCase().ExecuteAsync();
-
-        result.IsSuccess.Should().BeTrue();
-        result.Value.Should().Be(5);
+        _repo.Verify(r => r.GetByRecipientAsync(collaboratorId, null, 1, 10, It.IsAny<CancellationToken>()), Times.Once);
     }
 
     #endregion

@@ -26,26 +26,26 @@ public sealed class OpenApiToolCatalogGenerator
         new("mission_create", "Cria uma missão.", "post", "/api/missions", ToolSchemaKind.Create),
         new("mission_get", "Busca uma missão por ID.", "get", "/api/missions/{id}", ToolSchemaKind.GetById),
         new("mission_list", "Lista missões com filtros.", "get", "/api/missions", ToolSchemaKind.List),
-        new("mission_update", "Atualiza uma missão.", "put", "/api/missions/{id}", ToolSchemaKind.Update),
+        new("mission_update", "Atualiza uma missão.", "patch", "/api/missions/{id}", ToolSchemaKind.Update),
         new("mission_delete", "Remove uma missão.", "delete", "/api/missions/{id}", ToolSchemaKind.Delete),
 
-        new("mission_metric_create", "Cria uma métrica de missão.", "post", "/api/mission-metrics", ToolSchemaKind.Create),
-        new("mission_metric_get", "Busca uma métrica por ID.", "get", "/api/mission-metrics/{id}", ToolSchemaKind.GetById),
-        new("mission_metric_list", "Lista métricas de missão.", "get", "/api/mission-metrics", ToolSchemaKind.List),
-        new("mission_metric_update", "Atualiza uma métrica de missão.", "put", "/api/mission-metrics/{id}", ToolSchemaKind.Update),
-        new("mission_metric_delete", "Remove uma métrica de missão.", "delete", "/api/mission-metrics/{id}", ToolSchemaKind.Delete),
+        new("mission_metric_create", "Cria uma métrica de missão.", "post", "/api/metrics", ToolSchemaKind.Create),
+        new("mission_metric_get", "Busca uma métrica por ID.", "get", "/api/metrics/{id}", ToolSchemaKind.GetById),
+        new("mission_metric_list", "Lista métricas de missão.", "get", "/api/metrics", ToolSchemaKind.List),
+        new("mission_metric_update", "Atualiza uma métrica de missão.", "patch", "/api/metrics/{id}", ToolSchemaKind.Update),
+        new("mission_metric_delete", "Remove uma métrica de missão.", "delete", "/api/metrics/{id}", ToolSchemaKind.Delete),
 
-        new("mission_objective_create", "Cria um objetivo de missão.", "post", "/api/mission-objectives", ToolSchemaKind.Create),
-        new("mission_objective_get", "Busca um objetivo por ID.", "get", "/api/mission-objectives/{id}", ToolSchemaKind.GetById),
-        new("mission_objective_list", "Lista objetivos de uma missão.", "get", "/api/mission-objectives", ToolSchemaKind.List),
-        new("mission_objective_update", "Atualiza um objetivo de missão.", "put", "/api/mission-objectives/{id}", ToolSchemaKind.Update),
-        new("mission_objective_delete", "Remove um objetivo de missão.", "delete", "/api/mission-objectives/{id}", ToolSchemaKind.Delete),
+        new("mission_objective_create", "Cria um objetivo de missão.", "post", "/api/objectives", ToolSchemaKind.Create),
+        new("mission_objective_get", "Busca um objetivo por ID.", "get", "/api/objectives/{id}", ToolSchemaKind.GetById),
+        new("mission_objective_list", "Lista objetivos de uma missão.", "get", "/api/objectives", ToolSchemaKind.List),
+        new("mission_objective_update", "Atualiza um objetivo de missão.", "patch", "/api/objectives/{id}", ToolSchemaKind.Update),
+        new("mission_objective_delete", "Remove um objetivo de missão.", "delete", "/api/objectives/{id}", ToolSchemaKind.Delete),
 
-        new("metric_checkin_create", "Cria um check-in de métrica.", "post", "/api/metric-checkins", ToolSchemaKind.Create),
-        new("metric_checkin_get", "Busca um check-in por ID.", "get", "/api/metric-checkins/{id}", ToolSchemaKind.GetById),
-        new("metric_checkin_list", "Lista check-ins com filtros.", "get", "/api/metric-checkins", ToolSchemaKind.List),
-        new("metric_checkin_update", "Atualiza um check-in.", "put", "/api/metric-checkins/{id}", ToolSchemaKind.Update),
-        new("metric_checkin_delete", "Remove um check-in.", "delete", "/api/metric-checkins/{id}", ToolSchemaKind.Delete)
+        new("metric_checkin_create", "Cria um check-in de métrica.", "post", "/api/metrics/{metricId}/checkins", ToolSchemaKind.Create),
+        new("metric_checkin_get", "Busca um check-in por ID.", "get", "/api/metrics/{metricId}/checkins/{checkinId}", ToolSchemaKind.GetById),
+        new("metric_checkin_list", "Lista check-ins com filtros.", "get", "/api/metrics/{metricId}/checkins", ToolSchemaKind.List),
+        new("metric_checkin_update", "Atualiza um check-in.", "patch", "/api/metrics/{metricId}/checkins/{checkinId}", ToolSchemaKind.Update),
+        new("metric_checkin_delete", "Remove um check-in.", "delete", "/api/metrics/{metricId}/checkins/{checkinId}", ToolSchemaKind.Delete)
     ];
 
     public static JsonArray GenerateToolsFromOpenApi(string openApiJson)
@@ -100,22 +100,31 @@ public sealed class OpenApiToolCatalogGenerator
             .Where(parameter => string.Equals(parameter["in"]?.GetValue<string>(), "path", StringComparison.OrdinalIgnoreCase))
             .ToList();
 
-        var idParameter = pathParameters.FirstOrDefault(parameter =>
-            string.Equals(parameter["name"]?.GetValue<string>(), "id", StringComparison.OrdinalIgnoreCase));
+        var properties = new JsonObject();
+        var required = new JsonArray();
 
-        var idSchema = idParameter is not null && idParameter["schema"] is JsonObject parameterSchema
-            ? ResolveSchema(root, parameterSchema)
-            : new JsonObject { ["type"] = "string", ["format"] = "uuid" };
+        foreach (var parameter in pathParameters)
+        {
+            var parameterName = parameter["name"]?.GetValue<string>();
+            if (string.IsNullOrWhiteSpace(parameterName))
+            {
+                continue;
+            }
+
+            var schema = parameter["schema"] is JsonObject parameterSchema
+                ? ResolveSchema(root, parameterSchema)
+                : new JsonObject { ["type"] = "string", ["format"] = "uuid" };
+
+            properties[parameterName] = schema;
+            required.Add(parameterName);
+        }
 
         return new JsonObject
         {
             ["type"] = "object",
             ["additionalProperties"] = false,
-            ["required"] = new JsonArray("id"),
-            ["properties"] = new JsonObject
-            {
-                ["id"] = idSchema
-            }
+            ["required"] = required,
+            ["properties"] = properties
         };
     }
 

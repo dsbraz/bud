@@ -290,7 +290,7 @@ public class TeamsEndpointsTests : IClassFixture<CustomWebApplicationFactory>
     #region Update Tests
 
     [Fact]
-    public async Task Update_SettingSelfAsParent_ReturnsBadRequest()
+    public async Task Patch_SettingSelfAsParent_ReturnsBadRequest()
     {
         // Arrange
         var (_, workspace, leaderId) = await CreateTestHierarchy();
@@ -300,7 +300,7 @@ public class TeamsEndpointsTests : IClassFixture<CustomWebApplicationFactory>
         var team = await createResponse.Content.ReadFromJsonAsync<Team>();
 
         // Try to set itself as parent
-        var updateRequest = new UpdateTeamRequest
+        var updateRequest = new PatchTeamRequest
         {
             Name = "Test Team",
             LeaderId = leaderId,
@@ -308,7 +308,7 @@ public class TeamsEndpointsTests : IClassFixture<CustomWebApplicationFactory>
         };
 
         // Act
-        var response = await _client.PutAsJsonAsync($"/api/teams/{team.Id}", updateRequest);
+        var response = await _client.PatchAsJsonAsync($"/api/teams/{team.Id}", updateRequest);
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
@@ -330,7 +330,7 @@ public class TeamsEndpointsTests : IClassFixture<CustomWebApplicationFactory>
         var team2 = await team2Response.Content.ReadFromJsonAsync<Team>();
 
         // Update team2 to have team1 as parent
-        var updateRequest = new UpdateTeamRequest
+        var updateRequest = new PatchTeamRequest
         {
             Name = "Team 2 Updated",
             LeaderId = leaderId,
@@ -338,7 +338,7 @@ public class TeamsEndpointsTests : IClassFixture<CustomWebApplicationFactory>
         };
 
         // Act
-        var response = await _client.PutAsJsonAsync($"/api/teams/{team2!.Id}", updateRequest);
+        var response = await _client.PatchAsJsonAsync($"/api/teams/{team2!.Id}", updateRequest);
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.OK);
@@ -361,14 +361,14 @@ public class TeamsEndpointsTests : IClassFixture<CustomWebApplicationFactory>
         var collaborator = await CreateNonOwnerCollaborator(org.Id);
         var tenantClient = _factory.CreateTenantClient(org.Id, collaborator.Email, collaborator.Id);
 
-        var updateRequest = new UpdateTeamRequest
+        var updateRequest = new PatchTeamRequest
         {
             Name = "Team A Updated",
             LeaderId = leaderId
         };
 
         // Act
-        var response = await tenantClient.PutAsJsonAsync($"/api/teams/{team!.Id}", updateRequest);
+        var response = await tenantClient.PatchAsJsonAsync($"/api/teams/{team!.Id}", updateRequest);
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.Forbidden);
@@ -614,8 +614,8 @@ public class TeamsEndpointsTests : IClassFixture<CustomWebApplicationFactory>
         createResponse.StatusCode.Should().Be(HttpStatusCode.Created);
         var team = await createResponse.Content.ReadFromJsonAsync<Team>();
 
-        // Assert: leader should be in collaborator-summaries
-        var summariesResponse = await _client.GetAsync($"/api/teams/{team!.Id}/collaborators-summary");
+        // Assert: leader should be in collaborators summary projection
+        var summariesResponse = await _client.GetAsync($"/api/teams/{team!.Id}/collaborators/lookup");
         summariesResponse.StatusCode.Should().Be(HttpStatusCode.OK);
         var summaries = await summariesResponse.Content.ReadFromJsonAsync<List<CollaboratorSummaryDto>>();
         summaries.Should().NotBeNull();
@@ -623,7 +623,7 @@ public class TeamsEndpointsTests : IClassFixture<CustomWebApplicationFactory>
     }
 
     [Fact]
-    public async Task UpdateCollaborators_WithoutLeader_ShouldReturnBadRequest()
+    public async Task PatchCollaborators_WithoutLeader_ShouldReturnBadRequest()
     {
         // Arrange
         var (org, workspace, leaderId) = await CreateTestHierarchy();
@@ -648,8 +648,8 @@ public class TeamsEndpointsTests : IClassFixture<CustomWebApplicationFactory>
         await dbContext.SaveChangesAsync();
 
         // Act: update collaborators WITHOUT the leader
-        var updateResponse = await _client.PutAsJsonAsync($"/api/teams/{team!.Id}/collaborators",
-            new UpdateTeamCollaboratorsRequest { CollaboratorIds = new List<Guid> { otherCollab.Id } });
+        var updateResponse = await _client.PatchAsJsonAsync($"/api/teams/{team!.Id}/collaborators",
+            new PatchTeamCollaboratorsRequest { CollaboratorIds = new List<Guid> { otherCollab.Id } });
 
         // Assert
         updateResponse.StatusCode.Should().Be(HttpStatusCode.BadRequest);

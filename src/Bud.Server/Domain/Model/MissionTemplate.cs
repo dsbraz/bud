@@ -67,7 +67,7 @@ public sealed class MissionTemplate : ITenantEntity, IAggregateRoot
                 objective.Name,
                 objective.Description,
                 objective.OrderIndex,
-                objective.ObjectiveDimensionId))
+                objective.Dimension))
             .ToList();
 
         var objectiveIds = objectiveList

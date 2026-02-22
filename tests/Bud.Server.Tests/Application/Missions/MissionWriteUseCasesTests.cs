@@ -1,4 +1,4 @@
-using Bud.Server.Infrastructure.Services;
+using Bud.Server.Application.Ports;
 using Bud.Server.Domain.Repositories;
 using System.Security.Claims;
 using Bud.Server.Application.Common;
@@ -20,10 +20,10 @@ public sealed class MissionWriteUseCasesTests
     private readonly Mock<IMissionScopeResolver> _scopeResolver = new();
     private readonly Mock<IApplicationAuthorizationGateway> _authGateway = new();
 
-    private PlanMission CreatePlanningUseCase()
+    private CreateMission CreatePlanningUseCase()
         => new(_repo.Object, _scopeResolver.Object, _authGateway.Object);
 
-    private ReplanMission CreateReplanningUseCase()
+    private PatchMission CreateReplanningUseCase()
         => new(_repo.Object, _scopeResolver.Object, _authGateway.Object);
 
     private DeleteMission CreateRemoveUseCase()
@@ -123,7 +123,7 @@ public sealed class MissionWriteUseCasesTests
             .ReturnsAsync((Mission?)null);
 
         var useCase = CreateReplanningUseCase();
-        var request = new UpdateMissionRequest
+        var request = new PatchMissionRequest
         {
             Name = "Missão",
             StartDate = DateTime.UtcNow,
@@ -159,7 +159,7 @@ public sealed class MissionWriteUseCasesTests
             .ReturnsAsync(true);
 
         var useCase = CreateReplanningUseCase();
-        var request = new UpdateMissionRequest
+        var request = new PatchMissionRequest
         {
             Name = "Missão Atualizada",
             StartDate = DateTime.UtcNow,

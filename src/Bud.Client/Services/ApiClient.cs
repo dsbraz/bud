@@ -19,7 +19,7 @@ public sealed class ApiClient
 
     public async Task<List<OrganizationSummaryDto>?> GetMyOrganizationsAsync()
     {
-        return await GetSafeAsync<List<OrganizationSummaryDto>>("api/auth/my-organizations");
+        return await GetSafeAsync<List<OrganizationSummaryDto>>("api/me/organizations");
     }
 
     public async Task<PagedResult<Organization>?> GetOrganizationsAsync(string? search, int page = 1, int pageSize = 10)
@@ -53,9 +53,9 @@ public sealed class ApiClient
         return await response.Content.ReadFromJsonAsync<Organization>();
     }
 
-    public async Task<Organization?> UpdateOrganizationAsync(Guid id, UpdateOrganizationRequest request)
+    public async Task<Organization?> UpdateOrganizationAsync(Guid id, PatchOrganizationRequest request)
     {
-        var response = await _http.PutAsJsonAsync($"api/organizations/{id}", request);
+        var response = await _http.PatchAsJsonAsync($"api/organizations/{id}", request);
 
         if (!response.IsSuccessStatusCode)
         {
@@ -129,9 +129,9 @@ public sealed class ApiClient
         return await response.Content.ReadFromJsonAsync<Workspace>();
     }
 
-    public async Task<Workspace?> UpdateWorkspaceAsync(Guid id, UpdateWorkspaceRequest request)
+    public async Task<Workspace?> UpdateWorkspaceAsync(Guid id, PatchWorkspaceRequest request)
     {
-        var response = await _http.PutAsJsonAsync($"api/workspaces/{id}", request);
+        var response = await _http.PatchAsJsonAsync($"api/workspaces/{id}", request);
 
         if (!response.IsSuccessStatusCode)
         {
@@ -192,9 +192,9 @@ public sealed class ApiClient
         return await response.Content.ReadFromJsonAsync<Team>();
     }
 
-    public async Task<Team?> UpdateTeamAsync(Guid id, UpdateTeamRequest request)
+    public async Task<Team?> UpdateTeamAsync(Guid id, PatchTeamRequest request)
     {
-        var response = await _http.PutAsJsonAsync($"api/teams/{id}", request);
+        var response = await _http.PatchAsJsonAsync($"api/teams/{id}", request);
 
         if (!response.IsSuccessStatusCode)
         {
@@ -251,9 +251,9 @@ public sealed class ApiClient
         return await response.Content.ReadFromJsonAsync<Collaborator>();
     }
 
-    public async Task<Collaborator?> UpdateCollaboratorAsync(Guid id, UpdateCollaboratorRequest request)
+    public async Task<Collaborator?> UpdateCollaboratorAsync(Guid id, PatchCollaboratorRequest request)
     {
-        var response = await _http.PutAsJsonAsync($"api/collaborators/{id}", request);
+        var response = await _http.PatchAsJsonAsync($"api/collaborators/{id}", request);
 
         if (!response.IsSuccessStatusCode)
         {
@@ -307,7 +307,7 @@ public sealed class ApiClient
     }
 
     public async Task<PagedResult<Mission>?> GetMyMissionsAsync(
-        Guid collaboratorId, string? search, int page = 1, int pageSize = 10)
+        string? search, int page = 1, int pageSize = 10)
     {
         (page, pageSize) = NormalizePagination(page, pageSize);
 
@@ -321,7 +321,7 @@ public sealed class ApiClient
         queryParams.Add($"page={page}");
         queryParams.Add($"pageSize={pageSize}");
 
-        var url = $"api/missions/my-missions/{collaboratorId}?{string.Join("&", queryParams)}";
+        var url = $"api/me/missions?{string.Join("&", queryParams)}";
         return await GetSafeAsync<PagedResult<Mission>>(url);
     }
 
@@ -340,7 +340,7 @@ public sealed class ApiClient
 
     public async Task<MyDashboardResponse?> GetMyDashboardAsync(Guid? teamId = null)
     {
-        var url = "api/dashboard/my-dashboard";
+        var url = "api/me/dashboard";
         if (teamId.HasValue)
         {
             url += $"?teamId={teamId.Value}";
@@ -348,7 +348,7 @@ public sealed class ApiClient
         return await GetSafeAsync<MyDashboardResponse>(url);
     }
 
-    public async Task<PagedResult<MissionMetric>?> GetMissionMetricsAsync(Guid? missionId, string? search, int page = 1, int pageSize = 10)
+    public async Task<PagedResult<Metric>?> GetMissionMetricsAsync(Guid? missionId, string? search, int page = 1, int pageSize = 10)
     {
         (page, pageSize) = NormalizePagination(page, pageSize);
 
@@ -366,13 +366,13 @@ public sealed class ApiClient
         queryParams.Add($"page={page}");
         queryParams.Add($"pageSize={pageSize}");
 
-        var url = $"api/mission-metrics?{string.Join("&", queryParams)}";
-        return await GetSafeAsync<PagedResult<MissionMetric>>(url);
+        var url = $"api/metrics?{string.Join("&", queryParams)}";
+        return await GetSafeAsync<PagedResult<Metric>>(url);
     }
 
-    public async Task<MissionMetric?> CreateMissionMetricAsync(CreateMissionMetricRequest request)
+    public async Task<Metric?> CreateMissionMetricAsync(CreateMetricRequest request)
     {
-        var response = await _http.PostAsJsonAsync("api/mission-metrics", request);
+        var response = await _http.PostAsJsonAsync("api/metrics", request);
 
         if (!response.IsSuccessStatusCode)
         {
@@ -380,12 +380,12 @@ public sealed class ApiClient
             throw new HttpRequestException(errorMessage);
         }
 
-        return await response.Content.ReadFromJsonAsync<MissionMetric>();
+        return await response.Content.ReadFromJsonAsync<Metric>();
     }
 
-    public async Task<Mission?> UpdateMissionAsync(Guid id, UpdateMissionRequest request)
+    public async Task<Mission?> UpdateMissionAsync(Guid id, PatchMissionRequest request)
     {
-        var response = await _http.PutAsJsonAsync($"api/missions/{id}", request);
+        var response = await _http.PatchAsJsonAsync($"api/missions/{id}", request);
 
         if (!response.IsSuccessStatusCode)
         {
@@ -407,9 +407,9 @@ public sealed class ApiClient
         }
     }
 
-    public async Task<MissionMetric?> UpdateMissionMetricAsync(Guid id, UpdateMissionMetricRequest request)
+    public async Task<Metric?> UpdateMissionMetricAsync(Guid id, PatchMetricRequest request)
     {
-        var response = await _http.PutAsJsonAsync($"api/mission-metrics/{id}", request);
+        var response = await _http.PatchAsJsonAsync($"api/metrics/{id}", request);
 
         if (!response.IsSuccessStatusCode)
         {
@@ -417,12 +417,12 @@ public sealed class ApiClient
             throw new HttpRequestException(errorMessage);
         }
 
-        return await response.Content.ReadFromJsonAsync<MissionMetric>();
+        return await response.Content.ReadFromJsonAsync<Metric>();
     }
 
     public async Task DeleteMissionMetricAsync(Guid id)
     {
-        var response = await _http.DeleteAsync($"api/mission-metrics/{id}");
+        var response = await _http.DeleteAsync($"api/metrics/{id}");
 
         if (!response.IsSuccessStatusCode)
         {
@@ -431,15 +431,15 @@ public sealed class ApiClient
         }
     }
 
-    public async Task<PagedResult<MissionMetric>?> GetMissionMetricsByMissionIdAsync(Guid missionId, int page = 1, int pageSize = 100)
+    public async Task<PagedResult<Metric>?> GetMissionMetricsByMissionIdAsync(Guid missionId, int page = 1, int pageSize = 100)
     {
         (page, pageSize) = NormalizePagination(page, pageSize);
         var url = $"api/missions/{missionId}/metrics?page={page}&pageSize={pageSize}";
-        return await GetSafeAsync<PagedResult<MissionMetric>>(url);
+        return await GetSafeAsync<PagedResult<Metric>>(url);
     }
 
-    // MissionObjective methods
-    public async Task<PagedResult<MissionObjective>?> GetMissionObjectivesAsync(Guid missionId, int page = 1, int pageSize = 100)
+    // Objective methods
+    public async Task<PagedResult<Objective>?> GetMissionObjectivesAsync(Guid missionId, int page = 1, int pageSize = 100)
     {
         (page, pageSize) = NormalizePagination(page, pageSize);
 
@@ -450,13 +450,13 @@ public sealed class ApiClient
             $"pageSize={pageSize}"
         };
 
-        var url = $"api/mission-objectives?{string.Join("&", queryParams)}";
-        return await GetSafeAsync<PagedResult<MissionObjective>>(url);
+        var url = $"api/objectives?{string.Join("&", queryParams)}";
+        return await GetSafeAsync<PagedResult<Objective>>(url);
     }
 
-    public async Task<MissionObjective?> CreateMissionObjectiveAsync(CreateMissionObjectiveRequest request)
+    public async Task<Objective?> CreateMissionObjectiveAsync(CreateObjectiveRequest request)
     {
-        var response = await _http.PostAsJsonAsync("api/mission-objectives", request);
+        var response = await _http.PostAsJsonAsync("api/objectives", request);
 
         if (!response.IsSuccessStatusCode)
         {
@@ -464,12 +464,12 @@ public sealed class ApiClient
             throw new HttpRequestException(errorMessage);
         }
 
-        return await response.Content.ReadFromJsonAsync<MissionObjective>();
+        return await response.Content.ReadFromJsonAsync<Objective>();
     }
 
-    public async Task<MissionObjective?> UpdateMissionObjectiveAsync(Guid id, UpdateMissionObjectiveRequest request)
+    public async Task<Objective?> UpdateMissionObjectiveAsync(Guid id, PatchObjectiveRequest request)
     {
-        var response = await _http.PutAsJsonAsync($"api/mission-objectives/{id}", request);
+        var response = await _http.PatchAsJsonAsync($"api/objectives/{id}", request);
 
         if (!response.IsSuccessStatusCode)
         {
@@ -477,12 +477,12 @@ public sealed class ApiClient
             throw new HttpRequestException(errorMessage);
         }
 
-        return await response.Content.ReadFromJsonAsync<MissionObjective>();
+        return await response.Content.ReadFromJsonAsync<Objective>();
     }
 
     public async Task DeleteMissionObjectiveAsync(Guid id)
     {
-        var response = await _http.DeleteAsync($"api/mission-objectives/{id}");
+        var response = await _http.DeleteAsync($"api/objectives/{id}");
 
         if (!response.IsSuccessStatusCode)
         {
@@ -499,7 +499,7 @@ public sealed class ApiClient
         }
 
         var ids = string.Join(",", objectiveIds);
-        return await GetSafeAsync<List<ObjectiveProgressDto>>($"api/mission-objectives/progress?ids={ids}");
+        return await GetSafeAsync<List<ObjectiveProgressDto>>($"api/objectives/progress?ids={ids}");
     }
 
     // Metric Progress
@@ -511,7 +511,7 @@ public sealed class ApiClient
         }
 
         var ids = string.Join(",", metricIds);
-        return await GetSafeAsync<List<MetricProgressDto>>($"api/mission-metrics/progress?ids={ids}");
+        return await GetSafeAsync<List<MetricProgressDto>>($"api/metrics/progress?ids={ids}");
     }
 
     // Mission Progress
@@ -527,31 +527,22 @@ public sealed class ApiClient
     }
 
     // MetricCheckin methods
-    public async Task<PagedResult<MetricCheckin>?> GetMetricCheckinsAsync(Guid? missionMetricId, Guid? missionId, int page = 1, int pageSize = 10)
+    public async Task<PagedResult<MetricCheckin>?> GetMetricCheckinsAsync(Guid metricId, int page = 1, int pageSize = 10)
     {
         (page, pageSize) = NormalizePagination(page, pageSize);
 
         var queryParams = new List<string>();
 
-        if (missionMetricId.HasValue)
-        {
-            queryParams.Add($"missionMetricId={missionMetricId.Value}");
-        }
-        if (missionId.HasValue)
-        {
-            queryParams.Add($"missionId={missionId.Value}");
-        }
-
         queryParams.Add($"page={page}");
         queryParams.Add($"pageSize={pageSize}");
 
-        var url = $"api/metric-checkins?{string.Join("&", queryParams)}";
+        var url = $"api/metrics/{metricId}/checkins?{string.Join("&", queryParams)}";
         return await GetSafeAsync<PagedResult<MetricCheckin>>(url);
     }
 
-    public async Task<MetricCheckin?> CreateMetricCheckinAsync(CreateMetricCheckinRequest request)
+    public async Task<MetricCheckin?> CreateMetricCheckinAsync(CreateCheckinRequest request)
     {
-        var response = await _http.PostAsJsonAsync("api/metric-checkins", request);
+        var response = await _http.PostAsJsonAsync($"api/metrics/{request.MetricId}/checkins", request);
 
         if (!response.IsSuccessStatusCode)
         {
@@ -562,9 +553,9 @@ public sealed class ApiClient
         return await response.Content.ReadFromJsonAsync<MetricCheckin>();
     }
 
-    public async Task<MetricCheckin?> UpdateMetricCheckinAsync(Guid id, UpdateMetricCheckinRequest request)
+    public async Task<MetricCheckin?> UpdateMetricCheckinAsync(Guid metricId, Guid id, PatchCheckinRequest request)
     {
-        var response = await _http.PutAsJsonAsync($"api/metric-checkins/{id}", request);
+        var response = await _http.PatchAsJsonAsync($"api/metrics/{metricId}/checkins/{id}", request);
 
         if (!response.IsSuccessStatusCode)
         {
@@ -575,9 +566,9 @@ public sealed class ApiClient
         return await response.Content.ReadFromJsonAsync<MetricCheckin>();
     }
 
-    public async Task DeleteMetricCheckinAsync(Guid id)
+    public async Task DeleteMetricCheckinAsync(Guid metricId, Guid id)
     {
-        var response = await _http.DeleteAsync($"api/metric-checkins/{id}");
+        var response = await _http.DeleteAsync($"api/metrics/{metricId}/checkins/{id}");
 
         if (!response.IsSuccessStatusCode)
         {
@@ -601,18 +592,18 @@ public sealed class ApiClient
         queryParams.Add($"page={page}");
         queryParams.Add($"pageSize={pageSize}");
 
-        var url = $"api/mission-templates?{string.Join("&", queryParams)}";
+        var url = $"api/templates?{string.Join("&", queryParams)}";
         return await GetSafeAsync<PagedResult<MissionTemplate>>(url);
     }
 
     public async Task<MissionTemplate?> GetMissionTemplateByIdAsync(Guid id)
     {
-        return await GetSafeAsync<MissionTemplate>($"api/mission-templates/{id}");
+        return await GetSafeAsync<MissionTemplate>($"api/templates/{id}");
     }
 
     public async Task<MissionTemplate?> CreateMissionTemplateAsync(CreateMissionTemplateRequest request)
     {
-        var response = await _http.PostAsJsonAsync("api/mission-templates", request);
+        var response = await _http.PostAsJsonAsync("api/templates", request);
 
         if (!response.IsSuccessStatusCode)
         {
@@ -623,9 +614,9 @@ public sealed class ApiClient
         return await response.Content.ReadFromJsonAsync<MissionTemplate>();
     }
 
-    public async Task<MissionTemplate?> UpdateMissionTemplateAsync(Guid id, UpdateMissionTemplateRequest request)
+    public async Task<MissionTemplate?> UpdateMissionTemplateAsync(Guid id, PatchMissionTemplateRequest request)
     {
-        var response = await _http.PutAsJsonAsync($"api/mission-templates/{id}", request);
+        var response = await _http.PatchAsJsonAsync($"api/templates/{id}", request);
 
         if (!response.IsSuccessStatusCode)
         {
@@ -638,63 +629,7 @@ public sealed class ApiClient
 
     public async Task DeleteMissionTemplateAsync(Guid id)
     {
-        var response = await _http.DeleteAsync($"api/mission-templates/{id}");
-
-        if (!response.IsSuccessStatusCode)
-        {
-            var errorMessage = await ExtractErrorMessageAsync(response);
-            throw new HttpRequestException(errorMessage);
-        }
-    }
-
-    // ObjectiveDimension methods
-    public async Task<PagedResult<ObjectiveDimension>?> GetObjectiveDimensionsAsync(string? search, int page = 1, int pageSize = 10)
-    {
-        (page, pageSize) = NormalizePagination(page, pageSize);
-
-        var queryParams = new List<string>();
-
-        if (!string.IsNullOrEmpty(search))
-        {
-            queryParams.Add($"search={Uri.EscapeDataString(search)}");
-        }
-
-        queryParams.Add($"page={page}");
-        queryParams.Add($"pageSize={pageSize}");
-
-        var url = $"api/objective-dimensions?{string.Join("&", queryParams)}";
-        return await GetSafeAsync<PagedResult<ObjectiveDimension>>(url);
-    }
-
-    public async Task<ObjectiveDimension?> CreateObjectiveDimensionAsync(CreateObjectiveDimensionRequest request)
-    {
-        var response = await _http.PostAsJsonAsync("api/objective-dimensions", request);
-
-        if (!response.IsSuccessStatusCode)
-        {
-            var errorMessage = await ExtractErrorMessageAsync(response);
-            throw new HttpRequestException(errorMessage);
-        }
-
-        return await response.Content.ReadFromJsonAsync<ObjectiveDimension>();
-    }
-
-    public async Task<ObjectiveDimension?> UpdateObjectiveDimensionAsync(Guid id, UpdateObjectiveDimensionRequest request)
-    {
-        var response = await _http.PutAsJsonAsync($"api/objective-dimensions/{id}", request);
-
-        if (!response.IsSuccessStatusCode)
-        {
-            var errorMessage = await ExtractErrorMessageAsync(response);
-            throw new HttpRequestException(errorMessage);
-        }
-
-        return await response.Content.ReadFromJsonAsync<ObjectiveDimension>();
-    }
-
-    public async Task DeleteObjectiveDimensionAsync(Guid id)
-    {
-        var response = await _http.DeleteAsync($"api/objective-dimensions/{id}");
+        var response = await _http.DeleteAsync($"api/templates/{id}");
 
         if (!response.IsSuccessStatusCode)
         {
@@ -775,7 +710,7 @@ public sealed class ApiClient
 
     public async Task<AuthLoginResponse?> LoginAsync(AuthLoginRequest request)
     {
-        var response = await _http.PostAsJsonAsync("api/auth/login", request);
+        var response = await _http.PostAsJsonAsync("api/sessions", request);
         if (response.IsSuccessStatusCode)
         {
             return await response.Content.ReadFromJsonAsync<AuthLoginResponse>();
@@ -793,7 +728,7 @@ public sealed class ApiClient
 
     public async Task LogoutAsync()
     {
-        var response = await _http.PostAsync("api/auth/logout", null);
+        var response = await _http.DeleteAsync("api/sessions/current");
         if (!response.IsSuccessStatusCode)
         {
             var errorMessage = await ExtractErrorMessageAsync(response);
@@ -813,9 +748,9 @@ public sealed class ApiClient
         return await GetSafeAsync<List<TeamSummaryDto>>($"api/collaborators/{collaboratorId}/teams");
     }
 
-    public async Task UpdateCollaboratorTeamsAsync(Guid collaboratorId, UpdateCollaboratorTeamsRequest request)
+    public async Task UpdateCollaboratorTeamsAsync(Guid collaboratorId, PatchCollaboratorTeamsRequest request)
     {
-        var response = await _http.PutAsJsonAsync($"api/collaborators/{collaboratorId}/teams", request);
+        var response = await _http.PatchAsJsonAsync($"api/collaborators/{collaboratorId}/teams", request);
 
         if (!response.IsSuccessStatusCode)
         {
@@ -826,7 +761,7 @@ public sealed class ApiClient
 
     public async Task<List<TeamSummaryDto>?> GetAvailableTeamsForCollaboratorAsync(Guid collaboratorId, string? search = null)
     {
-        var url = $"api/collaborators/{collaboratorId}/available-teams";
+        var url = $"api/collaborators/{collaboratorId}/teams/eligible-for-assignment";
         if (!string.IsNullOrWhiteSpace(search))
         {
             url += $"?search={Uri.EscapeDataString(search)}";
@@ -837,7 +772,7 @@ public sealed class ApiClient
     // Collaborator Summaries
     public async Task<List<CollaboratorSummaryDto>?> GetCollaboratorSummariesAsync(string? search = null)
     {
-        var url = "api/collaborators/summaries";
+        var url = "api/collaborators/lookup";
         if (!string.IsNullOrWhiteSpace(search))
         {
             url += $"?search={Uri.EscapeDataString(search)}";
@@ -848,12 +783,12 @@ public sealed class ApiClient
     // Team Collaborators (Many-to-Many)
     public async Task<List<CollaboratorSummaryDto>?> GetTeamCollaboratorSummariesAsync(Guid teamId)
     {
-        return await GetSafeAsync<List<CollaboratorSummaryDto>>($"api/teams/{teamId}/collaborators-summary");
+        return await GetSafeAsync<List<CollaboratorSummaryDto>>($"api/teams/{teamId}/collaborators/lookup");
     }
 
-    public async Task UpdateTeamCollaboratorsAsync(Guid teamId, UpdateTeamCollaboratorsRequest request)
+    public async Task UpdateTeamCollaboratorsAsync(Guid teamId, PatchTeamCollaboratorsRequest request)
     {
-        var response = await _http.PutAsJsonAsync($"api/teams/{teamId}/collaborators", request);
+        var response = await _http.PatchAsJsonAsync($"api/teams/{teamId}/collaborators", request);
 
         if (!response.IsSuccessStatusCode)
         {
@@ -864,7 +799,7 @@ public sealed class ApiClient
 
     public async Task<List<CollaboratorSummaryDto>?> GetAvailableCollaboratorsForTeamAsync(Guid teamId, string? search = null)
     {
-        var url = $"api/teams/{teamId}/available-collaborators";
+        var url = $"api/teams/{teamId}/collaborators/eligible-for-assignment";
         if (!string.IsNullOrWhiteSpace(search))
         {
             url += $"?search={Uri.EscapeDataString(search)}";
@@ -873,21 +808,24 @@ public sealed class ApiClient
     }
 
     // Notification methods
-    public async Task<PagedResult<NotificationDto>?> GetNotificationsAsync(int page = 1, int pageSize = 20)
+    public async Task<PagedResult<NotificationDto>?> GetNotificationsAsync(bool? isRead = null, int page = 1, int pageSize = 20)
     {
         (page, pageSize) = NormalizePagination(page, pageSize);
-        var url = $"api/notifications?page={page}&pageSize={pageSize}";
-        return await GetSafeAsync<PagedResult<NotificationDto>>(url);
-    }
+        var queryParams = new List<string>();
+        if (isRead.HasValue)
+        {
+            queryParams.Add($"isRead={isRead.Value.ToString().ToLowerInvariant()}");
+        }
 
-    public async Task<UnreadCountResponse?> GetNotificationUnreadCountAsync()
-    {
-        return await GetSafeAsync<UnreadCountResponse>("api/notifications/unread-count");
+        queryParams.Add($"page={page}");
+        queryParams.Add($"pageSize={pageSize}");
+        var url = $"api/notifications?{string.Join("&", queryParams)}";
+        return await GetSafeAsync<PagedResult<NotificationDto>>(url);
     }
 
     public async Task MarkNotificationAsReadAsync(Guid id)
     {
-        var response = await _http.PutAsync($"api/notifications/{id}/read", null);
+        var response = await _http.PatchAsync($"api/notifications/{id}", null);
 
         if (!response.IsSuccessStatusCode)
         {
@@ -898,7 +836,7 @@ public sealed class ApiClient
 
     public async Task MarkAllNotificationsAsReadAsync()
     {
-        var response = await _http.PutAsync("api/notifications/read-all", null);
+        var response = await _http.PatchAsync("api/notifications", null);
 
         if (!response.IsSuccessStatusCode)
         {

@@ -1,4 +1,5 @@
 using Bud.Server.Infrastructure.Persistence;
+using Bud.Server.Application.Ports;
 using Microsoft.EntityFrameworkCore;
 
 namespace Bud.Server.Infrastructure.Services;
@@ -88,13 +89,13 @@ public sealed class NotificationRecipientResolver(ApplicationDbContext dbContext
     }
 
     public async Task<Guid?> ResolveMissionIdFromMetricAsync(
-        Guid missionMetricId,
+        Guid metricId,
         CancellationToken cancellationToken = default)
     {
         var missionId = await dbContext.MissionMetrics
             .IgnoreQueryFilters()
             .AsNoTracking()
-            .Where(mm => mm.Id == missionMetricId)
+            .Where(mm => mm.Id == metricId)
             .Select(mm => mm.MissionId)
             .FirstOrDefaultAsync(cancellationToken);
 

@@ -26,7 +26,7 @@ public sealed class DashboardEndpointsTests : IClassFixture<CustomWebApplication
     {
         var client = _factory.CreateClient();
 
-        var response = await client.GetAsync("/api/dashboard/my-dashboard");
+        var response = await client.GetAsync("/api/me/dashboard");
 
         response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
     }
@@ -40,7 +40,7 @@ public sealed class DashboardEndpointsTests : IClassFixture<CustomWebApplication
         client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
         client.DefaultRequestHeaders.Add("X-Tenant-Id", tenantUser.OrganizationId.ToString());
 
-        var response = await client.GetAsync("/api/dashboard/my-dashboard");
+        var response = await client.GetAsync("/api/me/dashboard");
 
         response.StatusCode.Should().Be(HttpStatusCode.Forbidden);
         var problem = await response.Content.ReadFromJsonAsync<ProblemDetails>();
@@ -54,7 +54,7 @@ public sealed class DashboardEndpointsTests : IClassFixture<CustomWebApplication
         var tenantUser = await GetOrCreateTenantUserAsync();
         var client = _factory.CreateTenantClient(tenantUser.OrganizationId, tenantUser.Email, tenantUser.CollaboratorId);
 
-        var response = await client.GetAsync("/api/dashboard/my-dashboard");
+        var response = await client.GetAsync("/api/me/dashboard");
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
     }
@@ -65,7 +65,7 @@ public sealed class DashboardEndpointsTests : IClassFixture<CustomWebApplication
         var tenantUser = await GetOrCreateTenantUserAsync();
         var client = _factory.CreateTenantClient(tenantUser.OrganizationId, tenantUser.Email, Guid.NewGuid());
 
-        var response = await client.GetAsync("/api/dashboard/my-dashboard");
+        var response = await client.GetAsync("/api/me/dashboard");
 
         response.StatusCode.Should().Be(HttpStatusCode.NotFound);
         var problem = await response.Content.ReadFromJsonAsync<ProblemDetails>();
@@ -80,7 +80,7 @@ public sealed class DashboardEndpointsTests : IClassFixture<CustomWebApplication
         var teamId = await GetOrCreateTeamWithMemberAsync(tenantUser.OrganizationId);
         var client = _factory.CreateTenantClient(tenantUser.OrganizationId, tenantUser.Email, tenantUser.CollaboratorId);
 
-        var response = await client.GetAsync($"/api/dashboard/my-dashboard?teamId={teamId}");
+        var response = await client.GetAsync($"/api/me/dashboard?teamId={teamId}");
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
     }
@@ -91,7 +91,7 @@ public sealed class DashboardEndpointsTests : IClassFixture<CustomWebApplication
         var tenantUser = await GetOrCreateTenantUserAsync();
         var client = _factory.CreateTenantClient(tenantUser.OrganizationId, tenantUser.Email, tenantUser.CollaboratorId);
 
-        var response = await client.GetAsync($"/api/dashboard/my-dashboard?teamId={Guid.NewGuid()}");
+        var response = await client.GetAsync($"/api/me/dashboard?teamId={Guid.NewGuid()}");
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
     }

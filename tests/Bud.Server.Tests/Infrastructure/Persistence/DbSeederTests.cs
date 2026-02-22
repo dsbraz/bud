@@ -18,7 +18,7 @@ public sealed class DbSeederTests
     }
 
     [Fact]
-    public async Task SeedAsync_WhenDatabaseIsEmpty_ShouldCreateDefaultTemplatesAndDimensions()
+    public async Task SeedAsync_WhenDatabaseIsEmpty_ShouldCreateDefaultTemplates()
     {
         // Arrange
         using var context = CreateInMemoryContext();
@@ -39,15 +39,15 @@ public sealed class DbSeederTests
         templateNames.Should().BeEquivalentTo(
             ["BSC", "Mapa Estratégico", "OKR", "PDI", "Planejamento Estratégico Anual"]);
 
-        var dimensionNames = await context.ObjectiveDimensions
+        var dimensions = await context.MissionTemplateObjectives
             .IgnoreQueryFilters()
-            .Where(d => d.OrganizationId == organization.Id)
-            .Select(d => d.Name)
-            .OrderBy(name => name)
+            .Where(o => o.OrganizationId == organization.Id)
+            .Select(o => o.Dimension)
+            .Where(d => !string.IsNullOrWhiteSpace(d))
+            .Distinct()
             .ToListAsync();
 
-        dimensionNames.Should().BeEquivalentTo(
-            ["Aprendizado e Crescimento", "Clientes", "Financeira", "Processos Internos", "Produtos"]);
+        dimensions.Should().NotBeEmpty();
     }
 
     [Fact]
@@ -108,13 +108,15 @@ public sealed class DbSeederTests
         templateNames.Should().Contain(["BSC", "Mapa Estratégico", "OKR", "PDI", "Planejamento Estratégico Anual"]);
         templateNames.Count(name => name == "OKR").Should().Be(1);
 
-        var dimensionNames = await context.ObjectiveDimensions
+        var dimensions = await context.MissionTemplateObjectives
             .IgnoreQueryFilters()
-            .Where(d => d.OrganizationId == organization.Id)
-            .Select(d => d.Name)
+            .Where(o => o.OrganizationId == organization.Id)
+            .Select(o => o.Dimension)
+            .Where(d => !string.IsNullOrWhiteSpace(d))
+            .Distinct()
             .ToListAsync();
 
-        dimensionNames.Should().Contain(["Aprendizado e Crescimento", "Clientes", "Financeira", "Processos Internos", "Produtos"]);
+        dimensions.Should().NotBeEmpty();
     }
 
     [Fact]

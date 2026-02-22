@@ -5,8 +5,8 @@ public sealed class MetricCheckin : ITenantEntity
     public Guid Id { get; set; }
     public Guid OrganizationId { get; set; }
     public Organization Organization { get; set; } = null!;
-    public Guid MissionMetricId { get; set; }
-    public MissionMetric MissionMetric { get; set; } = null!;
+    public Guid MetricId { get; set; }
+    public Metric Metric { get; set; } = null!;
     public Guid CollaboratorId { get; set; }
     public Collaborator Collaborator { get; set; } = null!;
 
@@ -47,7 +47,7 @@ public sealed class MetricCheckin : ITenantEntity
         {
             Id = id,
             OrganizationId = organizationId,
-            MissionMetricId = missionMetricId,
+            MetricId = missionMetricId,
             CollaboratorId = collaboratorId
         };
 

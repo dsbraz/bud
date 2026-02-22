@@ -151,34 +151,34 @@ public sealed class ToolCatalogCommandRunnerTests
         },
         "/api/missions/{id}": {
           "get": { "parameters": [ { "name": "id", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } } ] },
-          "put": { "parameters": [ { "name": "id", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } } ], "requestBody": { "content": { "application/json": { "schema": { "$ref": "#/components/schemas/UpdateMissionRequest" } } } } },
+          "patch": { "parameters": [ { "name": "id", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } } ], "requestBody": { "content": { "application/json": { "schema": { "$ref": "#/components/schemas/PatchMissionRequest" } } } } },
           "delete": { "parameters": [ { "name": "id", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } } ] }
         },
-        "/api/mission-metrics": {
-          "post": { "requestBody": { "content": { "application/json": { "schema": { "$ref": "#/components/schemas/CreateMissionMetricRequest" } } } } },
+        "/api/metrics": {
+          "post": { "requestBody": { "content": { "application/json": { "schema": { "$ref": "#/components/schemas/CreateMetricRequest" } } } } },
           "get": { "parameters": [] }
         },
-        "/api/mission-metrics/{id}": {
+        "/api/metrics/{id}": {
           "get": { "parameters": [ { "name": "id", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } } ] },
-          "put": { "parameters": [ { "name": "id", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } } ], "requestBody": { "content": { "application/json": { "schema": { "$ref": "#/components/schemas/UpdateMissionMetricRequest" } } } } },
+          "patch": { "parameters": [ { "name": "id", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } } ], "requestBody": { "content": { "application/json": { "schema": { "$ref": "#/components/schemas/PatchMetricRequest" } } } } },
           "delete": { "parameters": [ { "name": "id", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } } ] }
         },
-        "/api/mission-objectives": {
-          "post": { "requestBody": { "content": { "application/json": { "schema": { "$ref": "#/components/schemas/CreateMissionObjectiveRequest" } } } } },
+        "/api/objectives": {
+          "post": { "requestBody": { "content": { "application/json": { "schema": { "$ref": "#/components/schemas/CreateObjectiveRequest" } } } } },
           "get": { "parameters": [] }
         },
-        "/api/mission-objectives/{id}": {
+        "/api/objectives/{id}": {
           "get": { "parameters": [ { "name": "id", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } } ] },
-          "put": { "parameters": [ { "name": "id", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } } ], "requestBody": { "content": { "application/json": { "schema": { "$ref": "#/components/schemas/UpdateMissionObjectiveRequest" } } } } },
+          "patch": { "parameters": [ { "name": "id", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } } ], "requestBody": { "content": { "application/json": { "schema": { "$ref": "#/components/schemas/PatchObjectiveRequest" } } } } },
           "delete": { "parameters": [ { "name": "id", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } } ] }
         },
-        "/api/metric-checkins": {
-          "post": { "requestBody": { "content": { "application/json": { "schema": { "$ref": "#/components/schemas/CreateMetricCheckinRequest" } } } } },
+        "/api/metrics/{metricId}/checkins": {
+          "post": { "requestBody": { "content": { "application/json": { "schema": { "$ref": "#/components/schemas/CreateCheckinRequest" } } } } },
           "get": { "parameters": [] }
         },
-        "/api/metric-checkins/{id}": {
+        "/api/metrics/{metricId}/checkins/{checkinId}": {
           "get": { "parameters": [ { "name": "id", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } } ] },
-          "put": { "parameters": [ { "name": "id", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } } ], "requestBody": { "content": { "application/json": { "schema": { "$ref": "#/components/schemas/UpdateMetricCheckinRequest" } } } } },
+          "patch": { "parameters": [ { "name": "id", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } } ], "requestBody": { "content": { "application/json": { "schema": { "$ref": "#/components/schemas/PatchCheckinRequest" } } } } },
           "delete": { "parameters": [ { "name": "id", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } } ] }
         }
       },
@@ -196,14 +196,14 @@ public sealed class ToolCatalogCommandRunnerTests
               "scopeId": { "type": "string", "format": "uuid" }
             }
           },
-          "UpdateMissionRequest": {
+          "PatchMissionRequest": {
             "type": "object",
             "required": ["name"],
             "properties": {
               "name": { "type": "string" }
             }
           },
-          "CreateMissionMetricRequest": {
+          "CreateMetricRequest": {
             "type": "object",
             "required": ["missionId", "name", "type"],
             "properties": {
@@ -212,14 +212,14 @@ public sealed class ToolCatalogCommandRunnerTests
               "type": { "type": "integer", "format": "int32" }
             }
           },
-          "UpdateMissionMetricRequest": {
+          "PatchMetricRequest": {
             "type": "object",
             "required": ["name"],
             "properties": {
               "name": { "type": "string" }
             }
           },
-          "CreateMissionObjectiveRequest": {
+          "CreateObjectiveRequest": {
             "type": "object",
             "required": ["missionId", "name"],
             "properties": {
@@ -228,7 +228,7 @@ public sealed class ToolCatalogCommandRunnerTests
               "description": { "type": ["null", "string"] }
             }
           },
-          "UpdateMissionObjectiveRequest": {
+          "PatchObjectiveRequest": {
             "type": "object",
             "required": ["name"],
             "properties": {
@@ -236,7 +236,7 @@ public sealed class ToolCatalogCommandRunnerTests
               "description": { "type": ["null", "string"] }
             }
           },
-          "CreateMetricCheckinRequest": {
+          "CreateCheckinRequest": {
             "type": "object",
             "required": ["missionMetricId", "checkinDate", "confidenceLevel"],
             "properties": {
@@ -245,7 +245,7 @@ public sealed class ToolCatalogCommandRunnerTests
               "confidenceLevel": { "type": "integer", "format": "int32" }
             }
           },
-          "UpdateMetricCheckinRequest": {
+          "PatchCheckinRequest": {
             "type": "object",
             "required": ["checkinDate"],
             "properties": {
@@ -277,34 +277,34 @@ public sealed class ToolCatalogCommandRunnerTests
         },
         "/api/missions/{id}": {
           "get": { "parameters": [ { "name": "id", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } } ] },
-          "put": { "parameters": [ { "name": "id", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } } ], "requestBody": { "content": { "application/json": { "schema": { "$ref": "#/components/schemas/UpdateMissionRequest" } } } } },
+          "patch": { "parameters": [ { "name": "id", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } } ], "requestBody": { "content": { "application/json": { "schema": { "$ref": "#/components/schemas/PatchMissionRequest" } } } } },
           "delete": { "parameters": [ { "name": "id", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } } ] }
         },
-        "/api/mission-metrics": {
-          "post": { "requestBody": { "content": { "application/json": { "schema": { "$ref": "#/components/schemas/CreateMissionMetricRequest" } } } } },
+        "/api/metrics": {
+          "post": { "requestBody": { "content": { "application/json": { "schema": { "$ref": "#/components/schemas/CreateMetricRequest" } } } } },
           "get": { "parameters": [] }
         },
-        "/api/mission-metrics/{id}": {
+        "/api/metrics/{id}": {
           "get": { "parameters": [ { "name": "id", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } } ] },
-          "put": { "parameters": [ { "name": "id", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } } ], "requestBody": { "content": { "application/json": { "schema": { "$ref": "#/components/schemas/UpdateMissionMetricRequest" } } } } },
+          "patch": { "parameters": [ { "name": "id", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } } ], "requestBody": { "content": { "application/json": { "schema": { "$ref": "#/components/schemas/PatchMetricRequest" } } } } },
           "delete": { "parameters": [ { "name": "id", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } } ] }
         },
-        "/api/mission-objectives": {
-          "post": { "requestBody": { "content": { "application/json": { "schema": { "$ref": "#/components/schemas/CreateMissionObjectiveRequest" } } } } },
+        "/api/objectives": {
+          "post": { "requestBody": { "content": { "application/json": { "schema": { "$ref": "#/components/schemas/CreateObjectiveRequest" } } } } },
           "get": { "parameters": [] }
         },
-        "/api/mission-objectives/{id}": {
+        "/api/objectives/{id}": {
           "get": { "parameters": [ { "name": "id", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } } ] },
-          "put": { "parameters": [ { "name": "id", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } } ], "requestBody": { "content": { "application/json": { "schema": { "$ref": "#/components/schemas/UpdateMissionObjectiveRequest" } } } } },
+          "patch": { "parameters": [ { "name": "id", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } } ], "requestBody": { "content": { "application/json": { "schema": { "$ref": "#/components/schemas/PatchObjectiveRequest" } } } } },
           "delete": { "parameters": [ { "name": "id", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } } ] }
         },
-        "/api/metric-checkins": {
-          "post": { "requestBody": { "content": { "application/json": { "schema": { "$ref": "#/components/schemas/CreateMetricCheckinRequest" } } } } },
+        "/api/metrics/{metricId}/checkins": {
+          "post": { "requestBody": { "content": { "application/json": { "schema": { "$ref": "#/components/schemas/CreateCheckinRequest" } } } } },
           "get": { "parameters": [] }
         },
-        "/api/metric-checkins/{id}": {
+        "/api/metrics/{metricId}/checkins/{checkinId}": {
           "get": { "parameters": [ { "name": "id", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } } ] },
-          "put": { "parameters": [ { "name": "id", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } } ], "requestBody": { "content": { "application/json": { "schema": { "$ref": "#/components/schemas/UpdateMetricCheckinRequest" } } } } },
+          "patch": { "parameters": [ { "name": "id", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } } ], "requestBody": { "content": { "application/json": { "schema": { "$ref": "#/components/schemas/PatchCheckinRequest" } } } } },
           "delete": { "parameters": [ { "name": "id", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } } ] }
         }
       },
@@ -317,49 +317,49 @@ public sealed class ToolCatalogCommandRunnerTests
               "name": { "type": "string" }
             }
           },
-          "UpdateMissionRequest": {
+          "PatchMissionRequest": {
             "type": "object",
             "required": ["name"],
             "properties": {
               "name": { "type": "string" }
             }
           },
-          "CreateMissionMetricRequest": {
+          "CreateMetricRequest": {
             "type": "object",
             "required": ["missionId"],
             "properties": {
               "missionId": { "type": "string", "format": "uuid" }
             }
           },
-          "UpdateMissionMetricRequest": {
+          "PatchMetricRequest": {
             "type": "object",
             "required": ["name"],
             "properties": {
               "name": { "type": "string" }
             }
           },
-          "CreateMissionObjectiveRequest": {
+          "CreateObjectiveRequest": {
             "type": "object",
             "required": ["missionId"],
             "properties": {
               "missionId": { "type": "string", "format": "uuid" }
             }
           },
-          "UpdateMissionObjectiveRequest": {
+          "PatchObjectiveRequest": {
             "type": "object",
             "required": ["name"],
             "properties": {
               "name": { "type": "string" }
             }
           },
-          "CreateMetricCheckinRequest": {
+          "CreateCheckinRequest": {
             "type": "object",
             "required": ["missionMetricId"],
             "properties": {
               "missionMetricId": { "type": "string", "format": "uuid" }
             }
           },
-          "UpdateMetricCheckinRequest": {
+          "PatchCheckinRequest": {
             "type": "object",
             "required": ["checkinDate"],
             "properties": {

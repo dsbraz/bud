@@ -121,7 +121,7 @@ public sealed class AggregateInvariantsTests
     [Fact]
     public void MissionMetric_ApplyTarget_WithInvalidRange_ShouldThrow()
     {
-        var metric = MissionMetric.Create(Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid(), "Métrica", MetricType.Quantitative);
+        var metric = Metric.Create(Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid(), "Métrica", MetricType.Quantitative);
 
         var act = () => metric.ApplyTarget(
             MetricType.Quantitative,
@@ -156,7 +156,7 @@ public sealed class AggregateInvariantsTests
     [Fact]
     public void MissionMetric_CreateCheckin_WithMissingQuantitativeValue_ShouldThrow()
     {
-        var metric = MissionMetric.Create(Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid(), "Métrica", MetricType.Quantitative);
+        var metric = Metric.Create(Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid(), "Métrica", MetricType.Quantitative);
 
         var act = () => metric.CreateCheckin(
             Guid.NewGuid(),
@@ -173,7 +173,7 @@ public sealed class AggregateInvariantsTests
     [Fact]
     public void MissionMetric_UpdateCheckin_WithMissingQualitativeText_ShouldThrow()
     {
-        var metric = MissionMetric.Create(Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid(), "Métrica", MetricType.Qualitative);
+        var metric = Metric.Create(Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid(), "Métrica", MetricType.Qualitative);
         var checkin = MetricCheckin.Create(
             Guid.NewGuid(),
             metric.OrganizationId,
@@ -243,7 +243,7 @@ public sealed class AggregateInvariantsTests
     [Fact]
     public void MissionObjective_Create_WithEmptyOrganization_ShouldThrow()
     {
-        var act = () => MissionObjective.Create(Guid.NewGuid(), Guid.Empty, Guid.NewGuid(), "Objetivo", null);
+        var act = () => Objective.Create(Guid.NewGuid(), Guid.Empty, Guid.NewGuid(), "Objetivo", null);
 
         act.Should().Throw<DomainInvariantException>();
     }
@@ -251,7 +251,7 @@ public sealed class AggregateInvariantsTests
     [Fact]
     public void MissionObjective_Create_WithEmptyMission_ShouldThrow()
     {
-        var act = () => MissionObjective.Create(Guid.NewGuid(), Guid.NewGuid(), Guid.Empty, "Objetivo", null);
+        var act = () => Objective.Create(Guid.NewGuid(), Guid.NewGuid(), Guid.Empty, "Objetivo", null);
 
         act.Should().Throw<DomainInvariantException>();
     }
@@ -259,7 +259,7 @@ public sealed class AggregateInvariantsTests
     [Fact]
     public void MissionObjective_Create_WithEmptyName_ShouldThrow()
     {
-        var act = () => MissionObjective.Create(Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid(), "  ", null);
+        var act = () => Objective.Create(Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid(), "  ", null);
 
         act.Should().Throw<DomainInvariantException>();
     }
@@ -268,7 +268,7 @@ public sealed class AggregateInvariantsTests
     public void MissionObjective_Create_WithNameLongerThan200_ShouldThrow()
     {
         var longName = new string('A', 201);
-        var act = () => MissionObjective.Create(Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid(), longName, null);
+        var act = () => Objective.Create(Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid(), longName, null);
 
         act.Should().Throw<DomainInvariantException>();
     }
@@ -280,7 +280,7 @@ public sealed class AggregateInvariantsTests
         var orgId = Guid.NewGuid();
         var missionId = Guid.NewGuid();
 
-        var objective = MissionObjective.Create(id, orgId, missionId, "Objetivo", "Descrição");
+        var objective = Objective.Create(id, orgId, missionId, "Objetivo", "Descrição");
 
         objective.Id.Should().Be(id);
         objective.OrganizationId.Should().Be(orgId);
@@ -292,7 +292,7 @@ public sealed class AggregateInvariantsTests
     [Fact]
     public void MissionObjective_UpdateDetails_WithEmptyName_ShouldThrow()
     {
-        var objective = MissionObjective.Create(Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid(), "Objetivo", null);
+        var objective = Objective.Create(Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid(), "Objetivo", null);
 
         var act = () => objective.UpdateDetails("", null);
 
@@ -302,7 +302,7 @@ public sealed class AggregateInvariantsTests
     [Fact]
     public void MissionObjective_UpdateDetails_TrimsDescription()
     {
-        var objective = MissionObjective.Create(Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid(), "Objetivo", null);
+        var objective = Objective.Create(Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid(), "Objetivo", null);
 
         objective.UpdateDetails("Novo Nome", "  Descrição  ");
 
@@ -313,7 +313,7 @@ public sealed class AggregateInvariantsTests
     [Fact]
     public void MissionObjective_UpdateDetails_NullsEmptyDescription()
     {
-        var objective = MissionObjective.Create(Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid(), "Objetivo", "Desc");
+        var objective = Objective.Create(Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid(), "Objetivo", "Desc");
 
         objective.UpdateDetails("Nome", "   ");
 
@@ -321,14 +321,14 @@ public sealed class AggregateInvariantsTests
     }
 
     [Fact]
-    public void MissionObjective_UpdateDetails_SetsObjectiveDimensionId()
+    public void MissionObjective_UpdateDetails_SetsDimension()
     {
-        var objective = MissionObjective.Create(Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid(), "Objetivo", null);
-        var dimensionId = Guid.NewGuid();
+        var objective = Objective.Create(Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid(), "Objetivo", null);
+        var dimension = "Clientes";
 
-        objective.UpdateDetails("Objetivo", null, dimensionId);
+        objective.UpdateDetails("Objetivo", null, dimension);
 
-        objective.ObjectiveDimensionId.Should().Be(dimensionId);
+        objective.Dimension.Should().Be(dimension);
     }
 
     [Fact]

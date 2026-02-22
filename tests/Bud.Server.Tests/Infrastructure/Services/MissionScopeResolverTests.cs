@@ -1,5 +1,6 @@
 using Bud.Server.Infrastructure.Persistence;
 using Bud.Server.Infrastructure.Services;
+using Bud.Server.Application.Ports;
 using Bud.Server.Tests.Helpers;
 using Bud.Server.Domain.Model;
 using FluentAssertions;

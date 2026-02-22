@@ -1,6 +1,6 @@
 using Bud.Server.Application.Collaborators;
 using Bud.Server.Application.Common;
-using Bud.Server.Application.Projections;
+using Bud.Server.Domain.ReadModels;
 using Bud.Server.Domain.Model;
 using Bud.Server.Domain.Repositories;
 using Bud.Shared.Contracts;
@@ -29,7 +29,7 @@ public sealed class CollaboratorReadUseCasesTests
                 OrganizationId = Guid.NewGuid()
             });
 
-        var useCase = new ViewCollaboratorProfile(_collaboratorRepository.Object);
+        var useCase = new GetCollaboratorById(_collaboratorRepository.Object);
 
         var result = await useCase.ExecuteAsync(collaboratorId);
 
@@ -44,7 +44,7 @@ public sealed class CollaboratorReadUseCasesTests
             .Setup(repository => repository.GetByIdAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync((Collaborator?)null);
 
-        var useCase = new ViewCollaboratorProfile(_collaboratorRepository.Object);
+        var useCase = new GetCollaboratorById(_collaboratorRepository.Object);
 
         var result = await useCase.ExecuteAsync(Guid.NewGuid());
 
@@ -61,7 +61,7 @@ public sealed class CollaboratorReadUseCasesTests
             .Setup(repository => repository.GetLeadersAsync(organizationId, It.IsAny<CancellationToken>()))
             .ReturnsAsync([]);
 
-        var useCase = new ListLeaders(_collaboratorRepository.Object);
+        var useCase = new ListLeaderCollaborators(_collaboratorRepository.Object);
 
         var result = await useCase.ExecuteAsync(organizationId);
 
@@ -88,7 +88,7 @@ public sealed class CollaboratorReadUseCasesTests
             .Setup(repository => repository.GetAvailableTeamsAsync(collaboratorId, organizationId, "produto", 50, It.IsAny<CancellationToken>()))
             .ReturnsAsync([]);
 
-        var useCase = new ListAvailableCollaboratorTeams(_collaboratorRepository.Object);
+        var useCase = new ListAvailableTeamsForCollaborator(_collaboratorRepository.Object);
 
         var result = await useCase.ExecuteAsync(collaboratorId, "produto");
 

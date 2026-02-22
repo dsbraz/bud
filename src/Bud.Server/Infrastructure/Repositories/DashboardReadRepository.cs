@@ -1,11 +1,12 @@
-using Bud.Server.Application.Projections;
+using Bud.Server.Domain.ReadModels;
+using Bud.Server.Application.Me;
 using Bud.Server.Infrastructure.Persistence;
 using Bud.Server.Domain.Model;
 using Microsoft.EntityFrameworkCore;
 
 namespace Bud.Server.Infrastructure.Repositories;
 
-public sealed class DashboardReadRepository(ApplicationDbContext dbContext) : IDashboardReadRepository
+public sealed class DashboardReadRepository(ApplicationDbContext dbContext) : IMyDashboardReadStore
 {
     public async Task<MyDashboardSnapshot?> GetMyDashboardAsync(
         Guid collaboratorId,
@@ -217,18 +218,18 @@ public sealed class DashboardReadRepository(ApplicationDbContext dbContext) : ID
 
         var thisWeekUpdated = await dbContext.MetricCheckins
             .AsNoTracking()
-            .Where(mc => metricIdsForActiveMissions.Contains(mc.MissionMetricId)
+            .Where(mc => metricIdsForActiveMissions.Contains(mc.MetricId)
                 && mc.CheckinDate >= thisWeekStart)
-            .Select(mc => mc.MissionMetric.MissionId)
+            .Select(mc => mc.Metric.MissionId)
             .Distinct()
             .CountAsync(ct);
 
         var lastWeekUpdated = await dbContext.MetricCheckins
             .AsNoTracking()
-            .Where(mc => metricIdsForActiveMissions.Contains(mc.MissionMetricId)
+            .Where(mc => metricIdsForActiveMissions.Contains(mc.MetricId)
                 && mc.CheckinDate >= lastWeekStart
                 && mc.CheckinDate < thisWeekStart)
-            .Select(mc => mc.MissionMetric.MissionId)
+            .Select(mc => mc.Metric.MissionId)
             .Distinct()
             .CountAsync(ct);
 

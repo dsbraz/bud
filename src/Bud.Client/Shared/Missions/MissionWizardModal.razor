@@ -163,7 +163,7 @@
                                                 OnEdit="@(() => StartTempMetric(metricIndex))"
                                                 IsDeleteConfirming="false"
                                                 DeleteTitle="Excluir métrica"
-                                                OnDelete="@(() => RemoveMetric(metric))" />
+                                                OnDelete="@(() => DeleteMetric(metric))" />
                                         </div>
                                     }
                                 }
@@ -205,13 +205,7 @@
                                 </div>
                                 <div class="form-row">
                                     <label>Dimensão (opcional)</label>
-                                    <select class="input" @bind="tempObjectiveDimensionId">
-                                        <option value="">Sem dimensão</option>
-                                        @foreach (var dimension in ObjectiveDimensions.OrderBy(d => d.Name))
-                                        {
-                                            <option value="@dimension.Id">@dimension.Name</option>
-                                        }
-                                    </select>
+                                    <input type="text" class="input" @bind="tempObjectiveDimension" placeholder="Ex: Clientes, Financeiro, Processos" maxlength="100" />
                                 </div>
                                 <div class="form-actions" style="margin-top: var(--spacing-3);">
                                     <button type="button" class="button tertiary" @onclick="CancelAddObjective">Cancelar</button>
@@ -248,13 +242,7 @@
                                             </div>
                                             <div class="form-row">
                                                 <label>Dimensão (opcional)</label>
-                                                <select class="input" @bind="editingObjectiveDimensionId">
-                                                    <option value="">Sem dimensão</option>
-                                                    @foreach (var dimension in ObjectiveDimensions.OrderBy(d => d.Name))
-                                                    {
-                                                        <option value="@dimension.Id">@dimension.Name</option>
-                                                    }
-                                                </select>
+                                                <input type="text" class="input" @bind="editingObjectiveDimension" maxlength="100" />
                                             </div>
                                             <div class="form-actions" style="margin-top: var(--spacing-3);">
                                                 <button type="button" class="button tertiary" @onclick="CancelEditTempObjective">Cancelar</button>
@@ -279,15 +267,9 @@
                                                     {
                                                         <div class="metric-details">@obj.Description</div>
                                                     }
-                                                    @if (obj.ObjectiveDimensionId.HasValue)
+                                                    @if (!string.IsNullOrWhiteSpace(obj.Dimension))
                                                     {
-                                                        var dimensionName = ObjectiveDimensions
-                                                            .FirstOrDefault(d => d.Id == obj.ObjectiveDimensionId.Value)
-                                                            ?.Name;
-                                                        if (!string.IsNullOrWhiteSpace(dimensionName))
-                                                        {
-                                                            <div class="metric-details">Dimensão: @dimensionName</div>
-                                                        }
+                                                        <div class="metric-details">Dimensão: @obj.Dimension</div>
                                                     }
                                                 </div>
                                                 <CrudRowActions
@@ -344,7 +326,7 @@
                                                                     OnEdit="@(() => StartTempMetric(metricIndex))"
                                                                     IsDeleteConfirming="false"
                                                                     DeleteTitle="Excluir métrica"
-                                                                    OnDelete="@(() => RemoveMetric(metric))" />
+                                                                    OnDelete="@(() => DeleteMetric(metric))" />
                                                             </div>
                                                         }
                                                     }

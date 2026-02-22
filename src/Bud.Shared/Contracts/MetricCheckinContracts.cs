@@ -1,9 +1,9 @@
 namespace Bud.Shared.Contracts;
 
-public sealed class CreateMetricCheckinRequest
+public sealed class CreateCheckinRequest
 {
     /// <summary>Identificador da métrica da missão.</summary>
-    public Guid MissionMetricId { get; set; }
+    public Guid MetricId { get; set; }
     /// <summary>Valor numérico do check-in (métricas quantitativas).</summary>
     public decimal? Value { get; set; }
     /// <summary>Texto do check-in (métricas qualitativas).</summary>
@@ -16,7 +16,7 @@ public sealed class CreateMetricCheckinRequest
     public int ConfidenceLevel { get; set; }
 }
 
-public sealed class UpdateMetricCheckinRequest
+public sealed class PatchCheckinRequest
 {
     /// <summary>Valor numérico do check-in (métricas quantitativas).</summary>
     public decimal? Value { get; set; }

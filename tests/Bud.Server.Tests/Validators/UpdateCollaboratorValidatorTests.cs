@@ -17,8 +17,8 @@ public sealed class UpdateCollaboratorValidatorTests
             .Setup(x => x.IsValidLeaderAsync(It.IsAny<Guid>(), null, It.IsAny<CancellationToken>()))
             .ReturnsAsync(false);
 
-        var validator = new UpdateCollaboratorValidator(collaboratorRepository.Object);
-        var request = new UpdateCollaboratorRequest
+        var validator = new PatchCollaboratorValidator(collaboratorRepository.Object);
+        var request = new PatchCollaboratorRequest
         {
             FullName = "John Doe",
             Email = "john.doe@example.com",

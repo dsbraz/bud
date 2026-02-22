@@ -7,13 +7,13 @@ namespace Bud.Server.Tests.Validators;
 
 public class UpdateOrganizationValidatorTests
 {
-    private readonly UpdateOrganizationValidator _validator = new();
+    private readonly PatchOrganizationValidator _validator = new();
 
     [Fact]
     public async Task Validate_WithValidDomain_ShouldPass()
     {
         // Arrange
-        var request = new UpdateOrganizationRequest { Name = "empresa.com.br" };
+        var request = new PatchOrganizationRequest { Name = "empresa.com.br" };
 
         // Act
         var result = await _validator.ValidateAsync(request);
@@ -30,7 +30,7 @@ public class UpdateOrganizationValidatorTests
     public async Task Validate_WithEmptyOrWhitespaceName_ShouldFail(string? name)
     {
         // Arrange
-        var request = new UpdateOrganizationRequest { Name = name! };
+        var request = new PatchOrganizationRequest { Name = name! };
 
         // Act
         var result = await _validator.ValidateAsync(request);
@@ -45,7 +45,7 @@ public class UpdateOrganizationValidatorTests
     {
         // Arrange — "a{197}.com" = 197 + 1 + 3 = 201 chars
         var longLabel = new string('a', 197);
-        var request = new UpdateOrganizationRequest { Name = $"{longLabel}.com" };
+        var request = new PatchOrganizationRequest { Name = $"{longLabel}.com" };
 
         // Act
         var result = await _validator.ValidateAsync(request);
@@ -64,7 +64,7 @@ public class UpdateOrganizationValidatorTests
     public async Task Validate_WithValidDomains_ShouldPass(string domain)
     {
         // Arrange
-        var request = new UpdateOrganizationRequest { Name = domain };
+        var request = new PatchOrganizationRequest { Name = domain };
 
         // Act
         var result = await _validator.ValidateAsync(request);
@@ -85,7 +85,7 @@ public class UpdateOrganizationValidatorTests
     public async Task Validate_WithInvalidDomain_ShouldFail(string domain)
     {
         // Arrange
-        var request = new UpdateOrganizationRequest { Name = domain };
+        var request = new PatchOrganizationRequest { Name = domain };
 
         // Act
         var result = await _validator.ValidateAsync(request);

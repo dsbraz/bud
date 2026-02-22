@@ -269,10 +269,10 @@ public class OrganizationsEndpointsTests : IClassFixture<CustomWebApplicationFac
         var createResponse = await _client.PostAsJsonAsync("/api/organizations", createRequest);
         var created = await createResponse.Content.ReadFromJsonAsync<Organization>();
 
-        var updateRequest = new UpdateOrganizationRequest { Name = "updated.com" };
+        var updateRequest = new PatchOrganizationRequest { Name = "updated.com" };
 
         // Act
-        var response = await _client.PutAsJsonAsync($"/api/organizations/{created!.Id}", updateRequest);
+        var response = await _client.PatchAsJsonAsync($"/api/organizations/{created!.Id}", updateRequest);
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.OK);
@@ -286,10 +286,10 @@ public class OrganizationsEndpointsTests : IClassFixture<CustomWebApplicationFac
     {
         // Arrange
         var nonExistingId = Guid.NewGuid();
-        var updateRequest = new UpdateOrganizationRequest { Name = "updated.com" };
+        var updateRequest = new PatchOrganizationRequest { Name = "updated.com" };
 
         // Act
-        var response = await _client.PutAsJsonAsync($"/api/organizations/{nonExistingId}", updateRequest);
+        var response = await _client.PatchAsJsonAsync($"/api/organizations/{nonExistingId}", updateRequest);
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.NotFound);
@@ -405,10 +405,10 @@ public class OrganizationsEndpointsTests : IClassFixture<CustomWebApplicationFac
             nonAdminCollaborator.Email,
             nonAdminCollaborator.Id);
 
-        var request = new UpdateOrganizationRequest { Name = "updated.com" };
+        var request = new PatchOrganizationRequest { Name = "updated.com" };
 
         // Act
-        var response = await nonAdminClient.PutAsJsonAsync($"/api/organizations/{org.Id}", request);
+        var response = await nonAdminClient.PatchAsJsonAsync($"/api/organizations/{org.Id}", request);
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.Forbidden);

@@ -63,28 +63,27 @@ public sealed class Mission
     public Workspace? Workspace { get; set; }
     public Team? Team { get; set; }
     public Collaborator? Collaborator { get; set; }
-    public List<MissionMetric> Metrics { get; set; } = [];
-    public List<MissionObjective> Objectives { get; set; } = [];
+    public List<Metric> Metrics { get; set; } = [];
+    public List<Objective> Objectives { get; set; } = [];
 }
 
-public sealed class MissionObjective
+public sealed class Objective
 {
     public Guid Id { get; set; }
     public Guid OrganizationId { get; set; }
     public Guid MissionId { get; set; }
     public string Name { get; set; } = string.Empty;
     public string? Description { get; set; }
-    public Guid? ObjectiveDimensionId { get; set; }
-    public ObjectiveDimension? ObjectiveDimension { get; set; }
-    public List<MissionMetric> Metrics { get; set; } = [];
+    public string? Dimension { get; set; }
+    public List<Metric> Metrics { get; set; } = [];
 }
 
-public sealed class MissionMetric
+public sealed class Metric
 {
     public Guid Id { get; set; }
     public Guid OrganizationId { get; set; }
     public Guid MissionId { get; set; }
-    public Guid? MissionObjectiveId { get; set; }
+    public Guid? ObjectiveId { get; set; }
     public string Name { get; set; } = string.Empty;
     public MetricType Type { get; set; }
     public QuantitativeMetricType? QuantitativeType { get; set; }
@@ -92,7 +91,7 @@ public sealed class MissionMetric
     public decimal? MaxValue { get; set; }
     public MetricUnit? Unit { get; set; }
     public string? TargetText { get; set; }
-    public MissionObjective? MissionObjective { get; set; }
+    public Objective? MissionObjective { get; set; }
     public List<MetricCheckin> Checkins { get; set; } = [];
 }
 
@@ -100,7 +99,7 @@ public sealed class MetricCheckin
 {
     public Guid Id { get; set; }
     public Guid OrganizationId { get; set; }
-    public Guid MissionMetricId { get; set; }
+    public Guid MetricId { get; set; }
     public Guid CollaboratorId { get; set; }
     public decimal? Value { get; set; }
     public string? Text { get; set; }
@@ -130,8 +129,7 @@ public sealed class MissionTemplateObjective
     public string Name { get; set; } = string.Empty;
     public string? Description { get; set; }
     public int OrderIndex { get; set; }
-    public Guid? ObjectiveDimensionId { get; set; }
-    public ObjectiveDimension? ObjectiveDimension { get; set; }
+    public string? Dimension { get; set; }
     public List<MissionTemplateMetric> Metrics { get; set; } = [];
 }
 
@@ -150,11 +148,4 @@ public sealed class MissionTemplateMetric
     public MetricUnit? Unit { get; set; }
     public string? TargetText { get; set; }
     public MissionTemplateObjective? MissionTemplateObjective { get; set; }
-}
-
-public sealed class ObjectiveDimension
-{
-    public Guid Id { get; set; }
-    public Guid OrganizationId { get; set; }
-    public string Name { get; set; } = string.Empty;
 }

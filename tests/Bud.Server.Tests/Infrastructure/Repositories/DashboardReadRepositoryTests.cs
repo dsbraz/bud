@@ -376,7 +376,7 @@ public class DashboardReadRepositoryTests
         };
         context.Missions.Add(mission);
 
-        var metric = new MissionMetric
+        var metric = new Metric
         {
             Id = Guid.NewGuid(),
             Name = "KR1",
@@ -390,7 +390,7 @@ public class DashboardReadRepositoryTests
         context.MetricCheckins.Add(new MetricCheckin
         {
             Id = Guid.NewGuid(),
-            MissionMetricId = metric.Id,
+            MetricId = metric.Id,
             CollaboratorId = member.Id,
             OrganizationId = org.Id,
             CheckinDate = DateTime.UtcNow.AddDays(-1),
@@ -466,7 +466,7 @@ public class DashboardReadRepositoryTests
             EndDate = DateTime.UtcNow.AddDays(30)
         };
 
-        var metric = new MissionMetric
+        var metric = new Metric
         {
             Id = Guid.NewGuid(),
             Name = "KR",
@@ -479,7 +479,7 @@ public class DashboardReadRepositoryTests
         var checkin = new MetricCheckin
         {
             Id = Guid.NewGuid(),
-            MissionMetricId = metric.Id,
+            MetricId = metric.Id,
             CollaboratorId = collaborator.Id,
             OrganizationId = org.Id,
             CheckinDate = DateTime.UtcNow.AddDays(-10),
@@ -531,7 +531,7 @@ public class DashboardReadRepositoryTests
             EndDate = DateTime.UtcNow.AddDays(30)
         };
 
-        var metric = new MissionMetric
+        var metric = new Metric
         {
             Id = Guid.NewGuid(),
             Name = "KR",
@@ -544,7 +544,7 @@ public class DashboardReadRepositoryTests
         var checkin = new MetricCheckin
         {
             Id = Guid.NewGuid(),
-            MissionMetricId = metric.Id,
+            MetricId = metric.Id,
             CollaboratorId = collaborator.Id,
             OrganizationId = org.Id,
             CheckinDate = DateTime.UtcNow.AddDays(-2),
@@ -766,7 +766,7 @@ public class DashboardReadRepositoryTests
             StartDate = DateTime.UtcNow.AddDays(-30),
             EndDate = DateTime.UtcNow.AddDays(30)
         };
-        var metric = new MissionMetric
+        var metric = new Metric
         {
             Id = Guid.NewGuid(),
             Name = "KR",
@@ -777,7 +777,7 @@ public class DashboardReadRepositoryTests
         var checkin = new MetricCheckin
         {
             Id = Guid.NewGuid(),
-            MissionMetricId = metric.Id,
+            MetricId = metric.Id,
             CollaboratorId = collaborator.Id,
             OrganizationId = org.Id,
             CheckinDate = DateTime.UtcNow.AddDays(-10),

@@ -1,6 +1,6 @@
 using Bud.Server.Application.Common;
-using Bud.Server.Application.Projections;
-using Bud.Server.Infrastructure.Services;
+using Bud.Server.Domain.ReadModels;
+using Bud.Server.Application.Ports;
 using Bud.Shared.Contracts;
 
 namespace Bud.Server.Application.Missions;

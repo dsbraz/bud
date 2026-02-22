@@ -1,15 +1,15 @@
 using Bud.Server.Application.Common;
-using Bud.Server.Application.MissionMetrics;
-using Bud.Server.Application.Projections;
+using Bud.Server.Application.Metrics;
+using Bud.Server.Domain.ReadModels;
 using Bud.Server.Domain.Model;
 using Bud.Server.Domain.Repositories;
-using Bud.Server.Infrastructure.Services;
+using Bud.Server.Application.Ports;
 using Bud.Shared.Contracts;
 using FluentAssertions;
 using Moq;
 using Xunit;
 
-namespace Bud.Server.Tests.Application.MissionMetrics;
+namespace Bud.Server.Tests.Application.Metrics;
 
 public sealed class MissionMetricReadUseCasesTests
 {
@@ -17,13 +17,13 @@ public sealed class MissionMetricReadUseCasesTests
     public async Task ViewMissionMetricDetails_WhenMetricExists_ReturnsSuccess()
     {
         var metricId = Guid.NewGuid();
-        var metricRepository = new Mock<IMissionMetricRepository>();
+        var metricRepository = new Mock<IMetricRepository>();
 
         metricRepository
             .Setup(repository => repository.GetByIdAsync(metricId, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new MissionMetric { Id = metricId, Name = "X", OrganizationId = Guid.NewGuid() });
+            .ReturnsAsync(new Metric { Id = metricId, Name = "X", OrganizationId = Guid.NewGuid() });
 
-        var useCase = new ViewMissionMetricDetails(metricRepository.Object);
+        var useCase = new GetMetricById(metricRepository.Object);
 
         var result = await useCase.ExecuteAsync(metricId);
 
@@ -35,13 +35,13 @@ public sealed class MissionMetricReadUseCasesTests
     public async Task ViewMissionMetricDetails_WhenMetricNotFound_ReturnsNotFound()
     {
         var metricId = Guid.NewGuid();
-        var metricRepository = new Mock<IMissionMetricRepository>();
+        var metricRepository = new Mock<IMetricRepository>();
 
         metricRepository
             .Setup(repository => repository.GetByIdAsync(metricId, It.IsAny<CancellationToken>()))
-            .ReturnsAsync((MissionMetric?)null);
+            .ReturnsAsync((Metric?)null);
 
-        var useCase = new ViewMissionMetricDetails(metricRepository.Object);
+        var useCase = new GetMetricById(metricRepository.Object);
 
         var result = await useCase.ExecuteAsync(metricId);
 
@@ -54,11 +54,11 @@ public sealed class MissionMetricReadUseCasesTests
     public async Task BrowseMissionMetrics_DelegatesToRepository()
     {
         var missionId = Guid.NewGuid();
-        var metricRepository = new Mock<IMissionMetricRepository>();
+        var metricRepository = new Mock<IMetricRepository>();
 
-        var pagedResult = new PagedResult<MissionMetric>
+        var pagedResult = new PagedResult<Metric>
         {
-            Items = [new MissionMetric { Id = Guid.NewGuid(), Name = "M1", OrganizationId = Guid.NewGuid() }],
+            Items = [new Metric { Id = Guid.NewGuid(), Name = "M1", OrganizationId = Guid.NewGuid() }],
             Total = 1,
             Page = 1,
             PageSize = 10
@@ -68,7 +68,7 @@ public sealed class MissionMetricReadUseCasesTests
             .Setup(repository => repository.GetAllAsync(missionId, null, null, 1, 10, It.IsAny<CancellationToken>()))
             .ReturnsAsync(pagedResult);
 
-        var useCase = new BrowseMissionMetrics(metricRepository.Object);
+        var useCase = new ListMetrics(metricRepository.Object);
 
         var result = await useCase.ExecuteAsync(missionId, null, null, 1, 10);
 
@@ -87,7 +87,7 @@ public sealed class MissionMetricReadUseCasesTests
             .Setup(service => service.GetMetricProgressAsync(ids, It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result<List<MetricProgressSnapshot>>.Success([]));
 
-        var useCase = new CalculateMissionMetricProgress(progressService.Object);
+        var useCase = new ListMetricProgress(progressService.Object);
 
         var result = await useCase.ExecuteAsync(ids);
 

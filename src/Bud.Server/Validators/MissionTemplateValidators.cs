@@ -46,9 +46,9 @@ public sealed class CreateMissionTemplateValidator : AbstractValidator<CreateMis
     }
 }
 
-public sealed class UpdateMissionTemplateValidator : AbstractValidator<UpdateMissionTemplateRequest>
+public sealed class PatchMissionTemplateValidator : AbstractValidator<PatchMissionTemplateRequest>
 {
-    public UpdateMissionTemplateValidator()
+    public PatchMissionTemplateValidator()
     {
         RuleFor(x => x.Name)
             .NotEmpty().WithMessage("Nome é obrigatório.")
@@ -77,7 +77,7 @@ public sealed class UpdateMissionTemplateValidator : AbstractValidator<UpdateMis
             .WithMessage("Uma ou mais métricas referenciam objetivos inexistentes no template.");
     }
 
-    private static bool HaveValidObjectiveReferences(UpdateMissionTemplateRequest request)
+    private static bool HaveValidObjectiveReferences(PatchMissionTemplateRequest request)
     {
         var objectiveIds = request.Objectives
             .Where(o => o.Id.HasValue)
@@ -100,6 +100,10 @@ public sealed class MissionTemplateObjectiveDtoValidator : AbstractValidator<Mis
         RuleFor(x => x.Description)
             .MaximumLength(1000).WithMessage("Descrição deve ter no máximo 1000 caracteres.")
             .When(x => !string.IsNullOrEmpty(x.Description));
+
+        RuleFor(x => x.Dimension)
+            .MaximumLength(100).WithMessage("Dimensão deve ter no máximo 100 caracteres.")
+            .When(x => !string.IsNullOrEmpty(x.Dimension));
 
         RuleFor(x => x.OrderIndex)
             .GreaterThanOrEqualTo(0).WithMessage("Índice de ordenação deve ser maior ou igual a 0.");

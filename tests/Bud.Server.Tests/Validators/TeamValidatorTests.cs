@@ -95,13 +95,13 @@ public class TeamValidatorTests
 
     #endregion
 
-    #region UpdateTeamValidator Tests
+    #region PatchTeamValidator Tests
 
     [Fact]
     public void UpdateTeamValidator_WithValidRequest_PassesValidation()
     {
-        var validator = new UpdateTeamValidator();
-        var request = new UpdateTeamRequest
+        var validator = new PatchTeamValidator();
+        var request = new PatchTeamRequest
         {
             Name = "Test Team",
             LeaderId = Guid.NewGuid()
@@ -115,8 +115,8 @@ public class TeamValidatorTests
     [Fact]
     public void UpdateTeamValidator_WithEmptyName_FailsValidation()
     {
-        var validator = new UpdateTeamValidator();
-        var request = new UpdateTeamRequest
+        var validator = new PatchTeamValidator();
+        var request = new PatchTeamRequest
         {
             Name = "",
             LeaderId = Guid.NewGuid()
@@ -131,8 +131,8 @@ public class TeamValidatorTests
     [Fact]
     public void UpdateTeamValidator_WithEmptyLeaderId_FailsValidation()
     {
-        var validator = new UpdateTeamValidator();
-        var request = new UpdateTeamRequest
+        var validator = new PatchTeamValidator();
+        var request = new PatchTeamRequest
         {
             Name = "Test Team",
             LeaderId = Guid.Empty

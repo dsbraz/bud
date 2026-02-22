@@ -14,13 +14,13 @@ namespace Bud.Server.Controllers;
 [Produces("application/json")]
 public sealed class WorkspacesController(
     CreateWorkspace createWorkspace,
-    RenameWorkspace renameWorkspace,
+    PatchWorkspace patchWorkspace,
     DeleteWorkspace deleteWorkspace,
-    ViewWorkspaceDetails viewWorkspaceDetails,
+    GetWorkspaceById getWorkspaceById,
     ListWorkspaces listWorkspaces,
     ListWorkspaceTeams listWorkspaceTeams,
     IValidator<CreateWorkspaceRequest> createValidator,
-    IValidator<UpdateWorkspaceRequest> updateValidator) : ApiControllerBase
+    IValidator<PatchWorkspaceRequest> updateValidator) : ApiControllerBase
 {
     /// <summary>
     /// Cria um workspace.
@@ -54,13 +54,13 @@ public sealed class WorkspacesController(
     /// <response code="400">Payload inválido.</response>
     /// <response code="404">Workspace não encontrado.</response>
     /// <response code="403">Sem permissão para atualizar workspace.</response>
-    [HttpPut("{id:guid}")]
+    [HttpPatch("{id:guid}")]
     [Consumes("application/json")]
     [ProducesResponseType(typeof(Workspace), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status403Forbidden)]
     [ProducesResponseType(typeof(ValidationProblemDetails), StatusCodes.Status400BadRequest)]
-    public async Task<ActionResult<Workspace>> Update(Guid id, UpdateWorkspaceRequest request, CancellationToken cancellationToken)
+    public async Task<ActionResult<Workspace>> Update(Guid id, PatchWorkspaceRequest request, CancellationToken cancellationToken)
     {
         var validationResult = await updateValidator.ValidateAsync(request, cancellationToken);
         if (!validationResult.IsValid)
@@ -68,7 +68,7 @@ public sealed class WorkspacesController(
             return ValidationProblemFrom(validationResult);
         }
 
-        var result = await renameWorkspace.ExecuteAsync(User, id, request, cancellationToken);
+        var result = await patchWorkspace.ExecuteAsync(User, id, request, cancellationToken);
         return FromResultOk(result);
     }
 
@@ -98,7 +98,7 @@ public sealed class WorkspacesController(
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
     public async Task<ActionResult<Workspace>> GetById(Guid id, CancellationToken cancellationToken)
     {
-        var result = await viewWorkspaceDetails.ExecuteAsync(id, cancellationToken);
+        var result = await getWorkspaceById.ExecuteAsync(id, cancellationToken);
         return FromResultOk(result);
     }
 

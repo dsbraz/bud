@@ -90,7 +90,57 @@ public sealed class ApiClientTests
         _ = await client.GetMyDashboardAsync();
 
         handler.LastRequest.Should().NotBeNull();
-        handler.LastRequest!.RequestUri!.PathAndQuery.Should().Be("/api/dashboard/my-dashboard");
+        handler.LastRequest!.RequestUri!.PathAndQuery.Should().Be("/api/me/dashboard");
+    }
+
+    [Fact]
+    public async Task GetLeadersAsync_CallsLeadersEndpoint()
+    {
+        var handler = new CapturingHandler(_ =>
+            new HttpResponseMessage(HttpStatusCode.OK)
+            {
+                Content = new StringContent("[]", Encoding.UTF8, "application/json")
+            });
+        var client = CreateClient(handler);
+        var organizationId = Guid.NewGuid();
+
+        _ = await client.GetLeadersAsync(organizationId);
+
+        handler.LastRequest.Should().NotBeNull();
+        handler.LastRequest!.RequestUri!.PathAndQuery.Should().Be($"/api/collaborators/leaders?organizationId={organizationId}");
+    }
+
+    [Fact]
+    public async Task GetCollaboratorSummariesAsync_CallsCollaboratorOptionsEndpoint()
+    {
+        var handler = new CapturingHandler(_ =>
+            new HttpResponseMessage(HttpStatusCode.OK)
+            {
+                Content = new StringContent("[]", Encoding.UTF8, "application/json")
+            });
+        var client = CreateClient(handler);
+
+        _ = await client.GetCollaboratorSummariesAsync("ana");
+
+        handler.LastRequest.Should().NotBeNull();
+        handler.LastRequest!.RequestUri!.PathAndQuery.Should().Be("/api/collaborators/lookup?search=ana");
+    }
+
+    [Fact]
+    public async Task GetAvailableCollaboratorsForTeamAsync_CallsTeamAvailableCollaboratorsEndpoint()
+    {
+        var handler = new CapturingHandler(_ =>
+            new HttpResponseMessage(HttpStatusCode.OK)
+            {
+                Content = new StringContent("[]", Encoding.UTF8, "application/json")
+            });
+        var client = CreateClient(handler);
+        var teamId = Guid.NewGuid();
+
+        _ = await client.GetAvailableCollaboratorsForTeamAsync(teamId, "jo");
+
+        handler.LastRequest.Should().NotBeNull();
+        handler.LastRequest!.RequestUri!.PathAndQuery.Should().Be($"/api/teams/{teamId}/collaborators/eligible-for-assignment?search=jo");
     }
 
     [Fact]
@@ -99,10 +149,10 @@ public sealed class ApiClientTests
         var handler = CreateSuccessHandler();
         var client = CreateClient(handler);
 
-        _ = await client.GetMetricCheckinsAsync(null, null, 1, 1000);
+        _ = await client.GetMetricCheckinsAsync(Guid.NewGuid(), 1, 1000);
 
         handler.LastRequest.Should().NotBeNull();
-        handler.LastRequest!.RequestUri!.PathAndQuery.Should().Be("/api/metric-checkins?page=1&pageSize=100");
+        handler.LastRequest!.RequestUri!.PathAndQuery.Should().MatchRegex("^/api/metrics/.+/checkins\\?page=1&pageSize=100$");
     }
 
     [Fact]

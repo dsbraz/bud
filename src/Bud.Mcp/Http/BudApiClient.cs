@@ -35,51 +35,49 @@ public sealed class BudApiClient(HttpClient httpClient, BudApiSession session)
             ("page", page.ToString(CultureInfo.InvariantCulture)),
             ("pageSize", pageSize.ToString(CultureInfo.InvariantCulture))), cancellationToken);
 
-    public Task<Mission> UpdateMissionAsync(Guid id, UpdateMissionRequest request, CancellationToken cancellationToken = default)
-        => PutAsync<UpdateMissionRequest, Mission>($"/api/missions/{id}", request, cancellationToken);
+    public Task<Mission> UpdateMissionAsync(Guid id, PatchMissionRequest request, CancellationToken cancellationToken = default)
+        => PatchAsync<PatchMissionRequest, Mission>($"/api/missions/{id}", request, cancellationToken);
 
     public Task DeleteMissionAsync(Guid id, CancellationToken cancellationToken = default)
         => DeleteAsync($"/api/missions/{id}", cancellationToken);
 
-    public Task<MissionMetric> CreateMissionMetricAsync(CreateMissionMetricRequest request, CancellationToken cancellationToken = default)
-        => PostAsync<CreateMissionMetricRequest, MissionMetric>("/api/mission-metrics", request, cancellationToken);
+    public Task<Metric> CreateMissionMetricAsync(CreateMetricRequest request, CancellationToken cancellationToken = default)
+        => PostAsync<CreateMetricRequest, Metric>("/api/metrics", request, cancellationToken);
 
-    public Task<MissionMetric> GetMissionMetricAsync(Guid id, CancellationToken cancellationToken = default)
-        => GetAsync<MissionMetric>($"/api/mission-metrics/{id}", cancellationToken);
+    public Task<Metric> GetMissionMetricAsync(Guid id, CancellationToken cancellationToken = default)
+        => GetAsync<Metric>($"/api/metrics/{id}", cancellationToken);
 
-    public Task<PagedResult<MissionMetric>> ListMissionMetricsAsync(Guid? missionId, string? search, int page, int pageSize, CancellationToken cancellationToken = default)
-        => GetAsync<PagedResult<MissionMetric>>(BuildQueryPath(
-            "/api/mission-metrics",
+    public Task<PagedResult<Metric>> ListMissionMetricsAsync(Guid? missionId, string? search, int page, int pageSize, CancellationToken cancellationToken = default)
+        => GetAsync<PagedResult<Metric>>(BuildQueryPath(
+            "/api/metrics",
             ("missionId", missionId?.ToString()),
             ("search", search),
             ("page", page.ToString(CultureInfo.InvariantCulture)),
             ("pageSize", pageSize.ToString(CultureInfo.InvariantCulture))), cancellationToken);
 
-    public Task<MissionMetric> UpdateMissionMetricAsync(Guid id, UpdateMissionMetricRequest request, CancellationToken cancellationToken = default)
-        => PutAsync<UpdateMissionMetricRequest, MissionMetric>($"/api/mission-metrics/{id}", request, cancellationToken);
+    public Task<Metric> UpdateMissionMetricAsync(Guid id, PatchMetricRequest request, CancellationToken cancellationToken = default)
+        => PatchAsync<PatchMetricRequest, Metric>($"/api/metrics/{id}", request, cancellationToken);
 
     public Task DeleteMissionMetricAsync(Guid id, CancellationToken cancellationToken = default)
-        => DeleteAsync($"/api/mission-metrics/{id}", cancellationToken);
+        => DeleteAsync($"/api/metrics/{id}", cancellationToken);
 
-    public Task<MetricCheckin> CreateMetricCheckinAsync(CreateMetricCheckinRequest request, CancellationToken cancellationToken = default)
-        => PostAsync<CreateMetricCheckinRequest, MetricCheckin>("/api/metric-checkins", request, cancellationToken);
+    public Task<MetricCheckin> CreateMetricCheckinAsync(CreateCheckinRequest request, CancellationToken cancellationToken = default)
+        => PostAsync<CreateCheckinRequest, MetricCheckin>($"/api/metrics/{request.MetricId}/checkins", request, cancellationToken);
 
-    public Task<MetricCheckin> GetMetricCheckinAsync(Guid id, CancellationToken cancellationToken = default)
-        => GetAsync<MetricCheckin>($"/api/metric-checkins/{id}", cancellationToken);
+    public Task<MetricCheckin> GetMetricCheckinAsync(Guid metricId, Guid id, CancellationToken cancellationToken = default)
+        => GetAsync<MetricCheckin>($"/api/metrics/{metricId}/checkins/{id}", cancellationToken);
 
-    public Task<PagedResult<MetricCheckin>> ListMetricCheckinsAsync(Guid? missionMetricId, Guid? missionId, int page, int pageSize, CancellationToken cancellationToken = default)
+    public Task<PagedResult<MetricCheckin>> ListMetricCheckinsAsync(Guid metricId, int page, int pageSize, CancellationToken cancellationToken = default)
         => GetAsync<PagedResult<MetricCheckin>>(BuildQueryPath(
-            "/api/metric-checkins",
-            ("missionMetricId", missionMetricId?.ToString()),
-            ("missionId", missionId?.ToString()),
+            $"/api/metrics/{metricId}/checkins",
             ("page", page.ToString(CultureInfo.InvariantCulture)),
             ("pageSize", pageSize.ToString(CultureInfo.InvariantCulture))), cancellationToken);
 
-    public Task<MetricCheckin> UpdateMetricCheckinAsync(Guid id, UpdateMetricCheckinRequest request, CancellationToken cancellationToken = default)
-        => PutAsync<UpdateMetricCheckinRequest, MetricCheckin>($"/api/metric-checkins/{id}", request, cancellationToken);
+    public Task<MetricCheckin> UpdateMetricCheckinAsync(Guid metricId, Guid id, PatchCheckinRequest request, CancellationToken cancellationToken = default)
+        => PatchAsync<PatchCheckinRequest, MetricCheckin>($"/api/metrics/{metricId}/checkins/{id}", request, cancellationToken);
 
-    public Task DeleteMetricCheckinAsync(Guid id, CancellationToken cancellationToken = default)
-        => DeleteAsync($"/api/metric-checkins/{id}", cancellationToken);
+    public Task DeleteMetricCheckinAsync(Guid metricId, Guid id, CancellationToken cancellationToken = default)
+        => DeleteAsync($"/api/metrics/{metricId}/checkins/{id}", cancellationToken);
 
     private async Task<TResponse> GetAsync<TResponse>(string path, CancellationToken cancellationToken)
     {
@@ -96,9 +94,9 @@ public sealed class BudApiClient(HttpClient httpClient, BudApiSession session)
         return await ReadSuccessResponseOrThrowAsync<TResponse>(response, cancellationToken);
     }
 
-    private async Task<TResponse> PutAsync<TRequest, TResponse>(string path, TRequest payload, CancellationToken cancellationToken)
+    private async Task<TResponse> PatchAsync<TRequest, TResponse>(string path, TRequest payload, CancellationToken cancellationToken)
     {
-        using var request = _session.CreateDomainRequest(HttpMethod.Put, path);
+        using var request = _session.CreateDomainRequest(HttpMethod.Patch, path);
         request.Content = JsonContent.Create(payload, options: RequestJsonOptions);
         using var response = await _httpClient.SendAsync(request, cancellationToken);
         return await ReadSuccessResponseOrThrowAsync<TResponse>(response, cancellationToken);

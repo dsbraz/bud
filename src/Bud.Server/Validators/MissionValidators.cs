@@ -33,9 +33,9 @@ public sealed class CreateMissionValidator : AbstractValidator<CreateMissionRequ
     }
 }
 
-public sealed class UpdateMissionValidator : AbstractValidator<UpdateMissionRequest>
+public sealed class PatchMissionValidator : AbstractValidator<PatchMissionRequest>
 {
-    public UpdateMissionValidator()
+    public PatchMissionValidator()
     {
         RuleFor(x => x.Name)
             .NotEmpty().WithMessage("Nome é obrigatório.")
@@ -53,7 +53,7 @@ public sealed class UpdateMissionValidator : AbstractValidator<UpdateMissionRequ
     }
 }
 
-public sealed class CreateMissionMetricValidator : AbstractValidator<CreateMissionMetricRequest>
+public sealed class CreateMissionMetricValidator : AbstractValidator<CreateMetricRequest>
 {
     public CreateMissionMetricValidator()
     {
@@ -136,9 +136,9 @@ public sealed class CreateMissionMetricValidator : AbstractValidator<CreateMissi
     }
 }
 
-public sealed class UpdateMissionMetricValidator : AbstractValidator<UpdateMissionMetricRequest>
+public sealed class PatchMissionMetricValidator : AbstractValidator<PatchMetricRequest>
 {
-    public UpdateMissionMetricValidator()
+    public PatchMissionMetricValidator()
     {
         RuleFor(x => x.Name)
             .NotEmpty().WithMessage("Nome é obrigatório.")

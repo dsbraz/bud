@@ -158,13 +158,16 @@ public sealed class McpToolService(BudApiClient budApiClient, BudApiSession sess
             "mission_list" => await MissionListAsync(arguments, cancellationToken),
             "mission_update" => await MissionUpdateAsync(arguments, cancellationToken),
             "mission_delete" => await MissionDeleteAsync(arguments, cancellationToken),
-            "mission_metric_create" => Serialize(await _budApiClient.CreateMissionMetricAsync(Deserialize<CreateMissionMetricRequest>(arguments), cancellationToken)),
+            "mission_metric_create" => Serialize(await _budApiClient.CreateMissionMetricAsync(Deserialize<CreateMetricRequest>(arguments), cancellationToken)),
             "mission_metric_get" => Serialize(await _budApiClient.GetMissionMetricAsync(ParseId(arguments), cancellationToken)),
             "mission_metric_list" => await MissionMetricListAsync(arguments, cancellationToken),
             "mission_metric_update" => await MissionMetricUpdateAsync(arguments, cancellationToken),
             "mission_metric_delete" => await MissionMetricDeleteAsync(arguments, cancellationToken),
-            "metric_checkin_create" => Serialize(await _budApiClient.CreateMetricCheckinAsync(Deserialize<CreateMetricCheckinRequest>(arguments), cancellationToken)),
-            "metric_checkin_get" => Serialize(await _budApiClient.GetMetricCheckinAsync(ParseId(arguments), cancellationToken)),
+            "metric_checkin_create" => Serialize(await _budApiClient.CreateMetricCheckinAsync(Deserialize<CreateCheckinRequest>(arguments), cancellationToken)),
+            "metric_checkin_get" => Serialize(await _budApiClient.GetMetricCheckinAsync(
+                ParseGuid(arguments, "metricId"),
+                ParseGuid(arguments, "checkinId"),
+                cancellationToken)),
             "metric_checkin_list" => await MetricCheckinListAsync(arguments, cancellationToken),
             "metric_checkin_update" => await MetricCheckinUpdateAsync(arguments, cancellationToken),
             "metric_checkin_delete" => await MetricCheckinDeleteAsync(arguments, cancellationToken),
@@ -301,7 +304,7 @@ public sealed class McpToolService(BudApiClient budApiClient, BudApiSession sess
     private async Task<JsonNode> MissionUpdateAsync(JsonElement arguments, CancellationToken cancellationToken)
     {
         var id = ParseGuid(arguments, "id");
-        var payload = DeserializeFromProperty<UpdateMissionRequest>(arguments, "payload");
+        var payload = DeserializeFromProperty<PatchMissionRequest>(arguments, "payload");
         var result = await _budApiClient.UpdateMissionAsync(id, payload, cancellationToken);
         return Serialize(result);
     }
@@ -325,7 +328,7 @@ public sealed class McpToolService(BudApiClient budApiClient, BudApiSession sess
     private async Task<JsonNode> MissionMetricUpdateAsync(JsonElement arguments, CancellationToken cancellationToken)
     {
         var id = ParseGuid(arguments, "id");
-        var payload = DeserializeFromProperty<UpdateMissionMetricRequest>(arguments, "payload");
+        var payload = DeserializeFromProperty<PatchMetricRequest>(arguments, "payload");
         var result = await _budApiClient.UpdateMissionMetricAsync(id, payload, cancellationToken);
         return Serialize(result);
     }
@@ -338,25 +341,27 @@ public sealed class McpToolService(BudApiClient budApiClient, BudApiSession sess
 
     private async Task<JsonNode> MetricCheckinListAsync(JsonElement arguments, CancellationToken cancellationToken)
     {
-        var missionMetricId = TryParseGuid(arguments, "missionMetricId");
-        var missionId = TryParseGuid(arguments, "missionId");
+        var metricId = ParseGuid(arguments, "metricId");
         var page = TryGetInt(arguments, "page") ?? 1;
         var pageSize = TryGetInt(arguments, "pageSize") ?? 10;
-        var result = await _budApiClient.ListMetricCheckinsAsync(missionMetricId, missionId, page, pageSize, cancellationToken);
+        var result = await _budApiClient.ListMetricCheckinsAsync(metricId, page, pageSize, cancellationToken);
         return Serialize(result);
     }
 
     private async Task<JsonNode> MetricCheckinUpdateAsync(JsonElement arguments, CancellationToken cancellationToken)
     {
-        var id = ParseGuid(arguments, "id");
-        var payload = DeserializeFromProperty<UpdateMetricCheckinRequest>(arguments, "payload");
-        var result = await _budApiClient.UpdateMetricCheckinAsync(id, payload, cancellationToken);
+        var metricId = ParseGuid(arguments, "metricId");
+        var checkinId = ParseGuid(arguments, "checkinId");
+        var payload = DeserializeFromProperty<PatchCheckinRequest>(arguments, "payload");
+        var result = await _budApiClient.UpdateMetricCheckinAsync(metricId, checkinId, payload, cancellationToken);
         return Serialize(result);
     }
 
     private async Task<JsonObject> MetricCheckinDeleteAsync(JsonElement arguments, CancellationToken cancellationToken)
     {
-        await _budApiClient.DeleteMetricCheckinAsync(ParseId(arguments), cancellationToken);
+        var metricId = ParseGuid(arguments, "metricId");
+        var checkinId = ParseGuid(arguments, "checkinId");
+        await _budApiClient.DeleteMetricCheckinAsync(metricId, checkinId, cancellationToken);
         return new JsonObject { ["deleted"] = true };
     }
 

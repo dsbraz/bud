@@ -27,14 +27,13 @@ public sealed class ApplicationDbContext : DbContext
     public DbSet<Team> Teams => Set<Team>();
     public DbSet<Collaborator> Collaborators => Set<Collaborator>();
     public DbSet<Mission> Missions => Set<Mission>();
-    public DbSet<MissionMetric> MissionMetrics => Set<MissionMetric>();
+    public DbSet<Metric> MissionMetrics => Set<Metric>();
     public DbSet<CollaboratorTeam> CollaboratorTeams => Set<CollaboratorTeam>();
     public DbSet<MetricCheckin> MetricCheckins => Set<MetricCheckin>();
     public DbSet<MissionTemplate> MissionTemplates => Set<MissionTemplate>();
     public DbSet<MissionTemplateObjective> MissionTemplateObjectives => Set<MissionTemplateObjective>();
     public DbSet<MissionTemplateMetric> MissionTemplateMetrics => Set<MissionTemplateMetric>();
-    public DbSet<MissionObjective> MissionObjectives => Set<MissionObjective>();
-    public DbSet<ObjectiveDimension> ObjectiveDimensions => Set<ObjectiveDimension>();
+    public DbSet<Objective> MissionObjectives => Set<Objective>();
     public DbSet<CollaboratorAccessLog> CollaboratorAccessLogs => Set<CollaboratorAccessLog>();
     public DbSet<Notification> Notifications => Set<Notification>();
 
@@ -81,21 +80,14 @@ public sealed class ApplicationDbContext : DbContext
                 (_tenantId != null && m.OrganizationId == _tenantId)
             );
 
-        modelBuilder.Entity<MissionObjective>()
+        modelBuilder.Entity<Objective>()
             .HasQueryFilter(mo =>
                 !_applyTenantFilter ||
                 (_isGlobalAdmin && _tenantId == null) ||
                 (_tenantId != null && mo.OrganizationId == _tenantId)
             );
 
-        modelBuilder.Entity<ObjectiveDimension>()
-            .HasQueryFilter(od =>
-                !_applyTenantFilter ||
-                (_isGlobalAdmin && _tenantId == null) ||
-                (_tenantId != null && od.OrganizationId == _tenantId)
-            );
-
-        modelBuilder.Entity<MissionMetric>()
+        modelBuilder.Entity<Metric>()
             .HasQueryFilter(mm =>
                 !_applyTenantFilter ||
                 (_isGlobalAdmin && _tenantId == null) ||

@@ -1,9 +1,9 @@
-using Bud.Server.Application.Projections;
 using Bud.Server.Infrastructure.Querying;
 using Bud.Server.Infrastructure.Persistence;
-using Bud.Shared.Contracts;
 using Bud.Server.Domain.Model;
 using Microsoft.EntityFrameworkCore;
+
+using Bud.Shared.Contracts;
 
 namespace Bud.Server.Infrastructure.Repositories;
 
@@ -70,24 +70,18 @@ public sealed class TeamRepository(ApplicationDbContext dbContext) : ITeamReposi
         return new PagedResult<Collaborator> { Items = items, Total = total, Page = page, PageSize = pageSize };
     }
 
-    public async Task<List<CollaboratorSummary>> GetCollaboratorSummariesAsync(Guid teamId, CancellationToken ct = default)
+    public async Task<List<Collaborator>> GetCollaboratorSummariesAsync(Guid teamId, CancellationToken ct = default)
     {
         return await dbContext.CollaboratorTeams
             .AsNoTracking()
             .Where(ct2 => ct2.TeamId == teamId)
             .Include(ct2 => ct2.Collaborator)
-            .Select(ct2 => new CollaboratorSummary
-            {
-                Id = ct2.Collaborator.Id,
-                FullName = ct2.Collaborator.FullName,
-                Email = ct2.Collaborator.Email,
-                Role = ct2.Collaborator.Role
-            })
+            .Select(ct2 => ct2.Collaborator)
             .OrderBy(c => c.FullName)
             .ToListAsync(ct);
     }
 
-    public async Task<List<CollaboratorSummary>> GetAvailableCollaboratorsAsync(
+    public async Task<List<Collaborator>> GetAvailableCollaboratorsAsync(
         Guid teamId, Guid organizationId, string? search, int limit, CancellationToken ct = default)
     {
         var currentCollaboratorIds = await dbContext.CollaboratorTeams
@@ -106,13 +100,6 @@ public sealed class TeamRepository(ApplicationDbContext dbContext) : ITeamReposi
         }
 
         return await query
-            .Select(c => new CollaboratorSummary
-            {
-                Id = c.Id,
-                FullName = c.FullName,
-                Email = c.Email,
-                Role = c.Role
-            })
             .OrderBy(c => c.FullName)
             .Take(limit)
             .ToListAsync(ct);

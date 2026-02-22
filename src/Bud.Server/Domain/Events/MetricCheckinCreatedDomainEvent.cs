@@ -4,7 +4,7 @@ namespace Bud.Server.Domain.Events;
 
 public sealed record MetricCheckinCreatedDomainEvent(
     Guid CheckinId,
-    Guid MissionMetricId,
+    Guid MetricId,
     Guid OrganizationId,
     Guid? ExcludeCollaboratorId) : IDomainEvent
 {

@@ -8,7 +8,7 @@ using Xunit;
 
 namespace Bud.Server.Tests.Infrastructure.Repositories;
 
-public sealed class MetricCheckinRepositoryTests
+public sealed class MissionMetricCheckinPersistenceTests
 {
     private readonly TestTenantProvider _tenantProvider = new() { IsGlobalAdmin = true };
 
@@ -44,14 +44,14 @@ public sealed class MetricCheckinRepositoryTests
         return (org, mission);
     }
 
-    private static async Task<MissionMetric> CreateTestMetric(
+    private static async Task<Metric> CreateTestMetric(
         ApplicationDbContext context,
         Guid missionId,
         Guid organizationId,
         MetricType type,
         string name = "Test Metric")
     {
-        var metric = new MissionMetric
+        var metric = new Metric
         {
             Id = Guid.NewGuid(),
             OrganizationId = organizationId,
@@ -87,7 +87,7 @@ public sealed class MetricCheckinRepositoryTests
     }
 
     private static MetricCheckin CreateCheckin(
-        MissionMetric metric,
+        Metric metric,
         Guid collaboratorId,
         decimal? value = null,
         string? text = null,
@@ -112,7 +112,7 @@ public sealed class MetricCheckinRepositoryTests
     {
         // Arrange
         using var context = CreateInMemoryContext();
-        var repo = new MetricCheckinRepository(context);
+        var repo = new MetricRepository(context);
         var (org, mission) = await CreateTestMission(context);
         var metric = await CreateTestMetric(context, mission.Id, org.Id, MetricType.Quantitative);
         var collaborator = await CreateTestCollaborator(context, org.Id);
@@ -121,12 +121,12 @@ public sealed class MetricCheckinRepositoryTests
         await context.SaveChangesAsync();
 
         // Act
-        var result = await repo.GetByIdAsync(checkin.Id);
+        var result = await repo.GetCheckinByIdAsync(checkin.Id);
 
         // Assert
         result.Should().NotBeNull();
         result!.Id.Should().Be(checkin.Id);
-        result.MissionMetricId.Should().Be(metric.Id);
+        result.MetricId.Should().Be(metric.Id);
         result.CollaboratorId.Should().Be(collaborator.Id);
         result.Value.Should().Be(42.5m);
         result.Note.Should().Be("Weekly check-in");
@@ -138,10 +138,10 @@ public sealed class MetricCheckinRepositoryTests
     {
         // Arrange
         using var context = CreateInMemoryContext();
-        var repo = new MetricCheckinRepository(context);
+        var repo = new MetricRepository(context);
 
         // Act
-        var result = await repo.GetByIdAsync(Guid.NewGuid());
+        var result = await repo.GetCheckinByIdAsync(Guid.NewGuid());
 
         // Assert
         result.Should().BeNull();
@@ -156,7 +156,7 @@ public sealed class MetricCheckinRepositoryTests
     {
         // Arrange
         using var context = CreateInMemoryContext();
-        var repo = new MetricCheckinRepository(context);
+        var repo = new MetricRepository(context);
         var (org, mission) = await CreateTestMission(context);
         var metric1 = await CreateTestMetric(context, mission.Id, org.Id, MetricType.Quantitative, "Metric 1");
         var metric2 = await CreateTestMetric(context, mission.Id, org.Id, MetricType.Quantitative, "Metric 2");
@@ -168,12 +168,12 @@ public sealed class MetricCheckinRepositoryTests
         await context.SaveChangesAsync();
 
         // Act
-        var result = await repo.GetAllAsync(missionMetricId: metric1.Id, missionId: null, page: 1, pageSize: 10);
+        var result = await repo.GetCheckinsAsync(metricId: metric1.Id, missionId: null, page: 1, pageSize: 10);
 
         // Assert
         result.Total.Should().Be(2);
         result.Items.Should().HaveCount(2);
-        result.Items.Should().AllSatisfy(c => c.MissionMetricId.Should().Be(metric1.Id));
+        result.Items.Should().AllSatisfy(c => c.MetricId.Should().Be(metric1.Id));
     }
 
     [Fact]
@@ -181,7 +181,7 @@ public sealed class MetricCheckinRepositoryTests
     {
         // Arrange
         using var context = CreateInMemoryContext();
-        var repo = new MetricCheckinRepository(context);
+        var repo = new MetricRepository(context);
         var (org, mission1) = await CreateTestMission(context);
 
         var mission2 = new Mission
@@ -205,12 +205,12 @@ public sealed class MetricCheckinRepositoryTests
         await context.SaveChangesAsync();
 
         // Act
-        var result = await repo.GetAllAsync(missionMetricId: null, missionId: mission1.Id, page: 1, pageSize: 10);
+        var result = await repo.GetCheckinsAsync(metricId: null, missionId: mission1.Id, page: 1, pageSize: 10);
 
         // Assert
         result.Total.Should().Be(1);
         result.Items.Should().HaveCount(1);
-        result.Items[0].MissionMetricId.Should().Be(metric1.Id);
+        result.Items[0].MetricId.Should().Be(metric1.Id);
     }
 
     [Fact]
@@ -218,7 +218,7 @@ public sealed class MetricCheckinRepositoryTests
     {
         // Arrange
         using var context = CreateInMemoryContext();
-        var repo = new MetricCheckinRepository(context);
+        var repo = new MetricRepository(context);
         var (org, mission) = await CreateTestMission(context);
         var metric = await CreateTestMetric(context, mission.Id, org.Id, MetricType.Quantitative);
         var collaborator = await CreateTestCollaborator(context, org.Id);
@@ -233,7 +233,7 @@ public sealed class MetricCheckinRepositoryTests
         await context.SaveChangesAsync();
 
         // Act
-        var result = await repo.GetAllAsync(missionMetricId: metric.Id, missionId: null, page: 1, pageSize: 10);
+        var result = await repo.GetCheckinsAsync(metricId: metric.Id, missionId: null, page: 1, pageSize: 10);
 
         // Assert
         result.Items.Should().HaveCount(3);
@@ -247,7 +247,7 @@ public sealed class MetricCheckinRepositoryTests
     {
         // Arrange
         using var context = CreateInMemoryContext();
-        var repo = new MetricCheckinRepository(context);
+        var repo = new MetricRepository(context);
         var (org, mission) = await CreateTestMission(context);
         var metric = await CreateTestMetric(context, mission.Id, org.Id, MetricType.Quantitative);
         var collaborator = await CreateTestCollaborator(context, org.Id);
@@ -260,7 +260,7 @@ public sealed class MetricCheckinRepositoryTests
         await context.SaveChangesAsync();
 
         // Act
-        var result = await repo.GetAllAsync(missionMetricId: null, missionId: null, page: 1, pageSize: 2);
+        var result = await repo.GetCheckinsAsync(metricId: null, missionId: null, page: 1, pageSize: 2);
 
         // Assert
         result.Total.Should().Be(5);
@@ -278,7 +278,7 @@ public sealed class MetricCheckinRepositoryTests
     {
         // Arrange
         using var context = CreateInMemoryContext();
-        var repo = new MetricCheckinRepository(context);
+        var repo = new MetricRepository(context);
         var (org, mission) = await CreateTestMission(context);
         var metric = await CreateTestMetric(context, mission.Id, org.Id, MetricType.Quantitative);
 
@@ -297,7 +297,7 @@ public sealed class MetricCheckinRepositoryTests
     {
         // Arrange
         using var context = CreateInMemoryContext();
-        var repo = new MetricCheckinRepository(context);
+        var repo = new MetricRepository(context);
 
         // Act
         var result = await repo.GetMetricWithMissionAsync(Guid.NewGuid());
@@ -315,12 +315,12 @@ public sealed class MetricCheckinRepositoryTests
     {
         // Arrange
         using var context = CreateInMemoryContext();
-        var repo = new MetricCheckinRepository(context);
+        var repo = new MetricRepository(context);
         var (org, mission) = await CreateTestMission(context);
         var metric = await CreateTestMetric(context, mission.Id, org.Id, MetricType.Quantitative);
 
         // Act
-        var result = await repo.GetMetricByIdAsync(metric.Id);
+        var result = await repo.GetByIdAsync(metric.Id);
 
         // Assert
         result.Should().NotBeNull();
@@ -332,10 +332,10 @@ public sealed class MetricCheckinRepositoryTests
     {
         // Arrange
         using var context = CreateInMemoryContext();
-        var repo = new MetricCheckinRepository(context);
+        var repo = new MetricRepository(context);
 
         // Act
-        var result = await repo.GetMetricByIdAsync(Guid.NewGuid());
+        var result = await repo.GetByIdAsync(Guid.NewGuid());
 
         // Assert
         result.Should().BeNull();
@@ -350,14 +350,14 @@ public sealed class MetricCheckinRepositoryTests
     {
         // Arrange
         using var context = CreateInMemoryContext();
-        var repo = new MetricCheckinRepository(context);
+        var repo = new MetricRepository(context);
         var (org, mission) = await CreateTestMission(context);
         var metric = await CreateTestMetric(context, mission.Id, org.Id, MetricType.Quantitative);
         var collaborator = await CreateTestCollaborator(context, org.Id);
         var checkin = CreateCheckin(metric, collaborator.Id, value: 42.5m);
 
         // Act
-        await repo.AddAsync(checkin);
+        await repo.AddCheckinAsync(checkin);
         await repo.SaveChangesAsync();
 
         // Assert
@@ -371,7 +371,7 @@ public sealed class MetricCheckinRepositoryTests
     {
         // Arrange
         using var context = CreateInMemoryContext();
-        var repo = new MetricCheckinRepository(context);
+        var repo = new MetricRepository(context);
         var (org, mission) = await CreateTestMission(context);
         var metric = await CreateTestMetric(context, mission.Id, org.Id, MetricType.Quantitative);
         var collaborator = await CreateTestCollaborator(context, org.Id);
@@ -383,7 +383,7 @@ public sealed class MetricCheckinRepositoryTests
         var tracked = await context.MetricCheckins.FirstAsync(c => c.Id == checkin.Id);
 
         // Act
-        await repo.RemoveAsync(tracked);
+        await repo.RemoveCheckinAsync(tracked);
         await repo.SaveChangesAsync();
 
         // Assert

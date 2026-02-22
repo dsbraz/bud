@@ -170,7 +170,7 @@ namespace Bud.Server.Infrastructure.Persistence.Migrations
                     Name = table.Column<string>(type: "character varying(200)", maxLength: 200, nullable: false),
                     Description = table.Column<string>(type: "character varying(1000)", maxLength: 1000, nullable: true),
                     OrderIndex = table.Column<int>(type: "integer", nullable: false),
-                    ObjectiveDimensionId = table.Column<Guid>(type: "uuid", nullable: true)
+                    Dimension = table.Column<Guid>(type: "uuid", nullable: true)
                 },
                 constraints: table =>
                 {
@@ -183,7 +183,7 @@ namespace Bud.Server.Infrastructure.Persistence.Migrations
                         onDelete: ReferentialAction.Cascade);
                     table.ForeignKey(
                         name: "FK_MissionTemplateObjectives_ObjectiveDimensions_ObjectiveDime~",
-                        column: x => x.ObjectiveDimensionId,
+                        column: x => x.Dimension,
                         principalTable: "ObjectiveDimensions",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Restrict);
@@ -353,7 +353,7 @@ namespace Bud.Server.Infrastructure.Persistence.Migrations
                     MissionId = table.Column<Guid>(type: "uuid", nullable: false),
                     Name = table.Column<string>(type: "character varying(200)", maxLength: 200, nullable: false),
                     Description = table.Column<string>(type: "character varying(1000)", maxLength: 1000, nullable: true),
-                    ObjectiveDimensionId = table.Column<Guid>(type: "uuid", nullable: true)
+                    Dimension = table.Column<Guid>(type: "uuid", nullable: true)
                 },
                 constraints: table =>
                 {
@@ -366,7 +366,7 @@ namespace Bud.Server.Infrastructure.Persistence.Migrations
                         onDelete: ReferentialAction.Cascade);
                     table.ForeignKey(
                         name: "FK_MissionObjectives_ObjectiveDimensions_ObjectiveDimensionId",
-                        column: x => x.ObjectiveDimensionId,
+                        column: x => x.Dimension,
                         principalTable: "ObjectiveDimensions",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Restrict);
@@ -385,7 +385,7 @@ namespace Bud.Server.Infrastructure.Persistence.Migrations
                     Id = table.Column<Guid>(type: "uuid", nullable: false),
                     OrganizationId = table.Column<Guid>(type: "uuid", nullable: false),
                     MissionId = table.Column<Guid>(type: "uuid", nullable: false),
-                    MissionObjectiveId = table.Column<Guid>(type: "uuid", nullable: true),
+                    ObjectiveId = table.Column<Guid>(type: "uuid", nullable: true),
                     Name = table.Column<string>(type: "character varying(200)", maxLength: 200, nullable: false),
                     Type = table.Column<int>(type: "integer", nullable: false),
                     QuantitativeType = table.Column<int>(type: "integer", nullable: true),
@@ -399,7 +399,7 @@ namespace Bud.Server.Infrastructure.Persistence.Migrations
                     table.PrimaryKey("PK_MissionMetrics", x => x.Id);
                     table.ForeignKey(
                         name: "FK_MissionMetrics_MissionObjectives_MissionObjectiveId",
-                        column: x => x.MissionObjectiveId,
+                        column: x => x.ObjectiveId,
                         principalTable: "MissionObjectives",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
@@ -423,7 +423,7 @@ namespace Bud.Server.Infrastructure.Persistence.Migrations
                 {
                     Id = table.Column<Guid>(type: "uuid", nullable: false),
                     OrganizationId = table.Column<Guid>(type: "uuid", nullable: false),
-                    MissionMetricId = table.Column<Guid>(type: "uuid", nullable: false),
+                    MetricId = table.Column<Guid>(type: "uuid", nullable: false),
                     CollaboratorId = table.Column<Guid>(type: "uuid", nullable: false),
                     Value = table.Column<decimal>(type: "numeric", nullable: true),
                     Text = table.Column<string>(type: "character varying(1000)", maxLength: 1000, nullable: true),
@@ -442,7 +442,7 @@ namespace Bud.Server.Infrastructure.Persistence.Migrations
                         onDelete: ReferentialAction.Restrict);
                     table.ForeignKey(
                         name: "FK_MetricCheckins_MissionMetrics_MissionMetricId",
-                        column: x => x.MissionMetricId,
+                        column: x => x.MetricId,
                         principalTable: "MissionMetrics",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
@@ -503,7 +503,7 @@ namespace Bud.Server.Infrastructure.Persistence.Migrations
             migrationBuilder.CreateIndex(
                 name: "IX_MetricCheckins_MissionMetricId",
                 table: "MetricCheckins",
-                column: "MissionMetricId");
+                column: "MetricId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_MetricCheckins_OrganizationId",
@@ -518,7 +518,7 @@ namespace Bud.Server.Infrastructure.Persistence.Migrations
             migrationBuilder.CreateIndex(
                 name: "IX_MissionMetrics_MissionObjectiveId",
                 table: "MissionMetrics",
-                column: "MissionObjectiveId");
+                column: "ObjectiveId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_MissionMetrics_OrganizationId",
@@ -533,7 +533,7 @@ namespace Bud.Server.Infrastructure.Persistence.Migrations
             migrationBuilder.CreateIndex(
                 name: "IX_MissionObjectives_ObjectiveDimensionId",
                 table: "MissionObjectives",
-                column: "ObjectiveDimensionId");
+                column: "Dimension");
 
             migrationBuilder.CreateIndex(
                 name: "IX_MissionObjectives_OrganizationId",
@@ -583,7 +583,7 @@ namespace Bud.Server.Infrastructure.Persistence.Migrations
             migrationBuilder.CreateIndex(
                 name: "IX_MissionTemplateObjectives_ObjectiveDimensionId",
                 table: "MissionTemplateObjectives",
-                column: "ObjectiveDimensionId");
+                column: "Dimension");
 
             migrationBuilder.CreateIndex(
                 name: "IX_MissionTemplateObjectives_OrganizationId",

@@ -86,17 +86,16 @@
             }
             else
             {
-                var directMetrics = Metrics.Where(m => m.MissionObjectiveId is null).ToList();
+                var directMetrics = Metrics.Where(m => m.ObjectiveId is null).ToList();
 
                 @* Seção de Objetivos *@
                 if (Objectives != null && Objectives.Count > 0)
                 {
                     foreach (var objective in Objectives)
                     {
-                        var objMetrics = Metrics.Where(m => m.MissionObjectiveId == objective.Id).ToList();
+                        var objMetrics = Metrics.Where(m => m.ObjectiveId == objective.Id).ToList();
                         <MissionObjectiveSection Mission="Mission"
                                                  Objective="objective"
-                                                 ObjectiveDimensions="ObjectiveDimensions"
                                                  ObjectiveProgress="@(ObjectiveProgressCache.GetValueOrDefault(objective.Id))"
                                                  MissionProgress="Progress"
                                                  ObjectiveMetrics="objMetrics"
@@ -140,9 +139,8 @@
     [Parameter] public MissionProgressDto? Progress { get; set; }
     [Parameter] public bool IsExpanded { get; set; }
     [Parameter] public bool IsDeleting { get; set; }
-    [Parameter] public List<MissionMetric>? Metrics { get; set; }
-    [Parameter] public List<MissionObjective>? Objectives { get; set; }
-    [Parameter] public List<ObjectiveDimension> ObjectiveDimensions { get; set; } = [];
+    [Parameter] public List<Metric>? Metrics { get; set; }
+    [Parameter] public List<Objective>? Objectives { get; set; }
     [Parameter] public Dictionary<Guid, MetricProgressDto> MetricProgressCache { get; set; } = new();
     [Parameter] public Dictionary<Guid, ObjectiveProgressDto> ObjectiveProgressCache { get; set; } = new();
     [Parameter] public HashSet<Guid> ExpandedObjectives { get; set; } = new();
@@ -150,6 +148,6 @@
     [Parameter] public EventCallback OnEdit { get; set; }
     [Parameter] public EventCallback OnDeleteClick { get; set; }
     [Parameter] public EventCallback<Guid> OnToggleObjectiveExpand { get; set; }
-    [Parameter] public EventCallback<MissionMetric> OnCheckinClick { get; set; }
-    [Parameter] public EventCallback<MissionMetric> OnHistoryClick { get; set; }
+    [Parameter] public EventCallback<Metric> OnCheckinClick { get; set; }
+    [Parameter] public EventCallback<Metric> OnHistoryClick { get; set; }
 }

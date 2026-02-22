@@ -1,6 +1,6 @@
 namespace Bud.Server.Domain.Model;
 
-public sealed class Notification : ITenantEntity
+public sealed class Notification : ITenantEntity, IAggregateRoot
 {
     public Guid Id { get; set; }
     public Guid RecipientCollaboratorId { get; set; }

@@ -66,7 +66,7 @@ public sealed class CreateMissionTemplateRequest
     public List<MissionTemplateMetricDto> Metrics { get; set; } = [];
 }
 
-public sealed class CreateMissionObjectiveRequest
+public sealed class CreateObjectiveRequest
 {
     /// <summary>Identificador da missão.</summary>
     public Guid MissionId { get; set; }
@@ -75,21 +75,15 @@ public sealed class CreateMissionObjectiveRequest
     /// <summary>Descrição opcional do objetivo.</summary>
     public string? Description { get; set; }
     /// <summary>Identificador opcional da dimensão do objetivo.</summary>
-    public Guid? ObjectiveDimensionId { get; set; }
+    public string? Dimension { get; set; }
 }
 
-public sealed class CreateObjectiveDimensionRequest
-{
-    /// <summary>Nome da dimensão do objetivo.</summary>
-    public string Name { get; set; } = string.Empty;
-}
-
-public sealed class CreateMissionMetricRequest
+public sealed class CreateMetricRequest
 {
     /// <summary>Identificador da missão.</summary>
     public Guid MissionId { get; set; }
     /// <summary>Identificador opcional do objetivo (null = métrica direta da missão).</summary>
-    public Guid? MissionObjectiveId { get; set; }
+    public Guid? ObjectiveId { get; set; }
     /// <summary>Nome da métrica.</summary>
     public string Name { get; set; } = string.Empty;
     /// <summary>Tipo da métrica (quantitativa ou qualitativa).</summary>

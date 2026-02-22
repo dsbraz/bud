@@ -44,14 +44,9 @@ public sealed class MissionTemplatesPageTests : TestContext
         {
             var path = request.RequestUri!.PathAndQuery;
 
-            if (path.StartsWith("/api/mission-templates", StringComparison.Ordinal))
+            if (path.StartsWith("/api/templates", StringComparison.Ordinal))
             {
                 return Json("""{"items":[],"total":0,"page":1,"pageSize":20}""");
-            }
-
-            if (path.StartsWith("/api/objective-dimensions", StringComparison.Ordinal))
-            {
-                return Json("""{"items":[],"total":0,"page":1,"pageSize":200}""");
             }
 
             return Json("[]");

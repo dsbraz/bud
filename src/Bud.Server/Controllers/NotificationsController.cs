@@ -15,9 +15,8 @@ namespace Bud.Server.Controllers;
 [Produces("application/json")]
 public sealed class NotificationsController(
     ListNotifications listNotifications,
-    GetUnreadNotificationCount getUnreadNotificationCount,
-    MarkNotificationAsRead markNotificationAsRead,
-    MarkAllNotificationsAsRead markAllNotificationsAsRead) : ApiControllerBase
+    PatchNotification patchNotification,
+    PatchNotifications patchNotifications) : ApiControllerBase
 {
     /// <summary>
     /// Lista notificações do colaborador autenticado com paginação.
@@ -30,6 +29,7 @@ public sealed class NotificationsController(
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status403Forbidden)]
     public async Task<ActionResult<PagedResult<NotificationDto>>> GetAll(
+        [FromQuery] bool? isRead,
         [FromQuery] int page = 1,
         [FromQuery] int pageSize = 20,
         CancellationToken cancellationToken = default)
@@ -40,22 +40,8 @@ public sealed class NotificationsController(
             return paginationValidation;
         }
 
-        var result = await listNotifications.ExecuteAsync(page, pageSize, cancellationToken);
+        var result = await listNotifications.ExecuteAsync(isRead, page, pageSize, cancellationToken);
         return FromResultOk(result);
-    }
-
-    /// <summary>
-    /// Retorna a contagem de notificações não lidas do colaborador autenticado.
-    /// </summary>
-    /// <response code="200">Contagem retornada com sucesso.</response>
-    /// <response code="403">Colaborador não identificado.</response>
-    [HttpGet("unread-count")]
-    [ProducesResponseType(typeof(UnreadCountResponse), StatusCodes.Status200OK)]
-    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status403Forbidden)]
-    public async Task<ActionResult<UnreadCountResponse>> GetUnreadCount(CancellationToken cancellationToken)
-    {
-        var result = await getUnreadNotificationCount.ExecuteAsync(cancellationToken);
-        return FromResultOk(result, count => new UnreadCountResponse { Count = count });
     }
 
     /// <summary>
@@ -64,13 +50,13 @@ public sealed class NotificationsController(
     /// <response code="204">Notificação marcada como lida.</response>
     /// <response code="403">Sem permissão para marcar esta notificação.</response>
     /// <response code="404">Notificação não encontrada.</response>
-    [HttpPut("{id:guid}/read")]
+    [HttpPatch("{id:guid}")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status403Forbidden)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> MarkAsRead(Guid id, CancellationToken cancellationToken)
     {
-        var result = await markNotificationAsRead.ExecuteAsync(id, cancellationToken);
+        var result = await patchNotification.ExecuteAsync(id, cancellationToken);
         return FromResult(result, NoContent);
     }
 
@@ -79,12 +65,12 @@ public sealed class NotificationsController(
     /// </summary>
     /// <response code="204">Todas as notificações marcadas como lidas.</response>
     /// <response code="403">Colaborador não identificado.</response>
-    [HttpPut("read-all")]
+    [HttpPatch]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status403Forbidden)]
     public async Task<IActionResult> MarkAllAsRead(CancellationToken cancellationToken)
     {
-        var result = await markAllNotificationsAsRead.ExecuteAsync(cancellationToken);
+        var result = await patchNotifications.ExecuteAsync(cancellationToken);
         return FromResult(result, NoContent);
     }
 }

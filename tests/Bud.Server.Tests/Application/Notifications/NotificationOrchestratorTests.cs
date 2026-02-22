@@ -1,6 +1,6 @@
 using Bud.Server.Domain.Repositories;
-using Bud.Server.Infrastructure.Services;
-using Bud.Server.Application.Notifications;
+using Bud.Server.Application.Ports;
+using Bud.Server.Application.DomainEvents.Notifications;
 using Bud.Server.Domain.Model;
 using FluentAssertions;
 using Moq;

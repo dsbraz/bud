@@ -85,7 +85,7 @@
 
 @code {
     [Parameter] public bool IsOpen { get; set; }
-    [Parameter] public MissionMetric? Metric { get; set; }
+    [Parameter] public Metric? Metric { get; set; }
     [Parameter] public List<MetricCheckin> Checkins { get; set; } = [];
     [Parameter] public bool IsLoading { get; set; }
     [Parameter] public EventCallback OnClose { get; set; }

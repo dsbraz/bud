@@ -23,7 +23,7 @@ public sealed class BudApiSessionTests
     {
         var handler = new StubHttpMessageHandler(request =>
         {
-            if (request.RequestUri!.AbsolutePath == "/api/auth/login")
+            if (request.RequestUri!.AbsolutePath == "/api/sessions")
             {
                 return JsonResponse(new AuthLoginResponse
                 {
@@ -55,7 +55,7 @@ public sealed class BudApiSessionTests
     {
         var handler = new StubHttpMessageHandler(request =>
         {
-            if (request.RequestUri!.AbsolutePath == "/api/auth/login")
+            if (request.RequestUri!.AbsolutePath == "/api/sessions")
             {
                 return JsonResponse(new AuthLoginResponse
                 {
@@ -81,11 +81,11 @@ public sealed class BudApiSessionTests
     }
 
     [Fact]
-    public async Task ListAvailableTenantsAsync_AddsXUserEmailHeader()
+    public async Task ListAvailableTenantsAsync_AddsAuthorizationHeader()
     {
         var handler = new StubHttpMessageHandler(request =>
         {
-            if (request.RequestUri!.AbsolutePath == "/api/auth/login")
+            if (request.RequestUri!.AbsolutePath == "/api/sessions")
             {
                 return JsonResponse(new AuthLoginResponse
                 {
@@ -95,10 +95,11 @@ public sealed class BudApiSessionTests
                 });
             }
 
-            if (request.RequestUri.AbsolutePath == "/api/auth/my-organizations")
+            if (request.RequestUri.AbsolutePath == "/api/me/organizations")
             {
-                request.Headers.TryGetValues("X-User-Email", out var values).Should().BeTrue();
-                values!.Single().Should().Be("user@getbud.co");
+                request.Headers.Authorization.Should().NotBeNull();
+                request.Headers.Authorization!.Scheme.Should().Be("Bearer");
+                request.Headers.Authorization.Parameter.Should().Be("jwt-token");
 
                 return JsonResponse(new List<OrganizationSummaryDto>
                 {
@@ -127,7 +128,7 @@ public sealed class BudApiSessionTests
 
         var handler = new StubHttpMessageHandler(request =>
         {
-            if (request.RequestUri!.AbsolutePath == "/api/auth/login")
+            if (request.RequestUri!.AbsolutePath == "/api/sessions")
             {
                 return JsonResponse(new AuthLoginResponse
                 {
@@ -137,7 +138,7 @@ public sealed class BudApiSessionTests
                 });
             }
 
-            if (request.RequestUri.AbsolutePath == "/api/auth/my-organizations")
+            if (request.RequestUri.AbsolutePath == "/api/me/organizations")
             {
                 return JsonResponse(new List<OrganizationSummaryDto>
                 {

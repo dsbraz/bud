@@ -5,4 +5,4 @@ public readonly record struct MissionTemplateObjectiveDraft(
     string Name,
     string? Description,
     int OrderIndex,
-    Guid? ObjectiveDimensionId);
+    string? Dimension);

@@ -21,7 +21,7 @@ public sealed class OrganizationReadUseCasesTests
         _orgRepo.Setup(r => r.GetByIdAsync(orgId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(new Organization { Id = orgId, Name = "Bud" });
 
-        var useCase = new ViewOrganizationDetails(_orgRepo.Object);
+        var useCase = new GetOrganizationById(_orgRepo.Object);
 
         // Act
         var result = await useCase.ExecuteAsync(orgId);
@@ -38,7 +38,7 @@ public sealed class OrganizationReadUseCasesTests
         _orgRepo.Setup(r => r.GetByIdAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync((Organization?)null);
 
-        var useCase = new ViewOrganizationDetails(_orgRepo.Object);
+        var useCase = new GetOrganizationById(_orgRepo.Object);
 
         // Act
         var result = await useCase.ExecuteAsync(Guid.NewGuid());

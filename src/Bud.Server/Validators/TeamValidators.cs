@@ -19,9 +19,9 @@ public sealed class CreateTeamValidator : AbstractValidator<CreateTeamRequest>
     }
 }
 
-public sealed class UpdateTeamValidator : AbstractValidator<UpdateTeamRequest>
+public sealed class PatchTeamValidator : AbstractValidator<PatchTeamRequest>
 {
-    public UpdateTeamValidator()
+    public PatchTeamValidator()
     {
         RuleFor(x => x.Name)
             .NotEmpty().WithMessage("Nome é obrigatório.")

@@ -170,7 +170,7 @@
 @if (isEditModalOpen)
 {
     <Modal Title="Editar equipe" Size="lg" OnClose="CloseEditModal">
-        <EditForm Model="@editTeam" OnValidSubmit="UpdateTeam">
+        <EditForm Model="@editTeam" OnValidSubmit="PatchTeam">
             <DataAnnotationsValidator />
             <div class="form-row">
                 <label>Nome</label>
@@ -237,4 +237,3 @@
         </ChildContent>
     </Modal>
 }
-

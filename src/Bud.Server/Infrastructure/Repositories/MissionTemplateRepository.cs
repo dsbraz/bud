@@ -1,8 +1,9 @@
 using Bud.Server.Infrastructure.Querying;
 using Bud.Server.Infrastructure.Persistence;
-using Bud.Shared.Contracts;
 using Bud.Server.Domain.Model;
 using Microsoft.EntityFrameworkCore;
+
+using Bud.Shared.Contracts;
 
 namespace Bud.Server.Infrastructure.Repositories;
 

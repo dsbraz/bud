@@ -59,62 +59,20 @@ public static class DbSeeder
             await context.SaveChangesAsync();
         }
 
-        var dimensionsByName = await SeedObjectiveDimensionsAsync(context, budOrg.Id);
-        await SeedMissionTemplatesAsync(context, budOrg.Id, dimensionsByName);
-    }
-
-    private static async Task<Dictionary<string, Guid>> SeedObjectiveDimensionsAsync(ApplicationDbContext context, Guid organizationId)
-    {
-        var defaultDimensions = new[]
-        {
-            "Financeira",
-            "Clientes",
-            "Produtos",
-            "Processos Internos",
-            "Aprendizado e Crescimento"
-        };
-
-        var existingDimensions = await context.ObjectiveDimensions
-            .IgnoreQueryFilters()
-            .Where(d => d.OrganizationId == organizationId)
-            .ToListAsync();
-
-        var existingByName = existingDimensions.ToDictionary(d => d.Name, d => d.Id);
-        var missingNames = defaultDimensions.Where(name => !existingByName.ContainsKey(name)).ToList();
-
-        foreach (var dimensionName in missingNames)
-        {
-            var dimension = new ObjectiveDimension
-            {
-                Id = Guid.NewGuid(),
-                OrganizationId = organizationId,
-                Name = dimensionName
-            };
-
-            context.ObjectiveDimensions.Add(dimension);
-            existingByName[dimensionName] = dimension.Id;
-        }
-
-        if (missingNames.Count > 0)
-        {
-            await context.SaveChangesAsync();
-        }
-
-        return existingByName;
+        await SeedMissionTemplatesAsync(context, budOrg.Id);
     }
 
     private static async Task SeedMissionTemplatesAsync(
         ApplicationDbContext context,
-        Guid organizationId,
-        IReadOnlyDictionary<string, Guid> dimensionsByName)
+        Guid organizationId)
     {
         var templates = new List<MissionTemplate>
         {
-            BuildBscTemplate(organizationId, dimensionsByName),
-            BuildStrategicMapTemplate(organizationId, dimensionsByName),
-            BuildAnnualStrategicPlanningTemplate(organizationId, dimensionsByName),
-            BuildOkrTemplate(organizationId, dimensionsByName),
-            BuildPdiTemplate(organizationId, dimensionsByName)
+            BuildBscTemplate(organizationId),
+            BuildStrategicMapTemplate(organizationId),
+            BuildAnnualStrategicPlanningTemplate(organizationId),
+            BuildOkrTemplate(organizationId),
+            BuildPdiTemplate(organizationId)
         };
 
         var existingTemplateNames = await context.MissionTemplates
@@ -134,7 +92,7 @@ public static class DbSeeder
         }
     }
 
-    private static MissionTemplate BuildBscTemplate(Guid organizationId, IReadOnlyDictionary<string, Guid> dimensionsByName)
+    private static MissionTemplate BuildBscTemplate(Guid organizationId)
     {
         var financeiraObjectiveId = Guid.NewGuid();
         var clientesObjectiveId = Guid.NewGuid();
@@ -158,7 +116,7 @@ public static class DbSeeder
                     Name = "Perspectiva Financeira",
                     Description = "Objetivos de desempenho econômico e sustentabilidade financeira.",
                     OrderIndex = 0,
-                    ObjectiveDimensionId = dimensionsByName["Financeira"]
+                    Dimension = "Financeira"
                 },
                 new MissionTemplateObjective
                 {
@@ -167,7 +125,7 @@ public static class DbSeeder
                     Name = "Perspectiva de Clientes",
                     Description = "Objetivos relacionados à proposta de valor e satisfação do cliente.",
                     OrderIndex = 1,
-                    ObjectiveDimensionId = dimensionsByName["Clientes"]
+                    Dimension = "Clientes"
                 },
                 new MissionTemplateObjective
                 {
@@ -176,7 +134,7 @@ public static class DbSeeder
                     Name = "Perspectiva de Processos Internos",
                     Description = "Objetivos de eficiência e excelência operacional.",
                     OrderIndex = 2,
-                    ObjectiveDimensionId = dimensionsByName["Processos Internos"]
+                    Dimension = "Processos Internos"
                 },
                 new MissionTemplateObjective
                 {
@@ -185,7 +143,7 @@ public static class DbSeeder
                     Name = "Perspectiva de Aprendizado e Crescimento",
                     Description = "Objetivos de capacidade organizacional, pessoas e inovação.",
                     OrderIndex = 3,
-                    ObjectiveDimensionId = dimensionsByName["Aprendizado e Crescimento"]
+                    Dimension = "Aprendizado e Crescimento"
                 }
             ],
             Metrics =
@@ -243,7 +201,7 @@ public static class DbSeeder
         };
     }
 
-    private static MissionTemplate BuildStrategicMapTemplate(Guid organizationId, IReadOnlyDictionary<string, Guid> dimensionsByName)
+    private static MissionTemplate BuildStrategicMapTemplate(Guid organizationId)
     {
         var crescimentoObjectiveId = Guid.NewGuid();
         var processosObjectiveId = Guid.NewGuid();
@@ -267,7 +225,7 @@ public static class DbSeeder
                     Name = "Capacidades Organizacionais",
                     Description = "Base de pessoas, cultura e inovação que viabiliza a estratégia.",
                     OrderIndex = 0,
-                    ObjectiveDimensionId = dimensionsByName["Aprendizado e Crescimento"]
+                    Dimension = "Aprendizado e Crescimento"
                 },
                 new MissionTemplateObjective
                 {
@@ -276,7 +234,7 @@ public static class DbSeeder
                     Name = "Excelência de Processos",
                     Description = "Processos críticos para entregar valor com previsibilidade.",
                     OrderIndex = 1,
-                    ObjectiveDimensionId = dimensionsByName["Processos Internos"]
+                    Dimension = "Processos Internos"
                 },
                 new MissionTemplateObjective
                 {
@@ -285,7 +243,7 @@ public static class DbSeeder
                     Name = "Valor para Clientes",
                     Description = "Resultados percebidos pelos clientes e posicionamento competitivo.",
                     OrderIndex = 2,
-                    ObjectiveDimensionId = dimensionsByName["Clientes"]
+                    Dimension = "Clientes"
                 },
                 new MissionTemplateObjective
                 {
@@ -294,7 +252,7 @@ public static class DbSeeder
                     Name = "Resultados Financeiros",
                     Description = "Impacto econômico final esperado da estratégia.",
                     OrderIndex = 3,
-                    ObjectiveDimensionId = dimensionsByName["Financeira"]
+                    Dimension = "Financeira"
                 }
             ],
             Metrics =
@@ -343,7 +301,7 @@ public static class DbSeeder
         };
     }
 
-    private static MissionTemplate BuildAnnualStrategicPlanningTemplate(Guid organizationId, IReadOnlyDictionary<string, Guid> dimensionsByName)
+    private static MissionTemplate BuildAnnualStrategicPlanningTemplate(Guid organizationId)
     {
         var portfolioObjectiveId = Guid.NewGuid();
         var executionObjectiveId = Guid.NewGuid();
@@ -366,7 +324,7 @@ public static class DbSeeder
                     Name = "Priorização Estratégica",
                     Description = "Definição das frentes prioritárias do ano.",
                     OrderIndex = 0,
-                    ObjectiveDimensionId = dimensionsByName["Financeira"]
+                    Dimension = "Financeira"
                 },
                 new MissionTemplateObjective
                 {
@@ -375,7 +333,7 @@ public static class DbSeeder
                     Name = "Execução e Governança",
                     Description = "Ritmo e disciplina de execução do plano.",
                     OrderIndex = 1,
-                    ObjectiveDimensionId = dimensionsByName["Processos Internos"]
+                    Dimension = "Processos Internos"
                 },
                 new MissionTemplateObjective
                 {
@@ -384,7 +342,7 @@ public static class DbSeeder
                     Name = "Evolução de Produtos",
                     Description = "Resultados estratégicos esperados para produtos no ciclo.",
                     OrderIndex = 2,
-                    ObjectiveDimensionId = dimensionsByName["Produtos"]
+                    Dimension = "Produtos"
                 }
             ],
             Metrics =
@@ -425,7 +383,7 @@ public static class DbSeeder
         };
     }
 
-    private static MissionTemplate BuildOkrTemplate(Guid organizationId, IReadOnlyDictionary<string, Guid> dimensionsByName)
+    private static MissionTemplate BuildOkrTemplate(Guid organizationId)
     {
         var objectiveId = Guid.NewGuid();
 
@@ -446,7 +404,7 @@ public static class DbSeeder
                     Name = "Objetivo Principal",
                     Description = "Objetivo aspiracional do ciclo de OKR.",
                     OrderIndex = 0,
-                    ObjectiveDimensionId = dimensionsByName["Clientes"]
+                    Dimension = "Clientes"
                 }
             ],
             Metrics =
@@ -491,7 +449,7 @@ public static class DbSeeder
         };
     }
 
-    private static MissionTemplate BuildPdiTemplate(Guid organizationId, IReadOnlyDictionary<string, Guid> dimensionsByName)
+    private static MissionTemplate BuildPdiTemplate(Guid organizationId)
     {
         var objectiveId = Guid.NewGuid();
 
@@ -512,7 +470,7 @@ public static class DbSeeder
                     Name = "Desenvolvimento Individual",
                     Description = "Capacidades e competências a desenvolver no ciclo.",
                     OrderIndex = 0,
-                    ObjectiveDimensionId = dimensionsByName["Aprendizado e Crescimento"]
+                    Dimension = "Aprendizado e Crescimento"
                 }
             ],
             Metrics =

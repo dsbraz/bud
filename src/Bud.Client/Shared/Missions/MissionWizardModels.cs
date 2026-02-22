@@ -23,7 +23,7 @@ public sealed record TempObjective(
     string Name,
     string? Description,
     Guid? OriginalId = null,
-    Guid? ObjectiveDimensionId = null);
+    string? Dimension = null);
 
 public sealed record MissionWizardModel
 {

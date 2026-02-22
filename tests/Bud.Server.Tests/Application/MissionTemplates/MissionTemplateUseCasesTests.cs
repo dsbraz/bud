@@ -29,7 +29,7 @@ public sealed class MissionTemplateUseCasesTests
             .Setup(gateway => gateway.CanAccessTenantOrganizationAsync(User, organizationId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(true);
 
-        var useCase = new CreateStrategicMissionTemplate(
+        var useCase = new CreateTemplate(
             _repository.Object,
             _authorizationGateway.Object,
             _tenantProvider.Object);
@@ -66,7 +66,7 @@ public sealed class MissionTemplateUseCasesTests
             .Setup(gateway => gateway.CanAccessTenantOrganizationAsync(User, tenantId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(false);
 
-        var useCase = new CreateStrategicMissionTemplate(
+        var useCase = new CreateTemplate(
             _repository.Object,
             _authorizationGateway.Object,
             _tenantProvider.Object);
@@ -100,11 +100,11 @@ public sealed class MissionTemplateUseCasesTests
             .Setup(gateway => gateway.CanAccessTenantOrganizationAsync(User, template.OrganizationId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(true);
 
-        var useCase = new ReviseStrategicMissionTemplate(
+        var useCase = new PatchTemplate(
             _repository.Object,
             _authorizationGateway.Object);
 
-        var result = await useCase.ExecuteAsync(User, template.Id, new UpdateMissionTemplateRequest { Name = "Updated" });
+        var result = await useCase.ExecuteAsync(User, template.Id, new PatchMissionTemplateRequest { Name = "Updated" });
 
         result.IsSuccess.Should().BeTrue();
         result.Value!.Name.Should().Be("Updated");
@@ -118,11 +118,11 @@ public sealed class MissionTemplateUseCasesTests
             .Setup(repository => repository.GetByIdWithChildrenAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync((MissionTemplate?)null);
 
-        var useCase = new ReviseStrategicMissionTemplate(
+        var useCase = new PatchTemplate(
             _repository.Object,
             _authorizationGateway.Object);
 
-        var result = await useCase.ExecuteAsync(User, Guid.NewGuid(), new UpdateMissionTemplateRequest { Name = "Updated" });
+        var result = await useCase.ExecuteAsync(User, Guid.NewGuid(), new PatchMissionTemplateRequest { Name = "Updated" });
 
         result.IsSuccess.Should().BeFalse();
         result.ErrorType.Should().Be(ErrorType.NotFound);
@@ -145,7 +145,7 @@ public sealed class MissionTemplateUseCasesTests
             .Setup(gateway => gateway.CanAccessTenantOrganizationAsync(User, template.OrganizationId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(true);
 
-        var useCase = new RemoveStrategicMissionTemplate(
+        var useCase = new DeleteTemplate(
             _repository.Object,
             _authorizationGateway.Object);
 
@@ -163,7 +163,7 @@ public sealed class MissionTemplateUseCasesTests
             .Setup(repository => repository.GetByIdAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync((MissionTemplate?)null);
 
-        var useCase = new RemoveStrategicMissionTemplate(
+        var useCase = new DeleteTemplate(
             _repository.Object,
             _authorizationGateway.Object);
 
@@ -181,7 +181,7 @@ public sealed class MissionTemplateUseCasesTests
             .Setup(repository => repository.GetByIdReadOnlyAsync(templateId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(new MissionTemplate { Id = templateId, Name = "Template", OrganizationId = Guid.NewGuid() });
 
-        var useCase = new ViewStrategicMissionTemplate(_repository.Object);
+        var useCase = new GetTemplateById(_repository.Object);
 
         var result = await useCase.ExecuteAsync(templateId);
 
@@ -204,7 +204,7 @@ public sealed class MissionTemplateUseCasesTests
             .Setup(repository => repository.GetAllAsync("search", 1, 10, It.IsAny<CancellationToken>()))
             .ReturnsAsync(pagedResult);
 
-        var useCase = new ListMissionTemplates(_repository.Object);
+        var useCase = new ListTemplates(_repository.Object);
 
         var result = await useCase.ExecuteAsync("search", 1, 10);
 

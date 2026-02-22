@@ -133,10 +133,10 @@
 
         try
         {
-            var unreadResult = await Api.GetNotificationUnreadCountAsync();
+            var unreadResult = await Api.GetNotificationsAsync(isRead: false, page: 1, pageSize: 1);
             if (unreadResult != null)
             {
-                unreadNotificationCount = unreadResult.Count;
+                unreadNotificationCount = unreadResult.Total;
             }
         }
         catch

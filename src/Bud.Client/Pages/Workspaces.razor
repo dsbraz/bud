@@ -163,7 +163,7 @@
     // Estado do modal de edição
     private bool isEditModalOpen = false;
     private Workspace? selectedWorkspace = null;
-    private UpdateWorkspaceRequest editWorkspace = new();
+    private PatchWorkspaceRequest editWorkspace = new();
 
     // Estado do modal de detalhes
     private bool isDetailsModalOpen = false;
@@ -302,7 +302,7 @@
     private void OpenEditModal(Workspace workspace)
     {
         selectedWorkspace = workspace;
-        editWorkspace = new UpdateWorkspaceRequest
+        editWorkspace = new PatchWorkspaceRequest
         {
             Name = workspace.Name
         };

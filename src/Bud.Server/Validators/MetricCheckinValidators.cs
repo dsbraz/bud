@@ -3,11 +3,11 @@ using FluentValidation;
 
 namespace Bud.Server.Validators;
 
-public sealed class CreateMetricCheckinValidator : AbstractValidator<CreateMetricCheckinRequest>
+public sealed class CreateMetricCheckinValidator : AbstractValidator<CreateCheckinRequest>
 {
     public CreateMetricCheckinValidator()
     {
-        RuleFor(x => x.MissionMetricId)
+        RuleFor(x => x.MetricId)
             .NotEmpty().WithMessage("Métrica é obrigatória.");
 
         RuleFor(x => x.CheckinDate)
@@ -26,9 +26,9 @@ public sealed class CreateMetricCheckinValidator : AbstractValidator<CreateMetri
     }
 }
 
-public sealed class UpdateMetricCheckinValidator : AbstractValidator<UpdateMetricCheckinRequest>
+public sealed class PatchMetricCheckinValidator : AbstractValidator<PatchCheckinRequest>
 {
-    public UpdateMetricCheckinValidator()
+    public PatchMetricCheckinValidator()
     {
         RuleFor(x => x.CheckinDate)
             .NotEmpty().WithMessage("Data do check-in é obrigatória.");

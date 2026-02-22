@@ -70,7 +70,6 @@
         {
             <div class="nav-submenu">
                 <a class="nav-subitem @GetSubitemActiveClass("/mission-templates")" href="/mission-templates">Modelos</a>
-                <a class="nav-subitem @GetSubitemActiveClass("/objective-dimensions")" href="/objective-dimensions">Dimensões</a>
             </div>
         }
         <a class="nav-item" href="#">
@@ -90,7 +89,7 @@
     private bool _configExpanded = true;
 
     private static readonly string[] PessoasRoutes = ["/collaborators", "/workspaces", "/teams"];
-    private static readonly string[] ConfigRoutes = ["/mission-templates", "/objective-dimensions"];
+    private static readonly string[] ConfigRoutes = ["/mission-templates"];
 
     private string GetOrganizationsActiveClass()
     {

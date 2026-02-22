@@ -15,7 +15,7 @@ public class CreateMissionMetricValidatorTests
     public async Task Validate_QualitativeWithTargetText_Passes()
     {
         // Arrange
-        var request = new CreateMissionMetricRequest
+        var request = new CreateMetricRequest
         {
             MissionId = Guid.NewGuid(),
             Name = "Quality Metric",
@@ -35,7 +35,7 @@ public class CreateMissionMetricValidatorTests
     public async Task Validate_QualitativeWithoutTargetText_Passes()
     {
         // Arrange
-        var request = new CreateMissionMetricRequest
+        var request = new CreateMetricRequest
         {
             MissionId = Guid.NewGuid(),
             Name = "Quality Metric",
@@ -54,7 +54,7 @@ public class CreateMissionMetricValidatorTests
     public async Task Validate_QualitativeWithEmptyTargetText_Passes()
     {
         // Arrange
-        var request = new CreateMissionMetricRequest
+        var request = new CreateMetricRequest
         {
             MissionId = Guid.NewGuid(),
             Name = "Quality Metric",
@@ -73,7 +73,7 @@ public class CreateMissionMetricValidatorTests
     public async Task Validate_QualitativeWithTargetTextExceeding1000Chars_Fails()
     {
         // Arrange
-        var request = new CreateMissionMetricRequest
+        var request = new CreateMetricRequest
         {
             MissionId = Guid.NewGuid(),
             Name = "Quality Metric",
@@ -99,7 +99,7 @@ public class CreateMissionMetricValidatorTests
     public async Task Validate_QuantitativeWithoutQuantitativeType_Fails()
     {
         // Arrange
-        var request = new CreateMissionMetricRequest
+        var request = new CreateMetricRequest
         {
             MissionId = Guid.NewGuid(),
             Name = "Story Points",
@@ -123,7 +123,7 @@ public class CreateMissionMetricValidatorTests
     public async Task Validate_QuantitativeWithoutUnit_Fails()
     {
         // Arrange
-        var request = new CreateMissionMetricRequest
+        var request = new CreateMetricRequest
         {
             MissionId = Guid.NewGuid(),
             Name = "Story Points",
@@ -149,7 +149,7 @@ public class CreateMissionMetricValidatorTests
     public async Task Validate_KeepAboveWithValidMinValue_Passes()
     {
         // Arrange
-        var request = new CreateMissionMetricRequest
+        var request = new CreateMetricRequest
         {
             MissionId = Guid.NewGuid(),
             Name = "Story Points",
@@ -171,7 +171,7 @@ public class CreateMissionMetricValidatorTests
     public async Task Validate_KeepAboveWithoutMinValue_Fails()
     {
         // Arrange
-        var request = new CreateMissionMetricRequest
+        var request = new CreateMetricRequest
         {
             MissionId = Guid.NewGuid(),
             Name = "Story Points",
@@ -195,7 +195,7 @@ public class CreateMissionMetricValidatorTests
     public async Task Validate_KeepAboveWithNegativeMinValue_Fails()
     {
         // Arrange
-        var request = new CreateMissionMetricRequest
+        var request = new CreateMetricRequest
         {
             MissionId = Guid.NewGuid(),
             Name = "Story Points",
@@ -219,7 +219,7 @@ public class CreateMissionMetricValidatorTests
     public async Task Validate_KeepAboveWithZeroMinValue_Passes()
     {
         // Arrange
-        var request = new CreateMissionMetricRequest
+        var request = new CreateMetricRequest
         {
             MissionId = Guid.NewGuid(),
             Name = "Story Points",
@@ -245,7 +245,7 @@ public class CreateMissionMetricValidatorTests
     public async Task Validate_KeepBelowWithValidMaxValue_Passes()
     {
         // Arrange
-        var request = new CreateMissionMetricRequest
+        var request = new CreateMetricRequest
         {
             MissionId = Guid.NewGuid(),
             Name = "Error Rate",
@@ -267,7 +267,7 @@ public class CreateMissionMetricValidatorTests
     public async Task Validate_KeepBelowWithoutMaxValue_Fails()
     {
         // Arrange
-        var request = new CreateMissionMetricRequest
+        var request = new CreateMetricRequest
         {
             MissionId = Guid.NewGuid(),
             Name = "Error Rate",
@@ -291,7 +291,7 @@ public class CreateMissionMetricValidatorTests
     public async Task Validate_KeepBelowWithNegativeMaxValue_Fails()
     {
         // Arrange
-        var request = new CreateMissionMetricRequest
+        var request = new CreateMetricRequest
         {
             MissionId = Guid.NewGuid(),
             Name = "Error Rate",
@@ -319,7 +319,7 @@ public class CreateMissionMetricValidatorTests
     public async Task Validate_KeepBetweenWithValidValues_Passes()
     {
         // Arrange
-        var request = new CreateMissionMetricRequest
+        var request = new CreateMetricRequest
         {
             MissionId = Guid.NewGuid(),
             Name = "Response Time",
@@ -342,7 +342,7 @@ public class CreateMissionMetricValidatorTests
     public async Task Validate_KeepBetweenWithoutMinValue_Fails()
     {
         // Arrange
-        var request = new CreateMissionMetricRequest
+        var request = new CreateMetricRequest
         {
             MissionId = Guid.NewGuid(),
             Name = "Response Time",
@@ -367,7 +367,7 @@ public class CreateMissionMetricValidatorTests
     public async Task Validate_KeepBetweenWithoutMaxValue_Fails()
     {
         // Arrange
-        var request = new CreateMissionMetricRequest
+        var request = new CreateMetricRequest
         {
             MissionId = Guid.NewGuid(),
             Name = "Response Time",
@@ -392,7 +392,7 @@ public class CreateMissionMetricValidatorTests
     public async Task Validate_KeepBetweenWithMinValueGreaterThanMaxValue_Fails()
     {
         // Arrange
-        var request = new CreateMissionMetricRequest
+        var request = new CreateMetricRequest
         {
             MissionId = Guid.NewGuid(),
             Name = "Response Time",
@@ -417,7 +417,7 @@ public class CreateMissionMetricValidatorTests
     public async Task Validate_KeepBetweenWithEqualMinAndMaxValues_Fails()
     {
         // Arrange
-        var request = new CreateMissionMetricRequest
+        var request = new CreateMetricRequest
         {
             MissionId = Guid.NewGuid(),
             Name = "Response Time",
@@ -442,7 +442,7 @@ public class CreateMissionMetricValidatorTests
     public async Task Validate_KeepBetweenWithNegativeMinValue_Fails()
     {
         // Arrange
-        var request = new CreateMissionMetricRequest
+        var request = new CreateMetricRequest
         {
             MissionId = Guid.NewGuid(),
             Name = "Response Time",
@@ -471,7 +471,7 @@ public class CreateMissionMetricValidatorTests
     public async Task Validate_AchieveWithValidMaxValue_Passes()
     {
         // Arrange
-        var request = new CreateMissionMetricRequest
+        var request = new CreateMetricRequest
         {
             MissionId = Guid.NewGuid(),
             Name = "Sales Target",
@@ -493,7 +493,7 @@ public class CreateMissionMetricValidatorTests
     public async Task Validate_AchieveWithoutMaxValue_Fails()
     {
         // Arrange
-        var request = new CreateMissionMetricRequest
+        var request = new CreateMetricRequest
         {
             MissionId = Guid.NewGuid(),
             Name = "Sales Target",
@@ -517,7 +517,7 @@ public class CreateMissionMetricValidatorTests
     public async Task Validate_AchieveWithNegativeMaxValue_Fails()
     {
         // Arrange
-        var request = new CreateMissionMetricRequest
+        var request = new CreateMetricRequest
         {
             MissionId = Guid.NewGuid(),
             Name = "Sales Target",
@@ -545,7 +545,7 @@ public class CreateMissionMetricValidatorTests
     public async Task Validate_ReduceWithValidMaxValue_Passes()
     {
         // Arrange
-        var request = new CreateMissionMetricRequest
+        var request = new CreateMetricRequest
         {
             MissionId = Guid.NewGuid(),
             Name = "Cost Reduction",
@@ -567,7 +567,7 @@ public class CreateMissionMetricValidatorTests
     public async Task Validate_ReduceWithoutMaxValue_Fails()
     {
         // Arrange
-        var request = new CreateMissionMetricRequest
+        var request = new CreateMetricRequest
         {
             MissionId = Guid.NewGuid(),
             Name = "Cost Reduction",
@@ -591,7 +591,7 @@ public class CreateMissionMetricValidatorTests
     public async Task Validate_ReduceWithNegativeMaxValue_Fails()
     {
         // Arrange
-        var request = new CreateMissionMetricRequest
+        var request = new CreateMetricRequest
         {
             MissionId = Guid.NewGuid(),
             Name = "Cost Reduction",
@@ -621,7 +621,7 @@ public class CreateMissionMetricValidatorTests
     public async Task Validate_WithEmptyMissionId_Fails()
     {
         // Arrange
-        var request = new CreateMissionMetricRequest
+        var request = new CreateMetricRequest
         {
             MissionId = Guid.Empty, // Empty GUID
             Name = "Test Metric",
@@ -644,7 +644,7 @@ public class CreateMissionMetricValidatorTests
     public async Task Validate_WithEmptyName_Fails(string? name)
     {
         // Arrange
-        var request = new CreateMissionMetricRequest
+        var request = new CreateMetricRequest
         {
             MissionId = Guid.NewGuid(),
             Name = name!,
@@ -664,7 +664,7 @@ public class CreateMissionMetricValidatorTests
     public async Task Validate_WithNameExceeding200Chars_Fails()
     {
         // Arrange
-        var request = new CreateMissionMetricRequest
+        var request = new CreateMetricRequest
         {
             MissionId = Guid.NewGuid(),
             Name = new string('A', 201), // 201 characters

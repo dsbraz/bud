@@ -38,7 +38,7 @@ public sealed class BudApiClientTests
 
         var handler = new StubHttpMessageHandler(request =>
         {
-            if (request.RequestUri!.AbsolutePath == "/api/auth/login")
+            if (request.RequestUri!.AbsolutePath == "/api/sessions")
             {
                 return JsonResponse(new AuthLoginResponse
                 {
@@ -48,7 +48,7 @@ public sealed class BudApiClientTests
                 });
             }
 
-            if (request.RequestUri.AbsolutePath == "/api/auth/my-organizations")
+            if (request.RequestUri.AbsolutePath == "/api/me/organizations")
             {
                 return JsonResponse(new List<OrganizationSummaryDto>
                 {
@@ -111,7 +111,7 @@ public sealed class BudApiClientTests
     {
         var handler = new StubHttpMessageHandler(request =>
         {
-            if (request.RequestUri!.AbsolutePath == "/api/auth/login")
+            if (request.RequestUri!.AbsolutePath == "/api/sessions")
             {
                 return JsonResponse(new AuthLoginResponse
                 {

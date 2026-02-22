@@ -9,7 +9,7 @@ namespace Bud.Client.Tests.Shared.Missions;
 
 public sealed class MissionCheckinHistoryModalTests : TestContext
 {
-    private static MissionMetric CreateQuantitativeMetric(string name = "Revenue") => new()
+    private static Metric CreateQuantitativeMetric(string name = "Revenue") => new()
     {
         Id = Guid.NewGuid(),
         Name = name,

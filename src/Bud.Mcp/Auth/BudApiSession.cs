@@ -32,7 +32,7 @@ public sealed class BudApiSession(HttpClient httpClient, BudMcpOptions options)
         }
 
         var loginResponse = await _httpClient.PostAsJsonAsync(
-            "/api/auth/login",
+            "/api/sessions",
             new AuthLoginRequest { Email = email.Trim() },
             cancellationToken);
 
@@ -56,8 +56,8 @@ public sealed class BudApiSession(HttpClient httpClient, BudMcpOptions options)
     {
         EnsureAuthenticated();
 
-        var request = CreateBaseRequest(HttpMethod.Get, "/api/auth/my-organizations");
-        request.Headers.TryAddWithoutValidation("X-User-Email", AuthContext!.Email);
+        var request = CreateBaseRequest(HttpMethod.Get, "/api/me/organizations");
+        request.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", AuthContext!.Token);
 
         var response = await _httpClient.SendAsync(request, cancellationToken);
         var organizations = await ReadSuccessResponseOrThrowAsync<List<OrganizationSummaryDto>>(response, cancellationToken);

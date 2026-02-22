@@ -296,11 +296,11 @@ public sealed class ArchitectureTests
     }
 
     [Fact]
-    public void Controllers_ExceptAuth_MustHaveClassLevelAuthorizeAttribute()
+    public void Controllers_ExceptSessions_MustHaveClassLevelAuthorizeAttribute()
     {
         var controllerTypes = ServerAssembly.GetTypes()
             .Where(t => t is { IsClass: true, IsAbstract: false } && t.IsAssignableTo(typeof(ControllerBase)))
-            .Where(t => t != typeof(AuthController))
+            .Where(t => t != typeof(SessionsController))
             .ToList();
 
         controllerTypes.Should().NotBeEmpty();
@@ -311,7 +311,7 @@ public sealed class ArchitectureTests
             .ToList();
 
         unprotected.Should().BeEmpty(
-            "todos os controllers (exceto AuthController) devem ter [Authorize] no nível de classe");
+            "todos os controllers (exceto SessionsController) devem ter [Authorize] no nível de classe");
     }
 
     [Fact]
@@ -393,17 +393,17 @@ public sealed class ArchitectureTests
     }
 
     [Fact]
-    public void Services_ShouldNotExposeSharedContractPayloadsInReturnTypes()
+    public void Ports_ShouldNotExposeSharedContractPayloadsInReturnTypes()
     {
-        var serviceInterfaces = ServerAssembly.GetTypes()
+        var portInterfaces = ServerAssembly.GetTypes()
             .Where(t => t.IsInterface &&
                 (t.Namespace?.StartsWith("Bud.Server.Domain.Repositories", StringComparison.Ordinal) == true ||
-                 t.Namespace?.StartsWith("Bud.Server.Infrastructure.Services", StringComparison.Ordinal) == true))
+                 t.Namespace?.StartsWith("Bud.Server.Application.Ports", StringComparison.Ordinal) == true))
             .ToList();
 
-        serviceInterfaces.Should().NotBeEmpty();
+        portInterfaces.Should().NotBeEmpty();
 
-        var invalidMethods = serviceInterfaces
+        var invalidMethods = portInterfaces
             .SelectMany(type => type.GetMethods(BindingFlags.Public | BindingFlags.Instance)
                 .Select(method => new { type, method }))
             .Where(x => ContainsSharedContractPayload(x.method.ReturnType))
@@ -411,17 +411,52 @@ public sealed class ArchitectureTests
             .ToList();
 
         invalidMethods.Should().BeEmpty(
-            "camada Services não deve expor DTOs/Responses de Bud.Shared.Contracts em tipos de retorno");
+            "ports não devem expor DTOs/Responses de Bud.Shared.Contracts em tipos de retorno");
     }
 
     [Fact]
-    public void AuthController_LoginAction_MustHaveRateLimitingAttribute()
+    public void DomainRepositories_ShouldNotDependOnSharedContractsOrReadModels()
     {
-        var loginMethod = typeof(AuthController)
+        var repositoryRoot = FindRepositoryRoot();
+        var repositoryFiles = Directory
+            .EnumerateFiles(
+                Path.Combine(repositoryRoot, "src", "Bud.Server", "Domain", "Repositories"),
+                "*.cs",
+                SearchOption.TopDirectoryOnly)
+            .ToList();
+
+        repositoryFiles.Should().NotBeEmpty();
+
+        var invalidFiles = repositoryFiles
+            .Where(path =>
+            {
+                var source = File.ReadAllText(path);
+                return source.Contains("using Bud.Shared.Contracts;", StringComparison.Ordinal)
+                    || source.Contains("using Bud.Server.Domain.ReadModels;", StringComparison.Ordinal);
+            })
+            .Select(path => Path.GetRelativePath(repositoryRoot, path))
+            .ToList();
+
+        invalidFiles.Should().BeEmpty(
+            "repositórios de domínio devem ser puros e não podem depender de contratos HTTP ou read models de consulta");
+    }
+
+    [Fact]
+    public void DomainRepositories_ShouldNotContainDashboardReadRepository()
+    {
+        var dashboardRepositoryType = ServerAssembly.GetType("Bud.Server.Domain.Repositories.IDashboardReadRepository");
+        dashboardRepositoryType.Should().BeNull(
+            "consultas de dashboard pertencem ao read side da Application e não ao contrato de repositório de domínio");
+    }
+
+    [Fact]
+    public void SessionsController_LoginAction_MustHaveRateLimitingAttribute()
+    {
+        var loginMethod = typeof(SessionsController)
             .GetMethods(BindingFlags.Public | BindingFlags.Instance)
             .FirstOrDefault(m => m.Name == "Login");
 
-        loginMethod.Should().NotBeNull("AuthController deve ter um método Login público");
+        loginMethod.Should().NotBeNull("SessionsController deve ter um método Login público");
 
         var hasRateLimiting = loginMethod!.GetCustomAttributes<EnableRateLimitingAttribute>(inherit: true).Any();
         hasRateLimiting.Should().BeTrue("o método Login deve ter [EnableRateLimiting] para proteção contra brute-force");

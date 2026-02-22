@@ -543,7 +543,8 @@ public class MissionsEndpointsTests : IClassFixture<CustomWebApplicationFactory>
         });
 
         // Act
-        var response = await _client.GetAsync($"/api/missions/my-missions/{collaborator.Id}");
+        var collaboratorClient = _factory.CreateTenantClient(org.Id, collaborator.Email, collaborator.Id);
+        var response = await collaboratorClient.GetAsync("/api/me/missions");
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.OK);
@@ -579,7 +580,7 @@ public class MissionsEndpointsTests : IClassFixture<CustomWebApplicationFactory>
         var createResponse = await _client.PostAsJsonAsync("/api/missions", createRequest);
         var created = await createResponse.Content.ReadFromJsonAsync<Mission>();
 
-        var updateRequest = new UpdateMissionRequest
+        var updateRequest = new PatchMissionRequest
         {
             Name = "Updated Name",
             StartDate = created!.StartDate,
@@ -588,7 +589,7 @@ public class MissionsEndpointsTests : IClassFixture<CustomWebApplicationFactory>
         };
 
         // Act
-        var response = await _client.PutAsJsonAsync($"/api/missions/{created.Id}", updateRequest);
+        var response = await _client.PatchAsJsonAsync($"/api/missions/{created.Id}", updateRequest);
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.OK);

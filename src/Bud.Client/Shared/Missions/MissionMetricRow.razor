@@ -39,11 +39,11 @@
 
 @code {
     [Parameter, EditorRequired] public Mission Mission { get; set; } = default!;
-    [Parameter, EditorRequired] public MissionMetric Metric { get; set; } = default!;
+    [Parameter, EditorRequired] public Metric Metric { get; set; } = default!;
     [Parameter] public MissionProgressDto? MissionProgress { get; set; }
     [Parameter] public MetricProgressDto? MetricProgress { get; set; }
-    [Parameter] public EventCallback<MissionMetric> OnCheckinClick { get; set; }
-    [Parameter] public EventCallback<MissionMetric> OnHistoryClick { get; set; }
+    [Parameter] public EventCallback<Metric> OnCheckinClick { get; set; }
+    [Parameter] public EventCallback<Metric> OnHistoryClick { get; set; }
 
     private int MetricProgressPercent => (int)(MetricProgress?.Progress ?? 0);
     private decimal ExpectedProgress => MissionProgress?.ExpectedProgress ?? 0m;
@@ -69,7 +69,7 @@
         return "off-track";
     }
 
-    private static string GetMetricStatusLabel(int progress, decimal expectedProgress, MissionMetric metric)
+    private static string GetMetricStatusLabel(int progress, decimal expectedProgress, Metric metric)
     {
         if (metric.Type == MetricType.Qualitative) return "Qualitativo";
         if (expectedProgress <= 0) return "Dentro do previsto";

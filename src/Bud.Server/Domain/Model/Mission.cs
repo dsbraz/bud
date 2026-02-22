@@ -27,8 +27,8 @@ public sealed class Mission : ITenantEntity, IAggregateRoot, IHasDomainEvents
     public Guid? CollaboratorId { get; set; }
     public Collaborator? Collaborator { get; set; }
 
-    public ICollection<MissionMetric> Metrics { get; set; } = new List<MissionMetric>();
-    public ICollection<MissionObjective> Objectives { get; set; } = new List<MissionObjective>();
+    public ICollection<Metric> Metrics { get; set; } = new List<Metric>();
+    public ICollection<Objective> Objectives { get; set; } = new List<Objective>();
 
     [NotMapped]
     public IReadOnlyCollection<IDomainEvent> DomainEvents => _domainEvents.AsReadOnly();

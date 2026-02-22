@@ -7,9 +7,9 @@ public sealed class TenantRequiredMiddleware(RequestDelegate next)
 {
     private static readonly HashSet<string> ExcludedPaths = new(StringComparer.OrdinalIgnoreCase)
     {
-        "/api/auth/login",
-        "/api/auth/logout",
-        "/api/auth/my-organizations"
+        "/api/sessions",
+        "/api/sessions/current",
+        "/api/me/organizations"
     };
 
     public async Task InvokeAsync(

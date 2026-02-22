@@ -9,7 +9,7 @@ namespace Bud.Server.Application.Missions;
 
 public sealed class ListMissionsByScope(IMissionRepository missionRepository)
 {
-    public async Task<Result<PagedResult<Mission>>> ExecuteAsync(
+    public async Task<Result<Bud.Shared.Contracts.PagedResult<Mission>>> ExecuteAsync(
         ApiMissionScopeType? scopeType,
         Guid? scopeId,
         string? search,
@@ -28,6 +28,6 @@ public sealed class ListMissionsByScope(IMissionRepository missionRepository)
             pageSize,
             cancellationToken);
 
-        return Result<PagedResult<Mission>>.Success(result);
+        return Result<Bud.Shared.Contracts.PagedResult<Mission>>.Success(result.MapPaged(x => x));
     }
 }

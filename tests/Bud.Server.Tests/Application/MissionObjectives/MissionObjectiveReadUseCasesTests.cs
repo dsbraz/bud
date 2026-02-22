@@ -1,32 +1,32 @@
 using Bud.Server.Application.Common;
-using Bud.Server.Application.MissionObjectives;
-using Bud.Server.Application.Projections;
+using Bud.Server.Application.Objectives;
+using Bud.Server.Domain.ReadModels;
 using Bud.Server.Domain.Model;
 using Bud.Server.Domain.Repositories;
-using Bud.Server.Infrastructure.Services;
+using Bud.Server.Application.Ports;
 using Bud.Shared.Contracts;
 using FluentAssertions;
 using Moq;
 using Xunit;
 
-namespace Bud.Server.Tests.Application.MissionObjectives;
+namespace Bud.Server.Tests.Application.Objectives;
 
 public sealed class MissionObjectiveReadUseCasesTests
 {
-    private readonly Mock<IMissionObjectiveRepository> _repository = new();
+    private readonly Mock<IObjectiveRepository> _repository = new();
     private readonly Mock<IMissionProgressService> _progressService = new();
 
     [Fact]
     public async Task ViewMissionObjectiveDetails_WhenFound_ReturnsObjective()
     {
         var objectiveId = Guid.NewGuid();
-        var objective = MissionObjective.Create(objectiveId, Guid.NewGuid(), Guid.NewGuid(), "Obj", null);
+        var objective = Objective.Create(objectiveId, Guid.NewGuid(), Guid.NewGuid(), "Obj", null);
 
         _repository
             .Setup(repository => repository.GetByIdAsync(objectiveId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(objective);
 
-        var useCase = new ViewMissionObjectiveDetails(_repository.Object);
+        var useCase = new GetObjectiveById(_repository.Object);
 
         var result = await useCase.ExecuteAsync(objectiveId);
 
@@ -39,9 +39,9 @@ public sealed class MissionObjectiveReadUseCasesTests
     {
         _repository
             .Setup(repository => repository.GetByIdAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync((MissionObjective?)null);
+            .ReturnsAsync((Objective?)null);
 
-        var useCase = new ViewMissionObjectiveDetails(_repository.Object);
+        var useCase = new GetObjectiveById(_repository.Object);
 
         var result = await useCase.ExecuteAsync(Guid.NewGuid());
 
@@ -54,7 +54,7 @@ public sealed class MissionObjectiveReadUseCasesTests
     {
         var missionId = Guid.NewGuid();
 
-        var pagedResult = new PagedResult<MissionObjective>
+        var pagedResult = new PagedResult<Objective>
         {
             Items = [],
             Total = 0,
@@ -63,15 +63,15 @@ public sealed class MissionObjectiveReadUseCasesTests
         };
 
         _repository
-            .Setup(repository => repository.GetByMissionAsync(missionId, 1, 10, It.IsAny<CancellationToken>()))
+            .Setup(repository => repository.GetAllAsync(missionId, 1, 10, It.IsAny<CancellationToken>()))
             .ReturnsAsync(pagedResult);
 
-        var useCase = new ListMissionObjectives(_repository.Object);
+        var useCase = new ListObjectives(_repository.Object);
 
         var result = await useCase.ExecuteAsync(missionId, 1, 10);
 
         result.IsSuccess.Should().BeTrue();
-        _repository.Verify(repository => repository.GetByMissionAsync(missionId, 1, 10, It.IsAny<CancellationToken>()), Times.Once);
+        _repository.Verify(repository => repository.GetAllAsync(missionId, 1, 10, It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact]
@@ -83,7 +83,7 @@ public sealed class MissionObjectiveReadUseCasesTests
             .Setup(service => service.GetObjectiveProgressAsync(objectiveIds, It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result<List<ObjectiveProgressSnapshot>>.Success([]));
 
-        var useCase = new CalculateMissionObjectiveProgress(_progressService.Object);
+        var useCase = new ListObjectiveProgress(_progressService.Object);
 
         var result = await useCase.ExecuteAsync(objectiveIds);
 
