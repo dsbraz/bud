@@ -23,14 +23,14 @@ internal static class MeContractMapper
         };
     }
 
-    private static DashboardTeamHealthResponse ToResponse(this TeamHealthSnapshot source)
+    private static MyDashboardTeamHealthResponse ToResponse(this TeamHealthSnapshot source)
     {
-        return new DashboardTeamHealthResponse
+        return new MyDashboardTeamHealthResponse
         {
             Leader = source.Leader?.ToResponse(),
             TeamMembers = source.TeamMembers.Select(ToResponse).ToList(),
             Engagement = source.Engagement.ToResponse(),
-            Indicators = new DashboardTeamIndicatorsResponse
+            Indicators = new MyDashboardTeamIndicatorsResponse
             {
                 WeeklyAccess = source.WeeklyAccess.ToResponse(),
                 MissionsUpdated = source.MissionsUpdated.ToResponse(),
@@ -39,9 +39,9 @@ internal static class MeContractMapper
         };
     }
 
-    private static DashboardLeaderResponse ToResponse(this TeamLeaderSnapshot source)
+    private static MyDashboardLeaderResponse ToResponse(this TeamLeaderSnapshot source)
     {
-        return new DashboardLeaderResponse
+        return new MyDashboardLeaderResponse
         {
             Id = source.Id,
             FullName = source.FullName,
@@ -51,9 +51,9 @@ internal static class MeContractMapper
         };
     }
 
-    private static DashboardTeamMemberResponse ToResponse(this TeamMemberSnapshot source)
+    private static MyDashboardTeamMemberResponse ToResponse(this TeamMemberSnapshot source)
     {
-        return new DashboardTeamMemberResponse
+        return new MyDashboardTeamMemberResponse
         {
             Id = source.Id,
             FullName = source.FullName,
@@ -61,9 +61,9 @@ internal static class MeContractMapper
         };
     }
 
-    private static DashboardEngagementScoreResponse ToResponse(this EngagementScore source)
+    private static MyDashboardEngagementScoreResponse ToResponse(this EngagementScore source)
     {
-        return new DashboardEngagementScoreResponse
+        return new MyDashboardEngagementScoreResponse
         {
             Score = source.Score,
             Level = source.Level,
@@ -71,9 +71,9 @@ internal static class MeContractMapper
         };
     }
 
-    private static DashboardIndicatorResponse ToResponse(this PerformanceIndicator source)
+    private static MyDashboardIndicatorResponse ToResponse(this PerformanceIndicator source)
     {
-        return new DashboardIndicatorResponse
+        return new MyDashboardIndicatorResponse
         {
             Percentage = source.Percentage,
             DeltaPercentage = source.DeltaPercentage,
@@ -81,9 +81,9 @@ internal static class MeContractMapper
         };
     }
 
-    private static DashboardPendingTaskResponse ToResponse(this PendingTaskSnapshot source)
+    private static MyDashboardPendingTaskResponse ToResponse(this PendingTaskSnapshot source)
     {
-        return new DashboardPendingTaskResponse
+        return new MyDashboardPendingTaskResponse
         {
             ReferenceId = source.ReferenceId,
             TaskType = source.TaskType,

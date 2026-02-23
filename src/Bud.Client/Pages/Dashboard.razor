@@ -93,7 +93,7 @@ else
             <div>
                 <h3 class="dashboard-section-title" style="font-size: var(--font-size-sm); margin-bottom: var(--spacing-3);">Indicadores</h3>
                 <div class="indicators-grid">
-                    @{ var indicators = new (string Label, DashboardIndicatorResponse Data)[]
+                    @{ var indicators = new (string Label, MyDashboardIndicatorResponse Data)[]
                         {
                             ("Acesso semanal", dashboard.TeamHealth.Indicators.WeeklyAccess),
                             ("Missões atualizadas", dashboard.TeamHealth.Indicators.MissionsUpdated),

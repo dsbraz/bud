@@ -15,9 +15,9 @@ public sealed class DomainEventDispatcher(IServiceProvider serviceProvider) : ID
 
         foreach (var domainEvent in domainEvents)
         {
-            var handlerType = typeof(IDomainEventHandler<>).MakeGenericType(domainEvent.GetType());
+            var handlerType = typeof(IDomainEventNotifier<>).MakeGenericType(domainEvent.GetType());
             var handlers = serviceProvider.GetServices(handlerType);
-            var handleMethod = handlerType.GetMethod(nameof(IDomainEventHandler<IDomainEvent>.HandleAsync))
+            var handleMethod = handlerType.GetMethod(nameof(IDomainEventNotifier<IDomainEvent>.HandleAsync))
                 ?? throw new InvalidOperationException($"Método HandleAsync não encontrado para {handlerType.Name}.");
 
             foreach (var handler in handlers)

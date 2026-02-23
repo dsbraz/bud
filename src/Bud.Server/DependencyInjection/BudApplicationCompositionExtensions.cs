@@ -122,10 +122,10 @@ public static class BudApplicationCompositionExtensions
         services.AddScoped<INotificationRepository, NotificationRepository>();
         services.AddScoped<INotificationRecipientResolver, NotificationRecipientResolver>();
         services.AddScoped<NotificationOrchestrator>();
-        services.AddScoped<IDomainEventHandler<MissionCreatedDomainEvent>, MissionCreatedDomainEventHandler>();
-        services.AddScoped<IDomainEventHandler<MissionUpdatedDomainEvent>, MissionUpdatedDomainEventHandler>();
-        services.AddScoped<IDomainEventHandler<MissionDeletedDomainEvent>, MissionDeletedDomainEventHandler>();
-        services.AddScoped<IDomainEventHandler<MetricCheckinCreatedDomainEvent>, MetricCheckinCreatedDomainEventHandler>();
+        services.AddScoped<IDomainEventNotifier<MissionCreatedDomainEvent>, MissionCreatedDomainEventNotifier>();
+        services.AddScoped<IDomainEventNotifier<MissionUpdatedDomainEvent>, MissionUpdatedDomainEventNotifier>();
+        services.AddScoped<IDomainEventNotifier<MissionDeletedDomainEvent>, MissionDeletedDomainEventNotifier>();
+        services.AddScoped<IDomainEventNotifier<MetricCheckinCreatedDomainEvent>, MetricCheckinCreatedDomainEventNotifier>();
         services.AddScoped<ListNotifications>();
         services.AddScoped<PatchNotification>();
         services.AddScoped<PatchNotifications>();

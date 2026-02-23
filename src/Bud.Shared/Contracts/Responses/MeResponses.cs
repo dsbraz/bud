@@ -8,19 +8,19 @@ public sealed class MyOrganizationResponse
 
 public sealed class MyDashboardResponse
 {
-    public DashboardTeamHealthResponse TeamHealth { get; set; } = new();
-    public List<DashboardPendingTaskResponse> PendingTasks { get; set; } = [];
+    public MyDashboardTeamHealthResponse TeamHealth { get; set; } = new();
+    public List<MyDashboardPendingTaskResponse> PendingTasks { get; set; } = [];
 }
 
-public sealed class DashboardTeamHealthResponse
+public sealed class MyDashboardTeamHealthResponse
 {
-    public DashboardLeaderResponse? Leader { get; set; }
-    public List<DashboardTeamMemberResponse> TeamMembers { get; set; } = [];
-    public DashboardEngagementScoreResponse Engagement { get; set; } = new();
-    public DashboardTeamIndicatorsResponse Indicators { get; set; } = new();
+    public MyDashboardLeaderResponse? Leader { get; set; }
+    public List<MyDashboardTeamMemberResponse> TeamMembers { get; set; } = [];
+    public MyDashboardEngagementScoreResponse Engagement { get; set; } = new();
+    public MyDashboardTeamIndicatorsResponse Indicators { get; set; } = new();
 }
 
-public sealed class DashboardLeaderResponse
+public sealed class MyDashboardLeaderResponse
 {
     public Guid Id { get; set; }
     public string FullName { get; set; } = string.Empty;
@@ -29,35 +29,35 @@ public sealed class DashboardLeaderResponse
     public string TeamName { get; set; } = string.Empty;
 }
 
-public sealed class DashboardTeamMemberResponse
+public sealed class MyDashboardTeamMemberResponse
 {
     public Guid Id { get; set; }
     public string FullName { get; set; } = string.Empty;
     public string Initials { get; set; } = string.Empty;
 }
 
-public sealed class DashboardEngagementScoreResponse
+public sealed class MyDashboardEngagementScoreResponse
 {
     public int Score { get; set; }
     public string Level { get; set; } = "low";
     public string Tip { get; set; } = string.Empty;
 }
 
-public sealed class DashboardTeamIndicatorsResponse
+public sealed class MyDashboardTeamIndicatorsResponse
 {
-    public DashboardIndicatorResponse WeeklyAccess { get; set; } = new();
-    public DashboardIndicatorResponse MissionsUpdated { get; set; } = new();
-    public DashboardIndicatorResponse FormsResponded { get; set; } = new();
+    public MyDashboardIndicatorResponse WeeklyAccess { get; set; } = new();
+    public MyDashboardIndicatorResponse MissionsUpdated { get; set; } = new();
+    public MyDashboardIndicatorResponse FormsResponded { get; set; } = new();
 }
 
-public sealed class DashboardIndicatorResponse
+public sealed class MyDashboardIndicatorResponse
 {
     public int Percentage { get; set; }
     public int DeltaPercentage { get; set; }
     public bool IsPlaceholder { get; set; }
 }
 
-public sealed class DashboardPendingTaskResponse
+public sealed class MyDashboardPendingTaskResponse
 {
     public Guid ReferenceId { get; set; }
     public string TaskType { get; set; } = string.Empty;

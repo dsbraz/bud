@@ -2,8 +2,8 @@ using Bud.Server.Domain.Events;
 
 namespace Bud.Server.Application.EventHandlers;
 
-public sealed class MissionCreatedDomainEventHandler(
-    NotificationOrchestrator notificationOrchestrator) : IDomainEventHandler<MissionCreatedDomainEvent>
+public sealed class MissionCreatedDomainEventNotifier(
+    NotificationOrchestrator notificationOrchestrator) : IDomainEventNotifier<MissionCreatedDomainEvent>
 {
     public async Task HandleAsync(
         MissionCreatedDomainEvent domainEvent,
@@ -16,8 +16,8 @@ public sealed class MissionCreatedDomainEventHandler(
     }
 }
 
-public sealed class MissionUpdatedDomainEventHandler(
-    NotificationOrchestrator notificationOrchestrator) : IDomainEventHandler<MissionUpdatedDomainEvent>
+public sealed class MissionUpdatedDomainEventNotifier(
+    NotificationOrchestrator notificationOrchestrator) : IDomainEventNotifier<MissionUpdatedDomainEvent>
 {
     public async Task HandleAsync(
         MissionUpdatedDomainEvent domainEvent,
@@ -30,8 +30,8 @@ public sealed class MissionUpdatedDomainEventHandler(
     }
 }
 
-public sealed class MissionDeletedDomainEventHandler(
-    NotificationOrchestrator notificationOrchestrator) : IDomainEventHandler<MissionDeletedDomainEvent>
+public sealed class MissionDeletedDomainEventNotifier(
+    NotificationOrchestrator notificationOrchestrator) : IDomainEventNotifier<MissionDeletedDomainEvent>
 {
     public async Task HandleAsync(
         MissionDeletedDomainEvent domainEvent,
@@ -44,8 +44,8 @@ public sealed class MissionDeletedDomainEventHandler(
     }
 }
 
-public sealed class MetricCheckinCreatedDomainEventHandler(
-    NotificationOrchestrator notificationOrchestrator) : IDomainEventHandler<MetricCheckinCreatedDomainEvent>
+public sealed class MetricCheckinCreatedDomainEventNotifier(
+    NotificationOrchestrator notificationOrchestrator) : IDomainEventNotifier<MetricCheckinCreatedDomainEvent>
 {
     public async Task HandleAsync(
         MetricCheckinCreatedDomainEvent domainEvent,
