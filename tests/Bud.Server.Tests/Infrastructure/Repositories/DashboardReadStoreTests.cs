@@ -88,21 +88,21 @@ public class DashboardReadStoreTests
         using var context = CreateInMemoryContext();
         var org = new Organization { Id = Guid.NewGuid(), Name = "Org" };
         var workspace = new Workspace { Id = Guid.NewGuid(), Name = "WS", OrganizationId = org.Id };
-        var team = new Team { Id = Guid.NewGuid(), Name = "Engenharia", OrganizationId = org.Id, WorkspaceId = workspace.Id, LeaderId = Guid.NewGuid() };
         var leader = new Collaborator
         {
             Id = Guid.NewGuid(),
             FullName = "Maria Silva",
             Email = "maria@test.com",
             Role = CollaboratorRole.Leader,
-            OrganizationId = org.Id,
-            TeamId = team.Id
+            OrganizationId = org.Id
         };
+        var team = new Team { Id = Guid.NewGuid(), Name = "Engenharia", OrganizationId = org.Id, WorkspaceId = workspace.Id, LeaderId = leader.Id };
+        leader.TeamId = team.Id;
 
         context.Organizations.Add(org);
         context.Workspaces.Add(workspace);
-        context.Teams.Add(team);
         context.Collaborators.Add(leader);
+        context.Teams.Add(team);
         await context.SaveChangesAsync();
 
         var repository = new DashboardReadStore(context);
@@ -177,11 +177,12 @@ public class DashboardReadStoreTests
     }
 
     [Fact]
-    public async Task GetMyDashboardAsync_LeaderWithDirectReports_ReturnsDirectReportsAsTeamMembers()
+    public async Task GetMyDashboardAsync_LeaderWithTeamMembers_ReturnsTeamMembersFromCollaboratorTeams()
     {
         // Arrange
         using var context = CreateInMemoryContext();
         var org = new Organization { Id = Guid.NewGuid(), Name = "Org" };
+        var workspace = new Workspace { Id = Guid.NewGuid(), Name = "WS", OrganizationId = org.Id };
         var leader = new Collaborator
         {
             Id = Guid.NewGuid(),
@@ -190,13 +191,15 @@ public class DashboardReadStoreTests
             Role = CollaboratorRole.Leader,
             OrganizationId = org.Id
         };
+        var team = new Team { Id = Guid.NewGuid(), Name = "Engenharia", OrganizationId = org.Id, WorkspaceId = workspace.Id, LeaderId = leader.Id };
+        leader.TeamId = team.Id;
         var member1 = new Collaborator
         {
             Id = Guid.NewGuid(),
             FullName = "Ana Lima",
             Email = "ana@test.com",
             OrganizationId = org.Id,
-            LeaderId = leader.Id
+            TeamId = team.Id
         };
         var member2 = new Collaborator
         {
@@ -204,11 +207,18 @@ public class DashboardReadStoreTests
             FullName = "Carlos Souza",
             Email = "carlos@test.com",
             OrganizationId = org.Id,
-            LeaderId = leader.Id
+            TeamId = team.Id
         };
 
         context.Organizations.Add(org);
-        context.Collaborators.AddRange(leader, member1, member2);
+        context.Workspaces.Add(workspace);
+        context.Collaborators.Add(leader);
+        context.Teams.Add(team);
+        context.Collaborators.AddRange(member1, member2);
+        context.Set<CollaboratorTeam>().AddRange(
+            new CollaboratorTeam { CollaboratorId = member1.Id, TeamId = team.Id },
+            new CollaboratorTeam { CollaboratorId = member2.Id, TeamId = team.Id }
+        );
         await context.SaveChangesAsync();
 
         var repository = new DashboardReadStore(context);
@@ -225,11 +235,12 @@ public class DashboardReadStoreTests
     }
 
     [Fact]
-    public async Task GetMyDashboardAsync_CollaboratorWithLeader_ReturnsLeaderDirectReportsAsTeamMembers()
+    public async Task GetMyDashboardAsync_CollaboratorWithPrimaryTeam_ReturnsTeamMembersFromCollaboratorTeams()
     {
         // Arrange
         using var context = CreateInMemoryContext();
         var org = new Organization { Id = Guid.NewGuid(), Name = "Org" };
+        var workspace = new Workspace { Id = Guid.NewGuid(), Name = "WS", OrganizationId = org.Id };
         var leader = new Collaborator
         {
             Id = Guid.NewGuid(),
@@ -238,13 +249,15 @@ public class DashboardReadStoreTests
             Role = CollaboratorRole.Leader,
             OrganizationId = org.Id
         };
+        var team = new Team { Id = Guid.NewGuid(), Name = "Engenharia", OrganizationId = org.Id, WorkspaceId = workspace.Id, LeaderId = leader.Id };
+        leader.TeamId = team.Id;
         var member1 = new Collaborator
         {
             Id = Guid.NewGuid(),
             FullName = "Ana Lima",
             Email = "ana@test.com",
             OrganizationId = org.Id,
-            LeaderId = leader.Id
+            TeamId = team.Id
         };
         var member2 = new Collaborator
         {
@@ -252,16 +265,23 @@ public class DashboardReadStoreTests
             FullName = "Carlos Souza",
             Email = "carlos@test.com",
             OrganizationId = org.Id,
-            LeaderId = leader.Id
+            TeamId = team.Id
         };
 
         context.Organizations.Add(org);
-        context.Collaborators.AddRange(leader, member1, member2);
+        context.Workspaces.Add(workspace);
+        context.Collaborators.Add(leader);
+        context.Teams.Add(team);
+        context.Collaborators.AddRange(member1, member2);
+        context.Set<CollaboratorTeam>().AddRange(
+            new CollaboratorTeam { CollaboratorId = member1.Id, TeamId = team.Id },
+            new CollaboratorTeam { CollaboratorId = member2.Id, TeamId = team.Id }
+        );
         await context.SaveChangesAsync();
 
         var repository = new DashboardReadStore(context);
 
-        // Act
+        // Act — member1 views "Meu time" (no teamId)
         var result = await repository.GetMyDashboardAsync(member1.Id, null);
 
         // Assert
@@ -278,6 +298,7 @@ public class DashboardReadStoreTests
         // Arrange
         using var context = CreateInMemoryContext();
         var org = new Organization { Id = Guid.NewGuid(), Name = "Org" };
+        var workspace = new Workspace { Id = Guid.NewGuid(), Name = "WS", OrganizationId = org.Id };
         var leader = new Collaborator
         {
             Id = Guid.NewGuid(),
@@ -286,13 +307,15 @@ public class DashboardReadStoreTests
             Role = CollaboratorRole.Leader,
             OrganizationId = org.Id
         };
+        var team = new Team { Id = Guid.NewGuid(), Name = "Team", OrganizationId = org.Id, WorkspaceId = workspace.Id, LeaderId = leader.Id };
+        leader.TeamId = team.Id;
         var member1 = new Collaborator
         {
             Id = Guid.NewGuid(),
             FullName = "M1 Test",
             Email = "m1@test.com",
             OrganizationId = org.Id,
-            LeaderId = leader.Id
+            TeamId = team.Id
         };
         var member2 = new Collaborator
         {
@@ -300,11 +323,18 @@ public class DashboardReadStoreTests
             FullName = "M2 Test",
             Email = "m2@test.com",
             OrganizationId = org.Id,
-            LeaderId = leader.Id
+            TeamId = team.Id
         };
 
         context.Organizations.Add(org);
-        context.Collaborators.AddRange(leader, member1, member2);
+        context.Workspaces.Add(workspace);
+        context.Collaborators.Add(leader);
+        context.Teams.Add(team);
+        context.Collaborators.AddRange(member1, member2);
+        context.Set<CollaboratorTeam>().AddRange(
+            new CollaboratorTeam { CollaboratorId = member1.Id, TeamId = team.Id },
+            new CollaboratorTeam { CollaboratorId = member2.Id, TeamId = team.Id }
+        );
 
         // Member 1 accessed this week
         context.CollaboratorAccessLogs.Add(new CollaboratorAccessLog
@@ -324,8 +354,8 @@ public class DashboardReadStoreTests
 
         // Assert
         result.Should().NotBeNull();
-        // 1 out of 2 direct reports accessed = 50%
-        result!.TeamHealth.WeeklyAccess.Percentage.Should().Be(50);
+        // 1 out of 3 (leader + 2 members) accessed = 33%
+        result!.TeamHealth.WeeklyAccess.Percentage.Should().Be(33);
     }
 
     [Fact]
@@ -334,6 +364,7 @@ public class DashboardReadStoreTests
         // Arrange
         using var context = CreateInMemoryContext();
         var org = new Organization { Id = Guid.NewGuid(), Name = "Org" };
+        var workspace = new Workspace { Id = Guid.NewGuid(), Name = "WS", OrganizationId = org.Id };
         var leader = new Collaborator
         {
             Id = Guid.NewGuid(),
@@ -342,17 +373,25 @@ public class DashboardReadStoreTests
             Role = CollaboratorRole.Leader,
             OrganizationId = org.Id
         };
+        var team = new Team { Id = Guid.NewGuid(), Name = "Team", OrganizationId = org.Id, WorkspaceId = workspace.Id, LeaderId = leader.Id };
+        leader.TeamId = team.Id;
         var member = new Collaborator
         {
             Id = Guid.NewGuid(),
             FullName = "Member One",
             Email = "member1@test.com",
             OrganizationId = org.Id,
-            LeaderId = leader.Id
+            TeamId = team.Id
         };
 
         context.Organizations.Add(org);
-        context.Collaborators.AddRange(leader, member);
+        context.Workspaces.Add(workspace);
+        context.Collaborators.Add(leader);
+        context.Teams.Add(team);
+        context.Collaborators.Add(member);
+        context.Set<CollaboratorTeam>().Add(
+            new CollaboratorTeam { CollaboratorId = member.Id, TeamId = team.Id }
+        );
 
         // Access log (100% access)
         context.CollaboratorAccessLogs.Add(new CollaboratorAccessLog
@@ -866,5 +905,155 @@ public class DashboardReadStoreTests
         result.Should().NotBeNull();
         result!.TeamHealth.Engagement.Score.Should().BeLessThan(40);
         result.TeamHealth.Engagement.Level.Should().Be("low");
+    }
+
+    [Fact]
+    public async Task GetMyDashboardAsync_OrgScopedMission_IncludedInPendingTasks()
+    {
+        // Arrange
+        using var context = CreateInMemoryContext();
+        var org = new Organization { Id = Guid.NewGuid(), Name = "Org" };
+        var collaborator = new Collaborator
+        {
+            Id = Guid.NewGuid(),
+            FullName = "Admin User",
+            Email = "admin@test.com",
+            Role = CollaboratorRole.Leader,
+            OrganizationId = org.Id
+        };
+
+        // Org-scoped mission (CollaboratorId = null)
+        var orgMission = new Mission
+        {
+            Id = Guid.NewGuid(),
+            Name = "Org Mission",
+            OrganizationId = org.Id,
+            CollaboratorId = null,
+            WorkspaceId = null,
+            TeamId = null,
+            Status = MissionStatus.Active,
+            StartDate = DateTime.UtcNow.AddDays(-30),
+            EndDate = DateTime.UtcNow.AddDays(30)
+        };
+        var metric = new Metric
+        {
+            Id = Guid.NewGuid(),
+            Name = "KR",
+            MissionId = orgMission.Id,
+            OrganizationId = org.Id,
+            Type = MetricType.Quantitative
+        };
+        // Old checkin (> 7 days)
+        var checkin = new MetricCheckin
+        {
+            Id = Guid.NewGuid(),
+            MetricId = metric.Id,
+            CollaboratorId = collaborator.Id,
+            OrganizationId = org.Id,
+            CheckinDate = DateTime.UtcNow.AddDays(-10),
+            ConfidenceLevel = 3,
+            Value = 50
+        };
+
+        context.Organizations.Add(org);
+        context.Collaborators.Add(collaborator);
+        context.Missions.Add(orgMission);
+        context.Metrics.Add(metric);
+        context.MetricCheckins.Add(checkin);
+        await context.SaveChangesAsync();
+
+        var repository = new DashboardReadStore(context);
+
+        // Act
+        var result = await repository.GetMyDashboardAsync(collaborator.Id, null);
+
+        // Assert
+        result.Should().NotBeNull();
+        result!.PendingTasks.Should().HaveCount(1);
+        result.PendingTasks[0].Title.Should().Be("Org Mission");
+    }
+
+    [Fact]
+    public async Task GetMyDashboardAsync_MissionsUpdated_IncludesOrgScopedMissions()
+    {
+        // Arrange
+        using var context = CreateInMemoryContext();
+        var org = new Organization { Id = Guid.NewGuid(), Name = "Org" };
+        var collaborator = new Collaborator
+        {
+            Id = Guid.NewGuid(),
+            FullName = "Admin User",
+            Email = "admin@test.com",
+            Role = CollaboratorRole.Leader,
+            OrganizationId = org.Id
+        };
+
+        // Personal mission with recent checkin
+        var personalMission = new Mission
+        {
+            Id = Guid.NewGuid(),
+            Name = "Personal",
+            OrganizationId = org.Id,
+            CollaboratorId = collaborator.Id,
+            Status = MissionStatus.Active,
+            StartDate = DateTime.UtcNow.AddDays(-30),
+            EndDate = DateTime.UtcNow.AddDays(30)
+        };
+        var personalMetric = new Metric
+        {
+            Id = Guid.NewGuid(),
+            Name = "KR1",
+            MissionId = personalMission.Id,
+            OrganizationId = org.Id,
+            Type = MetricType.Quantitative
+        };
+        context.MetricCheckins.Add(new MetricCheckin
+        {
+            Id = Guid.NewGuid(),
+            MetricId = personalMetric.Id,
+            CollaboratorId = collaborator.Id,
+            OrganizationId = org.Id,
+            CheckinDate = DateTime.UtcNow.AddDays(-1),
+            ConfidenceLevel = 4,
+            Value = 80
+        });
+
+        // Org-scoped mission without checkin
+        var orgMission = new Mission
+        {
+            Id = Guid.NewGuid(),
+            Name = "Org Mission",
+            OrganizationId = org.Id,
+            CollaboratorId = null,
+            WorkspaceId = null,
+            TeamId = null,
+            Status = MissionStatus.Active,
+            StartDate = DateTime.UtcNow.AddDays(-30),
+            EndDate = DateTime.UtcNow.AddDays(30)
+        };
+        var orgMetric = new Metric
+        {
+            Id = Guid.NewGuid(),
+            Name = "KR2",
+            MissionId = orgMission.Id,
+            OrganizationId = org.Id,
+            Type = MetricType.Quantitative
+        };
+
+        context.Organizations.Add(org);
+        context.Collaborators.Add(collaborator);
+        context.Missions.AddRange(personalMission, orgMission);
+        context.Metrics.AddRange(personalMetric, orgMetric);
+        await context.SaveChangesAsync();
+
+        var repository = new DashboardReadStore(context);
+
+        // Act
+        var result = await repository.GetMyDashboardAsync(collaborator.Id, null);
+
+        // Assert
+        result.Should().NotBeNull();
+        // 1 of 2 missions updated = 50%
+        result!.TeamHealth.MissionsUpdated.Percentage.Should().Be(50);
     }
 }

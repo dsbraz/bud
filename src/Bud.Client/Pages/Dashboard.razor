@@ -187,8 +187,17 @@ else
 
     protected override async Task OnInitializedAsync()
     {
-        await AuthState.EnsureInitializedAsync();
         OrgContext.OnOrganizationChanged += OnOrganizationChanged;
+
+        // Aguardar inicialização do OrgContext (MainLayout pode ainda estar carregando)
+        var maxWait = 50; // 50 * 100ms = 5 segundos máximo
+        while (!OrgContext.IsInitialized && maxWait > 0)
+        {
+            await Task.Delay(100);
+            maxWait--;
+        }
+
+        await AuthState.EnsureInitializedAsync();
         await LoadUserTeams();
         await LoadDashboard();
     }

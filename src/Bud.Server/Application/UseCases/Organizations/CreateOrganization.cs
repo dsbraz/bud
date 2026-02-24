@@ -37,8 +37,8 @@ public sealed class CreateOrganization(
             await organizationRepository.AddAsync(organization, cancellationToken);
             await unitOfWork.CommitAsync(organizationRepository.SaveChangesAsync, cancellationToken);
 
-            var result = await organizationRepository.GetByIdWithOwnerAsync(organization.Id, cancellationToken);
-            return Result<Organization>.Success(result!);
+            organization.Owner = owner;
+            return Result<Organization>.Success(organization);
         }
         catch (DomainInvariantException ex)
         {

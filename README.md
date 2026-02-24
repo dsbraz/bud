@@ -359,12 +359,14 @@ docker compose up --build
 - App (UI + API): `http://localhost:8080`
 - Swagger (ambiente Development): `http://localhost:8080/swagger`
 
-### Padrão de desenvolvimento (sem hot reload)
+### Padrão de desenvolvimento (com hot reload no Docker Compose)
 
-- O hot reload do Blazor WASM está desativado por padrão.
-- O build usa caches de NuGet e de compilação via volumes nomeados para acelerar o ciclo local.
+- Os serviços `web` e `mcp` usam `dotnet watch` no ambiente local via Docker Compose.
+- Para Docker Desktop (macOS/Windows), o compose habilita `DOTNET_USE_POLLING_FILE_WATCHER=1` para detecção estável de mudanças em volumes montados.
+- No `web`, o run usa `WasmEnableHotReload=true` para habilitar hot reload do Blazor WASM nesse fluxo local.
+- O build continua usando caches de NuGet e compilação via volumes nomeados para acelerar o ciclo.
 
-Se você encontrar assets antigos no browser, limpe os volumes e recompile:
+Se você encontrar assets antigos no browser, faça hard refresh. Se persistir, limpe volumes e recompile:
 
 ```bash
 docker compose down -v
@@ -419,6 +421,7 @@ docker compose up --build
 
 O serviço `mcp` é criado no compose usando:
 - `Dockerfile` (target `dev-mcp-web`)
+- `dotnet watch` para recarregar alterações locais automaticamente
 - `DOTNET_ENVIRONMENT=Development` (usa `src/Bud.Mcp/appsettings.Development.json`)
 - `BUD_API_BASE_URL=http://web:8080` para chamadas internas ao `Bud.Server`
 - mapeamento de porta `8081:8080` para evitar conflito com o `web`
@@ -638,7 +641,7 @@ sequenceDiagram
 
 - **Dados/artefatos antigos no browser**  
   Sintoma: UI não reflete mudanças recentes.  
-  Ação: execute `docker compose down -v && docker compose up --build` e force reload no navegador.
+  Ação: faça hard reload no navegador. Se persistir, execute `docker compose down -v && docker compose up --build`.
 
 #### Fluxo de diagnóstico rápido (401/403)
 

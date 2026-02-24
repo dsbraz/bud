@@ -178,10 +178,11 @@ public partial class MissionWizardModal
             return;
         }
 
-        if (TryBuildTempMetric(newMetricModel, null, null, out var metric))
+        if (TryBuildTempMetric(newMetricModel, null, addingMetricToObjectiveTempId, out var metric))
         {
             tempMetrics.Add(metric);
             newMetricModel.Clear();
+            addingMetricToObjectiveTempId = null;
         }
     }
 
