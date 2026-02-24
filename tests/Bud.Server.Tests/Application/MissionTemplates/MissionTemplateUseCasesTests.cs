@@ -11,9 +11,9 @@ using FluentAssertions;
 using Moq;
 using Xunit;
 
-namespace Bud.Server.Tests.Application.Templates;
+namespace Bud.Server.Tests.Application.MissionTemplates;
 
-public sealed class TemplateUseCasesTests
+public sealed class MissionTemplateUseCasesTests
 {
     private static readonly ClaimsPrincipal User = new(new ClaimsIdentity([new Claim(ClaimTypes.Name, "test")]));
 
