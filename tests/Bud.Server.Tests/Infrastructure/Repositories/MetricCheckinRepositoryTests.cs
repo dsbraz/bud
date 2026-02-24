@@ -8,7 +8,7 @@ using Xunit;
 
 namespace Bud.Server.Tests.Infrastructure.Repositories;
 
-public sealed class MissionMetricCheckinPersistenceTests
+public sealed class MetricCheckinRepositoryTests
 {
     private readonly TestTenantProvider _tenantProvider = new() { IsGlobalAdmin = true };
 
