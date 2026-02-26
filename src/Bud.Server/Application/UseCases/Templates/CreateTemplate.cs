@@ -6,13 +6,15 @@ using Bud.Server.Domain.Model;
 using Bud.Server.Domain.Repositories;
 using Bud.Server.MultiTenancy;
 using Bud.Shared.Contracts;
+using Microsoft.Extensions.Logging;
 
 namespace Bud.Server.Application.UseCases.Templates;
 
-public sealed class CreateTemplate(
+public sealed partial class CreateTemplate(
     ITemplateRepository templateRepository,
     IApplicationAuthorizationGateway authorizationGateway,
     ITenantProvider tenantProvider,
+    ILogger<CreateTemplate> logger,
     IUnitOfWork? unitOfWork = null)
 {
     public async Task<Result<Template>> ExecuteAsync(
@@ -20,6 +22,8 @@ public sealed class CreateTemplate(
         CreateTemplateRequest request,
         CancellationToken cancellationToken = default)
     {
+        LogCreatingTemplate(logger, request.Name);
+
         if (tenantProvider.TenantId.HasValue)
         {
             var canCreate = await authorizationGateway.CanAccessTenantOrganizationAsync(
@@ -28,6 +32,7 @@ public sealed class CreateTemplate(
                 cancellationToken);
             if (!canCreate)
             {
+                LogTemplateCreationFailed(logger, request.Name, "Forbidden");
                 return Result<Template>.Forbidden("Você não tem permissão para criar templates nesta organização.");
             }
         }
@@ -63,12 +68,22 @@ public sealed class CreateTemplate(
             await templateRepository.AddAsync(template, cancellationToken);
             await unitOfWork.CommitAsync(templateRepository.SaveChangesAsync, cancellationToken);
 
+            LogTemplateCreated(logger, template.Id, template.Name);
             return Result<Template>.Success(template);
         }
         catch (DomainInvariantException ex)
         {
+            LogTemplateCreationFailed(logger, request.Name, ex.Message);
             return Result<Template>.Failure(ex.Message, ErrorType.Validation);
         }
     }
-}
 
+    [LoggerMessage(EventId = 4072, Level = LogLevel.Information, Message = "Creating template '{Name}'")]
+    private static partial void LogCreatingTemplate(ILogger logger, string name);
+
+    [LoggerMessage(EventId = 4073, Level = LogLevel.Information, Message = "Template created successfully: {TemplateId} - '{Name}'")]
+    private static partial void LogTemplateCreated(ILogger logger, Guid templateId, string name);
+
+    [LoggerMessage(EventId = 4074, Level = LogLevel.Warning, Message = "Template creation failed for '{Name}': {Reason}")]
+    private static partial void LogTemplateCreationFailed(ILogger logger, string name, string reason);
+}

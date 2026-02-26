@@ -113,7 +113,7 @@ gcloud run deploy "$MCP_SERVICE_NAME" \
   --image "$IMAGE_URI" \
   --allow-unauthenticated \
   --port 8080 \
-  --set-env-vars "DOTNET_ENVIRONMENT=Production,ASPNETCORE_ENVIRONMENT=Production,ASPNETCORE_URLS=http://0.0.0.0:8080,BUD_API_BASE_URL=${WEB_API_URL}"
+  --set-env-vars "DOTNET_ENVIRONMENT=Production,ASPNETCORE_ENVIRONMENT=Production,ASPNETCORE_URLS=http://0.0.0.0:8080,BUD_API_BASE_URL=${WEB_API_URL},OTEL_SERVICE_NAME=Bud.Mcp,OTEL_RESOURCE_ATTRIBUTES=cloud.provider=gcp\,cloud.platform=gcp_cloud_run,OTEL_EXPORTER_OTLP_ENDPOINT=https://telemetry.googleapis.com,GCP_PROJECT_ID=${PROJECT_ID}"
 
 echo "==> Validando MCP"
 MCP_URL="$(gcloud run services describe "$MCP_SERVICE_NAME" --region "$REGION" --project "$PROJECT_ID" --format='value(status.url)')"

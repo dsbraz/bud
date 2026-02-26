@@ -6,13 +6,15 @@ using Bud.Server.Domain.Model;
 using Bud.Server.Domain.Repositories;
 using Bud.Server.Application.Ports;
 using Bud.Shared.Contracts;
+using Microsoft.Extensions.Logging;
 
 namespace Bud.Server.Application.UseCases.Missions;
 
-public sealed class PatchMission(
+public sealed partial class PatchMission(
     IMissionRepository missionRepository,
     IMissionScopeResolver missionScopeResolver,
     IApplicationAuthorizationGateway authorizationGateway,
+    ILogger<PatchMission> logger,
     IUnitOfWork? unitOfWork = null)
 {
     public async Task<Result<Mission>> ExecuteAsync(
@@ -21,15 +23,19 @@ public sealed class PatchMission(
         PatchMissionRequest request,
         CancellationToken cancellationToken = default)
     {
+        LogPatchingMission(logger, id);
+
         var mission = await missionRepository.GetByIdAsync(id, cancellationToken);
         if (mission is null)
         {
+            LogMissionPatchFailed(logger, id, "Not found");
             return Result<Mission>.NotFound("Missão não encontrada.");
         }
 
         var canUpdate = await authorizationGateway.CanAccessTenantOrganizationAsync(user, mission.OrganizationId, cancellationToken);
         if (!canUpdate)
         {
+            LogMissionPatchFailed(logger, id, "Forbidden");
             return Result<Mission>.Forbidden("Você não tem permissão para atualizar missões nesta organização.");
         }
 
@@ -69,6 +75,7 @@ public sealed class PatchMission(
                     cancellationToken: cancellationToken);
                 if (!scopeResolution.IsSuccess)
                 {
+                    LogMissionPatchFailed(logger, id, scopeResolution.Error ?? "Escopo não encontrado.");
                     return Result<Mission>.NotFound(scopeResolution.Error ?? "Escopo não encontrado.");
                 }
 
@@ -79,10 +86,12 @@ public sealed class PatchMission(
             mission.MarkAsUpdated();
             await unitOfWork.CommitAsync(missionRepository.SaveChangesAsync, cancellationToken);
 
+            LogMissionPatched(logger, id, mission.Name);
             return Result<Mission>.Success(mission);
         }
         catch (DomainInvariantException ex)
         {
+            LogMissionPatchFailed(logger, id, ex.Message);
             return Result<Mission>.Failure(ex.Message, ErrorType.Validation);
         }
     }
@@ -96,4 +105,13 @@ public sealed class PatchMission(
             _ => value.ToUniversalTime()
         };
     }
+
+    [LoggerMessage(EventId = 4003, Level = LogLevel.Information, Message = "Patching mission {MissionId}")]
+    private static partial void LogPatchingMission(ILogger logger, Guid missionId);
+
+    [LoggerMessage(EventId = 4004, Level = LogLevel.Information, Message = "Mission patched successfully: {MissionId} - '{Name}'")]
+    private static partial void LogMissionPatched(ILogger logger, Guid missionId, string name);
+
+    [LoggerMessage(EventId = 4005, Level = LogLevel.Warning, Message = "Mission patch failed for {MissionId}: {Reason}")]
+    private static partial void LogMissionPatchFailed(ILogger logger, Guid missionId, string reason);
 }

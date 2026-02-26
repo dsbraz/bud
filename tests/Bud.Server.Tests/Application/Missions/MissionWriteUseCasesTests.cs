@@ -9,6 +9,7 @@ using Bud.Shared.Contracts;
 using Bud.Server.Domain.Events;
 using Bud.Server.Domain.Model;
 using FluentAssertions;
+using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
 using Xunit;
 
@@ -22,13 +23,13 @@ public sealed class MissionWriteUseCasesTests
     private readonly Mock<IApplicationAuthorizationGateway> _authGateway = new();
 
     private CreateMission CreatePlanningUseCase()
-        => new(_repo.Object, _scopeResolver.Object, _authGateway.Object);
+        => new(_repo.Object, _scopeResolver.Object, _authGateway.Object, NullLogger<CreateMission>.Instance);
 
     private PatchMission CreateReplanningUseCase()
-        => new(_repo.Object, _scopeResolver.Object, _authGateway.Object);
+        => new(_repo.Object, _scopeResolver.Object, _authGateway.Object, NullLogger<PatchMission>.Instance);
 
     private DeleteMission CreateRemoveUseCase()
-        => new(_repo.Object, _authGateway.Object);
+        => new(_repo.Object, _authGateway.Object, NullLogger<DeleteMission>.Instance);
 
     [Fact]
     public async Task CreateAsync_WhenScopeResolutionFails_ReturnsNotFound()

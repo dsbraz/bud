@@ -7,6 +7,7 @@ using Bud.Server.Authorization;
 using Bud.Shared.Contracts;
 using Bud.Server.Domain.Model;
 using FluentAssertions;
+using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
 using Xunit;
 
@@ -20,13 +21,13 @@ public sealed class WorkspaceWriteUseCasesTests
     private readonly Mock<IApplicationAuthorizationGateway> _authGateway = new();
 
     private CreateWorkspace CreateCreateWorkspace()
-        => new(_wsRepo.Object, _orgRepo.Object, _authGateway.Object);
+        => new(_wsRepo.Object, _orgRepo.Object, _authGateway.Object, NullLogger<CreateWorkspace>.Instance);
 
     private PatchWorkspace CreatePatchWorkspace()
-        => new(_wsRepo.Object, _authGateway.Object);
+        => new(_wsRepo.Object, _authGateway.Object, NullLogger<PatchWorkspace>.Instance);
 
     private DeleteWorkspace CreateDeleteWorkspace()
-        => new(_wsRepo.Object, _authGateway.Object);
+        => new(_wsRepo.Object, _authGateway.Object, NullLogger<DeleteWorkspace>.Instance);
 
     [Fact]
     public async Task CreateAsync_WhenUnauthorized_ReturnsForbidden()

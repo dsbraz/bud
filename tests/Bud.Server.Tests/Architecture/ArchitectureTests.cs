@@ -208,6 +208,7 @@ public sealed class ArchitectureTests
         typeof(BudSecurityCompositionExtensions).Should().NotBeNull();
         typeof(BudInfrastructureCompositionExtensions).Should().NotBeNull();
         typeof(BudApplicationCompositionExtensions).Should().NotBeNull();
+        typeof(BudObservabilityCompositionExtensions).Should().NotBeNull();
         typeof(BudCompositionExtensions).Should().NotBeNull();
     }
 
@@ -223,6 +224,7 @@ public sealed class ArchitectureTests
             (Type: typeof(BudSecurityCompositionExtensions), Method: "AddBudRateLimiting"),
             (Type: typeof(BudInfrastructureCompositionExtensions), Method: "AddBudInfrastructure"),
             (Type: typeof(BudApplicationCompositionExtensions), Method: "AddBudApplication"),
+            (Type: typeof(BudObservabilityCompositionExtensions), Method: "AddBudObservability"),
             (Type: typeof(BudCompositionExtensions), Method: "AddBudPlatform")
         };
 

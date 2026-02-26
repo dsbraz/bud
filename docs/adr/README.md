@@ -23,6 +23,7 @@ Cada ADR é autocontida e descreve contexto, decisão, consequências e alternat
 10. `ADR-0010` Contratos HTTP, Tratamento de Erros e Camada de Borda
 11. `ADR-0011` Estratégia de Validação
 12. `ADR-0012` Estratégia de Testes e Governança Arquitetural
+13. `ADR-0013` Estratégia de Observabilidade
 
 ## Status possíveis
 

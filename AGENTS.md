@@ -51,6 +51,8 @@ This is the canonical agent contract for this repository.
 - Update or create ADR when architectural behavior changes.
 - Keep solution warning-free (`TreatWarningsAsErrors=true`).
 - For `Bud.Server` logging, use source-generated logging (`[LoggerMessage]`) local to each component (`partial` class); do not introduce centralized ad-hoc log catalogs.
+- For observability, register via `AddBudObservability()` in `BudObservabilityCompositionExtensions` (structured logging + OpenTelemetry). OTel config is **config-as-environment**: all export/resource/service-name settings come from standard OTel env vars, never hardcoded in code or appsettings.
+- Reserve EventId ranges per domain: 3100–3199 RequestTelemetryMiddleware; 4000–4009 Mission; 4010–4019 Organization; 4020–4029 Workspace; 4030–4039 Team; 4040–4049 Collaborator; 4050–4059 Metric; 4060–4069 MetricCheckin; 4070–4079 Template; 4080–4089 Objective; 4090–4099 Session/Notification; 5000–5009 McpRequestLoggingMiddleware.
 - For `Bud.Mcp`, keep tool schemas explicit (`required`, field types/formats/enums) and propagate API validation details (`errors` by field).
 - For `Bud.Mcp`, keep domain tools (`mission_*`, `mission_metric_*`, `metric_checkin_*`) sourced from `Tools/Generated/mcp-tool-catalog.json` (strict mode, no runtime ad-hoc fallback).
 - For `Bud.Mcp` HTTP transport, use `MCP-Session-Id` as the session header.
@@ -236,6 +238,7 @@ Operational command details are maintained in:
 - `src/Bud.Server/Controllers/OrganizationsController.cs`
 - `src/Bud.Server/Application/Common/Result.cs`
 - `src/Bud.Server/DependencyInjection/BudApplicationCompositionExtensions.cs`
+- `src/Bud.Server/DependencyInjection/BudObservabilityCompositionExtensions.cs`
 - `src/Bud.Server/DependencyInjection/BudSecurityCompositionExtensions.cs`
 - `src/Bud.Server/Infrastructure/Persistence/ApplicationDbContext.cs`
 - `src/Bud.Server/MultiTenancy/ITenantProvider.cs`

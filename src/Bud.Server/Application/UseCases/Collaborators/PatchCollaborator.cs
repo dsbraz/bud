@@ -6,12 +6,14 @@ using Bud.Server.Domain.Model;
 using Bud.Server.Domain.Repositories;
 using Bud.Server.MultiTenancy;
 using Bud.Shared.Contracts;
+using Microsoft.Extensions.Logging;
 
 namespace Bud.Server.Application.UseCases.Collaborators;
 
-public sealed class PatchCollaborator(
+public sealed partial class PatchCollaborator(
     ICollaboratorRepository collaboratorRepository,
     IApplicationAuthorizationGateway authorizationGateway,
+    ILogger<PatchCollaborator> logger,
     IUnitOfWork? unitOfWork = null)
 {
     public async Task<Result<Collaborator>> ExecuteAsync(
@@ -20,15 +22,19 @@ public sealed class PatchCollaborator(
         PatchCollaboratorRequest request,
         CancellationToken cancellationToken = default)
     {
+        LogPatchingCollaborator(logger, id);
+
         var collaborator = await collaboratorRepository.GetByIdAsync(id, cancellationToken);
         if (collaborator is null)
         {
+            LogCollaboratorPatchFailed(logger, id, "Not found");
             return Result<Collaborator>.NotFound("Colaborador não encontrado.");
         }
 
         var canUpdate = await authorizationGateway.IsOrganizationOwnerAsync(user, collaborator.OrganizationId, cancellationToken);
         if (!canUpdate)
         {
+            LogCollaboratorPatchFailed(logger, id, "Forbidden");
             return Result<Collaborator>.Forbidden("Apenas o proprietário da organização pode editar colaboradores.");
         }
 
@@ -39,11 +45,13 @@ public sealed class PatchCollaborator(
 
         if (!EmailAddress.TryCreate(requestedEmail, out var emailAddress))
         {
+            LogCollaboratorPatchFailed(logger, id, "Invalid email");
             return Result<Collaborator>.Failure("E-mail inválido.", ErrorType.Validation);
         }
 
         if (!PersonName.TryCreate(requestedFullName, out var personName))
         {
+            LogCollaboratorPatchFailed(logger, id, "Invalid name");
             return Result<Collaborator>.Failure("O nome do colaborador é obrigatório.", ErrorType.Validation);
         }
 
@@ -51,6 +59,7 @@ public sealed class PatchCollaborator(
         {
             if (!await collaboratorRepository.IsEmailUniqueAsync(emailAddress.Value, id, cancellationToken))
             {
+                LogCollaboratorPatchFailed(logger, id, "Email already in use");
                 return Result<Collaborator>.Failure("O email já está em uso.", ErrorType.Validation);
             }
         }
@@ -60,16 +69,19 @@ public sealed class PatchCollaborator(
             var leader = await collaboratorRepository.GetByIdAsync(requestedLeaderId.Value, cancellationToken);
             if (leader is null)
             {
+                LogCollaboratorPatchFailed(logger, id, "Leader not found");
                 return Result<Collaborator>.NotFound("Líder não encontrado.");
             }
 
             if (leader.OrganizationId != collaborator.OrganizationId)
             {
+                LogCollaboratorPatchFailed(logger, id, "Leader belongs to different organization");
                 return Result<Collaborator>.Failure("O líder deve pertencer à mesma organização.", ErrorType.Validation);
             }
 
             if (leader.Role != CollaboratorRole.Leader)
             {
+                LogCollaboratorPatchFailed(logger, id, "Selected collaborator is not a leader");
                 return Result<Collaborator>.Failure("O colaborador selecionado não é um líder.", ErrorType.Validation);
             }
         }
@@ -79,6 +91,7 @@ public sealed class PatchCollaborator(
         {
             if (await collaboratorRepository.HasSubordinatesAsync(id, cancellationToken))
             {
+                LogCollaboratorPatchFailed(logger, id, "Leader has subordinates");
                 return Result<Collaborator>.Failure(
                     "Não é possível alterar o perfil. Este líder possui membros de equipe.",
                     ErrorType.Validation);
@@ -86,6 +99,7 @@ public sealed class PatchCollaborator(
 
             if (await collaboratorRepository.IsOrganizationOwnerAsync(id, cancellationToken))
             {
+                LogCollaboratorPatchFailed(logger, id, "Leader is organization owner");
                 return Result<Collaborator>.Failure(
                     "Não é possível alterar o perfil. Este líder é proprietário de uma organização.",
                     ErrorType.Validation);
@@ -102,11 +116,22 @@ public sealed class PatchCollaborator(
                 collaborator.Id);
             await unitOfWork.CommitAsync(collaboratorRepository.SaveChangesAsync, cancellationToken);
 
+            LogCollaboratorPatched(logger, id, collaborator.FullName);
             return Result<Collaborator>.Success(collaborator);
         }
         catch (DomainInvariantException ex)
         {
+            LogCollaboratorPatchFailed(logger, id, ex.Message);
             return Result<Collaborator>.Failure(ex.Message, ErrorType.Validation);
         }
     }
+
+    [LoggerMessage(EventId = 4045, Level = LogLevel.Information, Message = "Patching collaborator {CollaboratorId}")]
+    private static partial void LogPatchingCollaborator(ILogger logger, Guid collaboratorId);
+
+    [LoggerMessage(EventId = 4046, Level = LogLevel.Information, Message = "Collaborator patched successfully: {CollaboratorId} - '{FullName}'")]
+    private static partial void LogCollaboratorPatched(ILogger logger, Guid collaboratorId, string fullName);
+
+    [LoggerMessage(EventId = 4047, Level = LogLevel.Warning, Message = "Collaborator patch failed for {CollaboratorId}: {Reason}")]
+    private static partial void LogCollaboratorPatchFailed(ILogger logger, Guid collaboratorId, string reason);
 }

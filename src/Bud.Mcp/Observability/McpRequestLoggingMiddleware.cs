@@ -1,10 +1,11 @@
 using System.Diagnostics;
+using Microsoft.Extensions.Logging;
 
-namespace Bud.Server.Middleware;
+namespace Bud.Mcp.Observability;
 
-public sealed partial class RequestTelemetryMiddleware(
+public sealed partial class McpRequestLoggingMiddleware(
     RequestDelegate next,
-    ILogger<RequestTelemetryMiddleware> logger)
+    ILogger<McpRequestLoggingMiddleware> logger)
 {
     public async Task InvokeAsync(HttpContext context)
     {
@@ -24,13 +25,13 @@ public sealed partial class RequestTelemetryMiddleware(
             var path = context.Request.Path.HasValue ? context.Request.Path.Value! : "/";
             var method = context.Request.Method;
 
-            LogHttpRequest(logger, method, path, statusCode, elapsedMs, correlationId);
+            LogMcpRequest(logger, method, path, statusCode, elapsedMs, correlationId);
         }
     }
 
     [LoggerMessage(
-        EventId = 3200,
+        EventId = 5000,
         Level = LogLevel.Information,
-        Message = "HTTP {Method} {Path} respondeu {StatusCode} em {ElapsedMs} ms (CorrelationId: {CorrelationId})")]
-    private static partial void LogHttpRequest(ILogger logger, string method, string path, int statusCode, double elapsedMs, string correlationId);
+        Message = "MCP {Method} {Path} respondeu {StatusCode} em {ElapsedMs} ms (CorrelationId: {CorrelationId})")]
+    private static partial void LogMcpRequest(ILogger logger, string method, string path, int statusCode, double elapsedMs, string correlationId);
 }

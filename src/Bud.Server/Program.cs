@@ -1,5 +1,6 @@
 using Bud.Server.DependencyInjection;
 using Bud.Server.MultiTenancy;
+using Bud.Server.Observability;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -27,6 +28,7 @@ if (!app.Environment.IsDevelopment())
 }
 
 app.UseExceptionHandler();
+app.UseMiddleware<LogEnrichmentMiddleware>();
 app.UseMiddleware<Bud.Server.Middleware.SecurityHeadersMiddleware>();
 app.UseHttpsRedirection();
 app.UseBlazorFrameworkFiles();
