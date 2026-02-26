@@ -1,4 +1,4 @@
-namespace Bud.Server.Domain.Abstractions;
+namespace Bud.Server.Domain.Primitives;
 
 public interface IDomainEventNotifier<in TDomainEvent>
     where TDomainEvent : IDomainEvent

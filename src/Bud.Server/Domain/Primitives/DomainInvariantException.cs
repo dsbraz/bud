@@ -1,3 +1,3 @@
-namespace Bud.Server.Domain.Abstractions;
+namespace Bud.Server.Domain.Primitives;
 
 public sealed class DomainInvariantException(string message) : Exception(message);

@@ -1,4 +1,4 @@
-global using Bud.Server.Domain.Abstractions;
+global using Bud.Server.Domain.Primitives;
 global using Bud.Server.Domain.ValueObjects;
 global using Bud.Server.Infrastructure.Repositories;
 global using Bud.Shared.Contracts;

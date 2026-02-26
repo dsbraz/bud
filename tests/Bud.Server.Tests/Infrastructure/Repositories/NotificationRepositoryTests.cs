@@ -235,66 +235,6 @@ public sealed class NotificationRepositoryTests
 
     #endregion
 
-    #region MarkAllAsReadAsync Tests
-
-    [Fact(Skip = "ExecuteUpdateAsync is not supported by EF Core InMemory provider; covered by integration tests.")]
-    public async Task MarkAllAsReadAsync_MarksAllUnreadNotificationsAsRead()
-    {
-        // Arrange
-        using var context = CreateInMemoryContext();
-        var repository = new NotificationRepository(context);
-        var (org, collaborator) = await CreateTestRecipient(context);
-
-        context.Notifications.AddRange(
-            CreateTestNotification(collaborator.Id, org.Id, isRead: false, title: "Unread 1"),
-            CreateTestNotification(collaborator.Id, org.Id, isRead: false, title: "Unread 2"),
-            CreateTestNotification(collaborator.Id, org.Id, isRead: true, title: "Already Read"));
-        await context.SaveChangesAsync();
-
-        // Act
-        await repository.MarkAllAsReadAsync(collaborator.Id);
-
-        // Assert
-        var allNotifications = await context.Notifications
-            .Where(n => n.RecipientCollaboratorId == collaborator.Id)
-            .ToListAsync();
-        allNotifications.Should().AllSatisfy(n => n.IsRead.Should().BeTrue());
-    }
-
-    [Fact(Skip = "ExecuteUpdateAsync is not supported by EF Core InMemory provider; covered by integration tests.")]
-    public async Task MarkAllAsReadAsync_DoesNotAffectOtherRecipients()
-    {
-        // Arrange
-        using var context = CreateInMemoryContext();
-        var repository = new NotificationRepository(context);
-        var (org, collaborator1) = await CreateTestRecipient(context);
-
-        var collaborator2 = new Collaborator
-        {
-            Id = Guid.NewGuid(),
-            FullName = "Other",
-            Email = "other@test.com",
-            OrganizationId = org.Id
-        };
-        context.Collaborators.Add(collaborator2);
-        await context.SaveChangesAsync();
-
-        context.Notifications.AddRange(
-            CreateTestNotification(collaborator1.Id, org.Id, isRead: false, title: "For C1"),
-            CreateTestNotification(collaborator2.Id, org.Id, isRead: false, title: "For C2"));
-        await context.SaveChangesAsync();
-
-        // Act
-        await repository.MarkAllAsReadAsync(collaborator1.Id);
-
-        // Assert
-        var c2Notification = await context.Notifications
-            .FirstAsync(n => n.RecipientCollaboratorId == collaborator2.Id);
-        c2Notification.IsRead.Should().BeFalse();
-    }
-
-    #endregion
-
     #region AddRangeAsync / SaveChangesAsync Tests
 
     [Fact]
