@@ -6,6 +6,7 @@ using Bud.Server.Settings;
 using Bud.Shared.Contracts;
 using Bud.Server.Domain.Model;
 using FluentAssertions;
+using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
 using Moq;
 using Xunit;
@@ -25,13 +26,13 @@ public sealed class OrganizationWriteUseCasesTests
         });
 
     private CreateOrganization CreateRegisterOrganization()
-        => new(_orgRepo.Object, _collabRepo.Object);
+        => new(_orgRepo.Object, _collabRepo.Object, NullLogger<CreateOrganization>.Instance);
 
     private PatchOrganization CreateRenameOrganization(string protectedOrgName = "getbud.co")
-        => new(_orgRepo.Object, _collabRepo.Object, CreateSettings(protectedOrgName));
+        => new(_orgRepo.Object, _collabRepo.Object, CreateSettings(protectedOrgName), NullLogger<PatchOrganization>.Instance);
 
     private DeleteOrganization CreateDeleteOrganization(string protectedOrgName = "getbud.co")
-        => new(_orgRepo.Object, CreateSettings(protectedOrgName));
+        => new(_orgRepo.Object, CreateSettings(protectedOrgName), NullLogger<DeleteOrganization>.Instance);
 
     #region CreateAsync
 

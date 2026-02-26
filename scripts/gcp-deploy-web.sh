@@ -200,7 +200,7 @@ gcloud run deploy "$SERVICE_NAME" \
   --set-cloudsql-instances "$INSTANCE_CONNECTION_NAME" \
   --set-secrets "ConnectionStrings__DefaultConnection=${SECRET_DB_CONNECTION}:latest" \
   --set-secrets "Jwt__Key=${SECRET_JWT_KEY}:latest" \
-  --set-env-vars "ASPNETCORE_ENVIRONMENT=Production,DOTNET_ENVIRONMENT=Production,ASPNETCORE_URLS=http://0.0.0.0:8080,ASPNETCORE_FORWARDEDHEADERS_ENABLED=true"
+  --set-env-vars "ASPNETCORE_ENVIRONMENT=Production,DOTNET_ENVIRONMENT=Production,ASPNETCORE_URLS=http://0.0.0.0:8080,ASPNETCORE_FORWARDEDHEADERS_ENABLED=true,OTEL_SERVICE_NAME=Bud.Server,OTEL_RESOURCE_ATTRIBUTES=cloud.provider=gcp\,cloud.platform=gcp_cloud_run,OTEL_EXPORTER_OTLP_ENDPOINT=https://telemetry.googleapis.com,GCP_PROJECT_ID=${PROJECT_ID}"
 
 echo "==> Validando endpoints de health"
 SERVICE_URL="$(gcloud run services describe "$SERVICE_NAME" --region "$REGION" --project "$PROJECT_ID" --format='value(status.url)')"

@@ -8,6 +8,7 @@ using Bud.Server.Domain.Repositories;
 using Bud.Server.MultiTenancy;
 using Bud.Shared.Contracts;
 using FluentAssertions;
+using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
 using Xunit;
 
@@ -33,7 +34,8 @@ public sealed class MissionTemplateUseCasesTests
         var useCase = new CreateTemplate(
             _repository.Object,
             _authorizationGateway.Object,
-            _tenantProvider.Object);
+            _tenantProvider.Object,
+            NullLogger<CreateTemplate>.Instance);
 
         var request = new CreateTemplateRequest
         {
@@ -70,7 +72,8 @@ public sealed class MissionTemplateUseCasesTests
         var useCase = new CreateTemplate(
             _repository.Object,
             _authorizationGateway.Object,
-            _tenantProvider.Object);
+            _tenantProvider.Object,
+            NullLogger<CreateTemplate>.Instance);
 
         var result = await useCase.ExecuteAsync(User, new CreateTemplateRequest { Name = "Template" });
 
@@ -103,7 +106,8 @@ public sealed class MissionTemplateUseCasesTests
 
         var useCase = new PatchTemplate(
             _repository.Object,
-            _authorizationGateway.Object);
+            _authorizationGateway.Object,
+            NullLogger<PatchTemplate>.Instance);
 
         var result = await useCase.ExecuteAsync(User, template.Id, new PatchTemplateRequest { Name = "Updated" });
 
@@ -121,7 +125,8 @@ public sealed class MissionTemplateUseCasesTests
 
         var useCase = new PatchTemplate(
             _repository.Object,
-            _authorizationGateway.Object);
+            _authorizationGateway.Object,
+            NullLogger<PatchTemplate>.Instance);
 
         var result = await useCase.ExecuteAsync(User, Guid.NewGuid(), new PatchTemplateRequest { Name = "Updated" });
 
@@ -148,7 +153,8 @@ public sealed class MissionTemplateUseCasesTests
 
         var useCase = new DeleteTemplate(
             _repository.Object,
-            _authorizationGateway.Object);
+            _authorizationGateway.Object,
+            NullLogger<DeleteTemplate>.Instance);
 
         var result = await useCase.ExecuteAsync(User, template.Id);
 
@@ -166,7 +172,8 @@ public sealed class MissionTemplateUseCasesTests
 
         var useCase = new DeleteTemplate(
             _repository.Object,
-            _authorizationGateway.Object);
+            _authorizationGateway.Object,
+            NullLogger<DeleteTemplate>.Instance);
 
         var result = await useCase.ExecuteAsync(User, Guid.NewGuid());
 

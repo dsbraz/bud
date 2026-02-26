@@ -8,6 +8,7 @@ using Bud.Server.Domain.Repositories;
 using Bud.Server.MultiTenancy;
 using Bud.Shared.Contracts;
 using FluentAssertions;
+using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
 using Xunit;
 
@@ -34,7 +35,8 @@ public sealed class CollaboratorWriteUseCasesTests
         var useCase = new CreateCollaborator(
             _collaboratorRepository.Object,
             _authorizationGateway.Object,
-            _tenantProvider.Object);
+            _tenantProvider.Object,
+            NullLogger<CreateCollaborator>.Instance);
 
         var request = new CreateCollaboratorRequest
         {
@@ -58,7 +60,8 @@ public sealed class CollaboratorWriteUseCasesTests
 
         var useCase = new PatchCollaborator(
             _collaboratorRepository.Object,
-            _authorizationGateway.Object);
+            _authorizationGateway.Object,
+            NullLogger<PatchCollaborator>.Instance);
 
         var request = new PatchCollaboratorRequest
         {
@@ -102,7 +105,8 @@ public sealed class CollaboratorWriteUseCasesTests
 
         var useCase = new DeleteCollaborator(
             _collaboratorRepository.Object,
-            _authorizationGateway.Object);
+            _authorizationGateway.Object,
+            NullLogger<DeleteCollaborator>.Instance);
 
         var result = await useCase.ExecuteAsync(User, collaborator.Id);
 
@@ -134,7 +138,8 @@ public sealed class CollaboratorWriteUseCasesTests
 
         var useCase = new DeleteCollaborator(
             _collaboratorRepository.Object,
-            _authorizationGateway.Object);
+            _authorizationGateway.Object,
+            NullLogger<DeleteCollaborator>.Instance);
 
         var result = await useCase.ExecuteAsync(User, collaborator.Id);
 
@@ -162,7 +167,8 @@ public sealed class CollaboratorWriteUseCasesTests
 
         var useCase = new PatchCollaboratorTeams(
             _collaboratorRepository.Object,
-            _authorizationGateway.Object);
+            _authorizationGateway.Object,
+            NullLogger<PatchCollaboratorTeams>.Instance);
 
         var request = new PatchCollaboratorTeamsRequest { TeamIds = [] };
 
@@ -192,7 +198,8 @@ public sealed class CollaboratorWriteUseCasesTests
 
         var useCase = new PatchCollaboratorTeams(
             _collaboratorRepository.Object,
-            _authorizationGateway.Object);
+            _authorizationGateway.Object,
+            NullLogger<PatchCollaboratorTeams>.Instance);
 
         var request = new PatchCollaboratorTeamsRequest { TeamIds = [] };
 

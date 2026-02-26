@@ -5,13 +5,15 @@ using Bud.Server.Authorization;
 using Bud.Server.Domain.Model;
 using Bud.Server.Domain.Repositories;
 using Bud.Shared.Contracts;
+using Microsoft.Extensions.Logging;
 
 namespace Bud.Server.Application.UseCases.Workspaces;
 
-public sealed class CreateWorkspace(
+public sealed partial class CreateWorkspace(
     IWorkspaceRepository workspaceRepository,
     IOrganizationRepository organizationRepository,
     IApplicationAuthorizationGateway authorizationGateway,
+    ILogger<CreateWorkspace> logger,
     IUnitOfWork? unitOfWork = null)
 {
     public async Task<Result<Workspace>> ExecuteAsync(
@@ -19,19 +21,24 @@ public sealed class CreateWorkspace(
         CreateWorkspaceRequest request,
         CancellationToken cancellationToken = default)
     {
+        LogCreatingWorkspace(logger, request.Name, request.OrganizationId);
+
         var canCreate = await authorizationGateway.IsOrganizationOwnerAsync(user, request.OrganizationId, cancellationToken);
         if (!canCreate)
         {
+            LogWorkspaceCreationFailed(logger, request.Name, "Forbidden");
             return Result<Workspace>.Forbidden("Apenas o proprietário da organização pode criar workspaces.");
         }
 
         if (!await organizationRepository.ExistsAsync(request.OrganizationId, cancellationToken))
         {
+            LogWorkspaceCreationFailed(logger, request.Name, "Organization not found");
             return Result<Workspace>.NotFound("Organização não encontrada.");
         }
 
         if (!await workspaceRepository.IsNameUniqueAsync(request.OrganizationId, request.Name, ct: cancellationToken))
         {
+            LogWorkspaceCreationFailed(logger, request.Name, "Name already exists");
             return Result<Workspace>.Failure("Já existe um workspace com este nome nesta organização.", ErrorType.Conflict);
         }
 
@@ -42,12 +49,22 @@ public sealed class CreateWorkspace(
             await workspaceRepository.AddAsync(workspace, cancellationToken);
             await unitOfWork.CommitAsync(workspaceRepository.SaveChangesAsync, cancellationToken);
 
+            LogWorkspaceCreated(logger, workspace.Id, workspace.Name);
             return Result<Workspace>.Success(workspace);
         }
         catch (DomainInvariantException ex)
         {
+            LogWorkspaceCreationFailed(logger, request.Name, ex.Message);
             return Result<Workspace>.Failure(ex.Message, ErrorType.Validation);
         }
     }
-}
 
+    [LoggerMessage(EventId = 4020, Level = LogLevel.Information, Message = "Creating workspace '{Name}' for organization {OrganizationId}")]
+    private static partial void LogCreatingWorkspace(ILogger logger, string name, Guid organizationId);
+
+    [LoggerMessage(EventId = 4021, Level = LogLevel.Information, Message = "Workspace created successfully: {WorkspaceId} - '{Name}'")]
+    private static partial void LogWorkspaceCreated(ILogger logger, Guid workspaceId, string name);
+
+    [LoggerMessage(EventId = 4022, Level = LogLevel.Warning, Message = "Workspace creation failed for '{Name}': {Reason}")]
+    private static partial void LogWorkspaceCreationFailed(ILogger logger, string name, string reason);
+}

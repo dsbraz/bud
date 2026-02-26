@@ -7,6 +7,7 @@ using Bud.Server.Domain.Model;
 using Bud.Server.Domain.Repositories;
 using Bud.Shared.Contracts;
 using FluentAssertions;
+using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
 using Xunit;
 
@@ -26,7 +27,7 @@ public sealed class MissionMetricWriteUseCasesTests
             .Setup(repository => repository.GetMissionByIdAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync((Mission?)null);
 
-        var useCase = new CreateMetric(metricRepository.Object, authorizationGateway.Object);
+        var useCase = new CreateMetric(metricRepository.Object, authorizationGateway.Object, NullLogger<CreateMetric>.Instance);
 
         var request = new CreateMetricRequest
         {
@@ -68,7 +69,7 @@ public sealed class MissionMetricWriteUseCasesTests
             .Setup(gateway => gateway.CanAccessTenantOrganizationAsync(User, organizationId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(false);
 
-        var useCase = new CreateMetric(metricRepository.Object, authorizationGateway.Object);
+        var useCase = new CreateMetric(metricRepository.Object, authorizationGateway.Object, NullLogger<CreateMetric>.Instance);
 
         var request = new CreateMetricRequest
         {
@@ -114,7 +115,7 @@ public sealed class MissionMetricWriteUseCasesTests
             .Setup(gateway => gateway.CanAccessTenantOrganizationAsync(User, organizationId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(true);
 
-        var useCase = new CreateMetric(metricRepository.Object, authorizationGateway.Object);
+        var useCase = new CreateMetric(metricRepository.Object, authorizationGateway.Object, NullLogger<CreateMetric>.Instance);
 
         var request = new CreateMetricRequest
         {
@@ -171,7 +172,7 @@ public sealed class MissionMetricWriteUseCasesTests
             .Setup(gateway => gateway.CanAccessTenantOrganizationAsync(User, organizationId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(true);
 
-        var useCase = new CreateMetric(metricRepository.Object, authorizationGateway.Object);
+        var useCase = new CreateMetric(metricRepository.Object, authorizationGateway.Object, NullLogger<CreateMetric>.Instance);
 
         var request = new CreateMetricRequest
         {
@@ -212,7 +213,7 @@ public sealed class MissionMetricWriteUseCasesTests
             .Setup(gateway => gateway.CanAccessTenantOrganizationAsync(User, organizationId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(false);
 
-        var useCase = new PatchMetric(metricRepository.Object, authorizationGateway.Object);
+        var useCase = new PatchMetric(metricRepository.Object, authorizationGateway.Object, NullLogger<PatchMetric>.Instance);
 
         var request = new PatchMetricRequest
         {
@@ -258,7 +259,7 @@ public sealed class MissionMetricWriteUseCasesTests
             .Setup(gateway => gateway.CanAccessTenantOrganizationAsync(User, organizationId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(true);
 
-        var useCase = new PatchMetric(metricRepository.Object, authorizationGateway.Object);
+        var useCase = new PatchMetric(metricRepository.Object, authorizationGateway.Object, NullLogger<PatchMetric>.Instance);
 
         var request = new PatchMetricRequest
         {
@@ -308,7 +309,7 @@ public sealed class MissionMetricWriteUseCasesTests
             .Setup(gateway => gateway.CanAccessTenantOrganizationAsync(User, metric.OrganizationId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(true);
 
-        var useCase = new DeleteMetric(metricRepository.Object, authorizationGateway.Object);
+        var useCase = new DeleteMetric(metricRepository.Object, authorizationGateway.Object, NullLogger<DeleteMetric>.Instance);
 
         var result = await useCase.ExecuteAsync(User, metric.Id);
 
@@ -327,7 +328,7 @@ public sealed class MissionMetricWriteUseCasesTests
 
         var authorizationGateway = new Mock<IApplicationAuthorizationGateway>(MockBehavior.Strict);
 
-        var useCase = new DeleteMetric(metricRepository.Object, authorizationGateway.Object);
+        var useCase = new DeleteMetric(metricRepository.Object, authorizationGateway.Object, NullLogger<DeleteMetric>.Instance);
 
         var result = await useCase.ExecuteAsync(User, Guid.NewGuid());
 

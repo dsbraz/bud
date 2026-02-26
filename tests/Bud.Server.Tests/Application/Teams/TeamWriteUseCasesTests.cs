@@ -7,6 +7,7 @@ using Bud.Server.Domain.Model;
 using Bud.Server.Domain.Repositories;
 using Bud.Shared.Contracts;
 using FluentAssertions;
+using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
 using Xunit;
 
@@ -32,7 +33,8 @@ public sealed class TeamWriteUseCasesTests
             _teamRepository.Object,
             _workspaceRepository.Object,
             _collaboratorRepository.Object,
-            _authorizationGateway.Object);
+            _authorizationGateway.Object,
+            NullLogger<CreateTeam>.Instance);
 
         var request = new CreateTeamRequest
         {
@@ -64,7 +66,8 @@ public sealed class TeamWriteUseCasesTests
             _teamRepository.Object,
             _workspaceRepository.Object,
             _collaboratorRepository.Object,
-            _authorizationGateway.Object);
+            _authorizationGateway.Object,
+            NullLogger<CreateTeam>.Instance);
 
         var request = new CreateTeamRequest
         {
@@ -89,7 +92,8 @@ public sealed class TeamWriteUseCasesTests
         var useCase = new PatchTeam(
             _teamRepository.Object,
             _collaboratorRepository.Object,
-            _authorizationGateway.Object);
+            _authorizationGateway.Object,
+            NullLogger<PatchTeam>.Instance);
 
         var request = new PatchTeamRequest { Name = "Novo Team", LeaderId = Guid.NewGuid() };
 
@@ -120,7 +124,8 @@ public sealed class TeamWriteUseCasesTests
         var useCase = new PatchTeam(
             _teamRepository.Object,
             _collaboratorRepository.Object,
-            _authorizationGateway.Object);
+            _authorizationGateway.Object,
+            NullLogger<PatchTeam>.Instance);
 
         var request = new PatchTeamRequest { Name = "Novo Team", LeaderId = Guid.NewGuid() };
 
@@ -148,7 +153,7 @@ public sealed class TeamWriteUseCasesTests
             .Setup(gateway => gateway.CanWriteOrganizationAsync(User, team.OrganizationId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(true);
 
-        var useCase = new DeleteTeam(_teamRepository.Object, _authorizationGateway.Object);
+        var useCase = new DeleteTeam(_teamRepository.Object, _authorizationGateway.Object, NullLogger<DeleteTeam>.Instance);
 
         var result = await useCase.ExecuteAsync(User, team.Id);
 
@@ -174,7 +179,7 @@ public sealed class TeamWriteUseCasesTests
             .Setup(gateway => gateway.CanWriteOrganizationAsync(User, team.OrganizationId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(true);
 
-        var useCase = new DeleteTeam(_teamRepository.Object, _authorizationGateway.Object);
+        var useCase = new DeleteTeam(_teamRepository.Object, _authorizationGateway.Object, NullLogger<DeleteTeam>.Instance);
 
         var result = await useCase.ExecuteAsync(User, team.Id);
 
@@ -208,7 +213,8 @@ public sealed class TeamWriteUseCasesTests
         var useCase = new PatchTeamCollaborators(
             _teamRepository.Object,
             _collaboratorRepository.Object,
-            _authorizationGateway.Object);
+            _authorizationGateway.Object,
+            NullLogger<PatchTeamCollaborators>.Instance);
 
         var request = new PatchTeamCollaboratorsRequest { CollaboratorIds = [leaderId] };
 
@@ -239,7 +245,8 @@ public sealed class TeamWriteUseCasesTests
         var useCase = new PatchTeamCollaborators(
             _teamRepository.Object,
             _collaboratorRepository.Object,
-            _authorizationGateway.Object);
+            _authorizationGateway.Object,
+            NullLogger<PatchTeamCollaborators>.Instance);
 
         var request = new PatchTeamCollaboratorsRequest { CollaboratorIds = [] };
 

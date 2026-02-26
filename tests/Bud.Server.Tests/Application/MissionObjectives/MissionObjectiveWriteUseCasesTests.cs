@@ -7,6 +7,7 @@ using Bud.Server.Domain.Model;
 using Bud.Server.Domain.Repositories;
 using Bud.Shared.Contracts;
 using FluentAssertions;
+using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
 using Xunit;
 
@@ -27,7 +28,7 @@ public sealed class MissionObjectiveWriteUseCasesTests
             .Setup(repository => repository.GetByIdAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync((Mission?)null);
 
-        var useCase = new CreateObjective(_missionRepository.Object, _objectiveRepository.Object, _authorizationGateway.Object);
+        var useCase = new CreateObjective(_missionRepository.Object, _objectiveRepository.Object, _authorizationGateway.Object, NullLogger<CreateObjective>.Instance);
 
         var result = await useCase.ExecuteAsync(User, new CreateObjectiveRequest
         {
@@ -62,7 +63,7 @@ public sealed class MissionObjectiveWriteUseCasesTests
             .Setup(gateway => gateway.CanAccessTenantOrganizationAsync(User, organizationId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(true);
 
-        var useCase = new CreateObjective(_missionRepository.Object, _objectiveRepository.Object, _authorizationGateway.Object);
+        var useCase = new CreateObjective(_missionRepository.Object, _objectiveRepository.Object, _authorizationGateway.Object, NullLogger<CreateObjective>.Instance);
 
         var result = await useCase.ExecuteAsync(User, new CreateObjectiveRequest
         {
@@ -86,7 +87,7 @@ public sealed class MissionObjectiveWriteUseCasesTests
             .Setup(repository => repository.GetByIdAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync((Objective?)null);
 
-        var useCase = new PatchObjective(_objectiveRepository.Object, _authorizationGateway.Object);
+        var useCase = new PatchObjective(_objectiveRepository.Object, _authorizationGateway.Object, NullLogger<PatchObjective>.Instance);
 
         var result = await useCase.ExecuteAsync(User, Guid.NewGuid(), new PatchObjectiveRequest { Name = "X" });
 
@@ -111,7 +112,7 @@ public sealed class MissionObjectiveWriteUseCasesTests
             .Setup(gateway => gateway.CanAccessTenantOrganizationAsync(User, organizationId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(true);
 
-        var useCase = new PatchObjective(_objectiveRepository.Object, _authorizationGateway.Object);
+        var useCase = new PatchObjective(_objectiveRepository.Object, _authorizationGateway.Object, NullLogger<PatchObjective>.Instance);
 
         var result = await useCase.ExecuteAsync(User, objective.Id, new PatchObjectiveRequest
         {
@@ -131,7 +132,7 @@ public sealed class MissionObjectiveWriteUseCasesTests
             .Setup(repository => repository.GetByIdAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync((Objective?)null);
 
-        var useCase = new DeleteObjective(_objectiveRepository.Object, _authorizationGateway.Object);
+        var useCase = new DeleteObjective(_objectiveRepository.Object, _authorizationGateway.Object, NullLogger<DeleteObjective>.Instance);
 
         var result = await useCase.ExecuteAsync(User, Guid.NewGuid());
 

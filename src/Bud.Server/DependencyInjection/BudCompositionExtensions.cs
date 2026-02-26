@@ -8,6 +8,7 @@ public static class BudCompositionExtensions
         IWebHostEnvironment environment)
     {
         return services
+            .AddBudObservability(configuration, environment)
             .AddBudApi()
             .AddBudSettings(configuration)
             .AddBudAuthentication(configuration, environment)

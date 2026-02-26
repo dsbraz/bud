@@ -346,6 +346,14 @@ gcloud projects add-iam-policy-binding "$PROJECT_ID" \
   --member="serviceAccount:${SERVICE_ACCOUNT_EMAIL}" \
   --role="roles/secretmanager.secretAccessor" >/dev/null
 
+gcloud projects add-iam-policy-binding "$PROJECT_ID" \
+  --member="serviceAccount:${SERVICE_ACCOUNT_EMAIL}" \
+  --role="roles/cloudtrace.agent" >/dev/null
+
+gcloud projects add-iam-policy-binding "$PROJECT_ID" \
+  --member="serviceAccount:${SERVICE_ACCOUNT_EMAIL}" \
+  --role="roles/monitoring.metricWriter" >/dev/null
+
 echo "==> Aplicando papeis na service account padrao do Cloud Build"
 PROJECT_NUMBER="$(gcloud projects describe "$PROJECT_ID" --format='value(projectNumber)')"
 CLOUDBUILD_SA="${PROJECT_NUMBER}-compute@developer.gserviceaccount.com"

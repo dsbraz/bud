@@ -6,12 +6,14 @@ using Bud.Server.Domain.Model;
 using Bud.Server.Domain.Repositories;
 using Bud.Server.MultiTenancy;
 using Bud.Shared.Contracts;
+using Microsoft.Extensions.Logging;
 
 namespace Bud.Server.Application.UseCases.Collaborators;
 
-public sealed class PatchCollaboratorTeams(
+public sealed partial class PatchCollaboratorTeams(
     ICollaboratorRepository collaboratorRepository,
     IApplicationAuthorizationGateway authorizationGateway,
+    ILogger<PatchCollaboratorTeams> logger,
     IUnitOfWork? unitOfWork = null)
 {
     public async Task<Result> ExecuteAsync(
@@ -20,15 +22,19 @@ public sealed class PatchCollaboratorTeams(
         PatchCollaboratorTeamsRequest request,
         CancellationToken cancellationToken = default)
     {
+        LogPatchingCollaboratorTeams(logger, id);
+
         var collaborator = await collaboratorRepository.GetByIdWithCollaboratorTeamsAsync(id, cancellationToken);
         if (collaborator is null)
         {
+            LogCollaboratorTeamsPatchFailed(logger, id, "Collaborator not found");
             return Result.NotFound("Colaborador não encontrado.");
         }
 
         var canAssign = await authorizationGateway.IsOrganizationOwnerAsync(user, collaborator.OrganizationId, cancellationToken);
         if (!canAssign)
         {
+            LogCollaboratorTeamsPatchFailed(logger, id, "Forbidden");
             return Result.Forbidden("Apenas o proprietário da organização pode atribuir equipes.");
         }
 
@@ -43,6 +49,7 @@ public sealed class PatchCollaboratorTeams(
 
             if (validCount != distinctTeamIds.Count)
             {
+                LogCollaboratorTeamsPatchFailed(logger, id, "Invalid teams");
                 return Result.Failure("Uma ou mais equipes são inválidas ou pertencem a outra organização.", ErrorType.Validation);
             }
         }
@@ -60,7 +67,16 @@ public sealed class PatchCollaboratorTeams(
         }
 
         await unitOfWork.CommitAsync(collaboratorRepository.SaveChangesAsync, cancellationToken);
+        LogCollaboratorTeamsPatched(logger, id, distinctTeamIds.Count);
         return Result.Success();
     }
-}
 
+    [LoggerMessage(EventId = 4051, Level = LogLevel.Information, Message = "Patching teams for collaborator {CollaboratorId}")]
+    private static partial void LogPatchingCollaboratorTeams(ILogger logger, Guid collaboratorId);
+
+    [LoggerMessage(EventId = 4052, Level = LogLevel.Information, Message = "Collaborator teams patched successfully: {CollaboratorId} with {Count} teams")]
+    private static partial void LogCollaboratorTeamsPatched(ILogger logger, Guid collaboratorId, int count);
+
+    [LoggerMessage(EventId = 4053, Level = LogLevel.Warning, Message = "Collaborator teams patch failed for {CollaboratorId}: {Reason}")]
+    private static partial void LogCollaboratorTeamsPatchFailed(ILogger logger, Guid collaboratorId, string reason);
+}

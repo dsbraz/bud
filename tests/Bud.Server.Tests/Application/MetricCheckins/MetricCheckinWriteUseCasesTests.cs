@@ -10,6 +10,7 @@ using Bud.Shared.Contracts;
 using Bud.Server.Domain.Events;
 using Bud.Server.Domain.Model;
 using FluentAssertions;
+using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
 using Xunit;
 
@@ -65,7 +66,8 @@ public sealed class MetricCheckinWriteUseCasesTests
             checkinRepository.Object,
             collaboratorRepository.Object,
             authorizationGateway.Object,
-            tenantProvider.Object);
+            tenantProvider.Object,
+            NullLogger<CreateMetricCheckin>.Instance);
 
         var request = new CreateCheckinRequest
         {
@@ -141,7 +143,8 @@ public sealed class MetricCheckinWriteUseCasesTests
             checkinRepository.Object,
             collaboratorRepository.Object,
             authorizationGateway.Object,
-            tenantProvider.Object);
+            tenantProvider.Object,
+            NullLogger<CreateMetricCheckin>.Instance);
 
         var request = new CreateCheckinRequest
         {
@@ -213,7 +216,8 @@ public sealed class MetricCheckinWriteUseCasesTests
             checkinRepository.Object,
             collaboratorRepository.Object,
             authorizationGateway.Object,
-            tenantProvider.Object);
+            tenantProvider.Object,
+            NullLogger<CreateMetricCheckin>.Instance);
 
         var request = new CreateCheckinRequest
         {
@@ -260,7 +264,8 @@ public sealed class MetricCheckinWriteUseCasesTests
         var useCase = new PatchMetricCheckin(
             checkinRepository.Object,
             authorizationGateway.Object,
-            tenantProvider.Object);
+            tenantProvider.Object,
+            NullLogger<PatchMetricCheckin>.Instance);
 
         var request = new PatchCheckinRequest
         {
@@ -328,7 +333,8 @@ public sealed class MetricCheckinWriteUseCasesTests
         var useCase = new PatchMetricCheckin(
             checkinRepository.Object,
             authorizationGateway.Object,
-            tenantProvider.Object);
+            tenantProvider.Object,
+            NullLogger<PatchMetricCheckin>.Instance);
 
         var request = new PatchCheckinRequest
         {
@@ -380,7 +386,8 @@ public sealed class MetricCheckinWriteUseCasesTests
         var useCase = new DeleteMetricCheckin(
             checkinRepository.Object,
             authorizationGateway.Object,
-            tenantProvider.Object);
+            tenantProvider.Object,
+            NullLogger<DeleteMetricCheckin>.Instance);
 
         var result = await useCase.ExecuteAsync(User, checkin.MetricId, checkin.Id);
 

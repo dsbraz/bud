@@ -21,6 +21,7 @@ Este documento é voltado para devs que precisam:
 - [Deploy no Google Cloud](#deploy-no-google-cloud)
 - [Onboarding rápido (30 min)](#onboarding-rápido-30-min)
 - [Testes](#testes)
+- [Observabilidade](#observabilidade)
 - [Health checks](#health-checks)
 - [Endpoints principais](#endpoints-principais)
 - [Sistema de Design e Tokens](#sistema-de-design-e-tokens)
@@ -734,6 +735,59 @@ Veja [DESIGN_TOKENS.md](DESIGN_TOKENS.md) para:
   docker compose down -v && docker compose up --build
   ```
 - **Production**: usa EF Core migrations (`dotnet-ef migrations bundle`) via target `prod-migrate` no `Dockerfile.Production`. Migrations ficam em `Infrastructure/Persistence/Migrations/`.
+
+## Observabilidade
+
+O Bud usa OpenTelemetry (traces + métricas) e structured logging compatível com o Cloud Logging do GCP.
+
+### Structured Logging
+
+Em produção (`ASPNETCORE_ENVIRONMENT=Production`), os logs são emitidos em JSON single-line compatível com Cloud Logging:
+
+- Campos: `severity`, `message`, `time`, `logging.googleapis.com/trace`, `logging.googleapis.com/spanId`, `eventId`, `category`, `exception`.
+- `severity` é mapeado de `LogLevel` (ex.: `Information` → `INFO`, `Error` → `ERROR`).
+- Em desenvolvimento, mantém o formatter padrão do console.
+- `GCP_PROJECT_ID` configura o formato completo do trace: `projects/{id}/traces/{traceId}`.
+
+### Distributed Tracing e Métricas (OpenTelemetry)
+
+A instrumentação OTel cobre ASP.NET Core, HttpClient e EF Core. Toda configuração de exportação é via variáveis de ambiente padrão do OTel spec — sem hardcode no código:
+
+| Variável | Descrição | Exemplo (produção) |
+|----------|-----------|-------------------|
+| `OTEL_SERVICE_NAME` | Nome do serviço | `Bud.Server` ou `Bud.Mcp` |
+| `OTEL_RESOURCE_ATTRIBUTES` | Atributos de recurso | `cloud.provider=gcp,cloud.platform=gcp_cloud_run` |
+| `OTEL_EXPORTER_OTLP_ENDPOINT` | Endpoint OTLP | `https://telemetry.googleapis.com` |
+| `OTEL_EXPORTER_OTLP_PROTOCOL` | Protocolo | `grpc` |
+
+Em dev local sem `OTEL_EXPORTER_OTLP_ENDPOINT`, o exporter tenta `localhost:4317` e falha silenciosamente.
+
+### Log Enrichment e Correlation ID
+
+- `LogEnrichmentMiddleware` (Bud.Server): injeta `TraceId`, `SpanId` e `CorrelationId` no scope de todos os logs da request.
+- `McpRequestLoggingMiddleware` (Bud.Mcp): registra cada request com método, path, status code, elapsed e correlation ID.
+- Header `X-Correlation-Id` adicionado a todas as respostas.
+
+### EventIds de Log
+
+Ranges estáveis de EventId por domínio:
+
+| Range | Domínio |
+|-------|---------|
+| 3100–3199 | RequestTelemetryMiddleware |
+| 4000–4009 | Mission |
+| 4010–4019 | Organization |
+| 4020–4029 | Workspace |
+| 4030–4039 | Team |
+| 4040–4049 | Collaborator |
+| 4050–4059 | Metric |
+| 4060–4069 | MetricCheckin |
+| 4070–4079 | Template |
+| 4080–4089 | Objective |
+| 4090–4099 | Session / Notification |
+| 5000–5009 | McpRequestLoggingMiddleware (Bud.Mcp) |
+
+Referência: `docs/adr/ADR-0013-estrategia-de-observabilidade.md`.
 
 ## Health checks
 

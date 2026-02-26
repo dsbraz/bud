@@ -195,6 +195,40 @@ Segredos (connection string, JWT key) NUNCA ficam em arquivos de configuracao â€
 
 Nota: `Jwt__Key` ja e criado automaticamente pelo bootstrap e injetado via Secret Manager nos scripts de deploy.
 
+## VARIAVEIS DE AMBIENTE DE OBSERVABILIDADE
+
+O Bud usa OpenTelemetry com configuracao externalizada via variaveis de ambiente padrao do OTel spec. Os scripts de deploy ja incluem as variaveis abaixo.
+
+### Bud.Server (`bud-web`)
+
+| Variavel | Valor em producao | Descricao |
+|----------|-------------------|-----------|
+| `OTEL_SERVICE_NAME` | `Bud.Server` | Nome do servico nos traces e metricas |
+| `OTEL_RESOURCE_ATTRIBUTES` | `cloud.provider=gcp,cloud.platform=gcp_cloud_run` | Atributos de recurso adicionados a todos os spans |
+| `OTEL_EXPORTER_OTLP_ENDPOINT` | `https://telemetry.googleapis.com` | Endpoint OTLP do Cloud Trace/Monitoring |
+| `GCP_PROJECT_ID` | `${PROJECT_ID}` | ID do projeto GCP; usado para formatar o trace ID no Cloud Logging JSON |
+
+### Bud.Mcp (`bud-mcp`)
+
+| Variavel | Valor em producao | Descricao |
+|----------|-------------------|-----------|
+| `OTEL_SERVICE_NAME` | `Bud.Mcp` | Nome do servico nos traces e metricas |
+| `OTEL_RESOURCE_ATTRIBUTES` | `cloud.provider=gcp,cloud.platform=gcp_cloud_run` | Atributos de recurso adicionados a todos os spans |
+| `OTEL_EXPORTER_OTLP_ENDPOINT` | `https://telemetry.googleapis.com` | Endpoint OTLP do Cloud Trace/Monitoring |
+| `GCP_PROJECT_ID` | `${PROJECT_ID}` | ID do projeto GCP para formatacao de trace no Cloud Logging JSON |
+
+### Autorizacao no GCP
+
+O Cloud Run usa Application Default Credentials (ADC) da service account do runtime para autenticar no endpoint OTLP `telemetry.googleapis.com`. A service account precisa das roles:
+- `roles/cloudtrace.agent` (traces)
+- `roles/monitoring.metricWriter` (metricas)
+
+Essas roles sao configuradas pelo `gcp-bootstrap.sh` para a service account `${SERVICE_ACCOUNT}`.
+
+### Dev local
+
+Em desenvolvimento local, nenhuma variavel OTel e configurada. O OTLP exporter tenta `localhost:4317` e falha silenciosamente â€” sem impacto no funcionamento. Para visualizar traces localmente, adicione um container Jaeger ou OTel Collector ao `docker-compose.yml` e configure `OTEL_EXPORTER_OTLP_ENDPOINT`.
+
 ## OUTRAS CONSIDERACOES
 
 - `bud-web` e `bud-mcp` rodam em Cloud Run com porta interna `8080`.
