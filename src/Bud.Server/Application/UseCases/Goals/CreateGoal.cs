@@ -1,5 +1,6 @@
 using System.Security.Claims;
 using Bud.Server.Application.Common;
+using Bud.Server.Application.Policies;
 using Bud.Server.Authorization;
 using Bud.Server.Domain.Model;
 using Bud.Server.Domain.Repositories;
@@ -43,25 +44,25 @@ public sealed partial class CreateGoal(
             return Result<Goal>.Forbidden(UserErrorMessages.GoalCreateForbidden);
         }
 
+        Goal? parentGoal = null;
         if (request.ParentId.HasValue)
         {
-            var parentGoal = await goalRepository.GetByIdReadOnlyAsync(request.ParentId.Value, cancellationToken);
+            parentGoal = await goalRepository.GetByIdReadOnlyAsync(request.ParentId.Value, cancellationToken);
             if (parentGoal is null)
             {
                 LogGoalCreationFailed(logger, request.Name, UserErrorMessages.ParentGoalNotFound);
                 return Result<Goal>.NotFound(UserErrorMessages.ParentGoalNotFound);
             }
+        }
 
-            try
+        if (parentGoal is not null)
+        {
+            var violation = GoalDateRangePolicy.ValidateChildStartDate<Goal>(
+                UtcDateTimeNormalizer.Normalize(request.StartDate), parentGoal.StartDate);
+            if (violation is not null)
             {
-                Goal.EnsureChildStartDateNotBeforeParent(
-                    UtcDateTimeNormalizer.Normalize(request.StartDate),
-                    parentGoal.StartDate);
-            }
-            catch (DomainInvariantException ex)
-            {
-                LogGoalCreationFailed(logger, request.Name, ex.Message);
-                return Result<Goal>.Failure(ex.Message, ErrorType.Validation);
+                LogGoalCreationFailed(logger, request.Name, violation.Error!);
+                return violation;
             }
         }
 
@@ -76,7 +77,7 @@ public sealed partial class CreateGoal(
                 UtcDateTimeNormalizer.Normalize(request.StartDate),
                 UtcDateTimeNormalizer.Normalize(request.EndDate),
                 request.Status,
-                request.ParentId);
+                parentGoal?.Id);
 
             goal.SetScope(request.ScopeType, request.ScopeId);
 

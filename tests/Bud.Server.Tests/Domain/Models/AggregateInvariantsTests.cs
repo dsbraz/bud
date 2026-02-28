@@ -305,13 +305,13 @@ public sealed class AggregateInvariantsTests
     {
         var id = Guid.NewGuid();
         var orgId = Guid.NewGuid();
-        var parentId = Guid.NewGuid();
+        var parent = Goal.Create(Guid.NewGuid(), orgId, "Meta pai", null, null, DateTime.UtcNow, DateTime.UtcNow.AddDays(30), GoalStatus.Planned);
 
-        var goal = Goal.Create(id, orgId, "Meta", "Descrição", null, DateTime.UtcNow, DateTime.UtcNow.AddDays(1), GoalStatus.Planned, parentId);
+        var goal = Goal.Create(id, orgId, "Meta", "Descrição", null, DateTime.UtcNow, DateTime.UtcNow.AddDays(1), GoalStatus.Planned, parent.Id);
 
         goal.Id.Should().Be(id);
         goal.OrganizationId.Should().Be(orgId);
-        goal.ParentId.Should().Be(parentId);
+        goal.ParentId.Should().Be(parent.Id);
         goal.Name.Should().Be("Meta");
         goal.Description.Should().Be("Descrição");
     }
@@ -383,5 +383,24 @@ public sealed class AggregateInvariantsTests
             DateTime.UtcNow);
 
         act.Should().Throw<DomainInvariantException>();
+    }
+
+    [Fact]
+    public void Goal_Create_WithParentId_SetsParentId()
+    {
+        var parentId = Guid.NewGuid();
+
+        var child = Goal.Create(
+            Guid.NewGuid(),
+            Guid.NewGuid(),
+            "Meta filha",
+            null,
+            null,
+            new DateTime(2026, 3, 1, 0, 0, 0, DateTimeKind.Utc),
+            new DateTime(2026, 6, 30, 0, 0, 0, DateTimeKind.Utc),
+            GoalStatus.Planned,
+            parentId);
+
+        child.ParentId.Should().Be(parentId);
     }
 }

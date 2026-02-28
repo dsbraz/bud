@@ -1,5 +1,6 @@
 using System.Security.Claims;
 using Bud.Server.Application.Common;
+using Bud.Server.Application.Policies;
 using Bud.Server.Authorization;
 using Bud.Server.Domain.Model;
 using Bud.Server.Domain.Repositories;
@@ -43,16 +44,12 @@ public sealed partial class PatchGoal(
             var parentGoal = await goalRepository.GetByIdReadOnlyAsync(goal.ParentId.Value, cancellationToken);
             if (parentGoal is not null)
             {
-                try
+                var violation = GoalDateRangePolicy.ValidateChildStartDate<Goal>(
+                    UtcDateTimeNormalizer.Normalize(request.StartDate.Value), parentGoal.StartDate);
+                if (violation is not null)
                 {
-                    Goal.EnsureChildStartDateNotBeforeParent(
-                        UtcDateTimeNormalizer.Normalize(request.StartDate.Value),
-                        parentGoal.StartDate);
-                }
-                catch (DomainInvariantException ex)
-                {
-                    LogGoalPatchFailed(logger, id, ex.Message);
-                    return Result<Goal>.Failure(ex.Message, ErrorType.Validation);
+                    LogGoalPatchFailed(logger, id, violation.Error!);
+                    return violation;
                 }
             }
         }

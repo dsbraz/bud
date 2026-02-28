@@ -127,15 +127,6 @@ public sealed class Goal : ITenantEntity, IAggregateRoot, IHasDomainEvents
         SetScope(GoalScope.Create(scopeType, scopeId));
     }
 
-    public static void EnsureChildStartDateNotBeforeParent(DateTime childStartDateUtc, DateTime parentStartDateUtc)
-    {
-        if (childStartDateUtc < parentStartDateUtc)
-        {
-            throw new DomainInvariantException(
-                $"A data de início da meta não pode ser anterior à do pai ({parentStartDateUtc:dd/MM/yyyy}).");
-        }
-    }
-
     public void SetScope(GoalScope scope)
     {
         WorkspaceId = null;
