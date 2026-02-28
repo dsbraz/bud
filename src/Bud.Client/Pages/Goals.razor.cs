@@ -57,6 +57,11 @@ public partial class Goals
     private List<CheckinResponse> _indicatorCheckins = new();
     private bool _isLoadingCheckins;
 
+    // Indicator edit modal state
+    private bool _isIndicatorEditModalOpen;
+    private IndicatorResponse? _editingIndicator;
+    private GoalResponse? _editingIndicatorGoal;
+
     // Delete confirmation state
     private Guid? _deletingGoalId;
     private System.Threading.Timer? _deleteConfirmTimer;
@@ -749,6 +754,77 @@ public partial class Goals
     private int GetOutdatedIndicatorsCount()
     {
         return _goalProgress.Values.Sum(p => p.OutdatedIndicators);
+    }
+
+    // ---- Indicator Edit Modal Methods ----
+
+    private void OpenEditIndicatorModal(GoalResponse goal, IndicatorResponse indicator)
+    {
+        _editingIndicatorGoal = goal;
+        _editingIndicator = indicator;
+        _isIndicatorEditModalOpen = true;
+    }
+
+    private void CloseIndicatorEditModal()
+    {
+        _isIndicatorEditModalOpen = false;
+        _editingIndicator = null;
+        _editingIndicatorGoal = null;
+    }
+
+    private TempIndicator? GetEditingIndicatorModel()
+    {
+        if (_editingIndicator is null)
+        {
+            return null;
+        }
+
+        return new TempIndicator(
+            OriginalId: _editingIndicator.Id,
+            Name: _editingIndicator.Name,
+            Type: _editingIndicator.Type.ToString(),
+            Details: IndicatorDisplayHelper.GetTargetLabel(_editingIndicator),
+            QuantitativeType: _editingIndicator.QuantitativeType?.ToString(),
+            MinValue: _editingIndicator.MinValue,
+            MaxValue: _editingIndicator.MaxValue,
+            TargetText: _editingIndicator.TargetText,
+            Unit: _editingIndicator.Unit?.ToString());
+    }
+
+    private async Task HandleIndicatorEditSave(TempIndicator tempIndicator)
+    {
+        if (_editingIndicator is null)
+        {
+            return;
+        }
+
+        await UiOps.RunAsync(
+            async () =>
+            {
+                var request = new PatchIndicatorRequest
+                {
+                    Name = tempIndicator.Name,
+                    Type = Enum.Parse<IndicatorType>(tempIndicator.Type),
+                    QuantitativeType = !string.IsNullOrEmpty(tempIndicator.QuantitativeType)
+                        ? Enum.Parse<QuantitativeIndicatorType>(tempIndicator.QuantitativeType)
+                        : null,
+                    MinValue = tempIndicator.MinValue,
+                    MaxValue = tempIndicator.MaxValue,
+                    Unit = !string.IsNullOrEmpty(tempIndicator.Unit)
+                        ? Enum.Parse<IndicatorUnit>(tempIndicator.Unit)
+                        : null,
+                    TargetText = tempIndicator.TargetText
+                };
+
+                await Api.UpdateGoalIndicatorAsync(_editingIndicator.Id, request);
+                ToastService.ShowSuccess("Indicador atualizado", "O indicador foi atualizado com sucesso.");
+                var goalId = _editingIndicatorGoal?.Id;
+                CloseIndicatorEditModal();
+                _cardRefreshToken++;
+                await RefreshExpandedGoalProgressAsync(goalId);
+            },
+            "Erro ao atualizar indicador",
+            "Não foi possível atualizar o indicador. Verifique os dados e tente novamente.");
     }
 
     // ---- Checkin Modal Methods ----

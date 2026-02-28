@@ -32,4 +32,6 @@ public sealed class GoalProgressResponse
     public int TotalIndicators { get; set; }
     public int IndicatorsWithCheckins { get; set; }
     public int OutdatedIndicators { get; set; }
+    public int DirectChildren { get; set; }
+    public int DirectIndicators { get; set; }
 }

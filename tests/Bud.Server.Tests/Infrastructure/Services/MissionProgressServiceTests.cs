@@ -1112,4 +1112,40 @@ public class MissionProgressServiceTests
         result.Value![0].OverallProgress.Should().Be(40m);
         result.Value![0].TotalIndicators.Should().Be(1);
     }
+
+    [Fact]
+    public async Task GetProgressAsync_ReturnsDirectChildrenAndDirectIndicators()
+    {
+        await using var context = CreateInMemoryContext();
+        var (org, parent) = await CreateTestMission(context);
+
+        // 2 direct indicators on parent
+        await CreateTestMetric(context, parent.Id, org.Id);
+        await CreateTestMetric(context, parent.Id, org.Id);
+
+        // 1 child goal with its own indicator
+        var child = new Goal
+        {
+            Id = Guid.NewGuid(),
+            Name = "Child",
+            ParentId = parent.Id,
+            StartDate = parent.StartDate,
+            EndDate = parent.EndDate,
+            Status = GoalStatus.Active,
+            OrganizationId = org.Id
+        };
+        context.Goals.Add(child);
+        await context.SaveChangesAsync();
+
+        await CreateTestMetric(context, child.Id, org.Id);
+
+        var service = new GoalProgressService(context);
+        var result = await service.GetProgressAsync([parent.Id]);
+
+        result.IsSuccess.Should().BeTrue();
+        var progress = result.Value![0];
+        progress.DirectChildren.Should().Be(1);
+        progress.DirectIndicators.Should().Be(2);
+        progress.TotalIndicators.Should().Be(3);
+    }
 }

@@ -119,6 +119,9 @@ public sealed class GoalProgressService(ApplicationDbContext dbContext) : IGoalP
 
             var expectedProgress = CalculateExpectedProgress(goal.StartDate, goal.EndDate, now);
 
+            var directChildren = goals.Count(g => g.ParentId == goalId);
+            var directIndicators = goal.Indicators.Count;
+
             results.Add(new GoalProgressSnapshot
             {
                 GoalId = goal.Id,
@@ -127,7 +130,9 @@ public sealed class GoalProgressService(ApplicationDbContext dbContext) : IGoalP
                 AverageConfidence = Math.Round(averageConfidence, 1),
                 TotalIndicators = totalIndicators,
                 IndicatorsWithCheckins = indicatorsWithCheckins,
-                OutdatedIndicators = outdatedIndicators
+                OutdatedIndicators = outdatedIndicators,
+                DirectChildren = directChildren,
+                DirectIndicators = directIndicators
             });
         }
 

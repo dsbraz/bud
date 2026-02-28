@@ -14,7 +14,9 @@ internal static class ProgressContractMapper
             AverageConfidence = source.AverageConfidence,
             TotalIndicators = source.TotalIndicators,
             IndicatorsWithCheckins = source.IndicatorsWithCheckins,
-            OutdatedIndicators = source.OutdatedIndicators
+            OutdatedIndicators = source.OutdatedIndicators,
+            DirectChildren = source.DirectChildren,
+            DirectIndicators = source.DirectIndicators
         };
     }
 

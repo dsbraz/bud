@@ -1,0 +1,336 @@
+@using Bud.Client.Services
+@using Bud.Shared.Contracts
+
+@if (RootGoals is null || RootGoals.Items.Count == 0)
+{
+    return;
+}
+
+<div class="goal-grid-tree">
+    @foreach (var goal in RootGoals.Items)
+    {
+        var isOpen = _openRootGoalId == goal.Id;
+        var goalProgress = RootGoalProgress.GetValueOrDefault(goal.Id);
+        var progressPercent = GetGoalProgressPercent(goalProgress);
+        var statusClass = GoalProgressDisplayHelper.GetGoalProgressStatusClass(goalProgress);
+        var isDraft = goal.Status == GoalStatus.Planned;
+        var itemCount = GetGoalItemCount(goalProgress);
+        var childGoalCount = goalProgress?.DirectChildren ?? 0;
+        var directIndicatorCount = goalProgress?.DirectIndicators ?? 0;
+
+        @if (isOpen)
+        {
+            @if (_isExpanded)
+            {
+                <div class="goal-grid-overlay" @onclick="ToggleExpand"></div>
+            }
+            <div class="goal-grid-container @(_isExpanded ? "goal-grid-container-expanded" : "")">
+                <div class="goal-grid-container-header">
+                    <div class="goal-grid-icon goal-grid-icon-goal">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="24" height="24"><circle cx="12" cy="12" r="10" stroke-linecap="round"/><circle cx="12" cy="12" r="6" stroke-linecap="round"/><circle cx="12" cy="12" r="2" stroke-linecap="round"/></svg>
+                    </div>
+                    <div class="goal-grid-label">
+                        <span class="goal-grid-container-name">@goal.Name</span>
+                        @if (!string.IsNullOrEmpty(goal.Dimension))
+                        {
+                            <span class="goal-grid-details">@goal.Dimension</span>
+                        }
+                    </div>
+                    <div class="goal-grid-container-progress">
+                        <div class="goal-grid-progress-bar">
+                            <div class="goal-grid-progress-fill @statusClass" style="width: @(progressPercent)%"></div>
+                        </div>
+                        <span class="goal-grid-progress-value">@(progressPercent)%</span>
+                    </div>
+                    <div class="goal-grid-actions">
+                        <button class="goal-grid-action-btn" title="Editar" @onclick="async () => await HandleEditClick(goal)">
+                            <svg viewBox="0 0 20 20" fill="currentColor" width="14" height="14"><path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z"/></svg>
+                        </button>
+                        <button class="goal-grid-action-btn delete @(DeletingGoalId == goal.Id ? "confirming" : "")"
+                                title="@(DeletingGoalId == goal.Id ? "Confirmar exclusão" : "Excluir")"
+                                @onclick="async () => await HandleDeleteClick(goal.Id)">
+                            @if (DeletingGoalId == goal.Id)
+                            {
+                                <span class="goal-grid-confirm-text">OK?</span>
+                            }
+                            else
+                            {
+                                <svg viewBox="0 0 20 20" fill="currentColor" width="14" height="14"><path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd"/></svg>
+                            }
+                        </button>
+                        <button class="goal-grid-action-btn goal-grid-expand-btn" title="@(_isExpanded ? "Recolher" : "Expandir")" @onclick="ToggleExpand">
+                            @if (_isExpanded)
+                            {
+                                <svg width="14" height="14" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                    <rect x="4" y="6" width="9" height="9" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                                    <path d="M8 6V5C8 4.44772 8.44772 4 9 4H15C15.5523 4 16 4.44772 16 5V11C16 11.5523 15.5523 12 15 12H14" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                                </svg>
+                            }
+                            else
+                            {
+                                <svg width="14" height="14" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                    <path d="M9 4L4 4L4 9M11 16L16 16L16 11" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                                    <path d="M4 4L9 9M16 16L11 11" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                                </svg>
+                            }
+                        </button>
+                        <button class="goal-grid-action-btn goal-grid-close-btn" title="Fechar" @onclick="CloseContainer">
+                            <svg viewBox="0 0 20 20" fill="currentColor" width="14" height="14"><path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd"/></svg>
+                        </button>
+                    </div>
+                </div>
+
+                @if (_breadcrumb.Count > 1)
+                {
+                    <nav class="goal-grid-breadcrumb">
+                        <span class="goal-grid-breadcrumb-link" @onclick="() => NavigateTo(0)">@_breadcrumb[0].Name</span>
+                        @for (var i = 1; i < _breadcrumb.Count; i++)
+                        {
+                            var index = i;
+                            <span class="goal-grid-breadcrumb-sep">/</span>
+                            @if (i < _breadcrumb.Count - 1)
+                            {
+                                <span class="goal-grid-breadcrumb-link" @onclick="() => NavigateTo(index)">@_breadcrumb[index].Name</span>
+                            }
+                            else
+                            {
+                                <span class="goal-grid-breadcrumb-current">@_breadcrumb[index].Name</span>
+                            }
+                        }
+                    </nav>
+                }
+
+                @if (_isLoading)
+                {
+                    <div class="goal-grid-container-loading">
+                        <p class="muted">Carregando...</p>
+                    </div>
+                }
+                else if (DisplayGoals.Count == 0 && DisplayIndicators.Count == 0)
+                {
+                    <div class="goal-grid-container-empty">
+                        <p class="muted">Nenhum indicador ou meta nesta missão.</p>
+                    </div>
+                }
+                else
+                {
+                    <div class="goal-grid-tree goal-grid-tree-inner">
+                        @foreach (var child in DisplayGoals)
+                        {
+                            var childProgress = _currentGoalProgress.GetValueOrDefault(child.Id);
+                            var childPercent = GetGoalProgressPercent(childProgress);
+                            var childStatusClass = GoalProgressDisplayHelper.GetGoalProgressStatusClass(childProgress);
+                            var childIsDraft = child.Status == GoalStatus.Planned;
+                            var childItemCount = GetGoalItemCount(childProgress);
+                            var innerChildGoalCount = childProgress?.DirectChildren ?? 0;
+                            var innerDirectIndicatorCount = childProgress?.DirectIndicators ?? 0;
+
+                            <div class="goal-grid-node goal-grid-node-goal @(childIsDraft ? "draft" : "")"
+                                 @onclick="() => NavigateInto(child)">
+                                <div class="goal-grid-header">
+                                    <div class="goal-grid-icon goal-grid-icon-goal">
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="24" height="24"><circle cx="12" cy="12" r="10" stroke-linecap="round"/><circle cx="12" cy="12" r="6" stroke-linecap="round"/><circle cx="12" cy="12" r="2" stroke-linecap="round"/></svg>
+                                    </div>
+                                    <div class="goal-grid-label">
+                                        <span class="goal-grid-name">@child.Name</span>
+                                        @if (!string.IsNullOrEmpty(child.Dimension))
+                                        {
+                                            <span class="goal-grid-details">@child.Dimension</span>
+                                        }
+                                    </div>
+                                    <span class="goal-grid-type-label">Meta</span>
+                                </div>
+                                @if (childIsDraft)
+                                {
+                                    <span class="goal-grid-draft-tag">RASCUNHO</span>
+                                }
+                                @{ var innerTotalMiniIcons = innerChildGoalCount + innerDirectIndicatorCount; }
+                                @if (innerTotalMiniIcons > 0)
+                                {
+                                    <div class="goal-grid-contents">
+                                        @for (var n = 0; n < Math.Min(innerChildGoalCount, 8); n++)
+                                        {
+                                            <svg class="goal-grid-mini-icon goal-grid-mini-icon-goal" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20"><circle cx="12" cy="12" r="10" stroke-linecap="round"/><circle cx="12" cy="12" r="6" stroke-linecap="round"/><circle cx="12" cy="12" r="2" stroke-linecap="round"/></svg>
+                                        }
+                                        @for (var n = 0; n < Math.Min(innerDirectIndicatorCount, 8); n++)
+                                        {
+                                            <svg class="goal-grid-mini-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20"><path d="M3 3v18h18" stroke-linecap="round" stroke-linejoin="round"/><path d="M18 9l-5 5-4-4-3 3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                                        }
+                                    </div>
+                                }
+                                else if (childItemCount > 0)
+                                {
+                                    <div class="goal-grid-contents">
+                                        @for (var n = 0; n < Math.Min(childItemCount, 8); n++)
+                                        {
+                                            <svg class="goal-grid-mini-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20"><path d="M3 3v18h18" stroke-linecap="round" stroke-linejoin="round"/><path d="M18 9l-5 5-4-4-3 3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                                        }
+                                    </div>
+                                }
+                                <div class="goal-grid-progress">
+                                    <div class="goal-grid-progress-bar">
+                                        <div class="goal-grid-progress-fill @childStatusClass" style="width: @(childPercent)%"></div>
+                                    </div>
+                                    <span class="goal-grid-progress-value">@(childPercent)%</span>
+                                </div>
+                                <div class="goal-grid-footer">
+                                    @{ var innerBadgeCount = innerTotalMiniIcons > 0 ? innerTotalMiniIcons : childItemCount; }
+                                    @if (innerBadgeCount > 0)
+                                    {
+                                        <span class="goal-grid-badge">@innerBadgeCount</span>
+                                    }
+                                    else
+                                    {
+                                        <span></span>
+                                    }
+                                    <div class="goal-grid-actions">
+                                        <button class="goal-grid-action-btn" title="Editar" @onclick="async () => await HandleEditClick(child)" @onclick:stopPropagation="true">
+                                            <svg viewBox="0 0 20 20" fill="currentColor" width="14" height="14"><path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z"/></svg>
+                                        </button>
+                                        <button class="goal-grid-action-btn delete @(DeletingGoalId == child.Id ? "confirming" : "")"
+                                                title="@(DeletingGoalId == child.Id ? "Confirmar exclusão" : "Excluir")"
+                                                @onclick="async () => await HandleDeleteClick(child.Id)" @onclick:stopPropagation="true">
+                                            @if (DeletingGoalId == child.Id)
+                                            {
+                                                <span class="goal-grid-confirm-text">OK?</span>
+                                            }
+                                            else
+                                            {
+                                                <svg viewBox="0 0 20 20" fill="currentColor" width="14" height="14"><path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd"/></svg>
+                                            }
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        }
+
+                        @foreach (var indicator in DisplayIndicators)
+                        {
+                            var indicatorProgress = _currentIndicatorProgress.GetValueOrDefault(indicator.Id);
+                            var indPercent = GetIndicatorProgressPercent(indicatorProgress);
+                            var indStatusClass = GoalProgressDisplayHelper.GetIndicatorProgressStatusClass(
+                                indicatorProgress ?? new IndicatorProgressResponse { IndicatorId = indicator.Id });
+                            var indStatusLabel = GetIndicatorStatusLabel(indicatorProgress);
+
+                            <div class="goal-grid-node goal-grid-node-indicator goal-grid-node-clickable"
+                                 @onclick="async () => await HandleHistoryClick(indicator)">
+                                <div class="goal-grid-header">
+                                    <div class="goal-grid-icon goal-grid-icon-indicator">
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="24" height="24"><path d="M3 3v18h18" stroke-linecap="round" stroke-linejoin="round"/><path d="M18 9l-5 5-4-4-3 3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                                    </div>
+                                    <div class="goal-grid-label">
+                                        <span class="goal-grid-name">@indicator.Name</span>
+                                        <span class="goal-grid-details">@IndicatorDisplayHelper.GetTargetLabel(indicator)</span>
+                                    </div>
+                                    <span class="goal-grid-type-label">Indicador</span>
+                                </div>
+                                <div class="goal-grid-progress">
+                                    <div class="goal-grid-progress-bar">
+                                        <div class="goal-grid-progress-fill @indStatusClass" style="width: @(indPercent)%"></div>
+                                    </div>
+                                    <span class="goal-grid-progress-value">@(indPercent)%</span>
+                                </div>
+                                <span class="goal-grid-status @indStatusClass">@indStatusLabel</span>
+                                <div class="goal-grid-footer">
+                                    <span class="goal-grid-indicator-type">@(indicator.Type == IndicatorType.Qualitative ? "Qualitativo" : "Quantitativo")</span>
+                                    <div class="goal-grid-actions">
+                                        <button class="goal-grid-action-btn" title="Editar" @onclick="async () => await HandleEditIndicatorClick(indicator)" @onclick:stopPropagation="true">
+                                            <svg viewBox="0 0 20 20" fill="currentColor" width="14" height="14"><path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z"/></svg>
+                                        </button>
+                                        <button class="goal-grid-action-btn" title="Novo check-in" @onclick="async () => await HandleCheckinClick(indicator)" @onclick:stopPropagation="true">
+                                            <svg viewBox="0 0 20 20" fill="currentColor" width="14" height="14"><path fill-rule="evenodd" d="M10 5a1 1 0 011 1v3h3a1 1 0 110 2h-3v3a1 1 0 11-2 0v-3H6a1 1 0 110-2h3V6a1 1 0 011-1z" clip-rule="evenodd"/></svg>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                }
+            </div>
+        }
+        else
+        {
+            <div class="goal-grid-node goal-grid-node-goal @(isDraft ? "draft" : "")"
+                 @onclick="() => OpenGoal(goal)">
+                <div class="goal-grid-header">
+                    <div class="goal-grid-icon goal-grid-icon-goal">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="24" height="24"><circle cx="12" cy="12" r="10" stroke-linecap="round"/><circle cx="12" cy="12" r="6" stroke-linecap="round"/><circle cx="12" cy="12" r="2" stroke-linecap="round"/></svg>
+                    </div>
+                    <div class="goal-grid-label">
+                        <span class="goal-grid-name">@goal.Name</span>
+                        @if (!string.IsNullOrEmpty(goal.Dimension))
+                        {
+                            <span class="goal-grid-details">@goal.Dimension</span>
+                        }
+                    </div>
+                    <span class="goal-grid-type-label">Meta</span>
+                </div>
+
+                @if (isDraft)
+                {
+                    <span class="goal-grid-draft-tag">RASCUNHO</span>
+                }
+
+                @{ var totalMiniIcons = childGoalCount + directIndicatorCount; }
+                @if (totalMiniIcons > 0)
+                {
+                    <div class="goal-grid-contents">
+                        @for (var n = 0; n < Math.Min(childGoalCount, 8); n++)
+                        {
+                            <svg class="goal-grid-mini-icon goal-grid-mini-icon-goal" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20"><circle cx="12" cy="12" r="10" stroke-linecap="round"/><circle cx="12" cy="12" r="6" stroke-linecap="round"/><circle cx="12" cy="12" r="2" stroke-linecap="round"/></svg>
+                        }
+                        @for (var n = 0; n < Math.Min(directIndicatorCount, 8); n++)
+                        {
+                            <svg class="goal-grid-mini-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20"><path d="M3 3v18h18" stroke-linecap="round" stroke-linejoin="round"/><path d="M18 9l-5 5-4-4-3 3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                        }
+                    </div>
+                }
+                else if (itemCount > 0)
+                {
+                    <div class="goal-grid-contents">
+                        @for (var n = 0; n < Math.Min(itemCount, 8); n++)
+                        {
+                            <svg class="goal-grid-mini-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20"><path d="M3 3v18h18" stroke-linecap="round" stroke-linejoin="round"/><path d="M18 9l-5 5-4-4-3 3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                        }
+                    </div>
+                }
+
+                <div class="goal-grid-progress">
+                    <div class="goal-grid-progress-bar">
+                        <div class="goal-grid-progress-fill @statusClass" style="width: @(progressPercent)%"></div>
+                    </div>
+                    <span class="goal-grid-progress-value">@(progressPercent)%</span>
+                </div>
+
+                <div class="goal-grid-footer">
+                    @{ var badgeCount = totalMiniIcons > 0 ? totalMiniIcons : itemCount; }
+                    @if (badgeCount > 0)
+                    {
+                        <span class="goal-grid-badge">@badgeCount</span>
+                    }
+                    else
+                    {
+                        <span></span>
+                    }
+                    <div class="goal-grid-actions">
+                        <button class="goal-grid-action-btn" title="Editar" @onclick="async () => await HandleEditClick(goal)" @onclick:stopPropagation="true">
+                            <svg viewBox="0 0 20 20" fill="currentColor" width="14" height="14"><path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z"/></svg>
+                        </button>
+                        <button class="goal-grid-action-btn delete @(DeletingGoalId == goal.Id ? "confirming" : "")"
+                                title="@(DeletingGoalId == goal.Id ? "Confirmar exclusão" : "Excluir")"
+                                @onclick="async () => await HandleDeleteClick(goal.Id)" @onclick:stopPropagation="true">
+                            @if (DeletingGoalId == goal.Id)
+                            {
+                                <span class="goal-grid-confirm-text">OK?</span>
+                            }
+                            else
+                            {
+                                <svg viewBox="0 0 20 20" fill="currentColor" width="14" height="14"><path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd"/></svg>
+                            }
+                        </button>
+                    </div>
+                </div>
+            </div>
+        }
+    }
+</div>

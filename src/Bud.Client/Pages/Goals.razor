@@ -53,26 +53,41 @@ else if (_goals.Items.Count == 0)
 }
 else
 {
-    <div class="@(_viewMode == "list" ? "goals-list" : "goals-grid")">
-        @foreach (var goal in _goals.Items)
-        {
-            <GoalCard @key="@($"{goal.Id}-{_cardRefreshToken}")" Goal="goal"
-                      Progress="@(_goalProgress.GetValueOrDefault(goal.Id))"
-                      IsExpanded="@(_expandedGoals.Contains(goal.Id))"
-                      IsDeleting="@(_deletingGoalId == goal.Id)"
-                      Indicators="@(_goalIndicatorsCache.GetValueOrDefault(goal.Id))"
-                      ChildGoals="@(_goalChildrenCache.GetValueOrDefault(goal.Id))"
-                      IndicatorProgressCache="_indicatorProgressCache"
-                      GoalProgressCache="_childGoalProgressCache"
-                      ExpandedGoals="_expandedChildGoals"
-                      OnToggleExpand="async () => await ToggleExpand(goal.Id)"
-                      OnEdit="async () => await OpenEditWizard(goal)"
-                      OnDeleteClick="() => HandleDeleteClick(goal.Id)"
-                      OnToggleGoalExpand="ToggleChildGoalExpand"
-                      OnCheckinClick="m => OpenCheckinModalForIndicator(goal, m)"
-                      OnHistoryClick="m => OpenCheckinHistoryModal(goal, m)" />
-        }
-    </div>
+    @if (_viewMode == "grid")
+    {
+        <GoalGridView @key="_cardRefreshToken"
+                      RootGoals="_goals"
+                      RootGoalProgress="_goalProgress"
+                      DeletingGoalId="_deletingGoalId"
+                      OnEdit="async (goal) => await OpenEditWizard(goal)"
+                      OnDeleteClick="(id) => HandleDeleteClick(id)"
+                      OnCheckinClick="t => OpenCheckinModalForIndicator(t.goal, t.indicator)"
+                      OnHistoryClick="t => OpenCheckinHistoryModal(t.goal, t.indicator)"
+                      OnEditIndicator="t => OpenEditIndicatorModal(t.goal, t.indicator)" />
+    }
+    else
+    {
+        <div class="goals-list">
+            @foreach (var goal in _goals.Items)
+            {
+                <GoalCard @key="@($"{goal.Id}-{_cardRefreshToken}")" Goal="goal"
+                          Progress="@(_goalProgress.GetValueOrDefault(goal.Id))"
+                          IsExpanded="@(_expandedGoals.Contains(goal.Id))"
+                          IsDeleting="@(_deletingGoalId == goal.Id)"
+                          Indicators="@(_goalIndicatorsCache.GetValueOrDefault(goal.Id))"
+                          ChildGoals="@(_goalChildrenCache.GetValueOrDefault(goal.Id))"
+                          IndicatorProgressCache="_indicatorProgressCache"
+                          GoalProgressCache="_childGoalProgressCache"
+                          ExpandedGoals="_expandedChildGoals"
+                          OnToggleExpand="async () => await ToggleExpand(goal.Id)"
+                          OnEdit="async () => await OpenEditWizard(goal)"
+                          OnDeleteClick="() => HandleDeleteClick(goal.Id)"
+                          OnToggleGoalExpand="ToggleChildGoalExpand"
+                          OnCheckinClick="m => OpenCheckinModalForIndicator(goal, m)"
+                          OnHistoryClick="m => OpenCheckinHistoryModal(goal, m)" />
+            }
+        </div>
+    }
     <p class="muted" style="margin-top: var(--spacing-4);">Total: @_goals.Total</p>
 }
 
@@ -91,6 +106,12 @@ else
                OnSave="HandleWizardSave"
                OnSaveDraft="HandleWizardSaveDraft" />
 
+
+<IndicatorFormModal IsOpen="@(_isIndicatorEditModalOpen && _editingIndicator != null)"
+                   IsEditMode="true"
+                   InitialModel="@GetEditingIndicatorModel()"
+                   OnClose="CloseIndicatorEditModal"
+                   OnSave="HandleIndicatorEditSave" />
 
 <CheckinModal IsOpen="@(_isCheckinModalOpen && _selectedCheckinIndicator != null)"
               Indicator="_selectedCheckinIndicator"
