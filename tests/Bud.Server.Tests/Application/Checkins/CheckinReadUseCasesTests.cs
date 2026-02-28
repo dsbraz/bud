@@ -10,7 +10,7 @@ using Xunit;
 
 namespace Bud.Server.Tests.Application.Checkins;
 
-public sealed class MetricCheckinReadUseCasesTests
+public sealed class CheckinReadUseCasesTests
 {
     [Fact]
     public async Task GetByIdAsync_WhenFound_ReturnsSuccess()

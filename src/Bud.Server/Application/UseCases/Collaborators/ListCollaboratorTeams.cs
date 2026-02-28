@@ -12,7 +12,7 @@ public sealed class ListCollaboratorTeams(ICollaboratorRepository collaboratorRe
     {
         if (!await collaboratorRepository.ExistsAsync(collaboratorId, cancellationToken))
         {
-            return Result<List<CollaboratorTeamResponse>>.NotFound("Colaborador não encontrado.");
+            return Result<List<CollaboratorTeamResponse>>.NotFound(UserErrorMessages.CollaboratorNotFound);
         }
 
         var teams = await collaboratorRepository.GetTeamsAsync(collaboratorId, cancellationToken);

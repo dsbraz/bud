@@ -16,7 +16,7 @@ public sealed class ListAvailableCollaboratorsForTeam(ITeamRepository teamReposi
         var team = await teamRepository.GetByIdAsync(teamId, cancellationToken);
         if (team is null)
         {
-            return Result<List<TeamCollaboratorEligibleResponse>>.NotFound("Time não encontrado.");
+            return Result<List<TeamCollaboratorEligibleResponse>>.NotFound(UserErrorMessages.TeamNotFound);
         }
 
         var summaries = await teamRepository.GetEligibleCollaboratorsForAssignmentAsync(teamId, team.OrganizationId, search, 50, cancellationToken);

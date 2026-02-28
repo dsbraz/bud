@@ -3,9 +3,9 @@ using Bud.Server.Application.Mapping;
 using Bud.Server.Domain.Model;
 using Bud.Server.Domain.Repositories;
 
-namespace Bud.Server.Application.UseCases.Goals;
+namespace Bud.Server.Application.UseCases.Me;
 
-public sealed class ListCollaboratorGoals(IGoalRepository goalRepository)
+public sealed class ListMyGoals(IGoalRepository goalRepository)
 {
     public async Task<Result<PagedResult<Goal>>> ExecuteAsync(
         Guid collaboratorId,
@@ -19,7 +19,7 @@ public sealed class ListCollaboratorGoals(IGoalRepository goalRepository)
         var collaborator = await goalRepository.FindCollaboratorForMyGoalsAsync(collaboratorId, cancellationToken);
         if (collaborator is null)
         {
-            return Result<PagedResult<Goal>>.NotFound("Colaborador não encontrado.");
+            return Result<PagedResult<Goal>>.NotFound(UserErrorMessages.CollaboratorNotFound);
         }
 
         var teamIds = await goalRepository.GetCollaboratorTeamIdsAsync(collaboratorId, collaborator.TeamId, cancellationToken);

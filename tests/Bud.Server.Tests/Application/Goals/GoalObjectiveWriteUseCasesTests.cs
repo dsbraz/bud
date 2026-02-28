@@ -12,9 +12,9 @@ using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
 using Xunit;
 
-namespace Bud.Server.Tests.Application.Objectives;
+namespace Bud.Server.Tests.Application.Goals;
 
-public sealed class MissionObjectiveWriteUseCasesTests
+public sealed class GoalObjectiveWriteUseCasesTests
 {
     private static readonly ClaimsPrincipal User = new(new ClaimsIdentity([new Claim(ClaimTypes.Name, "test")]));
 

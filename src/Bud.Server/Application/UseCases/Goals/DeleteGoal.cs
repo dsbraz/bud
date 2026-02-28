@@ -24,14 +24,14 @@ public sealed partial class DeleteGoal(
         if (goal is null)
         {
             LogGoalDeletionFailed(logger, id, "Not found");
-            return Result.NotFound("Meta não encontrada.");
+            return Result.NotFound(UserErrorMessages.GoalNotFound);
         }
 
         var canDelete = await authorizationGateway.CanAccessTenantOrganizationAsync(user, goal.OrganizationId, cancellationToken);
         if (!canDelete)
         {
             LogGoalDeletionFailed(logger, id, "Forbidden");
-            return Result.Forbidden("Você não tem permissão para excluir metas nesta organização.");
+            return Result.Forbidden(UserErrorMessages.GoalDeleteForbidden);
         }
 
         goal.MarkAsDeleted();

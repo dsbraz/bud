@@ -26,14 +26,14 @@ public sealed partial class DeleteWorkspace(
         if (workspace is null)
         {
             LogWorkspaceDeletionFailed(logger, id, "Not found");
-            return Result.NotFound("Workspace não encontrado.");
+            return Result.NotFound(UserErrorMessages.WorkspaceNotFound);
         }
 
         var canDelete = await authorizationGateway.CanWriteOrganizationAsync(user, workspace.OrganizationId, cancellationToken);
         if (!canDelete)
         {
             LogWorkspaceDeletionFailed(logger, id, "Forbidden");
-            return Result.Forbidden("Você não tem permissão para excluir este workspace.");
+            return Result.Forbidden(UserErrorMessages.WorkspaceDeleteForbidden);
         }
 
         if (await workspaceRepository.HasGoalsAsync(id, cancellationToken))

@@ -51,7 +51,7 @@ public static class BudApplicationCompositionExtensions
         services.AddScoped<ListTeams>();
         services.AddScoped<ListSubTeams>();
         services.AddScoped<ListTeamCollaborators>();
-        services.AddScoped<ListTeamCollaboratorOptions>();
+        services.AddScoped<GetTeamCollaboratorLookup>();
         services.AddScoped<PatchTeamCollaborators>();
         services.AddScoped<ListAvailableCollaboratorsForTeam>();
 
@@ -65,7 +65,7 @@ public static class BudApplicationCompositionExtensions
         services.AddScoped<ListCollaboratorTeams>();
         services.AddScoped<PatchCollaboratorTeams>();
         services.AddScoped<ListAvailableTeamsForCollaborator>();
-        services.AddScoped<ListCollaboratorOptions>();
+        services.AddScoped<GetCollaboratorLookup>();
 
         services.AddScoped<IGoalRepository, GoalRepository>();
         services.AddScoped<CreateGoal>();
@@ -75,7 +75,6 @@ public static class BudApplicationCompositionExtensions
         services.AddScoped<ListGoals>();
         services.AddScoped<ListGoalChildren>();
         services.AddScoped<ListGoalIndicators>();
-        services.AddScoped<ListCollaboratorGoals>();
         services.AddScoped<ListGoalProgress>();
 
         services.AddScoped<IIndicatorRepository, IndicatorRepository>();
@@ -95,6 +94,7 @@ public static class BudApplicationCompositionExtensions
         services.AddScoped<IAuthService, AuthService>();
         services.AddScoped<CreateSession>();
         services.AddScoped<ListMyOrganizations>();
+        services.AddScoped<ListMyGoals>();
         services.AddScoped<DeleteCurrentSession>();
 
         services.AddScoped<ITemplateRepository, TemplateRepository>();

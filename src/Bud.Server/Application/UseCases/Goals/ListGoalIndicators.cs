@@ -18,7 +18,7 @@ public sealed class ListGoalIndicators(IGoalRepository goalRepository)
         var goalExists = await goalRepository.ExistsAsync(goalId, cancellationToken);
         if (!goalExists)
         {
-            return Result<PagedResult<Indicator>>.NotFound("Meta não encontrada.");
+            return Result<PagedResult<Indicator>>.NotFound(UserErrorMessages.GoalNotFound);
         }
 
         var result = await goalRepository.GetIndicatorsAsync(goalId, page, pageSize, cancellationToken);

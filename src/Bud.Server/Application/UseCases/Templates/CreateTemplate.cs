@@ -33,7 +33,7 @@ public sealed partial class CreateTemplate(
             if (!canCreate)
             {
                 LogTemplateCreationFailed(logger, request.Name, "Forbidden");
-                return Result<Template>.Forbidden("Você não tem permissão para criar templates nesta organização.");
+                return Result<Template>.Forbidden(UserErrorMessages.TemplateCreateForbidden);
             }
         }
 
@@ -79,12 +79,12 @@ public sealed partial class CreateTemplate(
         }
     }
 
-    [LoggerMessage(EventId = 4072, Level = LogLevel.Information, Message = "Creating template '{Name}'")]
+    [LoggerMessage(EventId = 4070, Level = LogLevel.Information, Message = "Creating template '{Name}'")]
     private static partial void LogCreatingTemplate(ILogger logger, string name);
 
-    [LoggerMessage(EventId = 4073, Level = LogLevel.Information, Message = "Template created successfully: {TemplateId} - '{Name}'")]
+    [LoggerMessage(EventId = 4071, Level = LogLevel.Information, Message = "Template created successfully: {TemplateId} - '{Name}'")]
     private static partial void LogTemplateCreated(ILogger logger, Guid templateId, string name);
 
-    [LoggerMessage(EventId = 4074, Level = LogLevel.Warning, Message = "Template creation failed for '{Name}': {Reason}")]
+    [LoggerMessage(EventId = 4072, Level = LogLevel.Warning, Message = "Template creation failed for '{Name}': {Reason}")]
     private static partial void LogTemplateCreationFailed(ILogger logger, string name, string reason);
 }

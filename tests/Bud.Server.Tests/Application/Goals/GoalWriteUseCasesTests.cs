@@ -15,7 +15,7 @@ using Xunit;
 
 namespace Bud.Server.Tests.Application.Goals;
 
-public sealed class MissionWriteUseCasesTests
+public sealed class GoalWriteUseCasesTests
 {
     private static readonly ClaimsPrincipal User = new(new ClaimsIdentity([new Claim(ClaimTypes.Name, "test")]));
     private readonly Mock<IGoalRepository> _repo = new();

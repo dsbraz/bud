@@ -1,6 +1,5 @@
 using System.Security.Claims;
 using Bud.Server.Application.UseCases.Me;
-using Bud.Server.Application.UseCases.Goals;
 using Bud.Server.Authorization;
 using Bud.Server.MultiTenancy;
 using Bud.Shared.Contracts;
@@ -17,7 +16,7 @@ namespace Bud.Server.Controllers;
 public sealed class MeController(
     ListMyOrganizations listMyOrganizations,
     GetMyDashboard getMyDashboard,
-    ListCollaboratorGoals listCollaboratorGoals,
+    ListMyGoals listMyGoals,
     ITenantProvider tenantProvider) : ApiControllerBase
 {
     /// <summary>
@@ -86,7 +85,7 @@ public sealed class MeController(
             return paginationValidation;
         }
 
-        var result = await listCollaboratorGoals.ExecuteAsync(
+        var result = await listMyGoals.ExecuteAsync(
             collaboratorId.Value,
             searchValidation.Value,
             page,

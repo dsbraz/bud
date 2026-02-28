@@ -13,7 +13,7 @@ public sealed class PatchNotifications(
     {
         if (tenantProvider.CollaboratorId is null)
         {
-            return Result.Forbidden("Colaborador não identificado.");
+            return Result.Forbidden(UserErrorMessages.CollaboratorNotIdentified);
         }
 
         await notificationRepository.MarkAllAsReadAsync(

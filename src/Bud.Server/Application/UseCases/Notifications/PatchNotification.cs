@@ -16,18 +16,18 @@ public sealed class PatchNotification(
     {
         if (tenantProvider.CollaboratorId is null)
         {
-            return Result.Forbidden("Colaborador não identificado.");
+            return Result.Forbidden(UserErrorMessages.CollaboratorNotIdentified);
         }
 
         var notification = await notificationRepository.GetByIdAsync(notificationId, cancellationToken);
         if (notification is null)
         {
-            return Result.NotFound("Notificação não encontrada.");
+            return Result.NotFound(UserErrorMessages.NotificationNotFound);
         }
 
         if (notification.RecipientCollaboratorId != tenantProvider.CollaboratorId.Value)
         {
-            return Result.Forbidden("Você não tem permissão para marcar esta notificação como lida.");
+            return Result.Forbidden(UserErrorMessages.NotificationPatchForbidden);
         }
 
         if (notification.IsRead)

@@ -17,7 +17,7 @@ public sealed class CollaboratorsController(
     PatchCollaborator patchCollaborator,
     DeleteCollaborator deleteCollaborator,
     GetCollaboratorById getCollaboratorById,
-    ListCollaboratorOptions listCollaboratorOptions,
+    GetCollaboratorLookup listCollaboratorOptions,
     ListLeaderCollaborators listLeaderCollaborators,
     ListCollaborators listCollaborators,
     GetCollaboratorHierarchy getCollaboratorHierarchy,

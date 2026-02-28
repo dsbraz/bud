@@ -11,9 +11,9 @@ using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
 using Xunit;
 
-namespace Bud.Server.Tests.Application.Metrics;
+namespace Bud.Server.Tests.Application.Indicators;
 
-public sealed class MissionMetricWriteUseCasesTests
+public sealed class IndicatorWriteUseCasesTests
 {
     private static readonly ClaimsPrincipal User = new(new ClaimsIdentity([new Claim(ClaimTypes.Name, "test")]));
 

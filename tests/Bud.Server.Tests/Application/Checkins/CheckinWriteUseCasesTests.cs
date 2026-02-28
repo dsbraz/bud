@@ -16,7 +16,7 @@ using Xunit;
 
 namespace Bud.Server.Tests.Application.Checkins;
 
-public sealed class MetricCheckinWriteUseCasesTests
+public sealed class CheckinWriteUseCasesTests
 {
     private static readonly ClaimsPrincipal User = new(new ClaimsIdentity([new Claim(ClaimTypes.Name, "test")]));
 
@@ -82,6 +82,72 @@ public sealed class MetricCheckinWriteUseCasesTests
         result.ErrorType.Should().Be(ErrorType.Forbidden);
         result.Error.Should().Be("Colaborador não identificado.");
         collaboratorRepository.VerifyNoOtherCalls();
+    }
+
+    [Fact]
+    public async Task CreateAsync_WhenCollaboratorDoesNotExist_ReturnsNotFound()
+    {
+        var orgId = Guid.NewGuid();
+        var collaboratorId = Guid.NewGuid();
+        var goal = new Goal
+        {
+            Id = Guid.NewGuid(),
+            Name = "Meta",
+            StartDate = DateTime.UtcNow,
+            EndDate = DateTime.UtcNow.AddDays(1),
+            Status = GoalStatus.Active,
+            OrganizationId = orgId
+        };
+        var indicator = new Indicator
+        {
+            Id = Guid.NewGuid(),
+            Name = "Indicador",
+            Type = IndicatorType.Qualitative,
+            GoalId = goal.Id,
+            Goal = goal,
+            OrganizationId = orgId
+        };
+
+        var indicatorRepository = new Mock<IIndicatorRepository>(MockBehavior.Strict);
+        indicatorRepository
+            .Setup(r => r.GetIndicatorWithGoalAsync(indicator.Id, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(indicator);
+
+        var collaboratorRepository = new Mock<ICollaboratorRepository>(MockBehavior.Strict);
+        collaboratorRepository
+            .Setup(r => r.GetByIdAsync(collaboratorId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync((Collaborator?)null);
+
+        var authorizationGateway = new Mock<IApplicationAuthorizationGateway>(MockBehavior.Strict);
+        authorizationGateway
+            .Setup(g => g.CanAccessTenantOrganizationAsync(User, orgId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(true);
+        authorizationGateway
+            .Setup(g => g.CanAccessGoalScopeAsync(User, goal.WorkspaceId, goal.TeamId, goal.CollaboratorId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(true);
+
+        var tenantProvider = new Mock<ITenantProvider>(MockBehavior.Strict);
+        tenantProvider.SetupGet(t => t.CollaboratorId).Returns(collaboratorId);
+
+        var useCase = new CreateCheckin(
+            indicatorRepository.Object,
+            collaboratorRepository.Object,
+            authorizationGateway.Object,
+            tenantProvider.Object,
+            NullLogger<CreateCheckin>.Instance);
+
+        var request = new CreateCheckinRequest
+        {
+            Text = "ok",
+            CheckinDate = DateTime.UtcNow,
+            ConfidenceLevel = 3
+        };
+
+        var result = await useCase.ExecuteAsync(User, indicator.Id, request);
+
+        result.IsSuccess.Should().BeFalse();
+        result.ErrorType.Should().Be(ErrorType.NotFound);
+        result.Error.Should().Be("Colaborador não encontrado.");
     }
 
     [Fact]

@@ -1,6 +1,5 @@
 using System.Security.Claims;
 using Bud.Server.Application.Common;
-using Bud.Server.Application.Mapping;
 using Bud.Server.Authorization;
 using Bud.Server.Domain.Model;
 using Bud.Server.Domain.Repositories;
@@ -31,14 +30,14 @@ public sealed partial class CreateCheckin(
         if (indicator is null)
         {
             LogCheckinCreationFailed(logger, indicatorId, "Indicator not found");
-            return Result<Checkin>.NotFound("Indicador não encontrado.");
+            return Result<Checkin>.NotFound(UserErrorMessages.IndicatorNotFound);
         }
 
         var hasTenantAccess = await authorizationGateway.CanAccessTenantOrganizationAsync(user, indicator.OrganizationId, cancellationToken);
         if (!hasTenantAccess)
         {
             LogCheckinCreationFailed(logger, indicatorId, "Forbidden (tenant)");
-            return Result<Checkin>.Forbidden("Você não tem permissão para criar check-ins neste indicador.");
+            return Result<Checkin>.Forbidden(UserErrorMessages.CheckinCreateForbidden);
         }
 
         var goal = indicator.Goal;
@@ -51,21 +50,21 @@ public sealed partial class CreateCheckin(
         if (!hasScopeAccess)
         {
             LogCheckinCreationFailed(logger, indicatorId, "Forbidden (scope)");
-            return Result<Checkin>.Forbidden("Você não tem permissão para fazer check-in neste indicador.");
+            return Result<Checkin>.Forbidden(UserErrorMessages.CheckinScopeForbidden);
         }
 
         var collaboratorId = tenantProvider.CollaboratorId;
         if (!collaboratorId.HasValue)
         {
             LogCheckinCreationFailed(logger, indicatorId, "Collaborator not identified");
-            return Result<Checkin>.Forbidden("Colaborador não identificado.");
+            return Result<Checkin>.Forbidden(UserErrorMessages.CollaboratorNotIdentified);
         }
 
         var collaborator = await collaboratorRepository.GetByIdAsync(collaboratorId.Value, cancellationToken);
         if (collaborator is null)
         {
             LogCheckinCreationFailed(logger, indicatorId, "Collaborator not found");
-            return Result<Checkin>.Forbidden("Colaborador não encontrado.");
+            return Result<Checkin>.NotFound(UserErrorMessages.CollaboratorNotFound);
         }
 
         if (goal.Status != GoalStatus.Active)

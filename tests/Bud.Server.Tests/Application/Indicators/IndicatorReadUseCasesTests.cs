@@ -10,9 +10,9 @@ using FluentAssertions;
 using Moq;
 using Xunit;
 
-namespace Bud.Server.Tests.Application.Metrics;
+namespace Bud.Server.Tests.Application.Indicators;
 
-public sealed class MissionMetricReadUseCasesTests
+public sealed class IndicatorReadUseCasesTests
 {
     [Fact]
     public async Task ViewMissionMetricDetails_WhenMetricExists_ReturnsSuccess()

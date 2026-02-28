@@ -20,7 +20,7 @@ public sealed class GetMyDashboard(
 
         if (!tenantProvider.CollaboratorId.HasValue)
         {
-            return Result<MyDashboardResponse>.Forbidden("Colaborador não identificado.");
+            return Result<MyDashboardResponse>.Forbidden(UserErrorMessages.CollaboratorNotIdentified);
         }
 
         var snapshot = await dashboardReadStore.GetMyDashboardAsync(
@@ -30,7 +30,7 @@ public sealed class GetMyDashboard(
 
         if (snapshot is null)
         {
-            return Result<MyDashboardResponse>.NotFound("Colaborador não encontrado.");
+            return Result<MyDashboardResponse>.NotFound(UserErrorMessages.CollaboratorNotFound);
         }
 
         return Result<MyDashboardResponse>.Success(snapshot.ToResponse());

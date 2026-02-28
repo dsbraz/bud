@@ -27,19 +27,19 @@ public sealed partial class CreateWorkspace(
         if (!canCreate)
         {
             LogWorkspaceCreationFailed(logger, request.Name, "Forbidden");
-            return Result<Workspace>.Forbidden("Apenas o proprietário da organização pode criar workspaces.");
+            return Result<Workspace>.Forbidden(UserErrorMessages.WorkspaceCreateForbidden);
         }
 
         if (!await organizationRepository.ExistsAsync(request.OrganizationId, cancellationToken))
         {
             LogWorkspaceCreationFailed(logger, request.Name, "Organization not found");
-            return Result<Workspace>.NotFound("Organização não encontrada.");
+            return Result<Workspace>.NotFound(UserErrorMessages.OrganizationNotFound);
         }
 
         if (!await workspaceRepository.IsNameUniqueAsync(request.OrganizationId, request.Name, ct: cancellationToken))
         {
             LogWorkspaceCreationFailed(logger, request.Name, "Name already exists");
-            return Result<Workspace>.Failure("Já existe um workspace com este nome nesta organização.", ErrorType.Conflict);
+            return Result<Workspace>.Failure(UserErrorMessages.WorkspaceNameConflict, ErrorType.Conflict);
         }
 
         try

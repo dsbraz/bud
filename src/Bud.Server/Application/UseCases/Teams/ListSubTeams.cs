@@ -20,7 +20,7 @@ public sealed class ListSubTeams(ITeamRepository teamRepository)
 
         if (!await teamRepository.ExistsAsync(id, cancellationToken))
         {
-            return Result<Bud.Shared.Contracts.Common.PagedResult<Team>>.NotFound("Time não encontrado.");
+            return Result<Bud.Shared.Contracts.Common.PagedResult<Team>>.NotFound(UserErrorMessages.TeamNotFound);
         }
 
         var result = await teamRepository.GetSubTeamsAsync(id, page, pageSize, cancellationToken);

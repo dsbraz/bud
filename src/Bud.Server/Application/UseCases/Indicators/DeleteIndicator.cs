@@ -1,6 +1,5 @@
 using System.Security.Claims;
 using Bud.Server.Application.Common;
-using Bud.Server.Application.Mapping;
 using Bud.Server.Authorization;
 using Bud.Server.Domain.Repositories;
 using Microsoft.Extensions.Logging;
@@ -25,7 +24,7 @@ public sealed partial class DeleteIndicator(
         if (indicatorForAuthorization is null)
         {
             LogIndicatorDeletionFailed(logger, id, "Not found");
-            return Result.NotFound("Indicador não encontrado.");
+            return Result.NotFound(UserErrorMessages.IndicatorNotFound);
         }
 
         var canDelete = await authorizationGateway.CanAccessTenantOrganizationAsync(
@@ -35,14 +34,14 @@ public sealed partial class DeleteIndicator(
         if (!canDelete)
         {
             LogIndicatorDeletionFailed(logger, id, "Forbidden");
-            return Result.Forbidden("Você não tem permissão para excluir indicadores nesta meta.");
+            return Result.Forbidden(UserErrorMessages.IndicatorDeleteForbidden);
         }
 
         var indicator = await indicatorRepository.GetByIdForUpdateAsync(id, cancellationToken);
         if (indicator is null)
         {
             LogIndicatorDeletionFailed(logger, id, "Not found for update");
-            return Result.NotFound("Indicador não encontrado.");
+            return Result.NotFound(UserErrorMessages.IndicatorNotFound);
         }
 
         await indicatorRepository.RemoveAsync(indicator, cancellationToken);

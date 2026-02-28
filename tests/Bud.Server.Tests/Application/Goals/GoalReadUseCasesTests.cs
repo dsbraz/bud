@@ -3,6 +3,7 @@ using Bud.Server.Domain.Repositories;
 using Bud.Server.Application.Common;
 using Bud.Server.Application.Mapping;
 using Bud.Server.Application.UseCases.Goals;
+using Bud.Server.Application.UseCases.Me;
 using Bud.Server.Application.ReadModels;
 
 using Bud.Shared.Contracts;
@@ -13,7 +14,7 @@ using Xunit;
 
 namespace Bud.Server.Tests.Application.Goals;
 
-public sealed class MissionReadUseCasesTests
+public sealed class GoalReadUseCasesTests
 {
     private readonly Mock<IGoalRepository> _repo = new();
     private readonly Mock<IGoalProgressService> _progressService = new();
@@ -24,7 +25,7 @@ public sealed class MissionReadUseCasesTests
     private ListGoalProgress CreateListMissionProgress()
         => new(_progressService.Object);
 
-    private ListCollaboratorGoals CreateListCollaboratorMissions()
+    private ListMyGoals CreateListMyGoals()
         => new(_repo.Object);
 
     private ListGoalIndicators CreateListMissionMetrics()
@@ -81,7 +82,7 @@ public sealed class MissionReadUseCasesTests
         _repo.Setup(r => r.FindCollaboratorForMyGoalsAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync((Collaborator?)null);
 
-        var useCase = CreateListCollaboratorMissions();
+        var useCase = CreateListMyGoals();
 
         var result = await useCase.ExecuteAsync(Guid.NewGuid(), null, 1, 10);
 

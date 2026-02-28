@@ -1,6 +1,5 @@
 using System.Security.Claims;
 using Bud.Server.Application.Common;
-using Bud.Server.Application.Mapping;
 using Bud.Server.Authorization;
 using Bud.Server.Domain.Model;
 using Bud.Server.Domain.Repositories;
@@ -27,14 +26,14 @@ public sealed partial class CreateIndicator(
         if (goal is null)
         {
             LogIndicatorCreationFailed(logger, request.Name, "Goal not found");
-            return Result<Indicator>.NotFound("Meta não encontrada.");
+            return Result<Indicator>.NotFound(UserErrorMessages.GoalNotFound);
         }
 
         var canCreate = await authorizationGateway.CanAccessTenantOrganizationAsync(user, goal.OrganizationId, cancellationToken);
         if (!canCreate)
         {
             LogIndicatorCreationFailed(logger, request.Name, "Forbidden");
-            return Result<Indicator>.Forbidden("Você não tem permissão para criar indicadores nesta meta.");
+            return Result<Indicator>.Forbidden(UserErrorMessages.IndicatorCreateForbidden);
         }
 
         try

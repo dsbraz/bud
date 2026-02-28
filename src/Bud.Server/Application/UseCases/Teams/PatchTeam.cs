@@ -1,5 +1,6 @@
 using System.Security.Claims;
 using Bud.Server.Application.Common;
+using Bud.Server.Application.Policies;
 using Bud.Server.Application.Mapping;
 using Bud.Server.Authorization;
 using Bud.Server.Domain.Model;
@@ -28,14 +29,14 @@ public sealed partial class PatchTeam(
         if (team is null)
         {
             LogTeamPatchFailed(logger, id, "Not found");
-            return Result<Team>.NotFound("Time não encontrado.");
+            return Result<Team>.NotFound(UserErrorMessages.TeamNotFound);
         }
 
         var canUpdate = await authorizationGateway.CanWriteOrganizationAsync(user, team.OrganizationId, cancellationToken);
         if (!canUpdate)
         {
             LogTeamPatchFailed(logger, id, "Forbidden");
-            return Result<Team>.Forbidden("Você não tem permissão para atualizar este time.");
+            return Result<Team>.Forbidden(UserErrorMessages.TeamUpdateForbidden);
         }
 
         var requestedParentTeamId = request.ParentTeamId.HasValue ? request.ParentTeamId.Value : team.ParentTeamId;
@@ -47,7 +48,7 @@ public sealed partial class PatchTeam(
             if (requestedParentTeamId.HasValue && requestedParentTeamId.Value == id)
             {
                 LogTeamPatchFailed(logger, id, "Team cannot be its own parent");
-                return Result<Team>.Failure("Um time não pode ser seu próprio pai.");
+                return Result<Team>.Failure(UserErrorMessages.TeamSelfParentForbidden);
             }
 
             var parentTeam = requestedParentTeamId.HasValue
@@ -56,17 +57,17 @@ public sealed partial class PatchTeam(
             if (parentTeam is null)
             {
                 LogTeamPatchFailed(logger, id, "Parent team not found");
-                return Result<Team>.NotFound("Time pai não encontrado.");
+                return Result<Team>.NotFound(UserErrorMessages.ParentTeamNotFound);
             }
 
             if (parentTeam.WorkspaceId != team.WorkspaceId)
             {
                 LogTeamPatchFailed(logger, id, "Parent team belongs to different workspace");
-                return Result<Team>.Failure("O time pai deve pertencer ao mesmo workspace.");
+                return Result<Team>.Failure(UserErrorMessages.TeamParentMustBeSameWorkspace);
             }
         }
 
-        var leaderValidation = await TeamLeaderValidation.ValidateAsync(
+        var leaderValidation = await CollaboratorLeadershipPolicy.ValidateLeaderForOrganizationAsync<Team>(
             collaboratorRepository,
             requestedLeaderId,
             team.OrganizationId,

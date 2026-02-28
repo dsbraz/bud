@@ -15,7 +15,7 @@ public sealed class GetCheckinById(IIndicatorRepository indicatorRepository)
         var checkin = await indicatorRepository.GetCheckinByIdAsync(checkinId, cancellationToken);
         if (checkin is null || checkin.IndicatorId != indicatorId)
         {
-            return Result<Checkin>.NotFound("Check-in não encontrado.");
+            return Result<Checkin>.NotFound(UserErrorMessages.CheckinNotFound);
         }
 
         return Result<Checkin>.Success(checkin);

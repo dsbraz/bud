@@ -27,14 +27,14 @@ public sealed partial class PatchWorkspace(
         if (workspace is null)
         {
             LogWorkspacePatchFailed(logger, id, "Not found");
-            return Result<Workspace>.NotFound("Workspace não encontrado.");
+            return Result<Workspace>.NotFound(UserErrorMessages.WorkspaceNotFound);
         }
 
         var canUpdate = await authorizationGateway.CanWriteOrganizationAsync(user, workspace.OrganizationId, cancellationToken);
         if (!canUpdate)
         {
             LogWorkspacePatchFailed(logger, id, "Forbidden");
-            return Result<Workspace>.Forbidden("Você não tem permissão para atualizar este workspace.");
+            return Result<Workspace>.Forbidden(UserErrorMessages.WorkspaceUpdateForbidden);
         }
 
         try
@@ -46,7 +46,7 @@ public sealed partial class PatchWorkspace(
                 if (!await workspaceRepository.IsNameUniqueAsync(workspace.OrganizationId, newName, excludeId: id, ct: cancellationToken))
                 {
                     LogWorkspacePatchFailed(logger, id, "Name already exists");
-                    return Result<Workspace>.Failure("Já existe um workspace com este nome nesta organização.", ErrorType.Conflict);
+                    return Result<Workspace>.Failure(UserErrorMessages.WorkspaceNameConflict, ErrorType.Conflict);
                 }
 
                 workspace.Rename(newName);

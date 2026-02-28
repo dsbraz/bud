@@ -1,6 +1,5 @@
 using System.Security.Claims;
 using Bud.Server.Application.Common;
-using Bud.Server.Application.Mapping;
 using Bud.Server.Authorization;
 using Bud.Server.Domain.Model;
 using Bud.Server.Domain.Repositories;
@@ -32,7 +31,7 @@ public sealed partial class CreateGoal(
 
         if (!scopeResolution.IsSuccess)
         {
-            var error = scopeResolution.Error ?? "Escopo não encontrado.";
+            var error = scopeResolution.Error ?? UserErrorMessages.ScopeNotFound;
             LogGoalCreationFailed(logger, request.Name, error);
             return Result<Goal>.NotFound(error);
         }
@@ -41,7 +40,7 @@ public sealed partial class CreateGoal(
         if (!canCreate)
         {
             LogGoalCreationFailed(logger, request.Name, "Forbidden");
-            return Result<Goal>.Forbidden("Você não tem permissão para criar metas nesta organização.");
+            return Result<Goal>.Forbidden(UserErrorMessages.GoalCreateForbidden);
         }
 
         if (request.ParentId.HasValue)
@@ -49,15 +48,20 @@ public sealed partial class CreateGoal(
             var parentGoal = await goalRepository.GetByIdReadOnlyAsync(request.ParentId.Value, cancellationToken);
             if (parentGoal is null)
             {
-                LogGoalCreationFailed(logger, request.Name, "Meta pai não encontrada.");
-                return Result<Goal>.NotFound("Meta pai não encontrada.");
+                LogGoalCreationFailed(logger, request.Name, UserErrorMessages.ParentGoalNotFound);
+                return Result<Goal>.NotFound(UserErrorMessages.ParentGoalNotFound);
             }
 
-            if (request.StartDate < parentGoal.StartDate)
+            try
             {
-                var msg = $"A data de início da meta não pode ser anterior à do pai ({parentGoal.StartDate:dd/MM/yyyy}).";
-                LogGoalCreationFailed(logger, request.Name, msg);
-                return Result<Goal>.Failure(msg, ErrorType.Validation);
+                Goal.EnsureChildStartDateNotBeforeParent(
+                    UtcDateTimeNormalizer.Normalize(request.StartDate),
+                    parentGoal.StartDate);
+            }
+            catch (DomainInvariantException ex)
+            {
+                LogGoalCreationFailed(logger, request.Name, ex.Message);
+                return Result<Goal>.Failure(ex.Message, ErrorType.Validation);
             }
         }
 
@@ -69,8 +73,8 @@ public sealed partial class CreateGoal(
                 request.Name,
                 request.Description,
                 request.Dimension,
-                NormalizeToUtc(request.StartDate),
-                NormalizeToUtc(request.EndDate),
+                UtcDateTimeNormalizer.Normalize(request.StartDate),
+                UtcDateTimeNormalizer.Normalize(request.EndDate),
                 request.Status,
                 request.ParentId);
 
@@ -87,16 +91,6 @@ public sealed partial class CreateGoal(
             LogGoalCreationFailed(logger, request.Name, ex.Message);
             return Result<Goal>.Failure(ex.Message, ErrorType.Validation);
         }
-    }
-
-    private static DateTime NormalizeToUtc(DateTime value)
-    {
-        return value.Kind switch
-        {
-            DateTimeKind.Utc => value,
-            DateTimeKind.Unspecified => DateTime.SpecifyKind(value, DateTimeKind.Utc),
-            _ => value.ToUniversalTime()
-        };
     }
 
     [LoggerMessage(EventId = 4000, Level = LogLevel.Information, Message = "Creating goal '{Name}' with scope type '{ScopeType}'")]

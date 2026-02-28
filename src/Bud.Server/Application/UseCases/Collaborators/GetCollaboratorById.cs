@@ -15,7 +15,7 @@ public sealed class GetCollaboratorById(ICollaboratorRepository collaboratorRepo
     {
         var collaborator = await collaboratorRepository.GetByIdAsync(id, cancellationToken);
         return collaborator is null
-            ? Result<Collaborator>.NotFound("Colaborador não encontrado.")
+            ? Result<Collaborator>.NotFound(UserErrorMessages.CollaboratorNotFound)
             : Result<Collaborator>.Success(collaborator);
     }
 }

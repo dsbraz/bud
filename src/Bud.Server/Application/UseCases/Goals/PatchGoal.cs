@@ -1,6 +1,5 @@
 using System.Security.Claims;
 using Bud.Server.Application.Common;
-using Bud.Server.Application.Mapping;
 using Bud.Server.Authorization;
 using Bud.Server.Domain.Model;
 using Bud.Server.Domain.Repositories;
@@ -29,24 +28,32 @@ public sealed partial class PatchGoal(
         if (goal is null)
         {
             LogGoalPatchFailed(logger, id, "Not found");
-            return Result<Goal>.NotFound("Meta não encontrada.");
+            return Result<Goal>.NotFound(UserErrorMessages.GoalNotFound);
         }
 
         var canUpdate = await authorizationGateway.CanAccessTenantOrganizationAsync(user, goal.OrganizationId, cancellationToken);
         if (!canUpdate)
         {
             LogGoalPatchFailed(logger, id, "Forbidden");
-            return Result<Goal>.Forbidden("Você não tem permissão para atualizar metas nesta organização.");
+            return Result<Goal>.Forbidden(UserErrorMessages.GoalUpdateForbidden);
         }
 
         if (goal.ParentId.HasValue && request.StartDate.HasValue)
         {
             var parentGoal = await goalRepository.GetByIdReadOnlyAsync(goal.ParentId.Value, cancellationToken);
-            if (parentGoal is not null && NormalizeToUtc(request.StartDate.Value) < parentGoal.StartDate)
+            if (parentGoal is not null)
             {
-                var msg = $"A data de início da meta não pode ser anterior à do pai ({parentGoal.StartDate:dd/MM/yyyy}).";
-                LogGoalPatchFailed(logger, id, msg);
-                return Result<Goal>.Failure(msg, ErrorType.Validation);
+                try
+                {
+                    Goal.EnsureChildStartDateNotBeforeParent(
+                        UtcDateTimeNormalizer.Normalize(request.StartDate.Value),
+                        parentGoal.StartDate);
+                }
+                catch (DomainInvariantException ex)
+                {
+                    LogGoalPatchFailed(logger, id, ex.Message);
+                    return Result<Goal>.Failure(ex.Message, ErrorType.Validation);
+                }
             }
         }
 
@@ -68,7 +75,13 @@ public sealed partial class PatchGoal(
             var startDate = request.StartDate.HasValue ? request.StartDate.Value : goal.StartDate;
             var endDate = request.EndDate.HasValue ? request.EndDate.Value : goal.EndDate;
 
-            goal.UpdateDetails(name, description, dimension, NormalizeToUtc(startDate), NormalizeToUtc(endDate), status);
+            goal.UpdateDetails(
+                name,
+                description,
+                dimension,
+                UtcDateTimeNormalizer.Normalize(startDate),
+                UtcDateTimeNormalizer.Normalize(endDate),
+                status);
 
             var shouldUpdateScope = request.ScopeId.HasValue && request.ScopeId.Value != Guid.Empty;
             if (shouldUpdateScope)
@@ -81,8 +94,8 @@ public sealed partial class PatchGoal(
                     ct: cancellationToken);
                 if (!scopeResolution.IsSuccess)
                 {
-                    LogGoalPatchFailed(logger, id, scopeResolution.Error ?? "Escopo não encontrado.");
-                    return Result<Goal>.NotFound(scopeResolution.Error ?? "Escopo não encontrado.");
+                    LogGoalPatchFailed(logger, id, scopeResolution.Error ?? UserErrorMessages.ScopeNotFound);
+                    return Result<Goal>.NotFound(scopeResolution.Error ?? UserErrorMessages.ScopeNotFound);
                 }
 
                 goal.OrganizationId = scopeResolution.Value;
@@ -100,16 +113,6 @@ public sealed partial class PatchGoal(
             LogGoalPatchFailed(logger, id, ex.Message);
             return Result<Goal>.Failure(ex.Message, ErrorType.Validation);
         }
-    }
-
-    private static DateTime NormalizeToUtc(DateTime value)
-    {
-        return value.Kind switch
-        {
-            DateTimeKind.Utc => value,
-            DateTimeKind.Unspecified => DateTime.SpecifyKind(value, DateTimeKind.Utc),
-            _ => value.ToUniversalTime()
-        };
     }
 
     [LoggerMessage(EventId = 4003, Level = LogLevel.Information, Message = "Patching goal {GoalId}")]

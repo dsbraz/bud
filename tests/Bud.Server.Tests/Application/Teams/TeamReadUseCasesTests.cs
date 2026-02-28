@@ -65,7 +65,7 @@ public sealed class TeamReadUseCasesTests
             .Setup(repository => repository.GetCollaboratorLookupAsync(teamId, It.IsAny<CancellationToken>()))
             .ReturnsAsync([]);
 
-        var useCase = new ListTeamCollaboratorOptions(_teamRepository.Object);
+        var useCase = new GetTeamCollaboratorLookup(_teamRepository.Object);
 
         var result = await useCase.ExecuteAsync(teamId);
 

@@ -1,6 +1,5 @@
 using System.Security.Claims;
 using Bud.Server.Application.Common;
-using Bud.Server.Application.Mapping;
 using Bud.Server.Authorization;
 using Bud.Server.Domain.Model;
 using Bud.Server.Domain.Repositories;
@@ -28,7 +27,7 @@ public sealed partial class PatchIndicator(
         if (indicatorForAuthorization is null)
         {
             LogIndicatorPatchFailed(logger, id, "Not found");
-            return Result<Indicator>.NotFound("Indicador não encontrado.");
+            return Result<Indicator>.NotFound(UserErrorMessages.IndicatorNotFound);
         }
 
         var canUpdate = await authorizationGateway.CanAccessTenantOrganizationAsync(
@@ -38,14 +37,14 @@ public sealed partial class PatchIndicator(
         if (!canUpdate)
         {
             LogIndicatorPatchFailed(logger, id, "Forbidden");
-            return Result<Indicator>.Forbidden("Você não tem permissão para atualizar indicadores nesta meta.");
+            return Result<Indicator>.Forbidden(UserErrorMessages.IndicatorUpdateForbidden);
         }
 
         var indicator = await indicatorRepository.GetByIdForUpdateAsync(id, cancellationToken);
         if (indicator is null)
         {
             LogIndicatorPatchFailed(logger, id, "Not found for update");
-            return Result<Indicator>.NotFound("Indicador não encontrado.");
+            return Result<Indicator>.NotFound(UserErrorMessages.IndicatorNotFound);
         }
 
         try

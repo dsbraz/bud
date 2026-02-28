@@ -10,9 +10,9 @@ using FluentAssertions;
 using Moq;
 using Xunit;
 
-namespace Bud.Server.Tests.Application.Objectives;
+namespace Bud.Server.Tests.Application.Goals;
 
-public sealed class MissionObjectiveReadUseCasesTests
+public sealed class GoalObjectiveReadUseCasesTests
 {
     private readonly Mock<IGoalRepository> _repository = new();
     private readonly Mock<IGoalProgressService> _progressService = new();

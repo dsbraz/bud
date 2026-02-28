@@ -14,7 +14,7 @@ public sealed class ListAvailableTeamsForCollaborator(ICollaboratorRepository co
         var collaborator = await collaboratorRepository.GetByIdAsync(collaboratorId, cancellationToken);
         if (collaborator is null)
         {
-            return Result<List<CollaboratorTeamEligibleResponse>>.NotFound("Colaborador não encontrado.");
+            return Result<List<CollaboratorTeamEligibleResponse>>.NotFound(UserErrorMessages.CollaboratorNotFound);
         }
 
         var teams = await collaboratorRepository.GetEligibleTeamsForAssignmentAsync(

@@ -5,7 +5,7 @@ using Bud.Shared.Contracts;
 
 namespace Bud.Server.Application.UseCases.Teams;
 
-public sealed class ListTeamCollaboratorOptions(ITeamRepository teamRepository)
+public sealed class GetTeamCollaboratorLookup(ITeamRepository teamRepository)
 {
     public async Task<Result<List<CollaboratorLookupResponse>>> ExecuteAsync(
         Guid teamId,
@@ -13,7 +13,7 @@ public sealed class ListTeamCollaboratorOptions(ITeamRepository teamRepository)
     {
         if (!await teamRepository.ExistsAsync(teamId, cancellationToken))
         {
-            return Result<List<CollaboratorLookupResponse>>.NotFound("Time não encontrado.");
+            return Result<List<CollaboratorLookupResponse>>.NotFound(UserErrorMessages.TeamNotFound);
         }
 
         var summaries = await teamRepository.GetCollaboratorLookupAsync(teamId, cancellationToken);

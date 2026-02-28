@@ -1,6 +1,5 @@
 using System.Security.Claims;
 using Bud.Server.Application.Common;
-using Bud.Server.Application.Mapping;
 using Bud.Server.Authorization;
 using Bud.Server.Domain.Model;
 using Bud.Server.Domain.Repositories;
@@ -31,27 +30,27 @@ public sealed partial class PatchCheckin(
         if (checkin is null || checkin.IndicatorId != indicatorId)
         {
             LogCheckinPatchFailed(logger, checkinId, "Not found");
-            return Result<Checkin>.NotFound("Check-in não encontrado.");
+            return Result<Checkin>.NotFound(UserErrorMessages.CheckinNotFound);
         }
 
         var hasTenantAccess = await authorizationGateway.CanAccessTenantOrganizationAsync(user, checkin.OrganizationId, cancellationToken);
         if (!hasTenantAccess)
         {
             LogCheckinPatchFailed(logger, checkinId, "Forbidden (tenant)");
-            return Result<Checkin>.Forbidden("Você não tem permissão para atualizar este check-in.");
+            return Result<Checkin>.Forbidden(UserErrorMessages.CheckinUpdateForbidden);
         }
 
         if (!tenantProvider.IsGlobalAdmin && tenantProvider.CollaboratorId != checkin.CollaboratorId)
         {
             LogCheckinPatchFailed(logger, checkinId, "Not the author");
-            return Result<Checkin>.Forbidden("Apenas o autor pode editar este check-in.");
+            return Result<Checkin>.Forbidden(UserErrorMessages.CheckinEditAuthorOnly);
         }
 
         var indicator = await indicatorRepository.GetByIdAsync(indicatorId, cancellationToken);
         if (indicator is null)
         {
             LogCheckinPatchFailed(logger, checkinId, "Indicator not found");
-            return Result<Checkin>.NotFound("Indicador não encontrado.");
+            return Result<Checkin>.NotFound(UserErrorMessages.IndicatorNotFound);
         }
 
         try

@@ -5,7 +5,7 @@ using Bud.Shared.Contracts;
 
 namespace Bud.Server.Application.UseCases.Collaborators;
 
-public sealed class ListCollaboratorOptions(ICollaboratorRepository collaboratorRepository)
+public sealed class GetCollaboratorLookup(ICollaboratorRepository collaboratorRepository)
 {
     public async Task<Result<List<CollaboratorLookupResponse>>> ExecuteAsync(
         string? search,

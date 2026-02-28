@@ -4,7 +4,6 @@ using Bud.Server.Application.Mapping;
 using Bud.Server.Authorization;
 using Bud.Server.Domain.Model;
 using Bud.Server.Domain.Repositories;
-using Bud.Server.MultiTenancy;
 using Bud.Shared.Contracts;
 using Microsoft.Extensions.Logging;
 
@@ -28,14 +27,14 @@ public sealed partial class PatchCollaborator(
         if (collaborator is null)
         {
             LogCollaboratorPatchFailed(logger, id, "Not found");
-            return Result<Collaborator>.NotFound("Colaborador não encontrado.");
+            return Result<Collaborator>.NotFound(UserErrorMessages.CollaboratorNotFound);
         }
 
         var canUpdate = await authorizationGateway.IsOrganizationOwnerAsync(user, collaborator.OrganizationId, cancellationToken);
         if (!canUpdate)
         {
             LogCollaboratorPatchFailed(logger, id, "Forbidden");
-            return Result<Collaborator>.Forbidden("Apenas o proprietário da organização pode editar colaboradores.");
+            return Result<Collaborator>.Forbidden(UserErrorMessages.CollaboratorUpdateForbidden);
         }
 
         var requestedEmail = request.Email.HasValue ? request.Email.Value : collaborator.Email;
@@ -46,13 +45,13 @@ public sealed partial class PatchCollaborator(
         if (!EmailAddress.TryCreate(requestedEmail, out var emailAddress))
         {
             LogCollaboratorPatchFailed(logger, id, "Invalid email");
-            return Result<Collaborator>.Failure("E-mail inválido.", ErrorType.Validation);
+            return Result<Collaborator>.Failure(UserErrorMessages.CollaboratorInvalidEmail, ErrorType.Validation);
         }
 
         if (!PersonName.TryCreate(requestedFullName, out var personName))
         {
             LogCollaboratorPatchFailed(logger, id, "Invalid name");
-            return Result<Collaborator>.Failure("O nome do colaborador é obrigatório.", ErrorType.Validation);
+            return Result<Collaborator>.Failure(UserErrorMessages.CollaboratorNameRequired, ErrorType.Validation);
         }
 
         if (collaborator.Email != emailAddress.Value)
@@ -60,7 +59,7 @@ public sealed partial class PatchCollaborator(
             if (!await collaboratorRepository.IsEmailUniqueAsync(emailAddress.Value, id, cancellationToken))
             {
                 LogCollaboratorPatchFailed(logger, id, "Email already in use");
-                return Result<Collaborator>.Failure("O email já está em uso.", ErrorType.Validation);
+                return Result<Collaborator>.Failure(UserErrorMessages.CollaboratorEmailAlreadyInUse, ErrorType.Validation);
             }
         }
 
@@ -70,19 +69,17 @@ public sealed partial class PatchCollaborator(
             if (leader is null)
             {
                 LogCollaboratorPatchFailed(logger, id, "Leader not found");
-                return Result<Collaborator>.NotFound("Líder não encontrado.");
+                return Result<Collaborator>.NotFound(UserErrorMessages.LeaderNotFound);
             }
 
-            if (leader.OrganizationId != collaborator.OrganizationId)
+            try
             {
-                LogCollaboratorPatchFailed(logger, id, "Leader belongs to different organization");
-                return Result<Collaborator>.Failure("O líder deve pertencer à mesma organização.", ErrorType.Validation);
+                leader.EnsureCanLeadOrganization(collaborator.OrganizationId);
             }
-
-            if (leader.Role != CollaboratorRole.Leader)
+            catch (DomainInvariantException ex)
             {
-                LogCollaboratorPatchFailed(logger, id, "Selected collaborator is not a leader");
-                return Result<Collaborator>.Failure("O colaborador selecionado não é um líder.", ErrorType.Validation);
+                LogCollaboratorPatchFailed(logger, id, ex.Message);
+                return Result<Collaborator>.Failure(ex.Message, ErrorType.Validation);
             }
         }
 
@@ -126,12 +123,12 @@ public sealed partial class PatchCollaborator(
         }
     }
 
-    [LoggerMessage(EventId = 4045, Level = LogLevel.Information, Message = "Patching collaborator {CollaboratorId}")]
+    [LoggerMessage(EventId = 4043, Level = LogLevel.Information, Message = "Patching collaborator {CollaboratorId}")]
     private static partial void LogPatchingCollaborator(ILogger logger, Guid collaboratorId);
 
-    [LoggerMessage(EventId = 4046, Level = LogLevel.Information, Message = "Collaborator patched successfully: {CollaboratorId} - '{FullName}'")]
+    [LoggerMessage(EventId = 4044, Level = LogLevel.Information, Message = "Collaborator patched successfully: {CollaboratorId} - '{FullName}'")]
     private static partial void LogCollaboratorPatched(ILogger logger, Guid collaboratorId, string fullName);
 
-    [LoggerMessage(EventId = 4047, Level = LogLevel.Warning, Message = "Collaborator patch failed for {CollaboratorId}: {Reason}")]
+    [LoggerMessage(EventId = 4045, Level = LogLevel.Warning, Message = "Collaborator patch failed for {CollaboratorId}: {Reason}")]
     private static partial void LogCollaboratorPatchFailed(ILogger logger, Guid collaboratorId, string reason);
 }

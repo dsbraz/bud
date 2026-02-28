@@ -57,6 +57,36 @@ public sealed class AggregateInvariantsTests
     }
 
     [Fact]
+    public void Collaborator_EnsureCanOwnOrganization_WithNonLeaderRole_ShouldThrow()
+    {
+        var collaborator = Collaborator.Create(
+            Guid.NewGuid(),
+            Guid.NewGuid(),
+            "Ana",
+            "ana@getbud.co",
+            CollaboratorRole.IndividualContributor);
+
+        var act = () => collaborator.EnsureCanOwnOrganization();
+
+        act.Should().Throw<DomainInvariantException>();
+    }
+
+    [Fact]
+    public void Collaborator_EnsureCanOwnOrganization_WithLeaderRole_ShouldNotThrow()
+    {
+        var collaborator = Collaborator.Create(
+            Guid.NewGuid(),
+            Guid.NewGuid(),
+            "Ana",
+            "ana@getbud.co",
+            CollaboratorRole.Leader);
+
+        var act = () => collaborator.EnsureCanOwnOrganization();
+
+        act.Should().NotThrow();
+    }
+
+    [Fact]
     public void Goal_UpdateDetails_WithInvalidDateRange_ShouldThrow()
     {
         var goal = Goal.Create(

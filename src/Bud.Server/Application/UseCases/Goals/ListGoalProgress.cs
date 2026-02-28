@@ -15,7 +15,7 @@ public sealed class ListGoalProgress(IGoalProgressService goalProgressService)
         if (!result.IsSuccess)
         {
             return Result<List<GoalProgressResponse>>.Failure(
-                result.Error ?? "Falha ao calcular progresso das metas.",
+                result.Error ?? UserErrorMessages.GoalProgressCalculationFailed,
                 result.ErrorType);
         }
 

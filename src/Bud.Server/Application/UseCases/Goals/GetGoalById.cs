@@ -11,7 +11,7 @@ public sealed class GetGoalById(IGoalRepository goalRepository)
     {
         var goal = await goalRepository.GetByIdReadOnlyAsync(id, cancellationToken);
         return goal is null
-            ? Result<Goal>.NotFound("Meta não encontrada.")
+            ? Result<Goal>.NotFound(UserErrorMessages.GoalNotFound)
             : Result<Goal>.Success(goal);
     }
 }

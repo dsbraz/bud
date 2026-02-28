@@ -14,7 +14,7 @@ public sealed class GetTeamById(ITeamRepository teamRepository)
     {
         var team = await teamRepository.GetByIdAsync(id, cancellationToken);
         return team is null
-            ? Result<Team>.NotFound("Time não encontrado.")
+            ? Result<Team>.NotFound(UserErrorMessages.TeamNotFound)
             : Result<Team>.Success(team);
     }
 }

@@ -15,7 +15,7 @@ public sealed class GetIndicatorProgress(IGoalProgressService goalProgressServic
         if (!result.IsSuccess)
         {
             return Result<IndicatorProgressResponse?>.Failure(
-                result.Error ?? "Falha ao calcular progresso do indicador.",
+                result.Error ?? UserErrorMessages.IndicatorProgressCalculationFailed,
                 result.ErrorType);
         }
 

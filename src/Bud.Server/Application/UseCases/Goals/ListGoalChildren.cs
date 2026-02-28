@@ -18,7 +18,7 @@ public sealed class ListGoalChildren(IGoalRepository goalRepository)
         var parentExists = await goalRepository.ExistsAsync(parentId, cancellationToken);
         if (!parentExists)
         {
-            return Result<PagedResult<Goal>>.NotFound("Meta não encontrada.");
+            return Result<PagedResult<Goal>>.NotFound(UserErrorMessages.GoalNotFound);
         }
 
         var result = await goalRepository.GetChildrenAsync(parentId, page, pageSize, cancellationToken);

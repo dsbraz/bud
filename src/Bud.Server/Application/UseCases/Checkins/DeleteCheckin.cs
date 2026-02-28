@@ -1,6 +1,5 @@
 using System.Security.Claims;
 using Bud.Server.Application.Common;
-using Bud.Server.Application.Mapping;
 using Bud.Server.Authorization;
 using Bud.Server.Domain.Repositories;
 using Bud.Server.MultiTenancy;
@@ -27,20 +26,20 @@ public sealed partial class DeleteCheckin(
         if (checkin is null || checkin.IndicatorId != indicatorId)
         {
             LogCheckinDeletionFailed(logger, checkinId, "Not found");
-            return Result.NotFound("Check-in não encontrado.");
+            return Result.NotFound(UserErrorMessages.CheckinNotFound);
         }
 
         var hasTenantAccess = await authorizationGateway.CanAccessTenantOrganizationAsync(user, checkin.OrganizationId, cancellationToken);
         if (!hasTenantAccess)
         {
             LogCheckinDeletionFailed(logger, checkinId, "Forbidden (tenant)");
-            return Result.Forbidden("Você não tem permissão para excluir este check-in.");
+            return Result.Forbidden(UserErrorMessages.CheckinDeleteForbidden);
         }
 
         if (!tenantProvider.IsGlobalAdmin && tenantProvider.CollaboratorId != checkin.CollaboratorId)
         {
             LogCheckinDeletionFailed(logger, checkinId, "Not the author");
-            return Result.Forbidden("Apenas o autor pode excluir este check-in.");
+            return Result.Forbidden(UserErrorMessages.CheckinDeleteAuthorOnly);
         }
 
         await indicatorRepository.RemoveCheckinAsync(checkin, cancellationToken);

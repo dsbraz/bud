@@ -28,14 +28,14 @@ public sealed partial class PatchTemplate(
         if (template is null)
         {
             LogTemplatePatchFailed(logger, id, "Not found");
-            return Result<Template>.NotFound("Template de meta não encontrado.");
+            return Result<Template>.NotFound(UserErrorMessages.TemplateNotFound);
         }
 
         var canUpdate = await authorizationGateway.CanAccessTenantOrganizationAsync(user, template.OrganizationId, cancellationToken);
         if (!canUpdate)
         {
             LogTemplatePatchFailed(logger, id, "Forbidden");
-            return Result<Template>.Forbidden("Você não tem permissão para atualizar templates nesta organização.");
+            return Result<Template>.Forbidden(UserErrorMessages.TemplateUpdateForbidden);
         }
 
         try
@@ -85,12 +85,12 @@ public sealed partial class PatchTemplate(
         }
     }
 
-    [LoggerMessage(EventId = 4075, Level = LogLevel.Information, Message = "Patching template {TemplateId}")]
+    [LoggerMessage(EventId = 4073, Level = LogLevel.Information, Message = "Patching template {TemplateId}")]
     private static partial void LogPatchingTemplate(ILogger logger, Guid templateId);
 
-    [LoggerMessage(EventId = 4076, Level = LogLevel.Information, Message = "Template patched successfully: {TemplateId} - '{Name}'")]
+    [LoggerMessage(EventId = 4074, Level = LogLevel.Information, Message = "Template patched successfully: {TemplateId} - '{Name}'")]
     private static partial void LogTemplatePatched(ILogger logger, Guid templateId, string name);
 
-    [LoggerMessage(EventId = 4077, Level = LogLevel.Warning, Message = "Template patch failed for {TemplateId}: {Reason}")]
+    [LoggerMessage(EventId = 4075, Level = LogLevel.Warning, Message = "Template patch failed for {TemplateId}: {Reason}")]
     private static partial void LogTemplatePatchFailed(ILogger logger, Guid templateId, string reason);
 }

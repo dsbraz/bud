@@ -11,7 +11,7 @@ public sealed class GetIndicatorById(IIndicatorRepository indicatorRepository)
     {
         var indicator = await indicatorRepository.GetByIdAsync(id, cancellationToken);
         return indicator is null
-            ? Result<Indicator>.NotFound("Indicador não encontrado.")
+            ? Result<Indicator>.NotFound(UserErrorMessages.IndicatorNotFound)
             : Result<Indicator>.Success(indicator);
     }
 }
