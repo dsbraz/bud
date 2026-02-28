@@ -3,8 +3,6 @@ using Bud.Server.Infrastructure.Persistence;
 using Bud.Server.Domain.Model;
 using Microsoft.EntityFrameworkCore;
 
-using Bud.Shared.Contracts;
-
 namespace Bud.Server.Infrastructure.Repositories;
 
 public sealed class TemplateRepository(ApplicationDbContext dbContext) : ITemplateRepository
@@ -14,23 +12,23 @@ public sealed class TemplateRepository(ApplicationDbContext dbContext) : ITempla
 
     public async Task<Template?> GetByIdWithChildrenAsync(Guid id, CancellationToken ct = default)
         => await dbContext.Templates
-            .Include(t => t.Objectives)
-            .Include(t => t.Metrics)
+            .Include(t => t.Goals)
+            .Include(t => t.Indicators)
             .FirstOrDefaultAsync(t => t.Id == id, ct);
 
     public async Task<Template?> GetByIdReadOnlyAsync(Guid id, CancellationToken ct = default)
         => await dbContext.Templates
             .AsNoTracking()
-            .Include(t => t.Objectives.OrderBy(o => o.OrderIndex))
-            .Include(t => t.Metrics.OrderBy(m => m.OrderIndex))
+            .Include(t => t.Goals.OrderBy(g => g.OrderIndex))
+            .Include(t => t.Indicators.OrderBy(i => i.OrderIndex))
             .FirstOrDefaultAsync(t => t.Id == id, ct);
 
     public async Task<PagedResult<Template>> GetAllAsync(string? search, int page, int pageSize, CancellationToken ct = default)
     {
         var query = dbContext.Templates
             .AsNoTracking()
-            .Include(t => t.Objectives.OrderBy(o => o.OrderIndex))
-            .Include(t => t.Metrics.OrderBy(m => m.OrderIndex));
+            .Include(t => t.Goals.OrderBy(g => g.OrderIndex))
+            .Include(t => t.Indicators.OrderBy(i => i.OrderIndex));
 
         IQueryable<Template> filteredQuery = new TemplateSearchSpecification(search, dbContext.Database.IsNpgsql()).Apply(query);
 
@@ -53,24 +51,24 @@ public sealed class TemplateRepository(ApplicationDbContext dbContext) : ITempla
     public async Task AddAsync(Template entity, CancellationToken ct = default)
         => await dbContext.Templates.AddAsync(entity, ct);
 
-    public async Task RemoveAsync(Template entity, CancellationToken ct = default)
+    public Task RemoveAsync(Template entity, CancellationToken ct = default)
     {
-        await Task.CompletedTask;
         dbContext.Templates.Remove(entity);
+        return Task.CompletedTask;
     }
 
-    public async Task RemoveObjectivesAndMetricsAsync(IEnumerable<TemplateObjective> objectives, IEnumerable<TemplateMetric> metrics, CancellationToken ct = default)
+    public Task RemoveGoalsAndIndicatorsAsync(IEnumerable<TemplateGoal> goals, IEnumerable<TemplateIndicator> indicators, CancellationToken ct = default)
     {
-        await Task.CompletedTask;
-        dbContext.TemplateMetrics.RemoveRange(metrics);
-        dbContext.TemplateObjectives.RemoveRange(objectives);
+        dbContext.TemplateIndicators.RemoveRange(indicators);
+        dbContext.TemplateGoals.RemoveRange(goals);
+        return Task.CompletedTask;
     }
 
-    public async Task AddObjectivesAndMetricsAsync(IEnumerable<TemplateObjective> objectives, IEnumerable<TemplateMetric> metrics, CancellationToken ct = default)
+    public Task AddGoalsAndIndicatorsAsync(IEnumerable<TemplateGoal> goals, IEnumerable<TemplateIndicator> indicators, CancellationToken ct = default)
     {
-        await Task.CompletedTask;
-        dbContext.TemplateObjectives.AddRange(objectives);
-        dbContext.TemplateMetrics.AddRange(metrics);
+        dbContext.TemplateGoals.AddRange(goals);
+        dbContext.TemplateIndicators.AddRange(indicators);
+        return Task.CompletedTask;
     }
 
     public async Task SaveChangesAsync(CancellationToken ct = default)

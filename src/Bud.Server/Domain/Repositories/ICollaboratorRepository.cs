@@ -16,7 +16,7 @@ public interface ICollaboratorRepository
     Task<bool> IsEmailUniqueAsync(string email, Guid? excludeId, CancellationToken ct = default);
     Task<bool> HasSubordinatesAsync(Guid collaboratorId, CancellationToken ct = default);
     Task<bool> IsOrganizationOwnerAsync(Guid collaboratorId, CancellationToken ct = default);
-    Task<bool> HasMissionsAsync(Guid collaboratorId, CancellationToken ct = default);
+    Task<bool> HasGoalsAsync(Guid collaboratorId, CancellationToken ct = default);
     Task<int> CountTeamsByIdsAndOrganizationAsync(List<Guid> teamIds, Guid organizationId, CancellationToken ct = default);
     Task<int> CountByIdsAndOrganizationAsync(List<Guid> ids, Guid organizationId, CancellationToken ct = default);
     Task<bool> IsValidLeaderAsync(Guid leaderId, Guid? requiredOrganizationId, CancellationToken ct = default);

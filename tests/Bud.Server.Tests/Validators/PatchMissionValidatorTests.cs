@@ -7,17 +7,17 @@ namespace Bud.Server.Tests.Validators;
 
 public sealed class PatchMissionValidatorTests
 {
-    private readonly PatchMissionValidator _validator = new();
+    private readonly PatchGoalValidator _validator = new();
 
     [Fact]
     public async Task Validate_WithValidRequest_Passes()
     {
-        var request = new PatchMissionRequest
+        var request = new PatchGoalRequest
         {
             Name = "Missão Atualizada",
             StartDate = DateTime.UtcNow,
             EndDate = DateTime.UtcNow.AddDays(30),
-            Status = MissionStatus.Active
+            Status = GoalStatus.Active
         };
 
         var result = await _validator.ValidateAsync(request);
@@ -27,16 +27,15 @@ public sealed class PatchMissionValidatorTests
     }
 
     [Fact]
-    public async Task Validate_WithNoFieldsSet_FailsOnStartDate()
+    public async Task Validate_WithNoFieldsSet_Passes()
     {
-        // StartDate validation runs unconditionally (no .When guard),
-        // so a default Optional<DateTime> triggers NotEmpty failure.
-        var request = new PatchMissionRequest();
+        // PatchGoalValidator uses .When guards on all fields,
+        // so a default PatchGoalRequest with no fields set passes validation.
+        var request = new PatchGoalRequest();
 
         var result = await _validator.ValidateAsync(request);
 
-        result.IsValid.Should().BeFalse();
-        result.Errors.Should().Contain(e => e.PropertyName.Contains("StartDate"));
+        result.IsValid.Should().BeTrue();
     }
 
     #region Name Validation
@@ -47,7 +46,7 @@ public sealed class PatchMissionValidatorTests
     [InlineData(null)]
     public async Task Validate_WithEmptyName_Fails(string? name)
     {
-        var request = new PatchMissionRequest
+        var request = new PatchGoalRequest
         {
             Name = name!
         };
@@ -61,7 +60,7 @@ public sealed class PatchMissionValidatorTests
     [Fact]
     public async Task Validate_WithNameExceeding200Characters_Fails()
     {
-        var request = new PatchMissionRequest
+        var request = new PatchGoalRequest
         {
             Name = new string('A', 201)
         };
@@ -81,9 +80,9 @@ public sealed class PatchMissionValidatorTests
     [Fact]
     public async Task Validate_WithInvalidStatus_Fails()
     {
-        var request = new PatchMissionRequest
+        var request = new PatchGoalRequest
         {
-            Status = (MissionStatus)999
+            Status = (GoalStatus)999
         };
 
         var result = await _validator.ValidateAsync(request);
@@ -101,7 +100,7 @@ public sealed class PatchMissionValidatorTests
     [Fact]
     public async Task Validate_WithEmptyEndDate_Fails()
     {
-        var request = new PatchMissionRequest
+        var request = new PatchGoalRequest
         {
             EndDate = default(DateTime)
         };
@@ -119,7 +118,7 @@ public sealed class PatchMissionValidatorTests
     [Fact]
     public async Task Validate_WithEndDateBeforeStartDate_Fails()
     {
-        var request = new PatchMissionRequest
+        var request = new PatchGoalRequest
         {
             StartDate = DateTime.UtcNow.AddDays(30),
             EndDate = DateTime.UtcNow
@@ -136,7 +135,7 @@ public sealed class PatchMissionValidatorTests
     public async Task Validate_WithEndDateEqualToStartDate_Passes()
     {
         var date = DateTime.UtcNow;
-        var request = new PatchMissionRequest
+        var request = new PatchGoalRequest
         {
             StartDate = date,
             EndDate = date
@@ -150,7 +149,7 @@ public sealed class PatchMissionValidatorTests
     [Fact]
     public async Task Validate_WithOnlyStartDate_Passes()
     {
-        var request = new PatchMissionRequest
+        var request = new PatchGoalRequest
         {
             StartDate = DateTime.UtcNow
         };
@@ -161,18 +160,17 @@ public sealed class PatchMissionValidatorTests
     }
 
     [Fact]
-    public async Task Validate_WithOnlyEndDate_FailsOnStartDate()
+    public async Task Validate_WithOnlyEndDate_Passes()
     {
-        // StartDate validation runs unconditionally, so omitting it triggers failure.
-        var request = new PatchMissionRequest
+        // All fields use .When guards, so setting only EndDate is valid.
+        var request = new PatchGoalRequest
         {
             EndDate = DateTime.UtcNow.AddDays(30)
         };
 
         var result = await _validator.ValidateAsync(request);
 
-        result.IsValid.Should().BeFalse();
-        result.Errors.Should().Contain(e => e.PropertyName.Contains("StartDate"));
+        result.IsValid.Should().BeTrue();
     }
 
     #endregion

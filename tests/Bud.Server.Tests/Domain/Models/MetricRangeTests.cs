@@ -3,12 +3,12 @@ using Xunit;
 
 namespace Bud.Server.Tests.Domain.Models;
 
-public sealed class MetricRangeTests
+public sealed class IndicatorRangeTests
 {
     [Fact]
     public void TryCreate_WithValidRange_ShouldSucceed()
     {
-        var success = MetricRange.TryCreate(10m, 20m, out var range);
+        var success = IndicatorRange.TryCreate(10m, 20m, out var range);
 
         success.Should().BeTrue();
         range.MinValue.Should().Be(10m);
@@ -18,9 +18,9 @@ public sealed class MetricRangeTests
     [Fact]
     public void TryCreate_WithInvalidRange_ShouldFail()
     {
-        MetricRange.TryCreate(null, 20m, out _).Should().BeFalse();
-        MetricRange.TryCreate(10m, null, out _).Should().BeFalse();
-        MetricRange.TryCreate(20m, 20m, out _).Should().BeFalse();
-        MetricRange.TryCreate(30m, 20m, out _).Should().BeFalse();
+        IndicatorRange.TryCreate(null, 20m, out _).Should().BeFalse();
+        IndicatorRange.TryCreate(10m, null, out _).Should().BeFalse();
+        IndicatorRange.TryCreate(20m, 20m, out _).Should().BeFalse();
+        IndicatorRange.TryCreate(30m, 20m, out _).Should().BeFalse();
     }
 }

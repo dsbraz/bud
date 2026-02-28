@@ -114,11 +114,11 @@ public sealed class DashboardReadStore(ApplicationDbContext dbContext) : IMyDash
         var indicatorMemberIdList = indicatorMemberIds.ToList();
 
         var weeklyAccess = await CalculateWeeklyAccessAsync(indicatorMemberIdList, organizationId, ct);
-        var missionsUpdated = await CalculateMissionsUpdatedAsync(indicatorMemberIdList, organizationId, ct);
+        var goalsUpdated = await CalculateGoalsUpdatedAsync(indicatorMemberIdList, organizationId, ct);
         var formsResponded = PerformanceIndicator.Placeholder();
 
         var avgConfidence = await CalculateAverageConfidenceAsync(indicatorMemberIdList, ct);
-        var engagement = CalculateEngagement(weeklyAccess.Percentage, missionsUpdated.Percentage, avgConfidence);
+        var engagement = CalculateEngagement(weeklyAccess.Percentage, goalsUpdated.Percentage, avgConfidence);
 
         return new TeamHealthSnapshot
         {
@@ -126,7 +126,7 @@ public sealed class DashboardReadStore(ApplicationDbContext dbContext) : IMyDash
             TeamMembers = teamMemberDtos,
             Engagement = engagement,
             WeeklyAccess = weeklyAccess,
-            MissionsUpdated = missionsUpdated,
+            MissionsUpdated = goalsUpdated,
             FormsResponded = formsResponded
         };
     }
@@ -198,7 +198,7 @@ public sealed class DashboardReadStore(ApplicationDbContext dbContext) : IMyDash
         return PerformanceIndicator.Create(currentPct, currentPct - previousPct);
     }
 
-    private async Task<PerformanceIndicator> CalculateMissionsUpdatedAsync(
+    private async Task<PerformanceIndicator> CalculateGoalsUpdatedAsync(
         List<Guid> teamMemberIds,
         Guid organizationId,
         CancellationToken ct)
@@ -212,44 +212,44 @@ public sealed class DashboardReadStore(ApplicationDbContext dbContext) : IMyDash
         var thisWeekStart = now.AddDays(-7);
         var lastWeekStart = now.AddDays(-14);
 
-        var activeMissionIds = await BuildMyActiveMissionsQuery(teamMemberIds, organizationId)
-            .Select(m => m.Id)
+        var activeGoalIds = await BuildMyActiveGoalsQuery(teamMemberIds, organizationId)
+            .Select(g => g.Id)
             .ToListAsync(ct);
 
-        if (activeMissionIds.Count == 0)
+        if (activeGoalIds.Count == 0)
         {
             return PerformanceIndicator.Zero();
         }
 
-        var metricIdsForActiveMissions = await dbContext.Metrics
+        var indicatorIdsForActiveGoals = await dbContext.Indicators
             .AsNoTracking()
-            .Where(mm => activeMissionIds.Contains(mm.MissionId))
-            .Select(mm => mm.Id)
+            .Where(i => activeGoalIds.Contains(i.GoalId))
+            .Select(i => i.Id)
             .ToListAsync(ct);
 
-        if (metricIdsForActiveMissions.Count == 0)
+        if (indicatorIdsForActiveGoals.Count == 0)
         {
             return PerformanceIndicator.Zero();
         }
 
-        var thisWeekUpdated = await dbContext.MetricCheckins
+        var thisWeekUpdated = await dbContext.Checkins
             .AsNoTracking()
-            .Where(mc => metricIdsForActiveMissions.Contains(mc.MetricId)
-                && mc.CheckinDate >= thisWeekStart)
-            .Select(mc => mc.Metric.MissionId)
+            .Where(c => indicatorIdsForActiveGoals.Contains(c.IndicatorId)
+                && c.CheckinDate >= thisWeekStart)
+            .Select(c => c.Indicator.GoalId)
             .Distinct()
             .CountAsync(ct);
 
-        var lastWeekUpdated = await dbContext.MetricCheckins
+        var lastWeekUpdated = await dbContext.Checkins
             .AsNoTracking()
-            .Where(mc => metricIdsForActiveMissions.Contains(mc.MetricId)
-                && mc.CheckinDate >= lastWeekStart
-                && mc.CheckinDate < thisWeekStart)
-            .Select(mc => mc.Metric.MissionId)
+            .Where(c => indicatorIdsForActiveGoals.Contains(c.IndicatorId)
+                && c.CheckinDate >= lastWeekStart
+                && c.CheckinDate < thisWeekStart)
+            .Select(c => c.Indicator.GoalId)
             .Distinct()
             .CountAsync(ct);
 
-        var totalActive = activeMissionIds.Count;
+        var totalActive = activeGoalIds.Count;
         var currentPct = (int)Math.Round(thisWeekUpdated * 100.0 / totalActive);
         var previousPct = (int)Math.Round(lastWeekUpdated * 100.0 / totalActive);
 
@@ -265,12 +265,12 @@ public sealed class DashboardReadStore(ApplicationDbContext dbContext) : IMyDash
             return 0;
         }
 
-        var recentCheckins = await dbContext.MetricCheckins
+        var recentCheckins = await dbContext.Checkins
             .AsNoTracking()
-            .Where(mc => teamMemberIds.Contains(mc.CollaboratorId)
-                && mc.CheckinDate >= DateTime.UtcNow.AddDays(-30)
-                && mc.ConfidenceLevel > 0)
-            .Select(mc => mc.ConfidenceLevel)
+            .Where(c => teamMemberIds.Contains(c.CollaboratorId)
+                && c.CheckinDate >= DateTime.UtcNow.AddDays(-30)
+                && c.ConfidenceLevel > 0)
+            .Select(c => c.ConfidenceLevel)
             .ToListAsync(ct);
 
         if (recentCheckins.Count == 0)
@@ -282,29 +282,29 @@ public sealed class DashboardReadStore(ApplicationDbContext dbContext) : IMyDash
         return (int)Math.Round((avg / 5.0) * 100);
     }
 
-    private static EngagementScore CalculateEngagement(int weeklyAccessPct, int missionsUpdatedPct, int confidencePct)
+    private static EngagementScore CalculateEngagement(int weeklyAccessPct, int goalsUpdatedPct, int confidencePct)
     {
-        var score = (int)Math.Round(weeklyAccessPct * 0.30 + missionsUpdatedPct * 0.40 + confidencePct * 0.30);
+        var score = (int)Math.Round(weeklyAccessPct * 0.30 + goalsUpdatedPct * 0.40 + confidencePct * 0.30);
         score = Math.Clamp(score, 0, 100);
 
         return EngagementScore.Create(score);
     }
 
-    private IQueryable<Mission> BuildMyActiveMissionsQuery(
+    private IQueryable<Goal> BuildMyActiveGoalsQuery(
         List<Guid> memberIds,
         Guid organizationId)
     {
-        return dbContext.Missions
+        return dbContext.Goals
             .AsNoTracking()
-            .Where(m => m.Status == MissionStatus.Active
-                && (memberIds.Contains(m.CollaboratorId ?? Guid.Empty)
-                    || (m.TeamId != null && dbContext.CollaboratorTeams
-                        .Any(ct2 => ct2.TeamId == m.TeamId && memberIds.Contains(ct2.CollaboratorId)))
-                    || (m.WorkspaceId != null && dbContext.Teams
-                        .Any(t => t.WorkspaceId == m.WorkspaceId && dbContext.CollaboratorTeams
+            .Where(g => g.Status == GoalStatus.Active
+                && (memberIds.Contains(g.CollaboratorId ?? Guid.Empty)
+                    || (g.TeamId != null && dbContext.CollaboratorTeams
+                        .Any(ct2 => ct2.TeamId == g.TeamId && memberIds.Contains(ct2.CollaboratorId)))
+                    || (g.WorkspaceId != null && dbContext.Teams
+                        .Any(t => t.WorkspaceId == g.WorkspaceId && dbContext.CollaboratorTeams
                             .Any(ct2 => ct2.TeamId == t.Id && memberIds.Contains(ct2.CollaboratorId))))
-                    || (m.OrganizationId == organizationId
-                        && m.WorkspaceId == null && m.TeamId == null && m.CollaboratorId == null)));
+                    || (g.OrganizationId == organizationId
+                        && g.WorkspaceId == null && g.TeamId == null && g.CollaboratorId == null)));
     }
 
     private async Task<List<PendingTaskSnapshot>> BuildPendingTasksAsync(
@@ -314,27 +314,27 @@ public sealed class DashboardReadStore(ApplicationDbContext dbContext) : IMyDash
         var sevenDaysAgo = DateTime.UtcNow.AddDays(-7);
 
         var memberIds = new List<Guid> { collaborator.Id };
-        var myMissions = await BuildMyActiveMissionsQuery(memberIds, collaborator.OrganizationId)
-            .Include(m => m.Metrics)
-                .ThenInclude(mm => mm.Checkins)
+        var myGoals = await BuildMyActiveGoalsQuery(memberIds, collaborator.OrganizationId)
+            .Include(g => g.Indicators)
+                .ThenInclude(i => i.Checkins)
             .ToListAsync(ct);
 
         var tasks = new List<PendingTaskSnapshot>();
 
-        foreach (var mission in myMissions)
+        foreach (var goal in myGoals)
         {
-            var needsCheckin = mission.Metrics.Any(mm =>
-                !mm.Checkins.Any(c => c.CheckinDate >= sevenDaysAgo));
+            var needsCheckin = goal.Indicators.Any(i =>
+                !i.Checkins.Any(c => c.CheckinDate >= sevenDaysAgo));
 
             if (needsCheckin)
             {
                 tasks.Add(new PendingTaskSnapshot
                 {
-                    ReferenceId = mission.Id,
-                    TaskType = "mission_checkin",
-                    Title = mission.Name,
+                    ReferenceId = goal.Id,
+                    TaskType = "goal_checkin",
+                    Title = goal.Name,
                     Description = "Check-in pendente há mais de 7 dias",
-                    NavigateUrl = $"/missions/{mission.Id}"
+                    NavigateUrl = $"/goals/{goal.Id}"
                 });
             }
         }

@@ -422,21 +422,21 @@ public sealed class WorkspaceRepositoryTests
         var org = await CreateTestOrganization(context);
         var workspace = await CreateTestWorkspace(context, org.Id);
 
-        var mission = new Mission
+        var mission = new Goal
         {
             Id = Guid.NewGuid(),
             Name = "Mission",
             StartDate = DateTime.UtcNow,
             EndDate = DateTime.UtcNow.AddDays(7),
-            Status = MissionStatus.Planned,
+            Status = GoalStatus.Planned,
             OrganizationId = org.Id,
             WorkspaceId = workspace.Id
         };
-        context.Missions.Add(mission);
+        context.Goals.Add(mission);
         await context.SaveChangesAsync();
 
         // Act
-        var result = await repository.HasMissionsAsync(workspace.Id);
+        var result = await repository.HasGoalsAsync(workspace.Id);
 
         // Assert
         result.Should().BeTrue();
@@ -452,7 +452,7 @@ public sealed class WorkspaceRepositoryTests
         var workspace = await CreateTestWorkspace(context, org.Id);
 
         // Act
-        var result = await repository.HasMissionsAsync(workspace.Id);
+        var result = await repository.HasGoalsAsync(workspace.Id);
 
         // Assert
         result.Should().BeFalse();

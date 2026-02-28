@@ -9,17 +9,17 @@ public sealed class MissionScopeTests
     [Fact]
     public void TryCreate_ForOrganizationScope_ShouldIgnoreScopeId()
     {
-        var success = MissionScope.TryCreate(MissionScopeType.Organization, Guid.Empty, out var scope);
+        var success = GoalScope.TryCreate(GoalScopeType.Organization, Guid.Empty, out var scope);
 
         success.Should().BeTrue();
-        scope.ScopeType.Should().Be(MissionScopeType.Organization);
+        scope.ScopeType.Should().Be(GoalScopeType.Organization);
         scope.ScopeId.Should().BeNull();
     }
 
     [Fact]
     public void TryCreate_ForTeamScope_WithEmptyId_ShouldFail()
     {
-        var success = MissionScope.TryCreate(MissionScopeType.Team, Guid.Empty, out _);
+        var success = GoalScope.TryCreate(GoalScopeType.Team, Guid.Empty, out _);
 
         success.Should().BeFalse();
     }
@@ -27,7 +27,7 @@ public sealed class MissionScopeTests
     [Fact]
     public void Create_ForInvalidScope_ShouldThrow()
     {
-        var act = () => MissionScope.Create(MissionScopeType.Workspace, Guid.Empty);
+        var act = () => GoalScope.Create(GoalScopeType.Workspace, Guid.Empty);
 
         act.Should().Throw<DomainInvariantException>();
     }

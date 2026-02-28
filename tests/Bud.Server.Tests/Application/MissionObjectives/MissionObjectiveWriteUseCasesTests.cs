@@ -1,10 +1,11 @@
 using System.Security.Claims;
 using Bud.Server.Application.Common;
 using Bud.Server.Application.Mapping;
-using Bud.Server.Application.UseCases.Objectives;
+using Bud.Server.Application.UseCases.Goals;
 using Bud.Server.Authorization;
 using Bud.Server.Domain.Model;
 using Bud.Server.Domain.Repositories;
+using Bud.Server.Application.Ports;
 using Bud.Shared.Contracts;
 using FluentAssertions;
 using Microsoft.Extensions.Logging.Abstractions;
@@ -17,79 +18,96 @@ public sealed class MissionObjectiveWriteUseCasesTests
 {
     private static readonly ClaimsPrincipal User = new(new ClaimsIdentity([new Claim(ClaimTypes.Name, "test")]));
 
-    private readonly Mock<IMissionRepository> _missionRepository = new();
-    private readonly Mock<IObjectiveRepository> _objectiveRepository = new();
+    private readonly Mock<IGoalRepository> _repository = new();
+    private readonly Mock<IGoalScopeResolver> _scopeResolver = new();
     private readonly Mock<IApplicationAuthorizationGateway> _authorizationGateway = new();
 
     [Fact]
-    public async Task DefineMissionObjective_WhenMissionNotFound_ReturnsNotFound()
+    public async Task DefineMissionObjective_WhenScopeResolutionFails_ReturnsNotFound()
     {
-        _missionRepository
-            .Setup(repository => repository.GetByIdAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync((Mission?)null);
+        _scopeResolver
+            .Setup(s => s.ResolveScopeOrganizationIdAsync(
+                It.IsAny<GoalScopeType>(), It.IsAny<Guid>(), It.IsAny<bool>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(Result<Guid>.NotFound("Organização não encontrada."));
 
-        var useCase = new CreateObjective(_missionRepository.Object, _objectiveRepository.Object, _authorizationGateway.Object, NullLogger<CreateObjective>.Instance);
+        var useCase = new CreateGoal(_repository.Object, _scopeResolver.Object, _authorizationGateway.Object, NullLogger<CreateGoal>.Instance);
 
-        var result = await useCase.ExecuteAsync(User, new CreateObjectiveRequest
+        var result = await useCase.ExecuteAsync(User, new CreateGoalRequest
         {
-            MissionId = Guid.NewGuid(),
-            Name = "Objetivo"
+            ParentId = Guid.NewGuid(),
+            Name = "Objetivo",
+            ScopeType = GoalScopeType.Organization,
+            ScopeId = Guid.NewGuid(),
+            StartDate = DateTime.UtcNow,
+            EndDate = DateTime.UtcNow.AddDays(30),
+            Status = GoalStatus.Planned
         });
 
         result.IsSuccess.Should().BeFalse();
         result.ErrorType.Should().Be(ErrorType.NotFound);
-        _objectiveRepository.Verify(repository => repository.AddAsync(It.IsAny<Objective>(), It.IsAny<CancellationToken>()), Times.Never);
+        _repository.Verify(r => r.AddAsync(It.IsAny<Goal>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
     [Fact]
     public async Task DefineMissionObjective_WhenAuthorized_CreatesObjective()
     {
         var organizationId = Guid.NewGuid();
-        var mission = new Mission
-        {
-            Id = Guid.NewGuid(),
-            Name = "Missão",
-            OrganizationId = organizationId,
-            Status = MissionStatus.Active,
-            StartDate = DateTime.UtcNow,
-            EndDate = DateTime.UtcNow.AddDays(30)
-        };
+        var parentId = Guid.NewGuid();
 
-        _missionRepository
-            .Setup(repository => repository.GetByIdAsync(mission.Id, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(mission);
+        _scopeResolver
+            .Setup(s => s.ResolveScopeOrganizationIdAsync(
+                GoalScopeType.Organization, It.IsAny<Guid>(), It.IsAny<bool>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(Result<Guid>.Success(organizationId));
 
         _authorizationGateway
-            .Setup(gateway => gateway.CanAccessTenantOrganizationAsync(User, organizationId, It.IsAny<CancellationToken>()))
+            .Setup(g => g.CanAccessTenantOrganizationAsync(User, organizationId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(true);
 
-        var useCase = new CreateObjective(_missionRepository.Object, _objectiveRepository.Object, _authorizationGateway.Object, NullLogger<CreateObjective>.Instance);
-
-        var result = await useCase.ExecuteAsync(User, new CreateObjectiveRequest
+        var parentGoal = new Goal
         {
-            MissionId = mission.Id,
+            Id = parentId,
+            Name = "Missão pai",
+            StartDate = DateTime.UtcNow.AddDays(-1),
+            EndDate = DateTime.UtcNow.AddDays(60),
+            Status = GoalStatus.Planned,
+            OrganizationId = organizationId
+        };
+
+        _repository
+            .Setup(r => r.GetByIdReadOnlyAsync(parentId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(parentGoal);
+
+        var useCase = new CreateGoal(_repository.Object, _scopeResolver.Object, _authorizationGateway.Object, NullLogger<CreateGoal>.Instance);
+
+        var result = await useCase.ExecuteAsync(User, new CreateGoalRequest
+        {
+            ParentId = parentId,
             Name = "Objetivo",
-            Dimension = "Clientes"
+            Dimension = "Clientes",
+            ScopeType = GoalScopeType.Organization,
+            ScopeId = organizationId,
+            StartDate = DateTime.UtcNow,
+            EndDate = DateTime.UtcNow.AddDays(30),
+            Status = GoalStatus.Planned
         });
 
         result.IsSuccess.Should().BeTrue();
         result.Value!.OrganizationId.Should().Be(organizationId);
-        result.Value.MissionId.Should().Be(mission.Id);
+        result.Value.ParentId.Should().Be(parentId);
         result.Value.Dimension.Should().Be("Clientes");
-        _objectiveRepository.Verify(repository => repository.AddAsync(It.IsAny<Objective>(), It.IsAny<CancellationToken>()), Times.Once);
-        _objectiveRepository.Verify(repository => repository.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
+        _repository.Verify(r => r.AddAsync(It.IsAny<Goal>(), It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact]
     public async Task ReviseMissionObjective_WhenObjectiveNotFound_ReturnsNotFound()
     {
-        _objectiveRepository
-            .Setup(repository => repository.GetByIdAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync((Objective?)null);
+        _repository
+            .Setup(r => r.GetByIdAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((Goal?)null);
 
-        var useCase = new PatchObjective(_objectiveRepository.Object, _authorizationGateway.Object, NullLogger<PatchObjective>.Instance);
+        var useCase = new PatchGoal(_repository.Object, _scopeResolver.Object, _authorizationGateway.Object, NullLogger<PatchGoal>.Instance);
 
-        var result = await useCase.ExecuteAsync(User, Guid.NewGuid(), new PatchObjectiveRequest { Name = "X" });
+        var result = await useCase.ExecuteAsync(User, Guid.NewGuid(), new PatchGoalRequest { Name = "X" });
 
         result.IsSuccess.Should().BeFalse();
         result.ErrorType.Should().Be(ErrorType.NotFound);
@@ -99,22 +117,29 @@ public sealed class MissionObjectiveWriteUseCasesTests
     public async Task ReviseMissionObjective_WhenAuthorized_UpdatesObjective()
     {
         var organizationId = Guid.NewGuid();
-        var objective = Objective.Create(Guid.NewGuid(), organizationId, Guid.NewGuid(), "Obj", null);
+        var parentId = Guid.NewGuid();
+        var objective = new Goal
+        {
+            Id = Guid.NewGuid(),
+            OrganizationId = organizationId,
+            ParentId = parentId,
+            Name = "Obj",
+            Status = GoalStatus.Active,
+            StartDate = DateTime.UtcNow,
+            EndDate = DateTime.UtcNow.AddDays(30)
+        };
 
-        _objectiveRepository
-            .Setup(repository => repository.GetByIdAsync(objective.Id, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(objective);
-        _objectiveRepository
-            .Setup(repository => repository.GetByIdForUpdateAsync(objective.Id, It.IsAny<CancellationToken>()))
+        _repository
+            .Setup(r => r.GetByIdAsync(objective.Id, It.IsAny<CancellationToken>()))
             .ReturnsAsync(objective);
 
         _authorizationGateway
-            .Setup(gateway => gateway.CanAccessTenantOrganizationAsync(User, organizationId, It.IsAny<CancellationToken>()))
+            .Setup(g => g.CanAccessTenantOrganizationAsync(User, organizationId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(true);
 
-        var useCase = new PatchObjective(_objectiveRepository.Object, _authorizationGateway.Object, NullLogger<PatchObjective>.Instance);
+        var useCase = new PatchGoal(_repository.Object, _scopeResolver.Object, _authorizationGateway.Object, NullLogger<PatchGoal>.Instance);
 
-        var result = await useCase.ExecuteAsync(User, objective.Id, new PatchObjectiveRequest
+        var result = await useCase.ExecuteAsync(User, objective.Id, new PatchGoalRequest
         {
             Name = "Atualizado",
             Description = "Nova descrição"
@@ -122,22 +147,21 @@ public sealed class MissionObjectiveWriteUseCasesTests
 
         result.IsSuccess.Should().BeTrue();
         result.Value!.Name.Should().Be("Atualizado");
-        _objectiveRepository.Verify(repository => repository.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact]
     public async Task RemoveMissionObjective_WhenNotFound_ReturnsNotFound()
     {
-        _objectiveRepository
-            .Setup(repository => repository.GetByIdAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync((Objective?)null);
+        _repository
+            .Setup(r => r.GetByIdAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((Goal?)null);
 
-        var useCase = new DeleteObjective(_objectiveRepository.Object, _authorizationGateway.Object, NullLogger<DeleteObjective>.Instance);
+        var useCase = new DeleteGoal(_repository.Object, _authorizationGateway.Object, NullLogger<DeleteGoal>.Instance);
 
         var result = await useCase.ExecuteAsync(User, Guid.NewGuid());
 
         result.IsSuccess.Should().BeFalse();
         result.ErrorType.Should().Be(ErrorType.NotFound);
-        _objectiveRepository.Verify(repository => repository.RemoveAsync(It.IsAny<Objective>(), It.IsAny<CancellationToken>()), Times.Never);
+        _repository.Verify(r => r.RemoveAsync(It.IsAny<Goal>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 }

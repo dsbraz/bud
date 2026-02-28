@@ -21,22 +21,22 @@ public sealed class MetricRepositoryTests
         return new ApplicationDbContext(options, _tenantProvider);
     }
 
-    private static async Task<Mission> CreateTestMission(ApplicationDbContext context)
+    private static async Task<Goal> CreateTestMission(ApplicationDbContext context)
     {
         var org = new Organization { Id = Guid.NewGuid(), Name = "Test Org" };
         context.Organizations.Add(org);
 
-        var mission = new Mission
+        var mission = new Goal
         {
             Id = Guid.NewGuid(),
             Name = "Test Mission",
             StartDate = DateTime.UtcNow,
             EndDate = DateTime.UtcNow.AddDays(7),
-            Status = MissionStatus.Planned,
+            Status = GoalStatus.Planned,
             OrganizationId = org.Id
         };
 
-        context.Missions.Add(mission);
+        context.Goals.Add(mission);
         await context.SaveChangesAsync();
 
         return mission;
@@ -48,18 +48,18 @@ public sealed class MetricRepositoryTests
     public async Task GetByIdAsync_WhenMetricExists_ReturnsMetric()
     {
         using var context = CreateInMemoryContext();
-        var repository = new MetricRepository(context);
+        var repository = new IndicatorRepository(context);
         var mission = await CreateTestMission(context);
 
-        var metric = new Metric
+        var metric = new Indicator
         {
             Id = Guid.NewGuid(),
             Name = "Test Metric",
-            Type = MetricType.Qualitative,
-            MissionId = mission.Id,
+            Type = IndicatorType.Qualitative,
+            GoalId = mission.Id,
             OrganizationId = mission.OrganizationId
         };
-        context.Metrics.Add(metric);
+        context.Indicators.Add(metric);
         await context.SaveChangesAsync();
 
         var result = await repository.GetByIdAsync(metric.Id);
@@ -73,7 +73,7 @@ public sealed class MetricRepositoryTests
     public async Task GetByIdAsync_WhenMetricNotFound_ReturnsNull()
     {
         using var context = CreateInMemoryContext();
-        var repository = new MetricRepository(context);
+        var repository = new IndicatorRepository(context);
 
         var result = await repository.GetByIdAsync(Guid.NewGuid());
 
@@ -88,29 +88,29 @@ public sealed class MetricRepositoryTests
     public async Task GetAllAsync_WithCaseInsensitiveSearch_FiltersCorrectly()
     {
         using var context = CreateInMemoryContext();
-        var repository = new MetricRepository(context);
+        var repository = new IndicatorRepository(context);
         var mission = await CreateTestMission(context);
 
-        context.Metrics.AddRange(
-            new Metric
+        context.Indicators.AddRange(
+            new Indicator
             {
                 Id = Guid.NewGuid(),
                 Name = "ALPHA Metric",
-                Type = MetricType.Qualitative,
-                MissionId = mission.Id,
+                Type = IndicatorType.Qualitative,
+                GoalId = mission.Id,
                 OrganizationId = mission.OrganizationId
             },
-            new Metric
+            new Indicator
             {
                 Id = Guid.NewGuid(),
                 Name = "Beta Metric",
-                Type = MetricType.Qualitative,
-                MissionId = mission.Id,
+                Type = IndicatorType.Qualitative,
+                GoalId = mission.Id,
                 OrganizationId = mission.OrganizationId
             });
         await context.SaveChangesAsync();
 
-        var result = await repository.GetAllAsync(mission.Id, null, "alpha", 1, 10);
+        var result = await repository.GetAllAsync(mission.Id, "alpha", 1, 10);
 
         result.Items.Should().HaveCount(1);
         result.Items[0].Name.Should().Be("ALPHA Metric");
@@ -120,90 +120,89 @@ public sealed class MetricRepositoryTests
     public async Task GetAllAsync_FiltersByMissionId()
     {
         using var context = CreateInMemoryContext();
-        var repository = new MetricRepository(context);
+        var repository = new IndicatorRepository(context);
         var mission1 = await CreateTestMission(context);
         var mission2 = await CreateTestMission(context);
 
-        context.Metrics.AddRange(
-            new Metric
+        context.Indicators.AddRange(
+            new Indicator
             {
                 Id = Guid.NewGuid(),
                 Name = "Metric A",
-                Type = MetricType.Qualitative,
-                MissionId = mission1.Id,
+                Type = IndicatorType.Qualitative,
+                GoalId = mission1.Id,
                 OrganizationId = mission1.OrganizationId
             },
-            new Metric
+            new Indicator
             {
                 Id = Guid.NewGuid(),
                 Name = "Metric B",
-                Type = MetricType.Qualitative,
-                MissionId = mission2.Id,
+                Type = IndicatorType.Qualitative,
+                GoalId = mission2.Id,
                 OrganizationId = mission2.OrganizationId
             });
         await context.SaveChangesAsync();
 
-        var result = await repository.GetAllAsync(mission1.Id, null, null, 1, 10);
+        var result = await repository.GetAllAsync(mission1.Id, null, 1, 10);
 
         result.Items.Should().HaveCount(1);
         result.Items[0].Name.Should().Be("Metric A");
     }
 
     [Fact]
-    public async Task GetAllAsync_FiltersByObjectiveId()
+    public async Task GetAllAsync_FiltersByGoalId()
     {
         using var context = CreateInMemoryContext();
-        var repository = new MetricRepository(context);
-        var mission = await CreateTestMission(context);
+        var repository = new IndicatorRepository(context);
+        var mission1 = await CreateTestMission(context);
+        var mission2 = await CreateTestMission(context);
 
-        var objectiveId = Guid.NewGuid();
-        context.Metrics.AddRange(
-            new Metric
+        context.Indicators.AddRange(
+            new Indicator
             {
                 Id = Guid.NewGuid(),
-                Name = "With Objective",
-                Type = MetricType.Qualitative,
-                MissionId = mission.Id,
-                ObjectiveId = objectiveId,
-                OrganizationId = mission.OrganizationId
+                Name = "In Goal1",
+                Type = IndicatorType.Qualitative,
+                GoalId = mission1.Id,
+                OrganizationId = mission1.OrganizationId
             },
-            new Metric
+            new Indicator
             {
                 Id = Guid.NewGuid(),
-                Name = "Without Objective",
-                Type = MetricType.Qualitative,
-                MissionId = mission.Id,
-                OrganizationId = mission.OrganizationId
+                Name = "In Goal2",
+                Type = IndicatorType.Qualitative,
+                GoalId = mission2.Id,
+                OrganizationId = mission2.OrganizationId
             });
         await context.SaveChangesAsync();
 
-        var result = await repository.GetAllAsync(null, objectiveId, null, 1, 10);
+        var result = await repository.GetAllAsync(mission1.Id, null, 1, 10);
 
         result.Items.Should().HaveCount(1);
-        result.Items[0].Name.Should().Be("With Objective");
+        result.Items[0].Name.Should().Be("In Goal1");
     }
 
     [Fact]
     public async Task GetAllAsync_ReturnsPaginatedResults()
     {
         using var context = CreateInMemoryContext();
-        var repository = new MetricRepository(context);
+        var repository = new IndicatorRepository(context);
         var mission = await CreateTestMission(context);
 
         for (int i = 0; i < 5; i++)
         {
-            context.Metrics.Add(new Metric
+            context.Indicators.Add(new Indicator
             {
                 Id = Guid.NewGuid(),
                 Name = $"Metric {i:D2}",
-                Type = MetricType.Qualitative,
-                MissionId = mission.Id,
+                Type = IndicatorType.Qualitative,
+                GoalId = mission.Id,
                 OrganizationId = mission.OrganizationId
             });
         }
         await context.SaveChangesAsync();
 
-        var result = await repository.GetAllAsync(mission.Id, null, null, 1, 2);
+        var result = await repository.GetAllAsync(mission.Id, null, 1, 2);
 
         result.Items.Should().HaveCount(2);
         result.Total.Should().Be(5);
@@ -213,16 +212,16 @@ public sealed class MetricRepositoryTests
 
     #endregion
 
-    #region GetMissionByIdAsync Tests
+    #region GetGoalByIdAsync Tests
 
     [Fact]
     public async Task GetMissionByIdAsync_WhenExists_ReturnsMission()
     {
         using var context = CreateInMemoryContext();
-        var repository = new MetricRepository(context);
+        var repository = new IndicatorRepository(context);
         var mission = await CreateTestMission(context);
 
-        var result = await repository.GetMissionByIdAsync(mission.Id);
+        var result = await repository.GetGoalByIdAsync(mission.Id);
 
         result.Should().NotBeNull();
         result!.Id.Should().Be(mission.Id);
@@ -232,35 +231,35 @@ public sealed class MetricRepositoryTests
     public async Task GetMissionByIdAsync_WhenNotFound_ReturnsNull()
     {
         using var context = CreateInMemoryContext();
-        var repository = new MetricRepository(context);
+        var repository = new IndicatorRepository(context);
 
-        var result = await repository.GetMissionByIdAsync(Guid.NewGuid());
+        var result = await repository.GetGoalByIdAsync(Guid.NewGuid());
 
         result.Should().BeNull();
     }
 
     #endregion
 
-    #region GetObjectiveByIdAsync Tests
+    #region GetGoalByIdAsync Tests
 
     [Fact]
     public async Task GetObjectiveByIdAsync_WhenExists_ReturnsObjective()
     {
         using var context = CreateInMemoryContext();
-        var repository = new MetricRepository(context);
+        var repository = new IndicatorRepository(context);
         var mission = await CreateTestMission(context);
 
-        var objective = new Objective
+        var objective = new Goal
         {
             Id = Guid.NewGuid(),
             Name = "Test Objective",
-            MissionId = mission.Id,
+            ParentId = mission.Id,
             OrganizationId = mission.OrganizationId
         };
-        context.Objectives.Add(objective);
+        context.Goals.Add(objective);
         await context.SaveChangesAsync();
 
-        var result = await repository.GetObjectiveByIdAsync(objective.Id);
+        var result = await repository.GetGoalByIdAsync(objective.Id);
 
         result.Should().NotBeNull();
         result!.Id.Should().Be(objective.Id);
@@ -270,9 +269,9 @@ public sealed class MetricRepositoryTests
     public async Task GetObjectiveByIdAsync_WhenNotFound_ReturnsNull()
     {
         using var context = CreateInMemoryContext();
-        var repository = new MetricRepository(context);
+        var repository = new IndicatorRepository(context);
 
-        var result = await repository.GetObjectiveByIdAsync(Guid.NewGuid());
+        var result = await repository.GetGoalByIdAsync(Guid.NewGuid());
 
         result.Should().BeNull();
     }
@@ -285,20 +284,20 @@ public sealed class MetricRepositoryTests
     public async Task AddAsync_PersistsMetric()
     {
         using var context = CreateInMemoryContext();
-        var repository = new MetricRepository(context);
+        var repository = new IndicatorRepository(context);
         var mission = await CreateTestMission(context);
 
-        var metric = Metric.Create(
+        var metric = Indicator.Create(
             Guid.NewGuid(),
             mission.OrganizationId,
             mission.Id,
             "New Metric",
-            MetricType.Qualitative);
+            IndicatorType.Qualitative);
 
         await repository.AddAsync(metric);
         await repository.SaveChangesAsync();
 
-        var persisted = await context.Metrics.FindAsync(metric.Id);
+        var persisted = await context.Indicators.FindAsync(metric.Id);
         persisted.Should().NotBeNull();
         persisted!.Name.Should().Be("New Metric");
     }
@@ -307,24 +306,24 @@ public sealed class MetricRepositoryTests
     public async Task RemoveAsync_DeletesMetric()
     {
         using var context = CreateInMemoryContext();
-        var repository = new MetricRepository(context);
+        var repository = new IndicatorRepository(context);
         var mission = await CreateTestMission(context);
 
-        var metric = new Metric
+        var metric = new Indicator
         {
             Id = Guid.NewGuid(),
             Name = "To Delete",
-            Type = MetricType.Qualitative,
-            MissionId = mission.Id,
+            Type = IndicatorType.Qualitative,
+            GoalId = mission.Id,
             OrganizationId = mission.OrganizationId
         };
-        context.Metrics.Add(metric);
+        context.Indicators.Add(metric);
         await context.SaveChangesAsync();
 
         await repository.RemoveAsync(metric);
         await repository.SaveChangesAsync();
 
-        var persisted = await context.Metrics.FindAsync(metric.Id);
+        var persisted = await context.Indicators.FindAsync(metric.Id);
         persisted.Should().BeNull();
     }
 

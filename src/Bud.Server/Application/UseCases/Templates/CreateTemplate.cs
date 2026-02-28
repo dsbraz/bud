@@ -44,26 +44,27 @@ public sealed partial class CreateTemplate(
                 Guid.Empty,
                 request.Name,
                 request.Description,
-                request.MissionNamePattern,
-                request.MissionDescriptionPattern);
+                request.GoalNamePattern,
+                request.GoalDescriptionPattern);
 
-            template.ReplaceObjectivesAndMetrics(
-                request.Objectives.Select(objective => new TemplateObjectiveDraft(
-                    objective.Id,
-                    objective.Name,
-                    objective.Description,
-                    objective.OrderIndex,
-                    objective.Dimension)),
-                request.Metrics.Select(metric => new TemplateMetricDraft(
-                    metric.Name,
-                    metric.Type,
-                    metric.OrderIndex,
-                    metric.TemplateObjectiveId,
-                    metric.QuantitativeType,
-                    metric.MinValue,
-                    metric.MaxValue,
-                    metric.Unit,
-                    metric.TargetText)));
+            template.ReplaceGoalsAndIndicators(
+                request.Goals.Select(goal => new TemplateGoalDraft(
+                    goal.Id,
+                    goal.ParentId,
+                    goal.Name,
+                    goal.Description,
+                    goal.OrderIndex,
+                    goal.Dimension)),
+                request.Indicators.Select(indicator => new TemplateIndicatorDraft(
+                    indicator.Name,
+                    indicator.Type,
+                    indicator.OrderIndex,
+                    indicator.TemplateGoalId,
+                    indicator.QuantitativeType,
+                    indicator.MinValue,
+                    indicator.MaxValue,
+                    indicator.Unit,
+                    indicator.TargetText)));
 
             await templateRepository.AddAsync(template, cancellationToken);
             await unitOfWork.CommitAsync(templateRepository.SaveChangesAsync, cancellationToken);

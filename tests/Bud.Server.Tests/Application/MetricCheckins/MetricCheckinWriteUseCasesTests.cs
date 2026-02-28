@@ -3,7 +3,7 @@ using Bud.Server.Application.Ports;
 using System.Security.Claims;
 using Bud.Server.Application.Common;
 using Bud.Server.Application.Mapping;
-using Bud.Server.Application.UseCases.Metrics;
+using Bud.Server.Application.UseCases.Checkins;
 using Bud.Server.Authorization;
 using Bud.Server.MultiTenancy;
 using Bud.Shared.Contracts;
@@ -24,28 +24,28 @@ public sealed class MetricCheckinWriteUseCasesTests
     public async Task CreateAsync_WhenCollaboratorNotIdentified_ReturnsForbidden()
     {
         var orgId = Guid.NewGuid();
-        var mission = new Mission
+        var mission = new Goal
         {
             Id = Guid.NewGuid(),
             Name = "Missão",
             StartDate = DateTime.UtcNow,
             EndDate = DateTime.UtcNow.AddDays(1),
-            Status = MissionStatus.Active,
+            Status = GoalStatus.Active,
             OrganizationId = orgId
         };
-        var metric = new Metric
+        var metric = new Indicator
         {
             Id = Guid.NewGuid(),
             Name = "Métrica",
-            Type = MetricType.Qualitative,
-            MissionId = mission.Id,
-            Mission = mission,
+            Type = IndicatorType.Qualitative,
+            GoalId = mission.Id,
+            Goal = mission,
             OrganizationId = orgId
         };
 
-        var checkinRepository = new Mock<IMetricRepository>(MockBehavior.Strict);
+        var checkinRepository = new Mock<IIndicatorRepository>(MockBehavior.Strict);
         checkinRepository
-            .Setup(r => r.GetMetricWithMissionAsync(metric.Id, It.IsAny<CancellationToken>()))
+            .Setup(r => r.GetIndicatorWithGoalAsync(metric.Id, It.IsAny<CancellationToken>()))
             .ReturnsAsync(metric);
 
         var collaboratorRepository = new Mock<ICollaboratorRepository>(MockBehavior.Strict);
@@ -55,19 +55,19 @@ public sealed class MetricCheckinWriteUseCasesTests
             .Setup(g => g.CanAccessTenantOrganizationAsync(User, orgId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(true);
         authorizationGateway
-            .Setup(g => g.CanAccessMissionScopeAsync(User, mission.WorkspaceId, mission.TeamId, mission.CollaboratorId, It.IsAny<CancellationToken>()))
+            .Setup(g => g.CanAccessGoalScopeAsync(User, mission.WorkspaceId, mission.TeamId, mission.CollaboratorId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(true);
 
         var tenantProvider = new Mock<ITenantProvider>();
         tenantProvider.SetupGet(t => t.IsGlobalAdmin).Returns(false);
         tenantProvider.SetupGet(t => t.CollaboratorId).Returns((Guid?)null);
 
-        var useCase = new CreateMetricCheckin(
+        var useCase = new CreateCheckin(
             checkinRepository.Object,
             collaboratorRepository.Object,
             authorizationGateway.Object,
             tenantProvider.Object,
-            NullLogger<CreateMetricCheckin>.Instance);
+            NullLogger<CreateCheckin>.Instance);
 
         var request = new CreateCheckinRequest
         {
@@ -85,38 +85,38 @@ public sealed class MetricCheckinWriteUseCasesTests
     }
 
     [Fact]
-    public async Task CreateAsync_WhenSuccess_RegistersMetricCheckinCreatedDomainEvent()
+    public async Task CreateAsync_WhenSuccess_RegistersCheckinCreatedDomainEvent()
     {
         var orgId = Guid.NewGuid();
         var collaboratorId = Guid.NewGuid();
-        var mission = new Mission
+        var mission = new Goal
         {
             Id = Guid.NewGuid(),
             Name = "Missão",
             StartDate = DateTime.UtcNow,
             EndDate = DateTime.UtcNow.AddDays(1),
-            Status = MissionStatus.Active,
+            Status = GoalStatus.Active,
             OrganizationId = orgId
         };
-        var metric = new Metric
+        var metric = new Indicator
         {
             Id = Guid.NewGuid(),
             Name = "Métrica",
-            Type = MetricType.Quantitative,
-            MissionId = mission.Id,
-            Mission = mission,
+            Type = IndicatorType.Quantitative,
+            GoalId = mission.Id,
+            Goal = mission,
             OrganizationId = orgId,
-            QuantitativeType = QuantitativeMetricType.KeepAbove,
+            QuantitativeType = QuantitativeIndicatorType.KeepAbove,
             MinValue = 0m,
-            Unit = MetricUnit.Integer
+            Unit = IndicatorUnit.Integer
         };
 
-        var checkinRepository = new Mock<IMetricRepository>();
+        var checkinRepository = new Mock<IIndicatorRepository>();
         checkinRepository
-            .Setup(r => r.GetMetricWithMissionAsync(metric.Id, It.IsAny<CancellationToken>()))
+            .Setup(r => r.GetIndicatorWithGoalAsync(metric.Id, It.IsAny<CancellationToken>()))
             .ReturnsAsync(metric);
         checkinRepository
-            .Setup(r => r.AddCheckinAsync(It.IsAny<MetricCheckin>(), It.IsAny<CancellationToken>()))
+            .Setup(r => r.AddCheckinAsync(It.IsAny<Checkin>(), It.IsAny<CancellationToken>()))
             .Returns(Task.CompletedTask);
         checkinRepository
             .Setup(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()))
@@ -132,19 +132,19 @@ public sealed class MetricCheckinWriteUseCasesTests
             .Setup(g => g.CanAccessTenantOrganizationAsync(User, orgId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(true);
         authorizationGateway
-            .Setup(g => g.CanAccessMissionScopeAsync(User, mission.WorkspaceId, mission.TeamId, mission.CollaboratorId, It.IsAny<CancellationToken>()))
+            .Setup(g => g.CanAccessGoalScopeAsync(User, mission.WorkspaceId, mission.TeamId, mission.CollaboratorId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(true);
 
         var tenantProvider = new Mock<ITenantProvider>();
         tenantProvider.SetupGet(t => t.IsGlobalAdmin).Returns(false);
         tenantProvider.SetupGet(t => t.CollaboratorId).Returns(collaboratorId);
 
-        var useCase = new CreateMetricCheckin(
+        var useCase = new CreateCheckin(
             checkinRepository.Object,
             collaboratorRepository.Object,
             authorizationGateway.Object,
             tenantProvider.Object,
-            NullLogger<CreateMetricCheckin>.Instance);
+            NullLogger<CreateCheckin>.Instance);
 
         var request = new CreateCheckinRequest
         {
@@ -156,14 +156,14 @@ public sealed class MetricCheckinWriteUseCasesTests
         var result = await useCase.ExecuteAsync(User, metric.Id, request);
 
         result.IsSuccess.Should().BeTrue();
-        checkinRepository.Verify(r => r.AddCheckinAsync(It.IsAny<MetricCheckin>(), It.IsAny<CancellationToken>()), Times.Once);
+        checkinRepository.Verify(r => r.AddCheckinAsync(It.IsAny<Checkin>(), It.IsAny<CancellationToken>()), Times.Once);
         checkinRepository.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
         var createdEvent = metric.DomainEvents.Should().ContainSingle().Subject;
-        var created = createdEvent.Should().BeOfType<MetricCheckinCreatedDomainEvent>().Subject;
+        var created = createdEvent.Should().BeOfType<CheckinCreatedDomainEvent>().Subject;
         created.CheckinId.Should().Be(result.Value!.Id);
-        created.MetricId.Should().Be(metric.Id);
+        created.IndicatorId.Should().Be(metric.Id);
         created.OrganizationId.Should().Be(orgId);
-        created.CreatorCollaboratorId.Should().Be(collaboratorId);
+        created.CollaboratorId.Should().Be(collaboratorId);
     }
 
     [Fact]
@@ -171,28 +171,28 @@ public sealed class MetricCheckinWriteUseCasesTests
     {
         var orgId = Guid.NewGuid();
         var collaboratorId = Guid.NewGuid();
-        var mission = new Mission
+        var mission = new Goal
         {
             Id = Guid.NewGuid(),
             Name = "Missão",
             StartDate = DateTime.UtcNow,
             EndDate = DateTime.UtcNow.AddDays(1),
-            Status = MissionStatus.Planned,
+            Status = GoalStatus.Planned,
             OrganizationId = orgId
         };
-        var metric = new Metric
+        var metric = new Indicator
         {
             Id = Guid.NewGuid(),
             Name = "Métrica",
-            Type = MetricType.Quantitative,
-            MissionId = mission.Id,
-            Mission = mission,
+            Type = IndicatorType.Quantitative,
+            GoalId = mission.Id,
+            Goal = mission,
             OrganizationId = orgId
         };
 
-        var checkinRepository = new Mock<IMetricRepository>(MockBehavior.Strict);
+        var checkinRepository = new Mock<IIndicatorRepository>(MockBehavior.Strict);
         checkinRepository
-            .Setup(r => r.GetMetricWithMissionAsync(metric.Id, It.IsAny<CancellationToken>()))
+            .Setup(r => r.GetIndicatorWithGoalAsync(metric.Id, It.IsAny<CancellationToken>()))
             .ReturnsAsync(metric);
 
         var collaboratorRepository = new Mock<ICollaboratorRepository>();
@@ -205,19 +205,19 @@ public sealed class MetricCheckinWriteUseCasesTests
             .Setup(g => g.CanAccessTenantOrganizationAsync(User, orgId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(true);
         authorizationGateway
-            .Setup(g => g.CanAccessMissionScopeAsync(User, mission.WorkspaceId, mission.TeamId, mission.CollaboratorId, It.IsAny<CancellationToken>()))
+            .Setup(g => g.CanAccessGoalScopeAsync(User, mission.WorkspaceId, mission.TeamId, mission.CollaboratorId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(true);
 
         var tenantProvider = new Mock<ITenantProvider>();
         tenantProvider.SetupGet(t => t.IsGlobalAdmin).Returns(false);
         tenantProvider.SetupGet(t => t.CollaboratorId).Returns(collaboratorId);
 
-        var useCase = new CreateMetricCheckin(
+        var useCase = new CreateCheckin(
             checkinRepository.Object,
             collaboratorRepository.Object,
             authorizationGateway.Object,
             tenantProvider.Object,
-            NullLogger<CreateMetricCheckin>.Instance);
+            NullLogger<CreateCheckin>.Instance);
 
         var request = new CreateCheckinRequest
         {
@@ -230,13 +230,13 @@ public sealed class MetricCheckinWriteUseCasesTests
 
         result.IsSuccess.Should().BeFalse();
         result.ErrorType.Should().Be(ErrorType.Validation);
-        result.Error.Should().Be("Não é possível fazer check-in em métricas de missões que não estão ativas.");
+        result.Error.Should().Be("Não é possível fazer check-in em indicadores de metas que não estão ativas.");
     }
 
     [Fact]
     public async Task UpdateAsync_WhenNotAuthorAndNotGlobalAdmin_ReturnsForbidden()
     {
-        var checkin = new MetricCheckin
+        var checkin = new Checkin
         {
             Id = Guid.NewGuid(),
             CollaboratorId = Guid.NewGuid(),
@@ -245,7 +245,7 @@ public sealed class MetricCheckinWriteUseCasesTests
             ConfidenceLevel = 3
         };
 
-        var checkinRepository = new Mock<IMetricRepository>(MockBehavior.Strict);
+        var checkinRepository = new Mock<IIndicatorRepository>(MockBehavior.Strict);
         checkinRepository
             .Setup(r => r.GetCheckinByIdAsync(checkin.Id, It.IsAny<CancellationToken>()))
             .ReturnsAsync(checkin);
@@ -261,11 +261,11 @@ public sealed class MetricCheckinWriteUseCasesTests
         tenantProvider.SetupGet(t => t.IsGlobalAdmin).Returns(false);
         tenantProvider.SetupGet(t => t.CollaboratorId).Returns(Guid.NewGuid());
 
-        var useCase = new PatchMetricCheckin(
+        var useCase = new PatchCheckin(
             checkinRepository.Object,
             authorizationGateway.Object,
             tenantProvider.Object,
-            NullLogger<PatchMetricCheckin>.Instance);
+            NullLogger<PatchCheckin>.Instance);
 
         var request = new PatchCheckinRequest
         {
@@ -274,7 +274,7 @@ public sealed class MetricCheckinWriteUseCasesTests
             ConfidenceLevel = 2
         };
 
-        var result = await useCase.ExecuteAsync(User, checkin.MetricId, checkin.Id, request);
+        var result = await useCase.ExecuteAsync(User, checkin.IndicatorId, checkin.Id, request);
 
         result.IsSuccess.Should().BeFalse();
         result.ErrorType.Should().Be(ErrorType.Forbidden);
@@ -286,35 +286,35 @@ public sealed class MetricCheckinWriteUseCasesTests
     public async Task UpdateAsync_WhenGlobalAdmin_UpdatesViaRepository()
     {
         var orgId = Guid.NewGuid();
-        var metricId = Guid.NewGuid();
-        var checkin = new MetricCheckin
+        var indicatorId = Guid.NewGuid();
+        var checkin = new Checkin
         {
             Id = Guid.NewGuid(),
             CollaboratorId = Guid.NewGuid(),
             OrganizationId = orgId,
-            MetricId = metricId,
+            IndicatorId = indicatorId,
             CheckinDate = DateTime.UtcNow,
             Value = 10m,
             ConfidenceLevel = 3
         };
-        var metric = new Metric
+        var metric = new Indicator
         {
-            Id = metricId,
+            Id = indicatorId,
             Name = "Métrica",
-            Type = MetricType.Quantitative,
-            MissionId = Guid.NewGuid(),
+            Type = IndicatorType.Quantitative,
+            GoalId = Guid.NewGuid(),
             OrganizationId = orgId,
-            QuantitativeType = QuantitativeMetricType.KeepAbove,
+            QuantitativeType = QuantitativeIndicatorType.KeepAbove,
             MinValue = 0m,
-            Unit = MetricUnit.Integer
+            Unit = IndicatorUnit.Integer
         };
 
-        var checkinRepository = new Mock<IMetricRepository>();
+        var checkinRepository = new Mock<IIndicatorRepository>();
         checkinRepository
             .Setup(r => r.GetCheckinByIdAsync(checkin.Id, It.IsAny<CancellationToken>()))
             .ReturnsAsync(checkin);
         checkinRepository
-            .Setup(r => r.GetByIdAsync(metricId, It.IsAny<CancellationToken>()))
+            .Setup(r => r.GetByIdAsync(indicatorId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(metric);
         checkinRepository
             .Setup(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()))
@@ -330,11 +330,11 @@ public sealed class MetricCheckinWriteUseCasesTests
         var tenantProvider = new Mock<ITenantProvider>();
         tenantProvider.SetupGet(t => t.IsGlobalAdmin).Returns(true);
 
-        var useCase = new PatchMetricCheckin(
+        var useCase = new PatchCheckin(
             checkinRepository.Object,
             authorizationGateway.Object,
             tenantProvider.Object,
-            NullLogger<PatchMetricCheckin>.Instance);
+            NullLogger<PatchCheckin>.Instance);
 
         var request = new PatchCheckinRequest
         {
@@ -343,7 +343,7 @@ public sealed class MetricCheckinWriteUseCasesTests
             ConfidenceLevel = 4
         };
 
-        var result = await useCase.ExecuteAsync(User, checkin.MetricId, checkin.Id, request);
+        var result = await useCase.ExecuteAsync(User, checkin.IndicatorId, checkin.Id, request);
 
         result.IsSuccess.Should().BeTrue();
         result.Value!.Value.Should().Be(25m);
@@ -353,7 +353,7 @@ public sealed class MetricCheckinWriteUseCasesTests
     [Fact]
     public async Task DeleteAsync_WhenGlobalAdmin_RemovesViaRepository()
     {
-        var checkin = new MetricCheckin
+        var checkin = new Checkin
         {
             Id = Guid.NewGuid(),
             CollaboratorId = Guid.NewGuid(),
@@ -362,7 +362,7 @@ public sealed class MetricCheckinWriteUseCasesTests
             ConfidenceLevel = 3
         };
 
-        var checkinRepository = new Mock<IMetricRepository>();
+        var checkinRepository = new Mock<IIndicatorRepository>();
         checkinRepository
             .Setup(r => r.GetCheckinByIdAsync(checkin.Id, It.IsAny<CancellationToken>()))
             .ReturnsAsync(checkin);
@@ -383,13 +383,13 @@ public sealed class MetricCheckinWriteUseCasesTests
         var tenantProvider = new Mock<ITenantProvider>();
         tenantProvider.SetupGet(t => t.IsGlobalAdmin).Returns(true);
 
-        var useCase = new DeleteMetricCheckin(
+        var useCase = new DeleteCheckin(
             checkinRepository.Object,
             authorizationGateway.Object,
             tenantProvider.Object,
-            NullLogger<DeleteMetricCheckin>.Instance);
+            NullLogger<DeleteCheckin>.Instance);
 
-        var result = await useCase.ExecuteAsync(User, checkin.MetricId, checkin.Id);
+        var result = await useCase.ExecuteAsync(User, checkin.IndicatorId, checkin.Id);
 
         result.IsSuccess.Should().BeTrue();
         checkinRepository.Verify(r => r.RemoveCheckinAsync(checkin, It.IsAny<CancellationToken>()), Times.Once);

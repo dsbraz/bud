@@ -42,11 +42,11 @@ public sealed partial class DeleteTeam(
             return Result.Failure("Não é possível excluir um time com sub-times. Exclua os sub-times primeiro.", ErrorType.Conflict);
         }
 
-        if (await teamRepository.HasMissionsAsync(id, cancellationToken))
+        if (await teamRepository.HasGoalsAsync(id, cancellationToken))
         {
-            LogTeamDeletionFailed(logger, id, "Has missions");
+            LogTeamDeletionFailed(logger, id, "Has goals");
             return Result.Failure(
-                "Não é possível excluir o time porque existem missões associadas a ele.",
+                "Não é possível excluir o time porque existem metas associadas a ele.",
                 ErrorType.Conflict);
         }
 

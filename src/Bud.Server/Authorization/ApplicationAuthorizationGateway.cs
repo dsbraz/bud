@@ -36,7 +36,7 @@ public sealed class ApplicationAuthorizationGateway(IAuthorizationService author
         return result.Succeeded;
     }
 
-    public async Task<bool> CanAccessMissionScopeAsync(
+    public async Task<bool> CanAccessGoalScopeAsync(
         ClaimsPrincipal user,
         Guid? workspaceId,
         Guid? teamId,
@@ -45,8 +45,8 @@ public sealed class ApplicationAuthorizationGateway(IAuthorizationService author
     {
         var result = await authorizationService.AuthorizeAsync(
             user,
-            new MissionScopeResource(workspaceId, teamId, collaboratorId),
-            AuthorizationPolicies.MissionScopeAccess);
+            new GoalScopeResource(workspaceId, teamId, collaboratorId),
+            AuthorizationPolicies.GoalScopeAccess);
 
         return result.Succeeded;
     }

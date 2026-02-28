@@ -97,7 +97,7 @@ public sealed class CollaboratorWriteUseCasesTests
             .Setup(repository => repository.HasSubordinatesAsync(collaborator.Id, It.IsAny<CancellationToken>()))
             .ReturnsAsync(false);
         _collaboratorRepository
-            .Setup(repository => repository.HasMissionsAsync(collaborator.Id, It.IsAny<CancellationToken>()))
+            .Setup(repository => repository.HasGoalsAsync(collaborator.Id, It.IsAny<CancellationToken>()))
             .ReturnsAsync(false);
         _authorizationGateway
             .Setup(gateway => gateway.IsOrganizationOwnerAsync(User, collaborator.OrganizationId, It.IsAny<CancellationToken>()))

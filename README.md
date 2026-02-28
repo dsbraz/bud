@@ -48,7 +48,7 @@ O Bud segue uma arquitetura em camadas com separação explícita de responsabil
 - **Use Cases** (`Application/UseCases/{Domain}/`) centralizam o fluxo completo da aplicação (orquestração, autorização, notificações) e retornam `Result`/`Result<T>` (em `Application/Common/`). Cada use case é uma classe com método `ExecuteAsync`, injetada diretamente nos controllers (sem mediator).
 - **Infrastructure** (`Infrastructure/`) contém implementações concretas:
   - `Repositories/`: implementações dos repositórios (`I*Repository` ficam em `Domain/Repositories/`).
-  - `Services/`: implementações de adapters (`AuthService`, `MissionScopeResolver`, `MissionProgressService`, `NotificationRecipientResolver`), com interfaces em `Application/Ports/`.
+  - `Services/`: implementações de adapters (`AuthService`, `GoalScopeResolver`, `GoalProgressService`, `NotificationRecipientResolver`), com interfaces em `Application/Ports/`.
   - `Querying/`: specifications de consulta para filtros reutilizáveis.
   - `ApplicationDbContext`, `Configurations/` e `DbSeeder`.
 - **Authorization** (`Authorization/`) contém serviços de autorização (`TenantAuthorizationService`, `OrganizationAuthorizationService`), policies, requirements e handlers.
@@ -76,11 +76,11 @@ O Bud segue uma arquitetura em camadas com separação explícita de responsabil
   Referências: `docs/adr/ADR-0003-agregados-entidades-value-objects-e-invariantes.md`.
 - **Invariantes no domínio (modelo rico)**  
   Regras centrais de negócio são aplicadas por métodos de agregado/entidade (`Create`, `Rename`, `SetScope`, etc.) com tradução para `Result` na camada de aplicação (Use Cases).
-  Inclui Value Objects formais (`PersonName`, `MissionScope`, `ConfidenceLevel`, `MetricRange`) para reduzir primitive obsession.
+  Inclui Value Objects formais (`PersonName`, `GoalScope`, `ConfidenceLevel`, `IndicatorRange`) para reduzir primitive obsession.
 - **Notification Orchestration (Application)**
   Orquestração de notificações centralizada em `Application/EventHandlers/` (`NotificationOrchestrator`), desacoplada dos repositórios.
 - **Domain Events + Unit of Work**
-  Eventos de domínio (`IDomainEvent`, `IHasDomainEvents`) são disparados por agregados e despachados via `IUnitOfWork`/`EfUnitOfWork` no commit. Handlers tipados (`IDomainEventNotifier<T>`) em `Application/EventHandlers/` reagem a eventos como `MissionCreatedDomainEvent`, `MissionUpdatedDomainEvent`, `MissionDeletedDomainEvent` e `MetricCheckinCreatedDomainEvent`.
+  Eventos de domínio (`IDomainEvent`, `IHasDomainEvents`) são disparados por agregados e despachados via `IUnitOfWork`/`EfUnitOfWork` no commit. Handlers tipados (`IDomainEventNotifier<T>`) em `Application/EventHandlers/` reagem a eventos como `GoalCreatedDomainEvent`, `GoalUpdatedDomainEvent`, `GoalDeletedDomainEvent` e `CheckinCreatedDomainEvent`.
   Referências: `docs/adr/ADR-0009-eventos-de-dominio-e-notificacoes.md`.
 
 ### Multi-tenancy
@@ -165,26 +165,26 @@ flowchart TD
     T[Team]
     ST[SubTeam]
     C[Collaborator]
-    M[Mission]
-    MO[Objective]
-    MM[Metric]
-    MC[MetricCheckin]
+    G[Goal]
+    SG[SubGoal]
+    I[Indicator]
+    CH[Checkin]
 
     O --> W
     W --> T
     T --> ST
     T --> C
 
-    O --> M
-    W -. escopo .-> M
-    T -. escopo .-> M
-    C -. escopo .-> M
+    O --> G
+    W -. escopo .-> G
+    T -. escopo .-> G
+    C -. escopo .-> G
 
-    M --> MO
-    MO --> MO
-    MO --> MM
-    M --> MM
-    MM --> MC
+    G --> SG
+    SG --> SG
+    G --> I
+    SG --> I
+    I --> CH
 
     O --> N[Notification]
     C --> N
@@ -452,7 +452,7 @@ dotnet run --project src/Bud.Mcp/Bud.Mcp.csproj -- check-tool-catalog --fail-on-
 ```
 
 Regras importantes do catálogo:
-- As ferramentas de domínio (`mission_*`, `mission_objective_*`, `mission_metric_*`, `metric_checkin_*`) são carregadas exclusivamente do arquivo `src/Bud.Mcp/Tools/Generated/mcp-tool-catalog.json`.
+- As ferramentas de domínio (`goal_*`, `goal_indicator_*`, `indicator_checkin_*`) são carregadas exclusivamente do arquivo `src/Bud.Mcp/Tools/Generated/mcp-tool-catalog.json`.
 - O `Bud.Mcp` falha na inicialização se o catálogo estiver ausente, inválido, vazio ou sem ferramentas de domínio obrigatórias.
 - O comando `check-tool-catalog --fail-on-diff` também valida o contrato mínimo de campos `required` por ferramenta e retorna erro quando houver quebra de contrato.
 
@@ -468,11 +468,9 @@ Se estiver rodando local com `DOTNET_ENVIRONMENT=Development`, defina:
 - `session_bootstrap`
 - `help_list_actions`
 - `help_action_schema`
-- `mission_create`, `mission_get`, `mission_list`, `mission_update`, `mission_delete`
-- `mission_metric_create`, `mission_metric_get`, `mission_metric_list`, `mission_metric_update`, `mission_metric_delete`
-- `metric_checkin_create`, `metric_checkin_get`, `metric_checkin_list`, `metric_checkin_update`, `metric_checkin_delete`
-
-> **Nota:** as tools `mission_objective_*` existem no catálogo gerado (`mcp-tool-catalog.json`) mas ainda não estão implementadas em `McpToolService`. Serão ativadas quando o wiring for adicionado.
+- `goal_create`, `goal_get`, `goal_list`, `goal_update`, `goal_delete`
+- `goal_indicator_create`, `goal_indicator_get`, `goal_indicator_list`, `goal_indicator_update`, `goal_indicator_delete`
+- `indicator_checkin_create`, `indicator_checkin_get`, `indicator_checkin_list`, `indicator_checkin_update`, `indicator_checkin_delete`
 
 ### Descoberta de parâmetros e bootstrap de sessão no MCP
 
@@ -579,20 +577,20 @@ export BUD_ORG_ID="<organization-id>"
 ### 4) Smoke test de leitura tenant-scoped
 
 ```bash
-curl -s "$BUD_BASE_URL/api/missions?page=1&pageSize=10" \
+curl -s "$BUD_BASE_URL/api/goals?page=1&pageSize=10" \
   -H "Authorization: Bearer $BUD_TOKEN" \
   -H "X-Tenant-Id: $BUD_ORG_ID"
 ```
 
-### 5) Smoke test de criação de missão
+### 5) Smoke test de criação de meta
 
 ```bash
-curl -s -X POST "$BUD_BASE_URL/api/missions" \
+curl -s -X POST "$BUD_BASE_URL/api/goals" \
   -H "Authorization: Bearer $BUD_TOKEN" \
   -H "X-Tenant-Id: $BUD_ORG_ID" \
   -H "Content-Type: application/json" \
   -d '{
-    "name":"Onboarding - Missão",
+    "name":"Onboarding - Meta",
     "description":"Validação ponta a ponta",
     "startDate":"2026-01-01T00:00:00Z",
     "endDate":"2026-12-31T23:59:59Z",
@@ -614,10 +612,10 @@ sequenceDiagram
     Dev->>API: GET /api/me/organizations (Bearer)
     API-->>Dev: organizations[]
     Dev->>Dev: define BUD_ORG_ID
-    Dev->>API: GET /api/missions (Bearer + X-Tenant-Id)
+    Dev->>API: GET /api/goals (Bearer + X-Tenant-Id)
     API-->>Dev: lista paginada
-    Dev->>API: POST /api/missions (Bearer + X-Tenant-Id)
-    API-->>Dev: missão criada
+    Dev->>API: POST /api/goals (Bearer + X-Tenant-Id)
+    API-->>Dev: meta criada
 ```
 
 ### 7) Debug rápido no backend
@@ -775,15 +773,14 @@ Ranges estáveis de EventId por domínio:
 | Range | Domínio |
 |-------|---------|
 | 3100–3199 | RequestTelemetryMiddleware |
-| 4000–4009 | Mission |
+| 4000–4009 | Goal |
 | 4010–4019 | Organization |
 | 4020–4029 | Workspace |
 | 4030–4039 | Team |
 | 4040–4049 | Collaborator |
-| 4050–4059 | Metric |
-| 4060–4069 | MetricCheckin |
+| 4050–4059 | Indicator |
+| 4060–4069 | Checkin |
 | 4070–4079 | Template |
-| 4080–4089 | Objective |
 | 4090–4099 | Session / Notification |
 | 5000–5009 | McpRequestLoggingMiddleware (Bud.Mcp) |
 
@@ -807,7 +804,7 @@ Referência completa com exemplos interativos disponível em `/swagger` (ambient
 
 - `GET /api/me/organizations` — organizações disponíveis
 - `GET /api/me/dashboard` — dashboard do colaborador autenticado
-- `GET /api/me/missions` — missões do colaborador autenticado
+- `GET /api/me/goals` — metas do colaborador autenticado
 
 ### Organizations (CRUD + relacionamentos)
 
@@ -855,41 +852,31 @@ Referência completa com exemplos interativos disponível em `/swagger` (ambient
 - `PATCH /api/collaborators/{id}/teams`
 - `GET /api/collaborators/{id}/teams/eligible-for-assignment`
 
-### Missions (CRUD + consultas)
+### Goals (CRUD + consultas)
 
-- `POST /api/missions`
-- `GET /api/missions` — listagem paginada
-- `GET /api/missions/{id}`
-- `PATCH /api/missions/{id}`
-- `DELETE /api/missions/{id}`
-- `GET /api/missions/progress`
-- `GET /api/missions/{id}/metrics`
-- `GET /api/missions/{id}/objectives`
+- `POST /api/goals`
+- `GET /api/goals` — listagem paginada (filtro por `scopeType`, `scopeId`, `parentId`)
+- `GET /api/goals/{id}`
+- `PATCH /api/goals/{id}`
+- `DELETE /api/goals/{id}`
+- `GET /api/goals/progress`
+- `GET /api/goals/{id}/children` — sub-metas (árvore recursiva via `parentId`)
+- `GET /api/goals/{id}/indicators` — indicadores da meta
+- Campo opcional nos payloads de criação/atualização: `dimension` (texto livre) e `parentId` (para sub-metas).
 
-### Objectives (CRUD)
+### Indicators (CRUD + progress)
 
-- `POST /api/objectives`
-- `GET /api/objectives` — listagem paginada (filtro por `missionId`)
-- `GET /api/objectives/{id}`
-- `PATCH /api/objectives/{id}`
-- `DELETE /api/objectives/{id}`
-- `GET /api/objectives/{objectiveId}/metrics`
-- `GET /api/objectives/progress`
-- Campo opcional nos payloads de criação/atualização: `dimension` (texto livre de até 100 caracteres).
-
-### Metrics (CRUD + checkins)
-
-- `POST /api/metrics`
-- `GET /api/metrics` — listagem paginada
-- `GET /api/metrics/{id}`
-- `PATCH /api/metrics/{id}`
-- `DELETE /api/metrics/{id}`
-- `GET /api/metrics/progress`
-- `POST /api/metrics/{metricId}/checkins` — cria checkin
-- `GET /api/metrics/{metricId}/checkins` — lista checkins da métrica
-- `GET /api/metrics/{metricId}/checkins/{checkinId}` — detalhe do checkin
-- `PATCH /api/metrics/{metricId}/checkins/{checkinId}` — atualiza checkin
-- `DELETE /api/metrics/{metricId}/checkins/{checkinId}` — remove checkin
+- `POST /api/indicators`
+- `GET /api/indicators` — listagem paginada (filtro por `goalId`)
+- `GET /api/indicators/{id}`
+- `PATCH /api/indicators/{id}`
+- `DELETE /api/indicators/{id}`
+- `GET /api/indicators/{id}/progress`
+- `POST /api/indicators/{id}/checkins` — cria checkin
+- `GET /api/indicators/{id}/checkins` — lista checkins do indicador
+- `GET /api/indicators/{id}/checkins/{checkinId}` — detalhe do checkin
+- `PATCH /api/indicators/{id}/checkins/{checkinId}` — atualiza checkin
+- `DELETE /api/indicators/{id}/checkins/{checkinId}` — remove checkin
 
 ### Templates (CRUD)
 
@@ -898,8 +885,8 @@ Referência completa com exemplos interativos disponível em `/swagger` (ambient
 - `GET /api/templates/{id}`
 - `PATCH /api/templates/{id}`
 - `DELETE /api/templates/{id}`
-- Modelos padrão semeados para a organização bootstrap (`getbud.co`): `BSC`, `Mapa Estratégico`, `Planejamento Estratégico Anual`, `OKR` e `PDI` (todos com objetivos e métricas vinculadas).
-- Payloads de criação/atualização também aceitam `objectives` (objetivos do template) e `metrics[].missionTemplateObjectiveId` para vincular métricas a objetivos.
+- Modelos padrão semeados para a organização bootstrap (`getbud.co`): `BSC`, `Mapa Estratégico`, `Planejamento Estratégico Anual`, `OKR` e `PDI`.
+- Payloads de criação/atualização aceitam `blueprintJson` (jsonb) com a estrutura de metas e indicadores do template.
 
 ### Notifications
 
@@ -944,7 +931,7 @@ Referência completa com exemplos interativos disponível em `/swagger` (ambient
 }
 ```
 
-**Mission:**
+**Goal (Meta):**
 ```json
 {
   "name": "Aumentar NPS",
@@ -953,11 +940,12 @@ Referência completa com exemplos interativos disponível em `/swagger` (ambient
   "endDate": "2026-03-31T23:59:59Z",
   "status": "Planned",
   "scopeType": "Workspace",
-  "scopeId": "00000000-0000-0000-0000-000000000000"
+  "scopeId": "00000000-0000-0000-0000-000000000000",
+  "parentId": null
 }
 ```
 
-**Metric Checkin** (`POST /api/metrics/{metricId}/checkins`)**:**
+**Checkin** (`POST /api/indicators/{id}/checkins`)**:**
 ```json
 {
   "value": 42.5,

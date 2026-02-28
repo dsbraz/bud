@@ -64,8 +64,8 @@ public sealed class WorkspaceRepository(ApplicationDbContext dbContext) : IWorks
         return !await query.AnyAsync(ct);
     }
 
-    public async Task<bool> HasMissionsAsync(Guid workspaceId, CancellationToken ct = default)
-        => await dbContext.Missions.AnyAsync(m => m.WorkspaceId == workspaceId, ct);
+    public async Task<bool> HasGoalsAsync(Guid workspaceId, CancellationToken ct = default)
+        => await dbContext.Goals.AnyAsync(m => m.WorkspaceId == workspaceId, ct);
 
     public async Task AddAsync(Workspace entity, CancellationToken ct = default)
         => await dbContext.Workspaces.AddAsync(entity, ct);

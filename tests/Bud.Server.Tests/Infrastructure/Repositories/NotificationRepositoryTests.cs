@@ -55,7 +55,7 @@ public sealed class NotificationRepositoryTests
             OrganizationId = organizationId,
             Title = title,
             Message = message,
-            Type = NotificationType.MissionCreated,
+            Type = NotificationType.GoalCreated,
             IsRead = isRead,
             CreatedAtUtc = createdAtUtc ?? DateTime.UtcNow,
             ReadAtUtc = isRead ? DateTime.UtcNow : null

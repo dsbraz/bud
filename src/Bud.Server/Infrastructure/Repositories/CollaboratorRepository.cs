@@ -149,8 +149,8 @@ public sealed class CollaboratorRepository(ApplicationDbContext dbContext) : ICo
     public async Task<bool> IsOrganizationOwnerAsync(Guid collaboratorId, CancellationToken ct = default)
         => await dbContext.Organizations.AnyAsync(o => o.OwnerId == collaboratorId, ct);
 
-    public async Task<bool> HasMissionsAsync(Guid collaboratorId, CancellationToken ct = default)
-        => await dbContext.Missions.AnyAsync(m => m.CollaboratorId == collaboratorId, ct);
+    public async Task<bool> HasGoalsAsync(Guid collaboratorId, CancellationToken ct = default)
+        => await dbContext.Goals.AnyAsync(m => m.CollaboratorId == collaboratorId, ct);
 
     public async Task<int> CountTeamsByIdsAndOrganizationAsync(List<Guid> teamIds, Guid organizationId, CancellationToken ct = default)
         => await dbContext.Teams.CountAsync(t => teamIds.Contains(t.Id) && t.OrganizationId == organizationId, ct);

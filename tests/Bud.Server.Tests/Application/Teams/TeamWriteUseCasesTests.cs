@@ -148,7 +148,7 @@ public sealed class TeamWriteUseCasesTests
 
         _teamRepository.Setup(repository => repository.GetByIdAsync(team.Id, It.IsAny<CancellationToken>())).ReturnsAsync(team);
         _teamRepository.Setup(repository => repository.HasSubTeamsAsync(team.Id, It.IsAny<CancellationToken>())).ReturnsAsync(false);
-        _teamRepository.Setup(repository => repository.HasMissionsAsync(team.Id, It.IsAny<CancellationToken>())).ReturnsAsync(false);
+        _teamRepository.Setup(repository => repository.HasGoalsAsync(team.Id, It.IsAny<CancellationToken>())).ReturnsAsync(false);
         _authorizationGateway
             .Setup(gateway => gateway.CanWriteOrganizationAsync(User, team.OrganizationId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(true);

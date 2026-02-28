@@ -1,4 +1,5 @@
 using Bud.Shared.Contracts;
+using Bud.Shared.Contracts.Requests;
 using FluentValidation;
 
 namespace Bud.Server.Validators;
@@ -15,34 +16,34 @@ public sealed class CreateTemplateValidator : AbstractValidator<CreateTemplateRe
             .MaximumLength(1000).WithMessage("Descrição deve ter no máximo 1000 caracteres.")
             .When(x => !string.IsNullOrEmpty(x.Description));
 
-        RuleFor(x => x.MissionNamePattern)
+        RuleFor(x => x.GoalNamePattern)
             .MaximumLength(200).WithMessage("Padrão de nome deve ter no máximo 200 caracteres.")
-            .When(x => !string.IsNullOrEmpty(x.MissionNamePattern));
+            .When(x => !string.IsNullOrEmpty(x.GoalNamePattern));
 
-        RuleFor(x => x.MissionDescriptionPattern)
+        RuleFor(x => x.GoalDescriptionPattern)
             .MaximumLength(1000).WithMessage("Padrão de descrição deve ter no máximo 1000 caracteres.")
-            .When(x => !string.IsNullOrEmpty(x.MissionDescriptionPattern));
+            .When(x => !string.IsNullOrEmpty(x.GoalDescriptionPattern));
 
-        RuleForEach(x => x.Objectives)
-            .SetValidator(new TemplateObjectiveDtoValidator());
+        RuleForEach(x => x.Goals)
+            .SetValidator(new TemplateGoalDtoValidator());
 
-        RuleForEach(x => x.Metrics)
-            .SetValidator(new TemplateMetricDtoValidator());
+        RuleForEach(x => x.Indicators)
+            .SetValidator(new TemplateIndicatorDtoValidator());
 
         RuleFor(x => x)
-            .Must(HaveValidObjectiveReferences)
-            .WithMessage("Uma ou mais métricas referenciam objetivos inexistentes no template.");
+            .Must(HaveValidGoalReferences)
+            .WithMessage("Um ou mais indicadores referenciam metas inexistentes no template.");
     }
 
-    private static bool HaveValidObjectiveReferences(CreateTemplateRequest request)
+    private static bool HaveValidGoalReferences(CreateTemplateRequest request)
     {
-        var objectiveIds = request.Objectives
-            .Where(o => o.Id.HasValue)
-            .Select(o => o.Id!.Value)
+        var goalIds = request.Goals
+            .Where(g => g.Id.HasValue)
+            .Select(g => g.Id!.Value)
             .ToHashSet();
 
-        return request.Metrics.All(metric =>
-            metric.TemplateObjectiveId is null || objectiveIds.Contains(metric.TemplateObjectiveId.Value));
+        return request.Indicators.All(indicator =>
+            indicator.TemplateGoalId is null || goalIds.Contains(indicator.TemplateGoalId.Value));
     }
 }
 
@@ -59,46 +60,46 @@ public sealed class PatchTemplateValidator : AbstractValidator<PatchTemplateRequ
             .MaximumLength(1000).WithMessage("Descrição deve ter no máximo 1000 caracteres.")
             .When(x => x.Description.HasValue && !string.IsNullOrEmpty(x.Description.Value));
 
-        RuleFor(x => x.MissionNamePattern.Value)
+        RuleFor(x => x.GoalNamePattern.Value)
             .MaximumLength(200).WithMessage("Padrão de nome deve ter no máximo 200 caracteres.")
-            .When(x => x.MissionNamePattern.HasValue && !string.IsNullOrEmpty(x.MissionNamePattern.Value));
+            .When(x => x.GoalNamePattern.HasValue && !string.IsNullOrEmpty(x.GoalNamePattern.Value));
 
-        RuleFor(x => x.MissionDescriptionPattern.Value)
+        RuleFor(x => x.GoalDescriptionPattern.Value)
             .MaximumLength(1000).WithMessage("Padrão de descrição deve ter no máximo 1000 caracteres.")
-            .When(x => x.MissionDescriptionPattern.HasValue && !string.IsNullOrEmpty(x.MissionDescriptionPattern.Value));
+            .When(x => x.GoalDescriptionPattern.HasValue && !string.IsNullOrEmpty(x.GoalDescriptionPattern.Value));
 
-        When(x => x.Objectives.HasValue && x.Objectives.Value is not null, () =>
+        When(x => x.Goals.HasValue && x.Goals.Value is not null, () =>
         {
-            RuleForEach(x => x.Objectives.Value!)
-                .SetValidator(new TemplateObjectiveDtoValidator());
+            RuleForEach(x => x.Goals.Value!)
+                .SetValidator(new TemplateGoalDtoValidator());
         });
 
-        When(x => x.Metrics.HasValue && x.Metrics.Value is not null, () =>
+        When(x => x.Indicators.HasValue && x.Indicators.Value is not null, () =>
         {
-            RuleForEach(x => x.Metrics.Value!)
-                .SetValidator(new TemplateMetricDtoValidator());
+            RuleForEach(x => x.Indicators.Value!)
+                .SetValidator(new TemplateIndicatorDtoValidator());
         });
 
         RuleFor(x => x)
-            .Must(HaveValidObjectiveReferences)
-            .WithMessage("Uma ou mais métricas referenciam objetivos inexistentes no template.");
+            .Must(HaveValidGoalReferences)
+            .WithMessage("Um ou mais indicadores referenciam metas inexistentes no template.");
     }
 
-    private static bool HaveValidObjectiveReferences(PatchTemplateRequest request)
+    private static bool HaveValidGoalReferences(PatchTemplateRequest request)
     {
-        var objectiveIds = request.Objectives.AsEnumerable()
-            .Where(o => o.Id.HasValue)
-            .Select(o => o.Id!.Value)
+        var goalIds = request.Goals.AsEnumerable()
+            .Where(g => g.Id.HasValue)
+            .Select(g => g.Id!.Value)
             .ToHashSet();
 
-        return request.Metrics.AsEnumerable().All(metric =>
-            metric.TemplateObjectiveId is null || objectiveIds.Contains(metric.TemplateObjectiveId.Value));
+        return request.Indicators.AsEnumerable().All(indicator =>
+            indicator.TemplateGoalId is null || goalIds.Contains(indicator.TemplateGoalId.Value));
     }
 }
 
-public sealed class TemplateObjectiveDtoValidator : AbstractValidator<TemplateObjectiveRequest>
+public sealed class TemplateGoalDtoValidator : AbstractValidator<TemplateGoalRequest>
 {
-    public TemplateObjectiveDtoValidator()
+    public TemplateGoalDtoValidator()
     {
         RuleFor(x => x.Name)
             .NotEmpty().WithMessage("Nome é obrigatório.")
@@ -117,9 +118,9 @@ public sealed class TemplateObjectiveDtoValidator : AbstractValidator<TemplateOb
     }
 }
 
-public sealed class TemplateMetricDtoValidator : AbstractValidator<TemplateMetricRequest>
+public sealed class TemplateIndicatorDtoValidator : AbstractValidator<TemplateIndicatorRequest>
 {
-    public TemplateMetricDtoValidator()
+    public TemplateIndicatorDtoValidator()
     {
         RuleFor(x => x.Name)
             .NotEmpty().WithMessage("Nome é obrigatório.")
@@ -131,59 +132,59 @@ public sealed class TemplateMetricDtoValidator : AbstractValidator<TemplateMetri
         RuleFor(x => x.OrderIndex)
             .GreaterThanOrEqualTo(0).WithMessage("Índice de ordenação deve ser maior ou igual a 0.");
 
-        When(x => x.Type == MetricType.Qualitative, () =>
+        When(x => x.Type == IndicatorType.Qualitative, () =>
         {
             RuleFor(x => x.TargetText)
                 .MaximumLength(1000).WithMessage("Texto alvo deve ter no máximo 1000 caracteres.");
         });
 
-        When(x => x.Type == MetricType.Quantitative, () =>
+        When(x => x.Type == IndicatorType.Quantitative, () =>
         {
             RuleFor(x => x.QuantitativeType)
-                .NotNull().WithMessage("Tipo quantitativo é obrigatório para métricas quantitativas.")
+                .NotNull().WithMessage("Tipo quantitativo é obrigatório para indicadores quantitativos.")
                 .IsInEnum().WithMessage("Tipo quantitativo inválido.");
 
             RuleFor(x => x.Unit)
-                .NotNull().WithMessage("Unidade é obrigatória para métricas quantitativas.")
+                .NotNull().WithMessage("Unidade é obrigatória para indicadores quantitativos.")
                 .IsInEnum().WithMessage("Unidade inválida.");
 
-            When(x => x.QuantitativeType == QuantitativeMetricType.KeepAbove, () =>
+            When(x => x.QuantitativeType == QuantitativeIndicatorType.KeepAbove, () =>
             {
                 RuleFor(x => x.MinValue)
-                    .NotNull().WithMessage("Valor mínimo é obrigatório para métricas KeepAbove.")
+                    .NotNull().WithMessage("Valor mínimo é obrigatório para indicadores KeepAbove.")
                     .GreaterThanOrEqualTo(0).WithMessage("Valor mínimo deve ser maior ou igual a 0.");
             });
 
-            When(x => x.QuantitativeType == QuantitativeMetricType.KeepBelow, () =>
+            When(x => x.QuantitativeType == QuantitativeIndicatorType.KeepBelow, () =>
             {
                 RuleFor(x => x.MaxValue)
-                    .NotNull().WithMessage("Valor máximo é obrigatório para métricas KeepBelow.")
+                    .NotNull().WithMessage("Valor máximo é obrigatório para indicadores KeepBelow.")
                     .GreaterThanOrEqualTo(0).WithMessage("Valor máximo deve ser maior ou igual a 0.");
             });
 
-            When(x => x.QuantitativeType == QuantitativeMetricType.KeepBetween, () =>
+            When(x => x.QuantitativeType == QuantitativeIndicatorType.KeepBetween, () =>
             {
                 RuleFor(x => x.MinValue)
-                    .NotNull().WithMessage("Valor mínimo é obrigatório para métricas KeepBetween.")
+                    .NotNull().WithMessage("Valor mínimo é obrigatório para indicadores KeepBetween.")
                     .GreaterThanOrEqualTo(0).WithMessage("Valor mínimo deve ser maior ou igual a 0.");
 
                 RuleFor(x => x.MaxValue)
-                    .NotNull().WithMessage("Valor máximo é obrigatório para métricas KeepBetween.")
+                    .NotNull().WithMessage("Valor máximo é obrigatório para indicadores KeepBetween.")
                     .GreaterThanOrEqualTo(0).WithMessage("Valor máximo deve ser maior ou igual a 0.")
                     .GreaterThan(x => x.MinValue ?? 0).WithMessage("Valor máximo deve ser maior que o valor mínimo.");
             });
 
-            When(x => x.QuantitativeType == QuantitativeMetricType.Achieve, () =>
+            When(x => x.QuantitativeType == QuantitativeIndicatorType.Achieve, () =>
             {
                 RuleFor(x => x.MaxValue)
-                    .NotNull().WithMessage("Valor máximo é obrigatório para métricas Achieve.")
+                    .NotNull().WithMessage("Valor máximo é obrigatório para indicadores Achieve.")
                     .GreaterThanOrEqualTo(0).WithMessage("Valor máximo deve ser maior ou igual a 0.");
             });
 
-            When(x => x.QuantitativeType == QuantitativeMetricType.Reduce, () =>
+            When(x => x.QuantitativeType == QuantitativeIndicatorType.Reduce, () =>
             {
                 RuleFor(x => x.MaxValue)
-                    .NotNull().WithMessage("Valor máximo é obrigatório para métricas Reduce.")
+                    .NotNull().WithMessage("Valor máximo é obrigatório para indicadores Reduce.")
                     .GreaterThanOrEqualTo(0).WithMessage("Valor máximo deve ser maior ou igual a 0.");
             });
         });

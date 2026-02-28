@@ -8,7 +8,7 @@ Formato por linha:
 Linhas iniciadas com `#` são comentários.
 
 src/Bud.Server/Application/UseCases/Collaborators/PatchCollaborator.cs|PersonName.TryCreate(requestedFullName||UpdateProfile(|
-src/Bud.Server/Application/UseCases/Metrics/CreateMetricCheckin.cs|metric.CreateCheckin(|
-src/Bud.Server/Application/UseCases/Metrics/PatchMetricCheckin.cs|metric.UpdateCheckin(|
-src/Bud.Server/Application/UseCases/Missions/CreateMission.cs|MissionScope.Create(scopeType, request.ScopeId)||mission.SetScope(missionScope)|mission.SetScope(request.ScopeType, request.ScopeId)
-src/Bud.Server/Application/UseCases/Missions/PatchMission.cs|MissionScope.Create(scopeType, scopeId)||mission.SetScope(missionScope)|mission.SetScope(request.ScopeType, request.ScopeId)
+src/Bud.Server/Application/UseCases/Checkins/CreateCheckin.cs|indicator.CreateCheckin(|
+src/Bud.Server/Application/UseCases/Checkins/PatchCheckin.cs|indicator.UpdateCheckin(|
+src/Bud.Server/Application/UseCases/Goals/CreateGoal.cs|goal.SetScope(|
+src/Bud.Server/Application/UseCases/Goals/PatchGoal.cs|goal.SetScope(|

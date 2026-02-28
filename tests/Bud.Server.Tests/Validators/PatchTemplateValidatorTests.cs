@@ -18,9 +18,9 @@ public sealed class PatchTemplateValidatorTests
         {
             Name = "Template Atualizado",
             Description = "Descrição atualizada",
-            MissionNamePattern = "Missão {0}",
-            MissionDescriptionPattern = "Descrição padrão",
-            Metrics = new List<TemplateMetricRequest>()
+            GoalNamePattern = "Missão {0}",
+            GoalDescriptionPattern = "Descrição padrão",
+            Indicators = new List<TemplateIndicatorRequest>()
         };
 
         // Act
@@ -38,12 +38,12 @@ public sealed class PatchTemplateValidatorTests
         var request = new PatchTemplateRequest
         {
             Name = "Template com Métricas",
-            Metrics = new List<TemplateMetricRequest>
+            Indicators = new List<TemplateIndicatorRequest>
             {
                 new()
                 {
                     Name = "Métrica Qualitativa",
-                    Type = Bud.Shared.Contracts.MetricType.Qualitative,
+                    Type = Bud.Shared.Contracts.IndicatorType.Qualitative,
                     OrderIndex = 0,
                     TargetText = "Texto alvo"
                 }
@@ -137,13 +137,13 @@ public sealed class PatchTemplateValidatorTests
     }
 
     [Fact]
-    public async Task Validate_MissionNamePatternExceeding200Chars_Fails()
+    public async Task Validate_GoalNamePatternExceeding200Chars_Fails()
     {
         // Arrange
         var request = new PatchTemplateRequest
         {
             Name = "Template",
-            MissionNamePattern = new string('A', 201)
+            GoalNamePattern = new string('A', 201)
         };
 
         // Act
@@ -152,18 +152,18 @@ public sealed class PatchTemplateValidatorTests
         // Assert
         result.IsValid.Should().BeFalse();
         result.Errors.Should().ContainSingle(e =>
-            e.PropertyName.Contains("MissionNamePattern") &&
+            e.PropertyName.Contains("GoalNamePattern") &&
             e.ErrorMessage.Contains("200"));
     }
 
     [Fact]
-    public async Task Validate_NullMissionNamePattern_Passes()
+    public async Task Validate_NullGoalNamePattern_Passes()
     {
         // Arrange
         var request = new PatchTemplateRequest
         {
             Name = "Template",
-            MissionNamePattern = null
+            GoalNamePattern = null
         };
 
         // Act
@@ -174,13 +174,13 @@ public sealed class PatchTemplateValidatorTests
     }
 
     [Fact]
-    public async Task Validate_MissionDescriptionPatternExceeding1000Chars_Fails()
+    public async Task Validate_GoalDescriptionPatternExceeding1000Chars_Fails()
     {
         // Arrange
         var request = new PatchTemplateRequest
         {
             Name = "Template",
-            MissionDescriptionPattern = new string('A', 1001)
+            GoalDescriptionPattern = new string('A', 1001)
         };
 
         // Act
@@ -189,18 +189,18 @@ public sealed class PatchTemplateValidatorTests
         // Assert
         result.IsValid.Should().BeFalse();
         result.Errors.Should().ContainSingle(e =>
-            e.PropertyName.Contains("MissionDescriptionPattern") &&
+            e.PropertyName.Contains("GoalDescriptionPattern") &&
             e.ErrorMessage.Contains("1000"));
     }
 
     [Fact]
-    public async Task Validate_NullMissionDescriptionPattern_Passes()
+    public async Task Validate_NullGoalDescriptionPattern_Passes()
     {
         // Arrange
         var request = new PatchTemplateRequest
         {
             Name = "Template",
-            MissionDescriptionPattern = null
+            GoalDescriptionPattern = null
         };
 
         // Act
@@ -217,12 +217,12 @@ public sealed class PatchTemplateValidatorTests
         var request = new PatchTemplateRequest
         {
             Name = "Template",
-            Metrics = new List<TemplateMetricRequest>
+            Indicators = new List<TemplateIndicatorRequest>
             {
                 new()
                 {
                     Name = "", // Invalid: empty name
-                    Type = Bud.Shared.Contracts.MetricType.Qualitative,
+                    Type = Bud.Shared.Contracts.IndicatorType.Qualitative,
                     OrderIndex = 0,
                     TargetText = "Texto alvo"
                 }
@@ -246,7 +246,7 @@ public sealed class PatchTemplateValidatorTests
         var request = new PatchTemplateRequest
         {
             Name = "Template",
-            Objectives = new List<TemplateObjectiveRequest>
+            Goals = new List<TemplateGoalRequest>
             {
                 new()
                 {
@@ -255,14 +255,14 @@ public sealed class PatchTemplateValidatorTests
                     OrderIndex = 0
                 }
             },
-            Metrics = new List<TemplateMetricRequest>
+            Indicators = new List<TemplateIndicatorRequest>
             {
                 new()
                 {
                     Name = "Métrica 1",
-                    Type = Bud.Shared.Contracts.MetricType.Qualitative,
+                    Type = Bud.Shared.Contracts.IndicatorType.Qualitative,
                     OrderIndex = 0,
-                    TemplateObjectiveId = Guid.NewGuid()
+                    TemplateGoalId = Guid.NewGuid()
                 }
             }
         };
@@ -272,6 +272,6 @@ public sealed class PatchTemplateValidatorTests
 
         // Assert
         result.IsValid.Should().BeFalse();
-        result.Errors.Should().Contain(e => e.ErrorMessage.Contains("objetivos inexistentes"));
+        result.Errors.Should().Contain(e => e.ErrorMessage.Contains("metas inexistentes"));
     }
 }

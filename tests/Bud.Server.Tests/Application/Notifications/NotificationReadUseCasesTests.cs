@@ -42,7 +42,7 @@ public sealed class NotificationReadUseCasesTests
 
         var pagedResult = new PagedResult<Notification>
         {
-            Items = [new Notification { Id = Guid.NewGuid(), Title = "Test", Message = "Msg", Type = NotificationType.MissionCreated }],
+            Items = [new Notification { Id = Guid.NewGuid(), Title = "Test", Message = "Msg", Type = NotificationType.GoalCreated }],
             Total = 1,
             Page = 1,
             PageSize = 10

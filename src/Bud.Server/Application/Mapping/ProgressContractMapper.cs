@@ -4,39 +4,25 @@ namespace Bud.Server.Application.Mapping;
 
 internal static class ProgressContractMapper
 {
-    public static MissionProgressResponse ToResponse(this MissionProgressSnapshot source)
+    public static GoalProgressResponse ToResponse(this GoalProgressSnapshot source)
     {
-        return new MissionProgressResponse
+        return new GoalProgressResponse
         {
-            MissionId = source.MissionId,
+            GoalId = source.GoalId,
             OverallProgress = source.OverallProgress,
             ExpectedProgress = source.ExpectedProgress,
             AverageConfidence = source.AverageConfidence,
-            TotalMetrics = source.TotalMetrics,
-            MetricsWithCheckins = source.MetricsWithCheckins,
-            OutdatedMetrics = source.OutdatedMetrics,
-            ObjectiveProgress = source.ObjectiveProgress.Select(ToResponse).ToList()
+            TotalIndicators = source.TotalIndicators,
+            IndicatorsWithCheckins = source.IndicatorsWithCheckins,
+            OutdatedIndicators = source.OutdatedIndicators
         };
     }
 
-    public static ObjectiveProgressResponse ToResponse(this ObjectiveProgressSnapshot source)
+    public static IndicatorProgressResponse ToResponse(this IndicatorProgressSnapshot source)
     {
-        return new ObjectiveProgressResponse
+        return new IndicatorProgressResponse
         {
-            ObjectiveId = source.ObjectiveId,
-            OverallProgress = source.OverallProgress,
-            AverageConfidence = source.AverageConfidence,
-            TotalMetrics = source.TotalMetrics,
-            MetricsWithCheckins = source.MetricsWithCheckins,
-            OutdatedMetrics = source.OutdatedMetrics
-        };
-    }
-
-    public static MetricProgressResponse ToResponse(this MetricProgressSnapshot source)
-    {
-        return new MetricProgressResponse
-        {
-            MetricId = source.MetricId,
+            IndicatorId = source.IndicatorId,
             Progress = source.Progress,
             Confidence = source.Confidence,
             HasCheckins = source.HasCheckins,

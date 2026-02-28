@@ -26,14 +26,13 @@ public sealed class ApplicationDbContext : DbContext
     public DbSet<Workspace> Workspaces => Set<Workspace>();
     public DbSet<Team> Teams => Set<Team>();
     public DbSet<Collaborator> Collaborators => Set<Collaborator>();
-    public DbSet<Mission> Missions => Set<Mission>();
-    public DbSet<Metric> Metrics => Set<Metric>();
+    public DbSet<Goal> Goals => Set<Goal>();
+    public DbSet<Indicator> Indicators => Set<Indicator>();
     public DbSet<CollaboratorTeam> CollaboratorTeams => Set<CollaboratorTeam>();
-    public DbSet<MetricCheckin> MetricCheckins => Set<MetricCheckin>();
+    public DbSet<Checkin> Checkins => Set<Checkin>();
     public DbSet<Template> Templates => Set<Template>();
-    public DbSet<TemplateObjective> TemplateObjectives => Set<TemplateObjective>();
-    public DbSet<TemplateMetric> TemplateMetrics => Set<TemplateMetric>();
-    public DbSet<Objective> Objectives => Set<Objective>();
+    public DbSet<TemplateGoal> TemplateGoals => Set<TemplateGoal>();
+    public DbSet<TemplateIndicator> TemplateIndicators => Set<TemplateIndicator>();
     public DbSet<CollaboratorAccessLog> CollaboratorAccessLogs => Set<CollaboratorAccessLog>();
     public DbSet<Notification> Notifications => Set<Notification>();
 
@@ -73,32 +72,25 @@ public sealed class ApplicationDbContext : DbContext
                 (_tenantId != null && c.OrganizationId == _tenantId)
             );
 
-        modelBuilder.Entity<Mission>()
-            .HasQueryFilter(m =>
+        modelBuilder.Entity<Goal>()
+            .HasQueryFilter(g =>
                 !_applyTenantFilter ||
                 (_isGlobalAdmin && _tenantId == null) ||
-                (_tenantId != null && m.OrganizationId == _tenantId)
+                (_tenantId != null && g.OrganizationId == _tenantId)
             );
 
-        modelBuilder.Entity<Objective>()
-            .HasQueryFilter(o =>
+        modelBuilder.Entity<Indicator>()
+            .HasQueryFilter(i =>
                 !_applyTenantFilter ||
                 (_isGlobalAdmin && _tenantId == null) ||
-                (_tenantId != null && o.OrganizationId == _tenantId)
+                (_tenantId != null && i.OrganizationId == _tenantId)
             );
 
-        modelBuilder.Entity<Metric>()
-            .HasQueryFilter(met =>
+        modelBuilder.Entity<Checkin>()
+            .HasQueryFilter(c =>
                 !_applyTenantFilter ||
                 (_isGlobalAdmin && _tenantId == null) ||
-                (_tenantId != null && met.OrganizationId == _tenantId)
-            );
-
-        modelBuilder.Entity<MetricCheckin>()
-            .HasQueryFilter(mc =>
-                !_applyTenantFilter ||
-                (_isGlobalAdmin && _tenantId == null) ||
-                (_tenantId != null && mc.OrganizationId == _tenantId)
+                (_tenantId != null && c.OrganizationId == _tenantId)
             );
 
         modelBuilder.Entity<Template>()
@@ -108,18 +100,18 @@ public sealed class ApplicationDbContext : DbContext
                 (_tenantId != null && mt.OrganizationId == _tenantId)
             );
 
-        modelBuilder.Entity<TemplateObjective>()
-            .HasQueryFilter(mto =>
+        modelBuilder.Entity<TemplateGoal>()
+            .HasQueryFilter(tg =>
                 !_applyTenantFilter ||
                 (_isGlobalAdmin && _tenantId == null) ||
-                (_tenantId != null && mto.OrganizationId == _tenantId)
+                (_tenantId != null && tg.OrganizationId == _tenantId)
             );
 
-        modelBuilder.Entity<TemplateMetric>()
-            .HasQueryFilter(mtm =>
+        modelBuilder.Entity<TemplateIndicator>()
+            .HasQueryFilter(ti =>
                 !_applyTenantFilter ||
                 (_isGlobalAdmin && _tenantId == null) ||
-                (_tenantId != null && mtm.OrganizationId == _tenantId)
+                (_tenantId != null && ti.OrganizationId == _tenantId)
             );
 
         modelBuilder.Entity<CollaboratorAccessLog>()
@@ -135,6 +127,5 @@ public sealed class ApplicationDbContext : DbContext
                 (_isGlobalAdmin && _tenantId == null) ||
                 (_tenantId != null && n.OrganizationId == _tenantId)
             );
-
     }
 }

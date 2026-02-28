@@ -84,7 +84,7 @@ public sealed class TemplateRepositoryTests
     #region GetByIdWithChildrenAsync Tests
 
     [Fact]
-    public async Task GetByIdWithChildrenAsync_WhenExists_ReturnsTemplateWithObjectivesAndMetrics()
+    public async Task GetByIdWithChildrenAsync_WhenExists_ReturnsTemplateWithGoalsAndIndicators()
     {
         // Arrange
         using var context = CreateInMemoryContext();
@@ -92,7 +92,7 @@ public sealed class TemplateRepositoryTests
         var org = await CreateTestOrganization(context);
         var template = await CreateTestTemplate(context, org.Id);
 
-        var objective = new TemplateObjective
+        var objective = new TemplateGoal
         {
             Id = Guid.NewGuid(),
             Name = "Template Objective",
@@ -100,18 +100,18 @@ public sealed class TemplateRepositoryTests
             OrganizationId = org.Id,
             OrderIndex = 0
         };
-        context.TemplateObjectives.Add(objective);
+        context.TemplateGoals.Add(objective);
 
-        var metric = new TemplateMetric
+        var metric = new TemplateIndicator
         {
             Id = Guid.NewGuid(),
             Name = "Template Metric",
             TemplateId = template.Id,
             OrganizationId = org.Id,
-            Type = MetricType.Qualitative,
+            Type = IndicatorType.Qualitative,
             OrderIndex = 0
         };
-        context.TemplateMetrics.Add(metric);
+        context.TemplateIndicators.Add(metric);
         await context.SaveChangesAsync();
 
         // Act
@@ -120,8 +120,8 @@ public sealed class TemplateRepositoryTests
         // Assert
         result.Should().NotBeNull();
         result!.Id.Should().Be(template.Id);
-        result.Objectives.Should().HaveCount(1);
-        result.Metrics.Should().HaveCount(1);
+        result.Goals.Should().HaveCount(1);
+        result.Indicators.Should().HaveCount(1);
     }
 
     [Fact]
@@ -151,8 +151,8 @@ public sealed class TemplateRepositoryTests
         var org = await CreateTestOrganization(context);
         var template = await CreateTestTemplate(context, org.Id);
 
-        context.TemplateObjectives.AddRange(
-            new TemplateObjective
+        context.TemplateGoals.AddRange(
+            new TemplateGoal
             {
                 Id = Guid.NewGuid(),
                 Name = "Second Objective",
@@ -160,7 +160,7 @@ public sealed class TemplateRepositoryTests
                 OrganizationId = org.Id,
                 OrderIndex = 1
             },
-            new TemplateObjective
+            new TemplateGoal
             {
                 Id = Guid.NewGuid(),
                 Name = "First Objective",
@@ -169,23 +169,23 @@ public sealed class TemplateRepositoryTests
                 OrderIndex = 0
             });
 
-        context.TemplateMetrics.AddRange(
-            new TemplateMetric
+        context.TemplateIndicators.AddRange(
+            new TemplateIndicator
             {
                 Id = Guid.NewGuid(),
                 Name = "Second Metric",
                 TemplateId = template.Id,
                 OrganizationId = org.Id,
-                Type = MetricType.Qualitative,
+                Type = IndicatorType.Qualitative,
                 OrderIndex = 1
             },
-            new TemplateMetric
+            new TemplateIndicator
             {
                 Id = Guid.NewGuid(),
                 Name = "First Metric",
                 TemplateId = template.Id,
                 OrganizationId = org.Id,
-                Type = MetricType.Qualitative,
+                Type = IndicatorType.Qualitative,
                 OrderIndex = 0
             });
         await context.SaveChangesAsync();
@@ -195,10 +195,10 @@ public sealed class TemplateRepositoryTests
 
         // Assert
         result.Should().NotBeNull();
-        result!.Objectives.Should().HaveCount(2);
-        result.Objectives.First().Name.Should().Be("First Objective");
-        result.Metrics.Should().HaveCount(2);
-        result.Metrics.First().Name.Should().Be("First Metric");
+        result!.Goals.Should().HaveCount(2);
+        result.Goals.First().Name.Should().Be("First Objective");
+        result.Indicators.Should().HaveCount(2);
+        result.Indicators.First().Name.Should().Be("First Metric");
     }
 
     [Fact]
@@ -351,10 +351,10 @@ public sealed class TemplateRepositoryTests
 
     #endregion
 
-    #region RemoveObjectivesAndMetricsAsync Tests
+    #region RemoveGoalsAndIndicatorsAsync Tests
 
     [Fact]
-    public async Task RemoveObjectivesAndMetricsAsync_RemovesBothObjectivesAndMetrics()
+    public async Task RemoveGoalsAndIndicatorsAsync_RemovesBothGoalsAndIndicators()
     {
         // Arrange
         using var context = CreateInMemoryContext();
@@ -362,7 +362,7 @@ public sealed class TemplateRepositoryTests
         var org = await CreateTestOrganization(context);
         var template = await CreateTestTemplate(context, org.Id);
 
-        var objective = new TemplateObjective
+        var objective = new TemplateGoal
         {
             Id = Guid.NewGuid(),
             Name = "To Remove",
@@ -370,31 +370,31 @@ public sealed class TemplateRepositoryTests
             OrganizationId = org.Id,
             OrderIndex = 0
         };
-        context.TemplateObjectives.Add(objective);
+        context.TemplateGoals.Add(objective);
 
-        var metric = new TemplateMetric
+        var metric = new TemplateIndicator
         {
             Id = Guid.NewGuid(),
             Name = "To Remove",
             TemplateId = template.Id,
             OrganizationId = org.Id,
-            Type = MetricType.Qualitative,
+            Type = IndicatorType.Qualitative,
             OrderIndex = 0
         };
-        context.TemplateMetrics.Add(metric);
+        context.TemplateIndicators.Add(metric);
         await context.SaveChangesAsync();
 
         // Act
-        await repository.RemoveObjectivesAndMetricsAsync(new[] { objective }, new[] { metric });
+        await repository.RemoveGoalsAndIndicatorsAsync(new[] { objective }, new[] { metric });
         await repository.SaveChangesAsync();
 
         // Assert
-        var objectives = await context.TemplateObjectives
+        var objectives = await context.TemplateGoals
             .Where(o => o.TemplateId == template.Id)
             .ToListAsync();
         objectives.Should().BeEmpty();
 
-        var metrics = await context.TemplateMetrics
+        var metrics = await context.TemplateIndicators
             .Where(m => m.TemplateId == template.Id)
             .ToListAsync();
         metrics.Should().BeEmpty();
@@ -402,10 +402,10 @@ public sealed class TemplateRepositoryTests
 
     #endregion
 
-    #region AddObjectivesAndMetricsAsync Tests
+    #region AddGoalsAndIndicatorsAsync Tests
 
     [Fact]
-    public async Task AddObjectivesAndMetricsAsync_PersistsBothObjectivesAndMetrics()
+    public async Task AddGoalsAndIndicatorsAsync_PersistsBothGoalsAndIndicators()
     {
         // Arrange
         using var context = CreateInMemoryContext();
@@ -415,7 +415,7 @@ public sealed class TemplateRepositoryTests
 
         var objectives = new[]
         {
-            new TemplateObjective
+            new TemplateGoal
             {
                 Id = Guid.NewGuid(),
                 Name = "New Objective",
@@ -427,29 +427,29 @@ public sealed class TemplateRepositoryTests
 
         var metrics = new[]
         {
-            new TemplateMetric
+            new TemplateIndicator
             {
                 Id = Guid.NewGuid(),
                 Name = "New Metric",
                 TemplateId = template.Id,
                 OrganizationId = org.Id,
-                Type = MetricType.Qualitative,
+                Type = IndicatorType.Qualitative,
                 OrderIndex = 0
             }
         };
 
         // Act
-        await repository.AddObjectivesAndMetricsAsync(objectives, metrics);
+        await repository.AddGoalsAndIndicatorsAsync(objectives, metrics);
         await repository.SaveChangesAsync();
 
         // Assert
-        var persistedObjectives = await context.TemplateObjectives
+        var persistedObjectives = await context.TemplateGoals
             .Where(o => o.TemplateId == template.Id)
             .ToListAsync();
         persistedObjectives.Should().HaveCount(1);
         persistedObjectives[0].Name.Should().Be("New Objective");
 
-        var persistedMetrics = await context.TemplateMetrics
+        var persistedMetrics = await context.TemplateIndicators
             .Where(m => m.TemplateId == template.Id)
             .ToListAsync();
         persistedMetrics.Should().HaveCount(1);

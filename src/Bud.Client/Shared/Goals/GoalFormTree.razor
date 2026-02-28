@@ -1,0 +1,131 @@
+@if (Indicators.Count > 0 || Children.Count > 0)
+{
+    <div class="goal-form-tree">
+        @for (var i = 0; i < Indicators.Count; i++)
+        {
+            var indicator = Indicators[i];
+            var indicatorIndex = i;
+            <div class="goal-form-tree-node goal-form-tree-indicator">
+                <div class="goal-form-tree-header">
+                    <div class="goal-form-tree-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="24" height="24">
+                            <path d="M3 3v18h18" stroke-linecap="round" stroke-linejoin="round"/>
+                            <path d="M18 9l-5 5-4-4-3 3" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                    </div>
+                    <div class="goal-form-tree-label">
+                        <span class="goal-form-tree-name">@indicator.Name</span>
+                        @if (!string.IsNullOrWhiteSpace(indicator.Details))
+                        {
+                            <span class="goal-form-tree-details">@indicator.Details</span>
+                        }
+                    </div>
+                    <span class="goal-form-tree-type-label">Indicador</span>
+                </div>
+                <div class="goal-form-tree-preview">
+                    <svg viewBox="0 0 64 28" fill="currentColor" aria-hidden="true">
+                        <rect x="2" y="16" width="8" height="12" rx="1.5" opacity="0.25"/>
+                        <rect x="14" y="8" width="8" height="20" rx="1.5" opacity="0.45"/>
+                        <rect x="26" y="12" width="8" height="16" rx="1.5" opacity="0.35"/>
+                        <rect x="38" y="4" width="8" height="24" rx="1.5" opacity="0.55"/>
+                        <rect x="50" y="10" width="8" height="18" rx="1.5" opacity="0.3"/>
+                    </svg>
+                </div>
+                <div class="goal-form-tree-footer">
+                    <span></span>
+                    <div class="goal-form-tree-actions">
+                        <button type="button" class="goal-form-tree-action-btn" title="Editar indicador" @onclick="() => OnEditIndicator.InvokeAsync(indicatorIndex)">
+                            <svg viewBox="0 0 20 20" fill="currentColor" width="14" height="14">
+                                <path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z"/>
+                            </svg>
+                        </button>
+                        <button type="button" class="goal-form-tree-action-btn delete" title="Excluir indicador" @onclick="() => OnDeleteIndicator.InvokeAsync(indicatorIndex)">
+                            <svg viewBox="0 0 20 20" fill="currentColor" width="14" height="14">
+                                <path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd"/>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        }
+
+        @for (var i = 0; i < Children.Count; i++)
+        {
+            var child = Children[i];
+            var childIndex = i;
+            var childItemCount = child.Indicators.Count + child.Children.Count;
+
+            <div class="goal-form-tree-node goal-form-tree-goal" @onclick="() => OnNavigateInto.InvokeAsync(childIndex)">
+                <div class="goal-form-tree-header">
+                    <div class="goal-form-tree-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="24" height="24">
+                            <circle cx="12" cy="12" r="10" stroke-linecap="round"/>
+                            <circle cx="12" cy="12" r="6" stroke-linecap="round"/>
+                            <circle cx="12" cy="12" r="2" stroke-linecap="round"/>
+                        </svg>
+                    </div>
+                    <div class="goal-form-tree-label">
+                        <span class="goal-form-tree-name">@child.Name</span>
+                        @if (!string.IsNullOrWhiteSpace(child.Dimension))
+                        {
+                            <span class="goal-form-tree-details">@child.Dimension</span>
+                        }
+                    </div>
+                    <span class="goal-form-tree-type-label">Meta</span>
+                </div>
+                @if (childItemCount > 0)
+                {
+                    <div class="goal-form-tree-contents">
+                        @foreach (var _ in child.Indicators)
+                        {
+                            <svg class="goal-form-tree-mini-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20">
+                                <path d="M3 3v18h18" stroke-linecap="round" stroke-linejoin="round"/>
+                                <path d="M18 9l-5 5-4-4-3 3" stroke-linecap="round" stroke-linejoin="round"/>
+                            </svg>
+                        }
+                        @foreach (var _ in child.Children)
+                        {
+                            <svg class="goal-form-tree-mini-icon goal-form-tree-mini-icon-goal" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20">
+                                <circle cx="12" cy="12" r="10" stroke-linecap="round"/>
+                                <circle cx="12" cy="12" r="6" stroke-linecap="round"/>
+                                <circle cx="12" cy="12" r="2" stroke-linecap="round"/>
+                            </svg>
+                        }
+                    </div>
+                }
+                <div class="goal-form-tree-footer">
+                    @if (childItemCount > 0)
+                    {
+                        <span class="goal-form-tree-badge">@childItemCount</span>
+                    }
+                    else
+                    {
+                        <span></span>
+                    }
+                    <div class="goal-form-tree-actions">
+                        <button type="button" class="goal-form-tree-action-btn" title="Editar meta" @onclick="() => OnEditGoal.InvokeAsync(childIndex)" @onclick:stopPropagation="true">
+                            <svg viewBox="0 0 20 20" fill="currentColor" width="14" height="14">
+                                <path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z"/>
+                            </svg>
+                        </button>
+                        <button type="button" class="goal-form-tree-action-btn delete" title="Excluir meta" @onclick="() => OnDeleteGoal.InvokeAsync(childIndex)" @onclick:stopPropagation="true">
+                            <svg viewBox="0 0 20 20" fill="currentColor" width="14" height="14">
+                                <path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd"/>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+}
+
+@code {
+    [Parameter] public List<TempIndicator> Indicators { get; set; } = [];
+    [Parameter] public List<TempGoal> Children { get; set; } = [];
+    [Parameter] public EventCallback<int> OnEditIndicator { get; set; }
+    [Parameter] public EventCallback<int> OnDeleteIndicator { get; set; }
+    [Parameter] public EventCallback<int> OnNavigateInto { get; set; }
+    [Parameter] public EventCallback<int> OnEditGoal { get; set; }
+    [Parameter] public EventCallback<int> OnDeleteGoal { get; set; }
+}

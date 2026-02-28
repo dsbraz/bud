@@ -53,11 +53,11 @@ public sealed partial class DeleteCollaborator(
                 ErrorType.Conflict);
         }
 
-        if (await collaboratorRepository.HasMissionsAsync(id, cancellationToken))
+        if (await collaboratorRepository.HasGoalsAsync(id, cancellationToken))
         {
-            LogCollaboratorDeletionFailed(logger, id, "Has missions");
+            LogCollaboratorDeletionFailed(logger, id, "Has goals");
             return Result.Failure(
-                "Não é possível excluir o colaborador porque existem missões associadas a ele.",
+                "Não é possível excluir o colaborador porque existem metas associadas a ele.",
                 ErrorType.Conflict);
         }
 

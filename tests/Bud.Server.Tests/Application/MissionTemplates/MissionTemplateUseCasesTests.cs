@@ -40,12 +40,12 @@ public sealed class MissionTemplateUseCasesTests
         var request = new CreateTemplateRequest
         {
             Name = "Template",
-            Metrics =
+            Indicators =
             [
-                new TemplateMetricRequest
+                new TemplateIndicatorRequest
                 {
                     Name = "Metric",
-                    Type = Bud.Shared.Contracts.MetricType.Qualitative,
+                    Type = Bud.Shared.Contracts.IndicatorType.Qualitative,
                     OrderIndex = 0,
                     TargetText = "Target"
                 }
@@ -90,8 +90,8 @@ public sealed class MissionTemplateUseCasesTests
             Id = Guid.NewGuid(),
             Name = "Original",
             OrganizationId = Guid.NewGuid(),
-            Objectives = new List<TemplateObjective>(),
-            Metrics = new List<TemplateMetric>()
+            Goals = new List<TemplateGoal>(),
+            Indicators = new List<TemplateIndicator>()
         };
 
         _repository

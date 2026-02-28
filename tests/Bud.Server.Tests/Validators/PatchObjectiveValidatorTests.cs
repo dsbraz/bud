@@ -7,12 +7,12 @@ namespace Bud.Server.Tests.Validators;
 
 public sealed class PatchObjectiveValidatorTests
 {
-    private readonly PatchObjectiveValidator _validator = new();
+    private readonly PatchGoalValidator _validator = new();
 
     [Fact]
     public async Task Validate_WithValidRequest_Passes()
     {
-        var request = new PatchObjectiveRequest
+        var request = new PatchGoalRequest
         {
             Name = "Objetivo Atualizado",
             Description = "Nova descrição"
@@ -29,7 +29,7 @@ public sealed class PatchObjectiveValidatorTests
     [InlineData(null)]
     public async Task Validate_WithEmptyName_Fails(string? name)
     {
-        var request = new PatchObjectiveRequest
+        var request = new PatchGoalRequest
         {
             Name = name!
         };
@@ -43,7 +43,7 @@ public sealed class PatchObjectiveValidatorTests
     [Fact]
     public async Task Validate_WithNameLongerThan200_Fails()
     {
-        var request = new PatchObjectiveRequest
+        var request = new PatchGoalRequest
         {
             Name = new string('A', 201)
         };
@@ -59,7 +59,7 @@ public sealed class PatchObjectiveValidatorTests
     [Fact]
     public async Task Validate_WithDescriptionLongerThan1000_Fails()
     {
-        var request = new PatchObjectiveRequest
+        var request = new PatchGoalRequest
         {
             Name = "Objetivo",
             Description = new string('A', 1001)

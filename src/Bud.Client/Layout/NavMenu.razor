@@ -11,7 +11,7 @@
 
     <div class="sidebar-section">
         <div class="sidebar-section-title">Performance e Engajamento</div>
-        <a class="nav-item @GetMissoesActiveClass()" href="/missions">
+        <a class="nav-item @GetMetasActiveClass()" href="/goals">
             <svg width="20" height="20" fill="currentColor" viewBox="0 0 256 256">
                 <path d="M128,24A104,104,0,1,0,232,128,104.11,104.11,0,0,0,128,24Zm0,192a88,88,0,1,1,88-88A88.1,88.1,0,0,1,128,216ZM172.24,99.76a6,6,0,0,1,0,8.48l-48,48a6,6,0,0,1-8.48,0l-24-24a6,6,0,0,1,8.48-8.48L120,143.51l43.76-43.75A6,6,0,0,1,172.24,99.76Z"/>
             </svg>
@@ -69,7 +69,7 @@
         @if (_configExpanded)
         {
             <div class="nav-submenu">
-                <a class="nav-subitem @GetSubitemActiveClass("/mission-templates")" href="/mission-templates">Modelos</a>
+                <a class="nav-subitem @GetSubitemActiveClass("/goal-templates")" href="/goal-templates">Modelos</a>
             </div>
         }
         <a class="nav-item" href="#">
@@ -89,7 +89,7 @@
     private bool _configExpanded = true;
 
     private static readonly string[] PessoasRoutes = ["/collaborators", "/workspaces", "/teams"];
-    private static readonly string[] ConfigRoutes = ["/mission-templates"];
+    private static readonly string[] ConfigRoutes = ["/goal-templates"];
 
     private string GetOrganizationsActiveClass()
     {
@@ -122,11 +122,11 @@
             : "";
     }
 
-    private string GetMissoesActiveClass()
+    private string GetMetasActiveClass()
     {
         var uri = Navigation.Uri;
-        var missoesRoutes = new[] { "/missions" };
-        return missoesRoutes.Any(route => uri.Contains(route, StringComparison.OrdinalIgnoreCase))
+        var metasRoutes = new[] { "/goals" };
+        return metasRoutes.Any(route => uri.Contains(route, StringComparison.OrdinalIgnoreCase))
             ? "active"
             : "";
     }

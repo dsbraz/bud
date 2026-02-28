@@ -292,7 +292,7 @@ public class WorkspacesEndpointsTests : IClassFixture<CustomWebApplicationFactor
         // Create mission scoped to workspace via DbContext
         using var scope = _factory.Services.CreateScope();
         var dbContext = scope.ServiceProvider.GetRequiredService<Bud.Server.Infrastructure.Persistence.ApplicationDbContext>();
-        var mission = new Mission
+        var mission = new Goal
         {
             Id = Guid.NewGuid(),
             Name = "Missão WS",
@@ -300,9 +300,9 @@ public class WorkspacesEndpointsTests : IClassFixture<CustomWebApplicationFactor
             WorkspaceId = workspace.Id,
             StartDate = DateTime.UtcNow,
             EndDate = DateTime.UtcNow.AddDays(30),
-            Status = MissionStatus.Active
+            Status = GoalStatus.Active
         };
-        dbContext.Missions.Add(mission);
+        dbContext.Goals.Add(mission);
         await dbContext.SaveChangesAsync();
 
         // Act

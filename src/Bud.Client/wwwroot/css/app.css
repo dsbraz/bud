@@ -655,7 +655,7 @@ a {
 }
 
 /* Mission Progress Bar */
-.mission-progress {
+.goal-progress {
     display: flex;
     align-items: center;
     gap: var(--spacing-2);
@@ -1183,6 +1183,14 @@ a {
     font-weight: var(--font-weight-semibold);
 }
 
+.modal-breadcrumb-text.clickable {
+    cursor: pointer;
+}
+
+.modal-breadcrumb-text.clickable:hover {
+    text-decoration: underline;
+}
+
 /* Modal Action Button */
 .modal-action-btn {
     display: flex;
@@ -1478,27 +1486,27 @@ a {
     margin-bottom: var(--spacing-4);
 }
 
-.wizard-objective-form {
+.wizard-subgoal-form {
     padding: var(--spacing-4);
     background: var(--color-surface);
     border: 1px solid var(--caramel-200);
     border-radius: var(--radius-md);
 }
 
-.wizard-objective-card {
+.wizard-subgoal-card {
     padding: var(--spacing-4);
     border: 1px solid var(--caramel-200);
     border-radius: var(--radius-sm);
     background: var(--color-surface);
 }
 
-.wizard-objective-header {
+.wizard-subgoal-header {
     display: flex;
     align-items: flex-start;
     gap: var(--spacing-3);
 }
 
-.wizard-objective-icon {
+.wizard-subgoal-icon {
     flex-shrink: 0;
     width: 20px;
     height: 20px;
@@ -1506,12 +1514,287 @@ a {
     margin-top: 2px;
 }
 
-.wizard-objective-icon svg {
+.wizard-subgoal-icon svg {
     width: 100%;
     height: 100%;
 }
 
-.metric-objective-tag {
+/* ========================================
+   GOAL FORM MODAL - Fixed context + Navigation
+   ======================================== */
+
+/* Fixed-height modal for GoalForm — context stays, navigation scrolls */
+.modal-dialog:has(.goal-form-layout) {
+    height: 80vh;
+}
+
+/* When expanded, goal form takes full screen */
+.modal-dialog.modal-expanded:has(.goal-form-layout) {
+    height: 100vh;
+}
+
+.modal-body:has(.goal-form-layout) {
+    overflow-y: hidden;
+    padding: 0;
+}
+
+.goal-form-layout {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+}
+
+.goal-form-context {
+    padding: var(--spacing-6);
+    padding-bottom: var(--spacing-2);
+    flex-shrink: 0;
+}
+
+.goal-form-divider {
+    border: none;
+    border-top: 1px solid var(--color-border);
+    flex-shrink: 0;
+}
+
+.goal-form-navigation {
+    padding: var(--spacing-4) var(--spacing-6);
+    background: var(--caramel-50);
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+}
+
+.goal-form-nav-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: var(--spacing-3);
+    margin-bottom: var(--spacing-3);
+}
+
+.goal-form-nav-breadcrumb {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-1);
+    font-size: var(--font-size-sm);
+    color: var(--color-text-muted);
+    flex-wrap: wrap;
+    min-width: 0;
+}
+
+.goal-form-nav-breadcrumb-icon {
+    font-size: var(--font-size-base);
+    flex-shrink: 0;
+}
+
+.goal-form-nav-breadcrumb-sep {
+    color: var(--color-text-muted);
+}
+
+.goal-form-nav-breadcrumb-link {
+    cursor: pointer;
+    transition: color var(--transition-fast);
+}
+
+.goal-form-nav-breadcrumb-link:hover {
+    color: var(--color-brand-primary);
+}
+
+.goal-form-nav-breadcrumb-current {
+    color: var(--color-text-primary);
+    font-weight: var(--font-weight-medium);
+}
+
+.goal-form-inline {
+    padding: var(--spacing-4);
+    margin-top: var(--spacing-3);
+    margin-bottom: var(--spacing-5);
+    background: var(--color-surface);
+    border: 1px solid var(--caramel-200);
+    border-radius: var(--radius-base);
+}
+
+.goal-form-actions {
+    display: flex;
+    gap: var(--spacing-3);
+    flex-shrink: 0;
+}
+
+.goal-form-tree {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+    gap: var(--spacing-3);
+}
+
+.goal-form-tree-node {
+    display: flex;
+    flex-direction: column;
+    padding: var(--spacing-3);
+    border-radius: var(--radius-base);
+    background: var(--color-surface);
+    border: 1px solid var(--caramel-200);
+    min-height: 150px;
+    min-width: 0;
+    overflow: hidden;
+    transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+}
+
+.goal-form-tree-node:hover {
+    border-color: var(--caramel-300);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.goal-form-tree-goal {
+    cursor: pointer;
+}
+
+/* Header: icon top-left + name beside it, dimension below */
+.goal-form-tree-header {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--spacing-2);
+    width: 100%;
+}
+
+.goal-form-tree-icon {
+    flex-shrink: 0;
+    color: var(--color-text-muted);
+    display: flex;
+    align-items: center;
+    margin-top: 1px;
+}
+
+.goal-form-tree-goal .goal-form-tree-icon {
+    color: var(--caramel-600);
+}
+
+.goal-form-tree-label {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    overflow: hidden;
+}
+
+/* Type label top-right corner */
+.goal-form-tree-type-label {
+    flex-shrink: 0;
+    font-size: var(--font-size-xs);
+    color: var(--color-text-muted);
+    white-space: nowrap;
+    line-height: 1;
+}
+
+.goal-form-tree-name {
+    font-size: var(--font-size-sm);
+    font-weight: var(--font-weight-medium);
+    color: var(--color-text-primary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.goal-form-tree-details {
+    font-size: var(--font-size-xs);
+    color: var(--color-text-muted);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* Mini icons inside goal cards (centered like indicator preview) */
+.goal-form-tree-contents {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--spacing-1);
+    padding: var(--spacing-2) 0;
+    flex: 1;
+    align-items: center;
+    align-content: center;
+    justify-content: center;
+    overflow: hidden;
+}
+
+.goal-form-tree-mini-icon {
+    color: var(--color-text-muted);
+    opacity: 0.5;
+}
+
+.goal-form-tree-mini-icon-goal {
+    color: var(--caramel-500);
+}
+
+/* Indicator card preview (decorative chart) */
+.goal-form-tree-preview {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex: 1;
+    color: var(--color-text-muted);
+    opacity: 0.4;
+    padding: var(--spacing-1) 0;
+}
+
+.goal-form-tree-preview svg {
+    width: 80px;
+    height: 36px;
+}
+
+/* Footer: badge left, actions right */
+.goal-form-tree-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    margin-top: auto;
+    padding-top: var(--spacing-2);
+}
+
+.goal-form-tree-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 18px;
+    height: 18px;
+    padding: 0 var(--spacing-1);
+    border-radius: var(--radius-full);
+    background: var(--caramel-100);
+    color: var(--caramel-700);
+    font-size: var(--font-size-xs);
+    font-weight: var(--font-weight-bold);
+    flex-shrink: 0;
+}
+
+.goal-form-tree-actions {
+    display: flex;
+    gap: var(--spacing-1);
+}
+
+.goal-form-tree-action-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    border: none;
+    border-radius: var(--radius-sm);
+    background: transparent;
+    color: var(--color-text-muted);
+    cursor: pointer;
+    transition: all var(--transition-fast);
+}
+
+.goal-form-tree-action-btn:hover {
+    background: var(--color-border-light);
+    color: var(--color-text-primary);
+}
+
+.goal-form-tree-action-btn.delete:hover {
+    color: var(--color-error);
+    background: var(--color-error-bg);
+}
+
+.indicator-subgoal-tag {
     display: inline-flex;
     align-items: center;
     padding: 1px var(--spacing-2);
@@ -1528,11 +1811,11 @@ a {
    MISSION MODAL - Specific Styles
    ======================================== */
 
-.mission-header {
+.goal-header {
     margin-bottom: var(--spacing-6);
 }
 
-.mission-title-input {
+.goal-title-input {
     font-size: var(--font-size-title-lg);
     font-weight: var(--font-weight-semibold);
     color: var(--color-text-primary);
@@ -1544,11 +1827,11 @@ a {
     outline: none;
 }
 
-.mission-title-input::placeholder {
+.goal-title-input::placeholder {
     color: var(--color-text-muted);
 }
 
-.mission-subtitle-input {
+.goal-subtitle-input {
     font-size: var(--font-size-base);
     color: var(--color-text-muted);
     border: none;
@@ -1558,12 +1841,55 @@ a {
     outline: none;
 }
 
-.mission-subtitle-input::placeholder {
+.goal-subtitle-input::placeholder {
     color: var(--color-text-muted);
 }
 
+/* Inline goal form — label-free inputs */
+.goal-inline-title-input {
+    font-size: var(--font-size-lg);
+    font-weight: var(--font-weight-semibold);
+    color: var(--color-text-primary);
+    border: none;
+    background: transparent;
+    padding: 0;
+    margin-bottom: var(--spacing-1);
+    width: 100%;
+    outline: none;
+}
+
+.goal-inline-title-input::placeholder {
+    color: var(--color-text-muted);
+}
+
+.goal-inline-subtitle-input {
+    font-size: var(--font-size-sm);
+    color: var(--color-text-secondary);
+    border: none;
+    background: transparent;
+    padding: 0;
+    margin-bottom: var(--spacing-1);
+    width: 100%;
+    outline: none;
+}
+
+.goal-inline-subtitle-input::placeholder {
+    color: var(--color-text-muted);
+}
+
+.goal-form-compact-row {
+    display: flex;
+    gap: var(--spacing-3);
+    align-items: center;
+}
+
+.goal-form-compact-row .input {
+    flex: 1;
+    min-width: 0;
+}
+
 /* Mission Metrics Section */
-.mission-metrics-section {
+.goal-indicators-section {
     margin-top: var(--spacing-6);
     padding: var(--spacing-5);
     background: var(--caramel-50);
@@ -1571,27 +1897,27 @@ a {
     border-radius: var(--radius-md);
 }
 
-.mission-metrics-section-header {
+.goal-indicators-section-header {
     display: flex;
     align-items: center;
     gap: var(--spacing-2);
     margin-bottom: var(--spacing-4);
 }
 
-.mission-metrics-section-header h3 {
+.goal-indicators-section-header h3 {
     margin: 0;
     font-size: var(--font-size-base);
     font-weight: var(--font-weight-semibold);
     color: var(--neutral-800);
 }
 
-.mission-metrics-section-icon {
+.goal-indicators-section-icon {
     width: 20px;
     height: 20px;
     color: var(--caramel-600);
 }
 
-.metrics-add-button {
+.indicators-add-button {
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -1607,12 +1933,12 @@ a {
     transition: all var(--transition-fast);
 }
 
-.metrics-add-button:hover {
+.indicators-add-button:hover {
     background: var(--color-hover);
     border-color: var(--color-border);
 }
 
-.metrics-add-icon {
+.indicators-add-icon {
     width: 24px;
     height: 24px;
     display: flex;
@@ -1625,17 +1951,17 @@ a {
     font-weight: var(--font-weight-bold);
 }
 
-.metrics-list {
+.indicators-list {
     display: flex;
     flex-direction: column;
     gap: var(--spacing-3);
 }
 
-.mission-metrics-section .metrics-list {
+.goal-indicators-section .indicators-list {
     margin-top: var(--spacing-4);
 }
 
-.metric-item {
+.indicator-item {
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -1645,23 +1971,23 @@ a {
     background: var(--color-surface);
 }
 
-.metric-info {
+.indicator-info {
     flex: 1;
 }
 
-.metric-name {
+.indicator-name {
     font-size: var(--font-size-base);
     font-weight: var(--font-weight-medium);
     color: var(--color-text-primary);
     margin-bottom: var(--spacing-1);
 }
 
-.metric-details {
+.indicator-details {
     font-size: var(--font-size-sm);
     color: var(--color-text-muted);
 }
 
-.metric-remove {
+.indicator-remove {
     display: flex;
     align-items: center;
     justify-content: center;
@@ -1676,7 +2002,7 @@ a {
     transition: all var(--transition-fast);
 }
 
-.metric-remove:hover {
+.indicator-remove:hover {
     background: var(--color-error-bg);
     color: var(--color-error);
 }
@@ -1700,58 +2026,58 @@ a {
 }
 
 /* Mission Metrics Form - Figma-inspired layout */
-.metrics-form-container {
+.indicators-form-container {
     display: flex;
     flex-direction: column;
     gap: var(--spacing-3);
 }
 
-.metrics-form-container .form-row {
+.indicators-form-container .form-row {
     margin-bottom: 0;
 }
 
-.metrics-form-container .form-row label {
+.indicators-form-container .form-row label {
     font-size: var(--font-size-label-sm);
     font-weight: var(--font-weight-medium);
     color: var(--neutral-500);
     margin-bottom: var(--spacing-1);
 }
 
-.metrics-form-container .input {
+.indicators-form-container .input {
     font-size: var(--font-size-label-sm);
     border-color: var(--caramel-300);
 }
 
-.metrics-form-container .input:focus {
+.indicators-form-container .input:focus {
     border-color: var(--orange-500);
 }
 
-.metrics-form-header {
+.indicators-form-header {
     display: flex;
     flex-direction: column;
     gap: var(--spacing-2);
 }
 
-.metrics-form-title {
+.indicators-form-title {
     font-size: var(--font-size-paragraph-md);
     font-weight: var(--font-weight-medium);
     color: var(--neutral-500);
 }
 
-.metrics-form-subtitle {
+.indicators-form-subtitle {
     font-size: var(--font-size-label-sm);
     font-weight: var(--font-weight-medium);
     color: var(--neutral-500);
 }
 
 /* Horizontal button-like selects */
-.metrics-form-selectors {
+.indicators-form-selectors {
     display: flex;
     gap: var(--spacing-2);
     flex-wrap: wrap;
 }
 
-.metrics-selector-btn {
+.indicators-selector-btn {
     background: white;
     border: 1px solid var(--caramel-300);
     border-radius: var(--radius-base);
@@ -1765,11 +2091,11 @@ a {
     transition: all var(--transition-fast);
 }
 
-.metrics-selector-btn:hover {
+.indicators-selector-btn:hover {
     background: var(--caramel-50);
 }
 
-.metrics-selector-btn select {
+.indicators-selector-btn select {
     border: none;
     background: transparent;
     flex: 1;
@@ -1781,24 +2107,24 @@ a {
     appearance: none;
 }
 
-.metrics-selector-btn select:focus {
+.indicators-selector-btn select:focus {
     outline: none;
 }
 
-.metrics-selector-icon {
+.indicators-selector-icon {
     width: 16px;
     height: 16px;
     color: var(--neutral-500);
 }
 
 /* Horizontal input fields */
-.metrics-form-inputs {
+.indicators-form-inputs {
     display: flex;
     gap: var(--spacing-4);
     flex-wrap: wrap;
 }
 
-.metrics-input-field {
+.indicators-input-field {
     background: white;
     border: 1px solid var(--caramel-300);
     border-radius: var(--radius-base);
@@ -1807,8 +2133,8 @@ a {
     min-width: 150px;
 }
 
-.metrics-input-field input,
-.metrics-input-field select {
+.indicators-input-field input,
+.indicators-input-field select {
     border: none;
     background: transparent;
     width: 100%;
@@ -1818,12 +2144,12 @@ a {
     padding: 0;
 }
 
-.metrics-input-field input::placeholder {
+.indicators-input-field input::placeholder {
     color: var(--neutral-500);
 }
 
-.metrics-input-field input:focus,
-.metrics-input-field select:focus {
+.indicators-input-field input:focus,
+.indicators-input-field select:focus {
     outline: none;
 }
 
@@ -2325,14 +2651,14 @@ a {
    ======================================== */
 
 /* Missions Page Header */
-.missions-page-header {
+.goals-page-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
     margin-bottom: var(--spacing-4);
 }
 
-.missions-page-title {
+.goals-page-title {
     font-size: var(--font-size-title-md);
     font-weight: var(--font-weight-medium);
     color: var(--neutral-950);
@@ -2340,7 +2666,7 @@ a {
 }
 
 /* Filter Bar */
-.missions-filter-bar {
+.goals-filter-bar {
     display: flex;
     justify-content: space-between;
     align-items: center;
@@ -2348,7 +2674,7 @@ a {
     margin-bottom: var(--spacing-4);
 }
 
-.missions-filter-left {
+.goals-filter-left {
     display: flex;
     align-items: center;
     gap: var(--spacing-2);
@@ -2462,7 +2788,7 @@ a {
 }
 
 /* Filter Panel */
-.missions-filter-panel {
+.goals-filter-panel {
     background: var(--color-surface);
     border: 1px solid var(--caramel-200);
     border-radius: var(--radius-sm);
@@ -2490,7 +2816,7 @@ a {
 }
 
 /* Summary Cards Row */
-.missions-summary {
+.goals-summary {
     display: flex;
     gap: var(--spacing-2);
     margin-bottom: var(--spacing-6);
@@ -2555,13 +2881,13 @@ a {
 }
 
 /* Mission Cards List */
-.missions-list {
+.goals-list {
     display: flex;
     flex-direction: column;
     gap: var(--spacing-4);
 }
 
-.mission-card {
+.goal-card {
     background: var(--color-surface);
     border: 1px solid var(--caramel-200);
     border-radius: var(--radius-sm);
@@ -2569,30 +2895,30 @@ a {
     transition: all var(--transition-fast);
 }
 
-.mission-card:hover {
+.goal-card:hover {
     border-color: var(--caramel-300);
 }
 
 /* Draft/Planned Mission Style */
-.mission-card.draft {
+.goal-card.draft {
     border: 1px dashed var(--neutral-200);
 }
 
-.mission-card.draft:hover {
+.goal-card.draft:hover {
     border-color: var(--neutral-300);
 }
 
-.mission-card.draft .mission-card-title {
+.goal-card.draft .goal-card-title {
     color: var(--neutral-500);
 }
 
 /* Outdated metric row */
-.metric-row.outdated {
+.indicator-row.outdated {
     border: 1px solid var(--red-400);
     border-radius: var(--radius-sm);
 }
 
-.mission-card-title-wrapper {
+.goal-card-title-wrapper {
     flex: 1;
     display: flex;
     flex-direction: column;
@@ -2600,7 +2926,7 @@ a {
 }
 
 /* Mission Confidence Badge */
-.mission-confidence-badge {
+.goal-confidence-badge {
     display: inline-flex;
     align-items: center;
     gap: 4px;
@@ -2611,26 +2937,26 @@ a {
     width: fit-content;
 }
 
-.mission-confidence-badge svg {
+.goal-confidence-badge svg {
     flex-shrink: 0;
 }
 
-.mission-confidence-badge.high {
+.goal-confidence-badge.high {
     background: var(--green-100);
     color: var(--green-700);
 }
 
-.mission-confidence-badge.medium {
+.goal-confidence-badge.medium {
     background: var(--yellow-100);
     color: var(--yellow-700);
 }
 
-.mission-confidence-badge.low {
+.goal-confidence-badge.low {
     background: var(--red-100);
     color: var(--red-700);
 }
 
-.mission-draft-tag {
+.goal-draft-tag {
     display: inline-flex;
     align-items: center;
     padding: var(--spacing-1) var(--spacing-2);
@@ -2642,7 +2968,7 @@ a {
     width: fit-content;
 }
 
-.mission-card-header {
+.goal-card-header {
     display: flex;
     align-items: center;
     gap: var(--spacing-6);
@@ -2650,7 +2976,7 @@ a {
 }
 
 /* Progress Circle */
-.mission-progress-circle {
+.goal-progress-circle {
     position: relative;
     width: 40px;
     height: 40px;
@@ -2662,77 +2988,77 @@ a {
     flex-shrink: 0;
 }
 
-.mission-progress-circle svg {
+.goal-progress-circle svg {
     position: absolute;
     top: -2px;
     left: -2px;
     transform: rotate(-90deg);
 }
 
-.mission-progress-circle circle {
+.goal-progress-circle circle {
     fill: none;
     stroke-width: 2;
 }
 
-.mission-progress-circle .progress-bg {
+.goal-progress-circle .progress-bg {
     stroke: var(--neutral-200);
 }
 
-.mission-progress-circle .progress-value {
+.goal-progress-circle .progress-value {
     stroke: var(--green-500);
     stroke-linecap: round;
     transition: stroke-dashoffset var(--transition-slow);
 }
 
-.mission-progress-circle .progress-value.at-risk {
+.goal-progress-circle .progress-value.at-risk {
     stroke: var(--yellow-400);
 }
 
-.mission-progress-circle .progress-value.off-track {
+.goal-progress-circle .progress-value.off-track {
     stroke: var(--red-500);
 }
 
-.mission-progress-text {
+.goal-progress-text {
     display: flex;
     align-items: baseline;
     justify-content: center;
     z-index: 1;
 }
 
-.mission-progress-number {
+.goal-progress-number {
     font-size: var(--font-size-xs);
     font-weight: var(--font-weight-bold);
     color: var(--neutral-950);
 }
 
-.mission-progress-percent {
+.goal-progress-percent {
     font-size: 6px;
     font-weight: var(--font-weight-bold);
     color: var(--neutral-950);
 }
 
 /* Mission Title */
-.mission-card-title {
+.goal-card-title {
     font-size: var(--font-size-sm);
     font-weight: var(--font-weight-bold);
     color: var(--neutral-950);
     line-height: 1.15;
 }
 
-.mission-card-title-row {
+.goal-card-title-row {
     display: flex;
     align-items: center;
     gap: var(--spacing-2);
 }
 
 /* Mission Card Actions */
-.mission-card-actions {
+.goal-card-actions {
     display: flex;
     align-items: center;
     gap: var(--spacing-1);
 }
 
-.mission-action-btn {
+.goal-action-btn {
     width: 32px;
     height: 32px;
     display: flex;
@@ -2746,33 +3072,33 @@ a {
     transition: all var(--transition-fast);
 }
 
-.mission-action-btn:hover {
+.goal-action-btn:hover {
     background: var(--caramel-100);
     color: var(--neutral-950);
 }
 
-.mission-expand-icon {
+.goal-expand-icon {
     transition: transform var(--transition-fast);
 }
 
-.mission-expand-icon.expanded {
+.goal-expand-icon.expanded {
     transform: rotate(180deg);
 }
 
 /* Mission Card Content (Expanded) */
-.mission-card-content {
+.goal-card-content {
     display: none;
     margin-top: var(--spacing-4);
     padding-top: var(--spacing-4);
     border-top: 1px solid var(--caramel-100);
 }
 
-.mission-card.expanded .mission-card-content {
+.goal-card.expanded .goal-card-content {
     display: block;
 }
 
 /* Metric Items in Expanded Card */
-.metric-row {
+.indicator-row {
     display: flex;
     align-items: center;
     gap: var(--spacing-8);
@@ -2782,11 +3108,11 @@ a {
     margin-bottom: var(--spacing-2);
 }
 
-.metric-row:last-child {
+.indicator-row:last-child {
     margin-bottom: 0;
 }
 
-.metric-row-title {
+.indicator-row-title {
     display: flex;
     align-items: center;
     gap: var(--spacing-4);
@@ -2794,7 +3120,7 @@ a {
     min-width: 200px;
 }
 
-.metric-row-icon {
+.indicator-row-icon {
     width: 32px;
     height: 32px;
     display: flex;
@@ -2803,30 +3129,30 @@ a {
     color: var(--neutral-500);
 }
 
-.metric-row-name {
+.indicator-row-name {
     font-size: var(--font-size-sm);
     font-weight: var(--font-weight-medium);
     color: var(--neutral-950);
 }
 
-.metric-row-period {
+.indicator-row-period {
     width: 180px;
     flex-shrink: 0;
 }
 
-.metric-period-label {
+.indicator-period-label {
     font-size: var(--font-size-xs);
     font-weight: var(--font-weight-bold);
     color: var(--neutral-950);
 }
 
-.metric-period-dates {
+.indicator-period-dates {
     font-size: var(--font-size-xs);
     color: var(--neutral-950);
     line-height: 1.15;
 }
 
-.metric-row-progress {
+.indicator-row-progress {
     width: 193px;
     flex-shrink: 0;
     display: flex;
@@ -2834,56 +3160,56 @@ a {
     gap: var(--spacing-1);
 }
 
-.metric-progress-target {
+.indicator-progress-target {
     font-size: 10px;
     font-weight: var(--font-weight-medium);
     color: var(--neutral-950);
 }
 
-.metric-progress-bar {
+.indicator-progress-bar {
     position: relative;
     height: 8px;
     background: var(--neutral-200);
     border-radius: var(--radius-sm);
 }
 
-.metric-progress-fill {
+.indicator-progress-fill {
     height: 100%;
     border-radius: var(--radius-sm);
     transition: width var(--transition-slow);
 }
 
-.metric-progress-fill.on-track {
+.indicator-progress-fill.on-track {
     background: var(--green-500);
 }
 
-.metric-progress-fill.at-risk {
+.indicator-progress-fill.at-risk {
     background: var(--yellow-400);
 }
 
-.metric-progress-fill.off-track {
+.indicator-progress-fill.off-track {
     background: var(--red-500);
 }
 
-.metric-progress-footer {
+.indicator-progress-footer {
     display: flex;
     justify-content: space-between;
     align-items: center;
 }
 
-.metric-progress-status {
+.indicator-progress-status {
     font-size: 10px;
     font-weight: var(--font-weight-medium);
     color: var(--neutral-950);
 }
 
-.metric-progress-value {
+.indicator-progress-value {
     font-size: 10px;
     font-weight: var(--font-weight-semibold);
     color: var(--neutral-950);
 }
 
-.metric-row-avatar {
+.indicator-row-avatar {
     width: 32px;
     height: 32px;
     border-radius: 50%;
@@ -2895,7 +3221,7 @@ a {
     color: var(--caramel-500);
 }
 
-.metric-row-avatar-initials {
+.indicator-row-avatar-initials {
     font-size: 11px;
     font-weight: var(--font-weight-semibold);
     text-transform: uppercase;
@@ -2904,7 +3230,7 @@ a {
 }
 
 /* Metric Checkin Button */
-.metric-checkin-btn {
+.indicator-checkin-btn {
     width: 32px;
     height: 32px;
     display: flex;
@@ -2919,13 +3245,13 @@ a {
     flex-shrink: 0;
 }
 
-.metric-checkin-btn:hover {
+.indicator-checkin-btn:hover {
     background: var(--orange-600);
     transform: scale(1.1);
 }
 
 /* Mission Card Status Badge */
-.mission-status-badge {
+.goal-status-badge {
     display: inline-flex;
     align-items: center;
     padding: var(--spacing-1) var(--spacing-2);
@@ -2934,136 +3260,137 @@ a {
     font-weight: var(--font-weight-medium);
 }
 
-.mission-status-badge.active {
+.goal-status-badge.active {
     background: var(--green-50);
     color: var(--green-700);
 }
 
-.mission-status-badge.planned {
+.goal-status-badge.planned {
     background: var(--caramel-100);
     color: var(--caramel-800);
 }
 
-.mission-status-badge.completed {
+.goal-status-badge.completed {
     background: var(--neutral-100);
     color: var(--neutral-700);
 }
 
-.mission-status-badge.cancelled {
+.goal-status-badge.cancelled {
     background: var(--red-50);
     color: var(--red-700);
 }
 
+
 /* Empty State */
-.missions-empty {
+.goals-empty {
     text-align: center;
     padding: var(--spacing-10) var(--spacing-6);
     color: var(--color-text-muted);
 }
 
-.missions-empty-icon {
+.goals-empty-icon {
     font-size: 48px;
     margin-bottom: var(--spacing-4);
     opacity: 0.5;
 }
 
 /* Loading State */
-.missions-loading {
+.goals-loading {
     text-align: center;
     padding: var(--spacing-10) var(--spacing-6);
     color: var(--color-text-muted);
 }
 
 /* Grid View Mode */
-.missions-grid {
+.goals-grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
     gap: var(--spacing-4);
 }
 
-.missions-grid .mission-card {
+.goals-grid .goal-card {
     display: flex;
     flex-direction: column;
     position: relative;
 }
 
-.missions-grid .mission-card-header {
+.goals-grid .goal-card-header {
     flex-direction: column;
     align-items: flex-start;
     gap: var(--spacing-3);
 }
 
-.missions-grid .mission-progress-circle {
+.goals-grid .goal-progress-circle {
     width: 56px;
     height: 56px;
     margin-bottom: var(--spacing-2);
 }
 
-.missions-grid .mission-progress-circle svg {
+.goals-grid .goal-progress-circle svg {
     width: 60px;
     height: 60px;
 }
 
-.missions-grid .mission-progress-circle circle {
+.goals-grid .goal-progress-circle circle {
     stroke-width: 2.5;
 }
 
-.missions-grid .mission-progress-number {
+.goals-grid .goal-progress-number {
     font-size: var(--font-size-sm);
 }
 
-.missions-grid .mission-progress-percent {
+.goals-grid .goal-progress-percent {
     font-size: 8px;
 }
 
-.missions-grid .mission-card-title-wrapper {
+.goals-grid .goal-card-title-wrapper {
     width: 100%;
 }
 
-.missions-grid .mission-card-actions {
+.goals-grid .goal-card-actions {
     position: absolute;
     top: var(--spacing-3);
     right: var(--spacing-3);
 }
 
-.missions-grid .mission-card-content {
+.goals-grid .goal-card-content {
     margin-top: var(--spacing-3);
     padding-top: var(--spacing-3);
 }
 
-.missions-grid .metric-row {
+.goals-grid .indicator-row {
     position: relative;
     flex-direction: column;
     align-items: flex-start;
     gap: var(--spacing-2);
 }
 
-.missions-grid .metric-row-title {
+.goals-grid .indicator-row-title {
     min-width: auto;
     width: 100%;
 }
 
-.missions-grid .metric-row-period {
+.goals-grid .indicator-row-period {
     width: 100%;
 }
 
-.missions-grid .metric-row-progress {
+.goals-grid .indicator-row-progress {
     width: 100%;
 }
 
-.missions-grid .metric-row-avatar {
+.goals-grid .indicator-row-avatar {
     position: absolute;
     top: var(--spacing-2);
     right: var(--spacing-2);
 }
 
 /* Clickable metric row */
-.metric-row.clickable {
+.indicator-row.clickable {
     cursor: pointer;
     transition: background-color 0.15s ease, box-shadow 0.15s ease;
 }
 
-.metric-row.clickable:hover {
+.indicator-row.clickable:hover {
     background: var(--caramel-100);
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
 }
@@ -3072,18 +3399,18 @@ a {
    OBJECTIVE SECTIONS (Accordion)
    ======================================== */
 
-.objective-section {
+.subgoal-section {
     border: 1px solid var(--caramel-200);
     border-radius: var(--radius-sm);
     margin-bottom: var(--spacing-2);
     overflow: hidden;
 }
 
-.objective-section.expanded {
+.subgoal-section.expanded {
     border-color: var(--caramel-300);
 }
 
-.objective-header {
+.subgoal-header {
     display: flex;
     align-items: center;
     gap: var(--spacing-3);
@@ -3092,11 +3419,11 @@ a {
     transition: background-color 0.15s ease;
 }
 
-.objective-header:hover {
+.subgoal-header:hover {
     background: var(--caramel-50);
 }
 
-.objective-expand-icon {
+.subgoal-expand-icon {
     width: 16px;
     height: 16px;
     flex-shrink: 0;
@@ -3104,22 +3431,22 @@ a {
     transition: transform 0.2s ease;
 }
 
-.objective-expand-icon.expanded {
+.subgoal-expand-icon.expanded {
     transform: rotate(180deg);
 }
 
-.objective-header-info {
+.subgoal-header-info {
     flex: 1;
     min-width: 0;
 }
 
-.objective-name {
+.subgoal-name {
     font-size: var(--font-size-sm);
     font-weight: var(--font-weight-semibold);
     color: var(--neutral-950);
 }
 
-.objective-description {
+.subgoal-description {
     font-size: var(--font-size-xs);
     color: var(--neutral-500);
     margin-top: 2px;
@@ -3128,7 +3455,7 @@ a {
     text-overflow: ellipsis;
 }
 
-.objective-progress-inline {
+.subgoal-progress-inline {
     display: flex;
     align-items: center;
     gap: var(--spacing-2);
@@ -3136,11 +3463,11 @@ a {
     flex-shrink: 0;
 }
 
-.objective-progress-inline .metric-progress-bar {
+.subgoal-progress-inline .indicator-progress-bar {
     flex: 1;
 }
 
-.objective-progress-value {
+.subgoal-progress-value {
     font-size: var(--font-size-xs);
     font-weight: var(--font-weight-medium);
     color: var(--neutral-700);
@@ -3148,19 +3475,19 @@ a {
     text-align: right;
 }
 
-.objective-actions {
+.subgoal-actions {
     display: flex;
     gap: var(--spacing-1);
     flex-shrink: 0;
 }
 
-.objective-metrics {
+.subgoal-indicators {
     padding: var(--spacing-2) var(--spacing-4) var(--spacing-3) var(--spacing-8);
     border-top: 1px solid var(--caramel-100);
     background: var(--white);
 }
 
-.direct-metrics-label {
+.direct-indicators-label {
     font-size: var(--font-size-xs);
     font-weight: var(--font-weight-semibold);
     color: var(--neutral-500);
@@ -3172,19 +3499,19 @@ a {
 }
 
 /* Grid view adjustments for objectives */
-.missions-grid .objective-section {
+.goals-grid .subgoal-section {
     margin-bottom: var(--spacing-1);
 }
 
-.missions-grid .objective-header {
+.goals-grid .subgoal-header {
     padding: var(--spacing-2) var(--spacing-3);
 }
 
-.missions-grid .objective-progress-inline {
+.goals-grid .subgoal-progress-inline {
     display: none;
 }
 
-.missions-grid .objective-metrics {
+.goals-grid .subgoal-indicators {
     padding-left: var(--spacing-4);
 }
 
@@ -3206,19 +3533,19 @@ a {
     border-bottom: 1px solid var(--caramel-200);
 }
 
-.checkin-history-metric-info {
+.checkin-history-indicator-info {
     display: flex;
     flex-direction: column;
     gap: var(--spacing-1);
 }
 
-.checkin-history-metric-name {
+.checkin-history-indicator-name {
     font-size: var(--font-size-lg);
     font-weight: var(--font-weight-semibold);
     color: var(--neutral-950);
 }
 
-.checkin-history-metric-target {
+.checkin-history-indicator-target {
     font-size: var(--font-size-sm);
     color: var(--neutral-500);
 }
@@ -4236,37 +4563,37 @@ a {
     }
 
     /* Phase 4: Metric rows wrap */
-    .metric-row {
+    .indicator-row {
         flex-wrap: wrap;
         gap: var(--spacing-3);
     }
 
-    .metric-row-period {
+    .indicator-row-period {
         width: auto;
         flex-shrink: 1;
         flex: 1 1 140px;
     }
 
-    .metric-row-progress {
+    .indicator-row-progress {
         width: auto;
         flex-shrink: 1;
         flex: 1 1 160px;
     }
 
-    .metric-row-title {
+    .indicator-row-title {
         min-width: 0;
         flex-basis: 100%;
     }
 
     /* Phase 4: Filter bars wrap */
-    .missions-filter-bar,
+    .goals-filter-bar,
     .collaborators-filter-bar,
     .workspaces-filter-bar,
     .teams-filter-bar {
         flex-wrap: wrap;
     }
 
-    .missions-filter-left,
+    .goals-filter-left,
     .collaborators-filter-left,
     .workspaces-filter-left,
     .teams-filter-left {
@@ -4298,7 +4625,7 @@ a {
     }
 
     /* Phase 2: Summary cards — 2 per row */
-    .missions-summary,
+    .goals-summary,
     .collaborators-summary,
     .workspaces-summary,
     .teams-summary {
@@ -4311,18 +4638,18 @@ a {
     }
 
     /* Phase 4: Metric rows stack vertically */
-    .metric-row {
+    .indicator-row {
         flex-direction: column;
         align-items: stretch;
     }
 
-    .metric-row-title {
+    .indicator-row-title {
         min-width: 0;
         flex-basis: auto;
     }
 
-    .metric-row-period,
-    .metric-row-progress {
+    .indicator-row-period,
+    .indicator-row-progress {
         width: 100%;
         flex: 1 1 100%;
     }
@@ -4374,7 +4701,7 @@ a {
     }
 
     /* Phase 5: Objective progress inline */
-    .objective-progress-inline {
+    .subgoal-progress-inline {
         width: auto;
         flex-shrink: 1;
     }

@@ -9,7 +9,7 @@ public sealed class MissionSearchSpecificationTests
 {
     private static readonly Guid OrgId = Guid.NewGuid();
 
-    private static readonly List<Mission> Data =
+    private static readonly List<Goal> Data =
     [
         new() { Id = Guid.NewGuid(), Name = "Missão Alpha", OrganizationId = OrgId },
         new() { Id = Guid.NewGuid(), Name = "Missão Beta", OrganizationId = OrgId },
@@ -19,7 +19,7 @@ public sealed class MissionSearchSpecificationTests
     [Fact]
     public void Apply_WithSearchTerm_ShouldFilterByName()
     {
-        var spec = new MissionSearchSpecification("ALPHA", isNpgsql: false);
+        var spec = new GoalSearchSpecification("ALPHA", isNpgsql: false);
 
         var result = spec.Apply(Data.AsQueryable()).ToList();
 
@@ -33,7 +33,7 @@ public sealed class MissionSearchSpecificationTests
     [InlineData("   ")]
     public void Apply_WithNullOrEmptySearch_ShouldReturnAll(string? search)
     {
-        var spec = new MissionSearchSpecification(search, isNpgsql: false);
+        var spec = new GoalSearchSpecification(search, isNpgsql: false);
 
         var result = spec.Apply(Data.AsQueryable()).ToList();
 
@@ -43,7 +43,7 @@ public sealed class MissionSearchSpecificationTests
     [Fact]
     public void Apply_WithNoMatch_ShouldReturnEmpty()
     {
-        var spec = new MissionSearchSpecification("inexistente", isNpgsql: false);
+        var spec = new GoalSearchSpecification("inexistente", isNpgsql: false);
 
         var result = spec.Apply(Data.AsQueryable()).ToList();
 

@@ -608,20 +608,20 @@ public sealed class TeamRepositoryTests
         var leader = await CreateTestCollaborator(context, org.Id);
         var team = await CreateTestTeam(context, org.Id, workspace.Id, leader.Id);
 
-        context.Missions.Add(new Mission
+        context.Goals.Add(new Goal
         {
             Id = Guid.NewGuid(),
             Name = "Team Mission",
             StartDate = DateTime.UtcNow,
             EndDate = DateTime.UtcNow.AddDays(7),
-            Status = MissionStatus.Planned,
+            Status = GoalStatus.Planned,
             OrganizationId = org.Id,
             TeamId = team.Id
         });
         await context.SaveChangesAsync();
 
         // Act
-        var result = await repository.HasMissionsAsync(team.Id);
+        var result = await repository.HasGoalsAsync(team.Id);
 
         // Assert
         result.Should().BeTrue();
@@ -639,7 +639,7 @@ public sealed class TeamRepositoryTests
         var team = await CreateTestTeam(context, org.Id, workspace.Id, leader.Id);
 
         // Act
-        var result = await repository.HasMissionsAsync(team.Id);
+        var result = await repository.HasGoalsAsync(team.Id);
 
         // Assert
         result.Should().BeFalse();

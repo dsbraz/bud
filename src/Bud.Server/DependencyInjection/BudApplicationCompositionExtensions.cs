@@ -1,8 +1,8 @@
 using Bud.Server.Application.UseCases.Collaborators;
 using Bud.Server.Application.UseCases.Me;
-using Bud.Server.Application.UseCases.Metrics;
-using Bud.Server.Application.UseCases.Objectives;
-using Bud.Server.Application.UseCases.Missions;
+using Bud.Server.Application.UseCases.Goals;
+using Bud.Server.Application.UseCases.Indicators;
+using Bud.Server.Application.UseCases.Checkins;
 using Bud.Server.Application.UseCases.Templates;
 using Bud.Server.Application.UseCases.Notifications;
 using Bud.Server.Application.EventHandlers;
@@ -67,39 +67,30 @@ public static class BudApplicationCompositionExtensions
         services.AddScoped<ListAvailableTeamsForCollaborator>();
         services.AddScoped<ListCollaboratorOptions>();
 
-        services.AddScoped<IMissionRepository, MissionRepository>();
-        services.AddScoped<CreateMission>();
-        services.AddScoped<PatchMission>();
-        services.AddScoped<DeleteMission>();
-        services.AddScoped<GetMissionById>();
-        services.AddScoped<ListMissionsByScope>();
-        services.AddScoped<ListCollaboratorMissions>();
-        services.AddScoped<ListMissionProgress>();
-        services.AddScoped<ListMissionMetrics>();
+        services.AddScoped<IGoalRepository, GoalRepository>();
+        services.AddScoped<CreateGoal>();
+        services.AddScoped<PatchGoal>();
+        services.AddScoped<DeleteGoal>();
+        services.AddScoped<GetGoalById>();
+        services.AddScoped<ListGoals>();
+        services.AddScoped<ListGoalChildren>();
+        services.AddScoped<ListGoalIndicators>();
+        services.AddScoped<ListCollaboratorGoals>();
+        services.AddScoped<ListGoalProgress>();
 
-        services.AddScoped<IObjectiveRepository, ObjectiveRepository>();
-        services.AddScoped<CreateObjective>();
-        services.AddScoped<PatchObjective>();
-        services.AddScoped<DeleteObjective>();
-        services.AddScoped<GetObjectiveById>();
-        services.AddScoped<ListObjectives>();
-        services.AddScoped<ListObjectivesByMission>();
-        services.AddScoped<ListObjectiveMetrics>();
-        services.AddScoped<ListObjectiveProgress>();
+        services.AddScoped<IIndicatorRepository, IndicatorRepository>();
+        services.AddScoped<CreateIndicator>();
+        services.AddScoped<PatchIndicator>();
+        services.AddScoped<DeleteIndicator>();
+        services.AddScoped<GetIndicatorById>();
+        services.AddScoped<ListIndicators>();
+        services.AddScoped<GetIndicatorProgress>();
 
-        services.AddScoped<IMetricRepository, MetricRepository>();
-        services.AddScoped<CreateMetric>();
-        services.AddScoped<PatchMetric>();
-        services.AddScoped<DeleteMetric>();
-        services.AddScoped<GetMetricById>();
-        services.AddScoped<ListMetrics>();
-        services.AddScoped<ListMetricProgress>();
-
-        services.AddScoped<CreateMetricCheckin>();
-        services.AddScoped<PatchMetricCheckin>();
-        services.AddScoped<DeleteMetricCheckin>();
-        services.AddScoped<GetMetricCheckinById>();
-        services.AddScoped<ListMetricCheckins>();
+        services.AddScoped<CreateCheckin>();
+        services.AddScoped<PatchCheckin>();
+        services.AddScoped<DeleteCheckin>();
+        services.AddScoped<GetCheckinById>();
+        services.AddScoped<ListCheckins>();
 
         services.AddScoped<IAuthService, AuthService>();
         services.AddScoped<CreateSession>();
@@ -116,16 +107,16 @@ public static class BudApplicationCompositionExtensions
         services.AddScoped<IMyDashboardReadStore, DashboardReadStore>();
         services.AddScoped<GetMyDashboard>();
 
-        services.AddScoped<IMissionProgressService, MissionProgressService>();
-        services.AddScoped<IMissionScopeResolver, MissionScopeResolver>();
+        services.AddScoped<IGoalProgressService, GoalProgressService>();
+        services.AddScoped<IGoalScopeResolver, GoalScopeResolver>();
 
         services.AddScoped<INotificationRepository, NotificationRepository>();
         services.AddScoped<INotificationRecipientResolver, NotificationRecipientResolver>();
         services.AddScoped<NotificationOrchestrator>();
-        services.AddScoped<IDomainEventNotifier<MissionCreatedDomainEvent>, MissionCreatedDomainEventNotifier>();
-        services.AddScoped<IDomainEventNotifier<MissionUpdatedDomainEvent>, MissionUpdatedDomainEventNotifier>();
-        services.AddScoped<IDomainEventNotifier<MissionDeletedDomainEvent>, MissionDeletedDomainEventNotifier>();
-        services.AddScoped<IDomainEventNotifier<MetricCheckinCreatedDomainEvent>, MetricCheckinCreatedDomainEventNotifier>();
+        services.AddScoped<IDomainEventNotifier<GoalCreatedDomainEvent>, GoalCreatedDomainEventNotifier>();
+        services.AddScoped<IDomainEventNotifier<GoalUpdatedDomainEvent>, GoalUpdatedDomainEventNotifier>();
+        services.AddScoped<IDomainEventNotifier<GoalDeletedDomainEvent>, GoalDeletedDomainEventNotifier>();
+        services.AddScoped<IDomainEventNotifier<CheckinCreatedDomainEvent>, CheckinCreatedDomainEventNotifier>();
         services.AddScoped<ListNotifications>();
         services.AddScoped<PatchNotification>();
         services.AddScoped<PatchNotifications>();

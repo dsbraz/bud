@@ -52,9 +52,9 @@ This is the canonical agent contract for this repository.
 - Keep solution warning-free (`TreatWarningsAsErrors=true`).
 - For `Bud.Server` logging, use source-generated logging (`[LoggerMessage]`) local to each component (`partial` class); do not introduce centralized ad-hoc log catalogs.
 - For observability, register via `AddBudObservability()` in `BudObservabilityCompositionExtensions` (structured logging + OpenTelemetry). OTel config is **config-as-environment**: all export/resource/service-name settings come from standard OTel env vars, never hardcoded in code or appsettings.
-- Reserve EventId ranges per domain: 3100–3199 RequestTelemetryMiddleware; 4000–4009 Mission; 4010–4019 Organization; 4020–4029 Workspace; 4030–4039 Team; 4040–4049 Collaborator; 4050–4059 Metric; 4060–4069 MetricCheckin; 4070–4079 Template; 4080–4089 Objective; 4090–4099 Session/Notification; 5000–5009 McpRequestLoggingMiddleware.
+- Reserve EventId ranges per domain: 3100–3199 RequestTelemetryMiddleware; 4000–4009 Goal; 4010–4019 Organization; 4020–4029 Workspace; 4030–4039 Team; 4040–4049 Collaborator; 4050–4059 Indicator; 4060–4069 Checkin; 4070–4079 Template; 4090–4099 Session/Notification; 5000–5009 McpRequestLoggingMiddleware.
 - For `Bud.Mcp`, keep tool schemas explicit (`required`, field types/formats/enums) and propagate API validation details (`errors` by field).
-- For `Bud.Mcp`, keep domain tools (`mission_*`, `mission_metric_*`, `metric_checkin_*`) sourced from `Tools/Generated/mcp-tool-catalog.json` (strict mode, no runtime ad-hoc fallback).
+- For `Bud.Mcp`, keep domain tools (`goal_*`, `goal_indicator_*`, `indicator_checkin_*`) sourced from `Tools/Generated/mcp-tool-catalog.json` (strict mode, no runtime ad-hoc fallback).
 - For `Bud.Mcp` HTTP transport, use `MCP-Session-Id` as the session header.
 - For `Bud.Mcp` protocol compatibility, keep `prompts/list` implemented (empty list when no prompts are published).
 
@@ -150,7 +150,7 @@ Main projects:
 ## Authorization Pattern (MUST)
 
 - Prefer `[Authorize(Policy = ...)]` in controllers.
-- Reuse existing policies (`TenantSelected`, `GlobalAdmin`, `OrganizationOwner`, `OrganizationWrite`, `TenantOrganizationMatch`, `MissionScopeAccess`).
+- Reuse existing policies (`TenantSelected`, `GlobalAdmin`, `OrganizationOwner`, `OrganizationWrite`, `TenantOrganizationMatch`, `GoalScopeAccess`).
 - New authorization rule -> new Requirement + Handler registered in `BudSecurityCompositionExtensions`.
 
 ## Controller Pattern (MUST)
@@ -218,7 +218,7 @@ dotnet ef migrations add <Name> --project src/Bud.Server
 
 ## MCP Tool Catalog Sync (MUST)
 
-When contracts used by MCP tools change (`/api/missions`, `/api/objectives`, `/api/metrics`, `/api/metrics/{id}/checkins`), run:
+When contracts used by MCP tools change (`/api/goals`, `/api/indicators`, `/api/indicators/{id}/checkins`), run:
 
 ```bash
 dotnet run --project src/Bud.Mcp/Bud.Mcp.csproj -- generate-tool-catalog

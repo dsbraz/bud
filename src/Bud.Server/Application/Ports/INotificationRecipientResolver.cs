@@ -2,13 +2,13 @@ namespace Bud.Server.Application.Ports;
 
 public interface INotificationRecipientResolver
 {
-    Task<List<Guid>> ResolveMissionRecipientsAsync(
-        Guid missionId,
+    Task<List<Guid>> ResolveGoalRecipientsAsync(
+        Guid goalId,
         Guid organizationId,
         Guid? excludeCollaboratorId = null,
         CancellationToken cancellationToken = default);
 
-    Task<Guid?> ResolveMissionIdFromMetricAsync(
-        Guid metricId,
+    Task<Guid?> ResolveGoalIdFromIndicatorAsync(
+        Guid indicatorId,
         CancellationToken cancellationToken = default);
 }

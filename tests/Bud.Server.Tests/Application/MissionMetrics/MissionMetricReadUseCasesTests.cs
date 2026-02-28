@@ -1,6 +1,6 @@
 using Bud.Server.Application.Common;
 using Bud.Server.Application.Mapping;
-using Bud.Server.Application.UseCases.Metrics;
+using Bud.Server.Application.UseCases.Indicators;
 using Bud.Server.Application.ReadModels;
 using Bud.Server.Domain.Model;
 using Bud.Server.Domain.Repositories;
@@ -17,82 +17,83 @@ public sealed class MissionMetricReadUseCasesTests
     [Fact]
     public async Task ViewMissionMetricDetails_WhenMetricExists_ReturnsSuccess()
     {
-        var metricId = Guid.NewGuid();
-        var metricRepository = new Mock<IMetricRepository>();
+        var indicatorId = Guid.NewGuid();
+        var metricRepository = new Mock<IIndicatorRepository>();
 
         metricRepository
-            .Setup(repository => repository.GetByIdAsync(metricId, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new Metric { Id = metricId, Name = "X", OrganizationId = Guid.NewGuid() });
+            .Setup(repository => repository.GetByIdAsync(indicatorId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new Indicator { Id = indicatorId, Name = "X", OrganizationId = Guid.NewGuid() });
 
-        var useCase = new GetMetricById(metricRepository.Object);
+        var useCase = new GetIndicatorById(metricRepository.Object);
 
-        var result = await useCase.ExecuteAsync(metricId);
+        var result = await useCase.ExecuteAsync(indicatorId);
 
         result.IsSuccess.Should().BeTrue();
-        result.Value!.Id.Should().Be(metricId);
+        result.Value!.Id.Should().Be(indicatorId);
     }
 
     [Fact]
     public async Task ViewMissionMetricDetails_WhenMetricNotFound_ReturnsNotFound()
     {
-        var metricId = Guid.NewGuid();
-        var metricRepository = new Mock<IMetricRepository>();
+        var indicatorId = Guid.NewGuid();
+        var metricRepository = new Mock<IIndicatorRepository>();
 
         metricRepository
-            .Setup(repository => repository.GetByIdAsync(metricId, It.IsAny<CancellationToken>()))
-            .ReturnsAsync((Metric?)null);
+            .Setup(repository => repository.GetByIdAsync(indicatorId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync((Indicator?)null);
 
-        var useCase = new GetMetricById(metricRepository.Object);
+        var useCase = new GetIndicatorById(metricRepository.Object);
 
-        var result = await useCase.ExecuteAsync(metricId);
+        var result = await useCase.ExecuteAsync(indicatorId);
 
         result.IsSuccess.Should().BeFalse();
         result.ErrorType.Should().Be(ErrorType.NotFound);
-        result.Error.Should().Be("Métrica da missão não encontrada.");
+        result.Error.Should().Be("Indicador não encontrado.");
     }
 
     [Fact]
     public async Task BrowseMissionMetrics_DelegatesToRepository()
     {
-        var missionId = Guid.NewGuid();
-        var metricRepository = new Mock<IMetricRepository>();
+        var goalId = Guid.NewGuid();
+        var metricRepository = new Mock<IIndicatorRepository>();
 
-        var pagedResult = new PagedResult<Metric>
+        var pagedResult = new PagedResult<Indicator>
         {
-            Items = [new Metric { Id = Guid.NewGuid(), Name = "M1", OrganizationId = Guid.NewGuid() }],
+            Items = [new Indicator { Id = Guid.NewGuid(), Name = "M1", OrganizationId = Guid.NewGuid() }],
             Total = 1,
             Page = 1,
             PageSize = 10
         };
 
         metricRepository
-            .Setup(repository => repository.GetAllAsync(missionId, null, null, 1, 10, It.IsAny<CancellationToken>()))
+            .Setup(repository => repository.GetAllAsync(goalId, null, 1, 10, It.IsAny<CancellationToken>()))
             .ReturnsAsync(pagedResult);
 
-        var useCase = new ListMetrics(metricRepository.Object);
+        var useCase = new ListIndicators(metricRepository.Object);
 
-        var result = await useCase.ExecuteAsync(missionId, null, null, 1, 10);
+        var result = await useCase.ExecuteAsync(goalId, null, 1, 10);
 
         result.IsSuccess.Should().BeTrue();
         result.Value!.Items.Should().HaveCount(1);
-        metricRepository.Verify(repository => repository.GetAllAsync(missionId, null, null, 1, 10, It.IsAny<CancellationToken>()), Times.Once);
+        metricRepository.Verify(repository => repository.GetAllAsync(goalId, null, 1, 10, It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact]
     public async Task CalculateMissionMetricProgress_DelegatesToProgressService()
     {
-        var ids = new List<Guid> { Guid.NewGuid() };
-        var progressService = new Mock<IMissionProgressService>();
+        var indicatorId = Guid.NewGuid();
+        var progressService = new Mock<IGoalProgressService>();
 
+        var snapshot = new IndicatorProgressSnapshot { IndicatorId = indicatorId };
         progressService
-            .Setup(service => service.GetMetricProgressAsync(ids, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(Result<List<MetricProgressSnapshot>>.Success([]));
+            .Setup(service => service.GetIndicatorProgressAsync(indicatorId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(Result<IndicatorProgressSnapshot?>.Success(snapshot));
 
-        var useCase = new ListMetricProgress(progressService.Object);
+        var useCase = new GetIndicatorProgress(progressService.Object);
 
-        var result = await useCase.ExecuteAsync(ids);
+        var result = await useCase.ExecuteAsync(indicatorId);
 
         result.IsSuccess.Should().BeTrue();
-        progressService.Verify(service => service.GetMetricProgressAsync(ids, It.IsAny<CancellationToken>()), Times.Once);
+        progressService.Verify(service => service.GetIndicatorProgressAsync(indicatorId, It.IsAny<CancellationToken>()), Times.Once);
     }
 }

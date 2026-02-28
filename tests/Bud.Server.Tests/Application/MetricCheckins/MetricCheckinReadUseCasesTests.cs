@@ -1,7 +1,7 @@
 using Bud.Server.Domain.Repositories;
 using Bud.Server.Application.Common;
 using Bud.Server.Application.Mapping;
-using Bud.Server.Application.UseCases.Metrics;
+using Bud.Server.Application.UseCases.Checkins;
 using Bud.Shared.Contracts;
 using Bud.Server.Domain.Model;
 using FluentAssertions;
@@ -16,27 +16,27 @@ public sealed class MetricCheckinReadUseCasesTests
     public async Task GetByIdAsync_WhenFound_ReturnsSuccess()
     {
         // Arrange
-        var metricId = Guid.NewGuid();
+        var indicatorId = Guid.NewGuid();
         var checkinId = Guid.NewGuid();
-        var checkin = new MetricCheckin
+        var checkin = new Checkin
         {
             Id = checkinId,
-            MetricId = metricId,
+            IndicatorId = indicatorId,
             CollaboratorId = Guid.NewGuid(),
             OrganizationId = Guid.NewGuid(),
             CheckinDate = DateTime.UtcNow,
             ConfidenceLevel = 3
         };
 
-        var checkinRepository = new Mock<IMetricRepository>();
+        var checkinRepository = new Mock<IIndicatorRepository>();
         checkinRepository
             .Setup(r => r.GetCheckinByIdAsync(checkinId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(checkin);
 
-        var useCase = new GetMetricCheckinById(checkinRepository.Object);
+        var useCase = new GetCheckinById(checkinRepository.Object);
 
         // Act
-        var result = await useCase.ExecuteAsync(metricId, checkinId);
+        var result = await useCase.ExecuteAsync(indicatorId, checkinId);
 
         // Assert
         result.IsSuccess.Should().BeTrue();
@@ -47,17 +47,17 @@ public sealed class MetricCheckinReadUseCasesTests
     public async Task GetByIdAsync_WhenNotFound_ReturnsNotFound()
     {
         // Arrange
-        var metricId = Guid.NewGuid();
+        var indicatorId = Guid.NewGuid();
         var checkinId = Guid.NewGuid();
-        var checkinRepository = new Mock<IMetricRepository>();
+        var checkinRepository = new Mock<IIndicatorRepository>();
         checkinRepository
             .Setup(r => r.GetCheckinByIdAsync(checkinId, It.IsAny<CancellationToken>()))
-            .ReturnsAsync((MetricCheckin?)null);
+            .ReturnsAsync((Checkin?)null);
 
-        var useCase = new GetMetricCheckinById(checkinRepository.Object);
+        var useCase = new GetCheckinById(checkinRepository.Object);
 
         // Act
-        var result = await useCase.ExecuteAsync(metricId, checkinId);
+        var result = await useCase.ExecuteAsync(indicatorId, checkinId);
 
         // Assert
         result.IsSuccess.Should().BeFalse();
@@ -69,7 +69,7 @@ public sealed class MetricCheckinReadUseCasesTests
     public async Task GetAllAsync_DelegatesToRepository()
     {
         // Arrange
-        var checkinRepository = new Mock<IMetricRepository>();
+        var checkinRepository = new Mock<IIndicatorRepository>();
         checkinRepository
             .Setup(r => r.GetCheckinsAsync(
                 It.IsAny<Guid?>(),
@@ -77,16 +77,16 @@ public sealed class MetricCheckinReadUseCasesTests
                 1,
                 10,
                 It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new PagedResult<MetricCheckin>());
+            .ReturnsAsync(new PagedResult<Checkin>());
 
-        var useCase = new ListMetricCheckins(checkinRepository.Object);
-        var metricId = Guid.NewGuid();
+        var useCase = new ListCheckins(checkinRepository.Object);
+        var indicatorId = Guid.NewGuid();
 
         // Act
-        var result = await useCase.ExecuteAsync(metricId, 1, 10);
+        var result = await useCase.ExecuteAsync(indicatorId, 1, 10);
 
         // Assert
         result.IsSuccess.Should().BeTrue();
-        checkinRepository.Verify(r => r.GetCheckinsAsync(metricId, null, 1, 10, It.IsAny<CancellationToken>()), Times.Once);
+        checkinRepository.Verify(r => r.GetCheckinsAsync(indicatorId, null, 1, 10, It.IsAny<CancellationToken>()), Times.Once);
     }
 }

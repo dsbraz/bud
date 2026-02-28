@@ -7,17 +7,24 @@ namespace Bud.Server.Tests.Validators;
 
 public sealed class CreateObjectiveValidatorTests
 {
-    private readonly CreateObjectiveValidator _validator = new();
+    private readonly CreateGoalValidator _validator = new();
+
+    private static CreateGoalRequest ValidChildGoalRequest(string name = "Objetivo 1") => new()
+    {
+        ParentId = Guid.NewGuid(),
+        Name = name,
+        Description = "Descrição",
+        ScopeType = GoalScopeType.Organization,
+        ScopeId = Guid.NewGuid(),
+        StartDate = DateTime.UtcNow,
+        EndDate = DateTime.UtcNow.AddDays(30),
+        Status = GoalStatus.Planned
+    };
 
     [Fact]
     public async Task Validate_WithValidRequest_Passes()
     {
-        var request = new CreateObjectiveRequest
-        {
-            MissionId = Guid.NewGuid(),
-            Name = "Objetivo 1",
-            Description = "Descrição"
-        };
+        var request = ValidChildGoalRequest();
 
         var result = await _validator.ValidateAsync(request);
 
@@ -26,20 +33,26 @@ public sealed class CreateObjectiveValidatorTests
     }
 
     [Fact]
-    public async Task Validate_WithEmptyMissionId_Fails()
+    public async Task Validate_WithEmptyScopeId_Fails()
     {
-        var request = new CreateObjectiveRequest
+        var request = new CreateGoalRequest
         {
-            MissionId = Guid.Empty,
-            Name = "Objetivo"
+            ParentId = Guid.NewGuid(),
+            Name = "Objetivo 1",
+            Description = "Descrição",
+            ScopeType = GoalScopeType.Organization,
+            ScopeId = Guid.Empty,
+            StartDate = DateTime.UtcNow,
+            EndDate = DateTime.UtcNow.AddDays(30),
+            Status = GoalStatus.Planned
         };
 
         var result = await _validator.ValidateAsync(request);
 
         result.IsValid.Should().BeFalse();
         result.Errors.Should().ContainSingle(e =>
-            e.PropertyName.Contains("MissionId") &&
-            e.ErrorMessage.Contains("obrigatória"));
+            e.PropertyName.Contains("ScopeId") &&
+            e.ErrorMessage.Contains("obrigatório"));
     }
 
     [Theory]
@@ -48,11 +61,7 @@ public sealed class CreateObjectiveValidatorTests
     [InlineData(null)]
     public async Task Validate_WithEmptyName_Fails(string? name)
     {
-        var request = new CreateObjectiveRequest
-        {
-            MissionId = Guid.NewGuid(),
-            Name = name!
-        };
+        var request = ValidChildGoalRequest(name!);
 
         var result = await _validator.ValidateAsync(request);
 
@@ -63,11 +72,7 @@ public sealed class CreateObjectiveValidatorTests
     [Fact]
     public async Task Validate_WithNameLongerThan200_Fails()
     {
-        var request = new CreateObjectiveRequest
-        {
-            MissionId = Guid.NewGuid(),
-            Name = new string('A', 201)
-        };
+        var request = ValidChildGoalRequest(new string('A', 201));
 
         var result = await _validator.ValidateAsync(request);
 
@@ -80,11 +85,16 @@ public sealed class CreateObjectiveValidatorTests
     [Fact]
     public async Task Validate_WithDescriptionLongerThan1000_Fails()
     {
-        var request = new CreateObjectiveRequest
+        var request = new CreateGoalRequest
         {
-            MissionId = Guid.NewGuid(),
-            Name = "Objetivo",
-            Description = new string('A', 1001)
+            ParentId = Guid.NewGuid(),
+            Name = "Objetivo 1",
+            Description = new string('A', 1001),
+            ScopeType = GoalScopeType.Organization,
+            ScopeId = Guid.NewGuid(),
+            StartDate = DateTime.UtcNow,
+            EndDate = DateTime.UtcNow.AddDays(30),
+            Status = GoalStatus.Planned
         };
 
         var result = await _validator.ValidateAsync(request);
@@ -98,11 +108,16 @@ public sealed class CreateObjectiveValidatorTests
     [Fact]
     public async Task Validate_WithNullDescription_Passes()
     {
-        var request = new CreateObjectiveRequest
+        var request = new CreateGoalRequest
         {
-            MissionId = Guid.NewGuid(),
-            Name = "Objetivo",
-            Description = null
+            ParentId = Guid.NewGuid(),
+            Name = "Objetivo 1",
+            Description = null,
+            ScopeType = GoalScopeType.Organization,
+            ScopeId = Guid.NewGuid(),
+            StartDate = DateTime.UtcNow,
+            EndDate = DateTime.UtcNow.AddDays(30),
+            Status = GoalStatus.Planned
         };
 
         var result = await _validator.ValidateAsync(request);

@@ -57,87 +57,92 @@ public sealed class AggregateInvariantsTests
     }
 
     [Fact]
-    public void Mission_UpdateDetails_WithInvalidDateRange_ShouldThrow()
+    public void Goal_UpdateDetails_WithInvalidDateRange_ShouldThrow()
     {
-        var mission = Mission.Create(
+        var goal = Goal.Create(
             Guid.NewGuid(),
             Guid.NewGuid(),
-            "Missão",
+            "Meta",
+            null,
             null,
             new DateTime(2026, 2, 12, 0, 0, 0, DateTimeKind.Utc),
             new DateTime(2026, 2, 13, 0, 0, 0, DateTimeKind.Utc),
-            MissionStatus.Active);
+            GoalStatus.Active);
 
-        var act = () => mission.UpdateDetails(
-            "Missão",
+        var act = () => goal.UpdateDetails(
+            "Meta",
+            null,
             null,
             new DateTime(2026, 2, 14, 0, 0, 0, DateTimeKind.Utc),
             new DateTime(2026, 2, 13, 0, 0, 0, DateTimeKind.Utc),
-            MissionStatus.Active);
+            GoalStatus.Active);
 
         act.Should().Throw<DomainInvariantException>();
     }
 
     [Fact]
-    public void Mission_UpdateDetails_WithNameLongerThan200_ShouldThrow()
+    public void Goal_UpdateDetails_WithNameLongerThan200_ShouldThrow()
     {
-        var mission = Mission.Create(
+        var goal = Goal.Create(
             Guid.NewGuid(),
             Guid.NewGuid(),
-            "Missão",
+            "Meta",
+            null,
             null,
             new DateTime(2026, 2, 12, 0, 0, 0, DateTimeKind.Utc),
             new DateTime(2026, 2, 13, 0, 0, 0, DateTimeKind.Utc),
-            MissionStatus.Active);
+            GoalStatus.Active);
 
         var longName = new string('A', 201);
-        var act = () => mission.UpdateDetails(
+        var act = () => goal.UpdateDetails(
             longName,
             null,
-            new DateTime(2026, 2, 12, 0, 0, 0, DateTimeKind.Utc),
-            new DateTime(2026, 2, 13, 0, 0, 0, DateTimeKind.Utc),
-            MissionStatus.Active);
-
-        act.Should().Throw<DomainInvariantException>();
-    }
-
-    [Fact]
-    public void Mission_SetScope_WithEmptyTeamId_ShouldThrow()
-    {
-        var mission = Mission.Create(
-            Guid.NewGuid(),
-            Guid.NewGuid(),
-            "Missão",
             null,
             new DateTime(2026, 2, 12, 0, 0, 0, DateTimeKind.Utc),
             new DateTime(2026, 2, 13, 0, 0, 0, DateTimeKind.Utc),
-            MissionStatus.Active);
-
-        var act = () => mission.SetScope(MissionScopeType.Team, Guid.Empty);
+            GoalStatus.Active);
 
         act.Should().Throw<DomainInvariantException>();
     }
 
     [Fact]
-    public void MissionMetric_ApplyTarget_WithInvalidRange_ShouldThrow()
+    public void Goal_SetScope_WithEmptyTeamId_ShouldThrow()
     {
-        var metric = Metric.Create(Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid(), "Métrica", MetricType.Quantitative);
+        var goal = Goal.Create(
+            Guid.NewGuid(),
+            Guid.NewGuid(),
+            "Meta",
+            null,
+            null,
+            new DateTime(2026, 2, 12, 0, 0, 0, DateTimeKind.Utc),
+            new DateTime(2026, 2, 13, 0, 0, 0, DateTimeKind.Utc),
+            GoalStatus.Active);
 
-        var act = () => metric.ApplyTarget(
-            MetricType.Quantitative,
-            QuantitativeMetricType.KeepBetween,
+        var act = () => goal.SetScope(GoalScopeType.Team, Guid.Empty);
+
+        act.Should().Throw<DomainInvariantException>();
+    }
+
+    [Fact]
+    public void GoalIndicator_ApplyTarget_WithInvalidRange_ShouldThrow()
+    {
+        var indicator = Indicator.Create(Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid(), "Indicador", IndicatorType.Quantitative);
+
+        var act = () => indicator.ApplyTarget(
+            IndicatorType.Quantitative,
+            QuantitativeIndicatorType.KeepBetween,
             100m,
             100m,
-            MetricUnit.Percentage,
+            IndicatorUnit.Percentage,
             null);
 
         act.Should().Throw<DomainInvariantException>();
     }
 
     [Fact]
-    public void MetricCheckin_Update_WithConfidenceOutOfRange_ShouldThrow()
+    public void Checkin_Update_WithConfidenceOutOfRange_ShouldThrow()
     {
-        var checkin = MetricCheckin.Create(
+        var checkin = Checkin.Create(
             Guid.NewGuid(),
             Guid.NewGuid(),
             Guid.NewGuid(),
@@ -154,11 +159,11 @@ public sealed class AggregateInvariantsTests
     }
 
     [Fact]
-    public void MissionMetric_CreateCheckin_WithMissingQuantitativeValue_ShouldThrow()
+    public void GoalIndicator_CreateCheckin_WithMissingQuantitativeValue_ShouldThrow()
     {
-        var metric = Metric.Create(Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid(), "Métrica", MetricType.Quantitative);
+        var indicator = Indicator.Create(Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid(), "Indicador", IndicatorType.Quantitative);
 
-        var act = () => metric.CreateCheckin(
+        var act = () => indicator.CreateCheckin(
             Guid.NewGuid(),
             Guid.NewGuid(),
             null,
@@ -171,13 +176,13 @@ public sealed class AggregateInvariantsTests
     }
 
     [Fact]
-    public void MissionMetric_UpdateCheckin_WithMissingQualitativeText_ShouldThrow()
+    public void GoalIndicator_UpdateCheckin_WithMissingQualitativeText_ShouldThrow()
     {
-        var metric = Metric.Create(Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid(), "Métrica", MetricType.Qualitative);
-        var checkin = MetricCheckin.Create(
+        var indicator = Indicator.Create(Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid(), "Indicador", IndicatorType.Qualitative);
+        var checkin = Checkin.Create(
             Guid.NewGuid(),
-            metric.OrganizationId,
-            metric.Id,
+            indicator.OrganizationId,
+            indicator.Id,
             Guid.NewGuid(),
             null,
             "Texto",
@@ -185,33 +190,33 @@ public sealed class AggregateInvariantsTests
             null,
             3);
 
-        var act = () => metric.UpdateCheckin(checkin, null, "   ", DateTime.UtcNow, null, 3);
+        var act = () => indicator.UpdateCheckin(checkin, null, "   ", DateTime.UtcNow, null, 3);
 
         act.Should().Throw<DomainInvariantException>();
     }
 
     [Fact]
-    public void TemplateMetric_Create_WithQuantitativeTypeMissing_ShouldThrow()
+    public void TemplateIndicator_Create_WithQuantitativeTypeMissing_ShouldThrow()
     {
-        var act = () => TemplateMetric.Create(
+        var act = () => TemplateIndicator.Create(
             Guid.NewGuid(),
             Guid.NewGuid(),
             Guid.NewGuid(),
             "Receita",
-            MetricType.Quantitative,
+            IndicatorType.Quantitative,
             0,
             null,
             null,
             0m,
             100m,
-            MetricUnit.Percentage,
+            IndicatorUnit.Percentage,
             null);
 
         act.Should().Throw<DomainInvariantException>();
     }
 
     [Fact]
-    public void Template_ReplaceMetrics_ShouldSetTemplateAndOrganizationIds()
+    public void Template_ReplaceIndicators_ShouldSetTemplateAndOrganizationIds()
     {
         var template = Template.Create(
             Guid.NewGuid(),
@@ -221,11 +226,11 @@ public sealed class AggregateInvariantsTests
             null,
             null);
 
-        template.ReplaceMetrics(
+        template.ReplaceIndicators(
         [
-            new TemplateMetricDraft(
+            new TemplateIndicatorDraft(
                 "Qualidade",
-                MetricType.Qualitative,
+                IndicatorType.Qualitative,
                 0,
                 null,
                 null,
@@ -235,100 +240,92 @@ public sealed class AggregateInvariantsTests
                 "Meta textual")
         ]);
 
-        template.Metrics.Should().ContainSingle();
-        template.Metrics.First().TemplateId.Should().Be(template.Id);
-        template.Metrics.First().OrganizationId.Should().Be(template.OrganizationId);
+        template.Indicators.Should().ContainSingle();
+        template.Indicators.First().TemplateId.Should().Be(template.Id);
+        template.Indicators.First().OrganizationId.Should().Be(template.OrganizationId);
     }
 
     [Fact]
-    public void MissionObjective_Create_WithEmptyOrganization_ShouldThrow()
+    public void Goal_Create_WithEmptyOrganization_ShouldThrow()
     {
-        var act = () => Objective.Create(Guid.NewGuid(), Guid.Empty, Guid.NewGuid(), "Objetivo", null);
+        var act = () => Goal.Create(Guid.NewGuid(), Guid.Empty, "Meta", null, null, DateTime.UtcNow, DateTime.UtcNow.AddDays(1), GoalStatus.Planned);
 
         act.Should().Throw<DomainInvariantException>();
     }
 
     [Fact]
-    public void MissionObjective_Create_WithEmptyMission_ShouldThrow()
+    public void Goal_Create_WithEmptyName_ShouldThrow()
     {
-        var act = () => Objective.Create(Guid.NewGuid(), Guid.NewGuid(), Guid.Empty, "Objetivo", null);
+        var act = () => Goal.Create(Guid.NewGuid(), Guid.NewGuid(), "  ", null, null, DateTime.UtcNow, DateTime.UtcNow.AddDays(1), GoalStatus.Planned);
 
         act.Should().Throw<DomainInvariantException>();
     }
 
     [Fact]
-    public void MissionObjective_Create_WithEmptyName_ShouldThrow()
-    {
-        var act = () => Objective.Create(Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid(), "  ", null);
-
-        act.Should().Throw<DomainInvariantException>();
-    }
-
-    [Fact]
-    public void MissionObjective_Create_WithNameLongerThan200_ShouldThrow()
+    public void Goal_Create_WithNameLongerThan200_ShouldThrow()
     {
         var longName = new string('A', 201);
-        var act = () => Objective.Create(Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid(), longName, null);
+        var act = () => Goal.Create(Guid.NewGuid(), Guid.NewGuid(), longName, null, null, DateTime.UtcNow, DateTime.UtcNow.AddDays(1), GoalStatus.Planned);
 
         act.Should().Throw<DomainInvariantException>();
     }
 
     [Fact]
-    public void MissionObjective_Create_WithValidData_ShouldSucceed()
+    public void Goal_Create_WithValidData_ShouldSucceed()
     {
         var id = Guid.NewGuid();
         var orgId = Guid.NewGuid();
-        var missionId = Guid.NewGuid();
+        var parentId = Guid.NewGuid();
 
-        var objective = Objective.Create(id, orgId, missionId, "Objetivo", "Descrição");
+        var goal = Goal.Create(id, orgId, "Meta", "Descrição", null, DateTime.UtcNow, DateTime.UtcNow.AddDays(1), GoalStatus.Planned, parentId);
 
-        objective.Id.Should().Be(id);
-        objective.OrganizationId.Should().Be(orgId);
-        objective.MissionId.Should().Be(missionId);
-        objective.Name.Should().Be("Objetivo");
-        objective.Description.Should().Be("Descrição");
+        goal.Id.Should().Be(id);
+        goal.OrganizationId.Should().Be(orgId);
+        goal.ParentId.Should().Be(parentId);
+        goal.Name.Should().Be("Meta");
+        goal.Description.Should().Be("Descrição");
     }
 
     [Fact]
-    public void MissionObjective_UpdateDetails_WithEmptyName_ShouldThrow()
+    public void Goal_UpdateDetails_WithEmptyName_ShouldThrow()
     {
-        var objective = Objective.Create(Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid(), "Objetivo", null);
+        var goal = Goal.Create(Guid.NewGuid(), Guid.NewGuid(), "Meta", null, null, DateTime.UtcNow, DateTime.UtcNow.AddDays(1), GoalStatus.Planned);
 
-        var act = () => objective.UpdateDetails("", null);
+        var act = () => goal.UpdateDetails("", null, null, DateTime.UtcNow, DateTime.UtcNow.AddDays(1), GoalStatus.Planned);
 
         act.Should().Throw<DomainInvariantException>();
     }
 
     [Fact]
-    public void MissionObjective_UpdateDetails_TrimsDescription()
+    public void Goal_UpdateDetails_TrimsDescription()
     {
-        var objective = Objective.Create(Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid(), "Objetivo", null);
+        var goal = Goal.Create(Guid.NewGuid(), Guid.NewGuid(), "Meta", null, null, DateTime.UtcNow, DateTime.UtcNow.AddDays(1), GoalStatus.Planned);
 
-        objective.UpdateDetails("Novo Nome", "  Descrição  ");
+        goal.UpdateDetails("Novo Nome", "  Descrição  ", null, DateTime.UtcNow, DateTime.UtcNow.AddDays(1), GoalStatus.Planned);
 
-        objective.Name.Should().Be("Novo Nome");
-        objective.Description.Should().Be("Descrição");
+        goal.Name.Should().Be("Novo Nome");
+        goal.Description.Should().Be("Descrição");
     }
 
     [Fact]
-    public void MissionObjective_UpdateDetails_NullsEmptyDescription()
+    public void Goal_UpdateDetails_NullsEmptyDescription()
     {
-        var objective = Objective.Create(Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid(), "Objetivo", "Desc");
+        var goal = Goal.Create(Guid.NewGuid(), Guid.NewGuid(), "Meta", "Desc", null, DateTime.UtcNow, DateTime.UtcNow.AddDays(1), GoalStatus.Planned);
 
-        objective.UpdateDetails("Nome", "   ");
+        goal.UpdateDetails("Nome", "   ", null, DateTime.UtcNow, DateTime.UtcNow.AddDays(1), GoalStatus.Planned);
 
-        objective.Description.Should().BeNull();
+        goal.Description.Should().BeNull();
     }
 
     [Fact]
-    public void MissionObjective_UpdateDetails_SetsDimension()
+    public void Goal_UpdateDetails_SetsDimension()
     {
-        var objective = Objective.Create(Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid(), "Objetivo", null);
+        var goal = Goal.Create(Guid.NewGuid(), Guid.NewGuid(), "Meta", null, null, DateTime.UtcNow, DateTime.UtcNow.AddDays(1), GoalStatus.Planned);
         var dimension = "Clientes";
 
-        objective.UpdateDetails("Objetivo", null, dimension);
+        goal.UpdateDetails("Meta", null, dimension, DateTime.UtcNow, DateTime.UtcNow.AddDays(1), GoalStatus.Planned);
 
-        objective.Dimension.Should().Be(dimension);
+        goal.Dimension.Should().Be(dimension);
     }
 
     [Fact]
@@ -340,7 +337,7 @@ public sealed class AggregateInvariantsTests
             Guid.NewGuid(),
             "  ",
             "Mensagem",
-            NotificationType.MissionCreated,
+            NotificationType.GoalCreated,
             DateTime.UtcNow);
 
         act.Should().Throw<DomainInvariantException>();

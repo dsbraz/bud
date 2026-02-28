@@ -8,7 +8,11 @@
     <div class="modal-dialog modal-@Size @(isExpanded ? "modal-expanded" : "")" @onclick="OnDialogClick">
         <div class="modal-header">
             <div class="modal-header-content">
-                @if (!string.IsNullOrEmpty(Breadcrumb))
+                @if (BreadcrumbContent != null)
+                {
+                    <div class="modal-breadcrumb">@BreadcrumbContent</div>
+                }
+                else if (!string.IsNullOrEmpty(Breadcrumb))
                 {
                     <div class="modal-breadcrumb">
                         <span class="modal-breadcrumb-icon">📦</span>
@@ -74,6 +78,12 @@
     public string? Breadcrumb { get; set; }
 
     /// <summary>
+    /// Optional navigable breadcrumb content (RenderFragment). When provided, renders instead of the plain Breadcrumb string.
+    /// </summary>
+    [Parameter]
+    public RenderFragment? BreadcrumbContent { get; set; }
+
+    /// <summary>
     /// Modal size: sm (400px), md (540px), lg (720px), xl (960px)
     /// </summary>
     [Parameter]
@@ -104,9 +114,16 @@
     public bool CloseOnOverlayClick { get; set; } = true;
 
     /// <summary>
+    /// Whether modal starts expanded to fullscreen (default: false)
+    /// </summary>
+    [Parameter]
+    public bool InitiallyExpanded { get; set; }
+
+    /// <summary>
     /// Internal state to track if modal is expanded
     /// </summary>
-    private bool isExpanded = false;
+    private bool isExpanded;
+    private bool _initialized;
 
     /// <summary>
     /// Close the modal
@@ -129,9 +146,12 @@
         // Prevents event propagation to backdrop
     }
 
-    protected override void OnInitialized()
+    protected override void OnParametersSet()
     {
-        // Add keyboard listener for ESC key
-        // Note: In a production app, you'd want to add JavaScript interop for ESC key handling
+        if (!_initialized)
+        {
+            isExpanded = InitiallyExpanded;
+            _initialized = true;
+        }
     }
 }

@@ -55,7 +55,7 @@ public class NotificationsEndpointsTests : IClassFixture<CustomWebApplicationFac
                 OrganizationId = orgId,
                 Title = $"NotificationResponse {i}",
                 Message = $"Message {i}",
-                Type = NotificationType.MissionCreated,
+                Type = NotificationType.GoalCreated,
                 IsRead = read,
                 CreatedAtUtc = DateTime.UtcNow.AddMinutes(-i),
                 ReadAtUtc = read ? DateTime.UtcNow : null,
@@ -121,7 +121,7 @@ public class NotificationsEndpointsTests : IClassFixture<CustomWebApplicationFac
                 OrganizationId = orgId,
                 Title = "To Read",
                 Message = "To be read",
-                Type = NotificationType.MissionCreated,
+                Type = NotificationType.GoalCreated,
                 IsRead = false,
                 CreatedAtUtc = DateTime.UtcNow
             };

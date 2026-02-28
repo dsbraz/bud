@@ -11,7 +11,7 @@ using Bud.Server.Application.Mapping;
 
 namespace Bud.Server.Tests.Infrastructure.Services;
 
-public sealed class MissionScopeResolverTests
+public sealed class GoalScopeResolverTests
 {
     private static ApplicationDbContext CreateInMemoryContext(TestTenantProvider tenantProvider)
     {
@@ -36,11 +36,11 @@ public sealed class MissionScopeResolverTests
             new Organization { Id = otherTenantId, Name = "other.org" });
         await context.SaveChangesAsync();
 
-        var resolver = new MissionScopeResolver(context);
+        var resolver = new GoalScopeResolver(context);
 
         // Act
         var result = await resolver.ResolveScopeOrganizationIdAsync(
-            MissionScopeType.Organization,
+            GoalScopeType.Organization,
             otherTenantId,
             ignoreQueryFilters: false);
 
@@ -64,11 +64,11 @@ public sealed class MissionScopeResolverTests
             new Organization { Id = otherTenantId, Name = "other.org" });
         await context.SaveChangesAsync();
 
-        var resolver = new MissionScopeResolver(context);
+        var resolver = new GoalScopeResolver(context);
 
         // Act
         var result = await resolver.ResolveScopeOrganizationIdAsync(
-            MissionScopeType.Organization,
+            GoalScopeType.Organization,
             otherTenantId,
             ignoreQueryFilters: true);
 
@@ -95,10 +95,10 @@ public sealed class MissionScopeResolverTests
         });
         await context.SaveChangesAsync();
 
-        var resolver = new MissionScopeResolver(context);
+        var resolver = new GoalScopeResolver(context);
 
         // Act
-        var result = await resolver.ResolveScopeOrganizationIdAsync(MissionScopeType.Workspace, workspaceId);
+        var result = await resolver.ResolveScopeOrganizationIdAsync(GoalScopeType.Workspace, workspaceId);
 
         // Assert
         result.IsSuccess.Should().BeTrue();
@@ -111,10 +111,10 @@ public sealed class MissionScopeResolverTests
         // Arrange
         var tenantProvider = new TestTenantProvider { IsGlobalAdmin = true };
         using var context = CreateInMemoryContext(tenantProvider);
-        var resolver = new MissionScopeResolver(context);
+        var resolver = new GoalScopeResolver(context);
 
         // Act
-        var result = await resolver.ResolveScopeOrganizationIdAsync(MissionScopeType.Workspace, Guid.NewGuid());
+        var result = await resolver.ResolveScopeOrganizationIdAsync(GoalScopeType.Workspace, Guid.NewGuid());
 
         // Assert
         result.IsSuccess.Should().BeFalse();

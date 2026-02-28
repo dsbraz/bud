@@ -2,7 +2,7 @@ using Bud.Server.Application.Ports;
 using Bud.Server.Domain.Repositories;
 using Bud.Server.Application.Common;
 using Bud.Server.Application.Mapping;
-using Bud.Server.Application.UseCases.Missions;
+using Bud.Server.Application.UseCases.Goals;
 using Bud.Server.Application.ReadModels;
 
 using Bud.Shared.Contracts;
@@ -11,45 +11,45 @@ using FluentAssertions;
 using Moq;
 using Xunit;
 
-namespace Bud.Server.Tests.Application.Missions;
+namespace Bud.Server.Tests.Application.Goals;
 
 public sealed class MissionReadUseCasesTests
 {
-    private readonly Mock<IMissionRepository> _repo = new();
-    private readonly Mock<IMissionProgressService> _progressService = new();
+    private readonly Mock<IGoalRepository> _repo = new();
+    private readonly Mock<IGoalProgressService> _progressService = new();
 
-    private GetMissionById CreateGetMissionById()
+    private GetGoalById CreateGetMissionById()
         => new(_repo.Object);
 
-    private ListMissionProgress CreateListMissionProgress()
+    private ListGoalProgress CreateListMissionProgress()
         => new(_progressService.Object);
 
-    private ListCollaboratorMissions CreateListCollaboratorMissions()
+    private ListCollaboratorGoals CreateListCollaboratorMissions()
         => new(_repo.Object);
 
-    private ListMissionMetrics CreateListMissionMetrics()
+    private ListGoalIndicators CreateListMissionMetrics()
         => new(_repo.Object);
 
     [Fact]
     public async Task GetByIdAsync_WithExistingMission_ReturnsSuccess()
     {
-        var missionId = Guid.NewGuid();
-        _repo.Setup(r => r.GetByIdReadOnlyAsync(missionId, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new Mission { Id = missionId, Name = "M", OrganizationId = Guid.NewGuid() });
+        var goalId = Guid.NewGuid();
+        _repo.Setup(r => r.GetByIdReadOnlyAsync(goalId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new Goal { Id = goalId, Name = "M", OrganizationId = Guid.NewGuid() });
 
         var useCase = CreateGetMissionById();
 
-        var result = await useCase.ExecuteAsync(missionId);
+        var result = await useCase.ExecuteAsync(goalId);
 
         result.IsSuccess.Should().BeTrue();
-        result.Value!.Id.Should().Be(missionId);
+        result.Value!.Id.Should().Be(goalId);
     }
 
     [Fact]
     public async Task GetByIdAsync_WithNonExistingId_ReturnsNotFound()
     {
         _repo.Setup(r => r.GetByIdReadOnlyAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync((Mission?)null);
+            .ReturnsAsync((Goal?)null);
 
         var useCase = CreateGetMissionById();
 
@@ -65,7 +65,7 @@ public sealed class MissionReadUseCasesTests
         var ids = new List<Guid> { Guid.NewGuid() };
         _progressService
             .Setup(s => s.GetProgressAsync(ids, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(Result<List<MissionProgressSnapshot>>.Success([]));
+            .ReturnsAsync(Result<List<GoalProgressSnapshot>>.Success([]));
 
         var useCase = CreateListMissionProgress();
 
@@ -78,7 +78,7 @@ public sealed class MissionReadUseCasesTests
     [Fact]
     public async Task GetMyMissionsAsync_WithNonExistingCollaborator_ReturnsNotFound()
     {
-        _repo.Setup(r => r.FindCollaboratorForMyMissionsAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
+        _repo.Setup(r => r.FindCollaboratorForMyGoalsAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync((Collaborator?)null);
 
         var useCase = CreateListCollaboratorMissions();
