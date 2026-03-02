@@ -343,7 +343,7 @@ public sealed class ArchitectureTests
             [typeof(Workspace)] = ["Create", "Rename"],
             [typeof(Team)] = ["Create", "Rename", "Reparent"],
             [typeof(Collaborator)] = ["Create", "UpdateProfile"],
-            [typeof(Mission)] = ["Create", "UpdateDetails", "SetScope"],
+            [typeof(Goal)] = ["Create", "UpdateDetails", "SetScope"],
             [typeof(Template)] = ["Create", "UpdateBasics"]
         };
 

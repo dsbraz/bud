@@ -1,0 +1,266 @@
+@inject ToastService ToastService
+
+@if (IsOpen)
+{
+    <Modal Title="@GetModalTitle()" Size="lg" OnClose="HandleClose">
+        <ChildContent>
+            <div class="goal-form-layout">
+            @* ── CONTEXTO FIXO (sempre visível, sempre editável) ── *@
+            <div class="goal-form-context">
+                <div class="goal-header">
+                    <input type="text" class="goal-title-input" @bind="name" placeholder="@GetNamePlaceholder()" />
+                    <input type="text" class="goal-subtitle-input" @bind="description" placeholder="@GetDescriptionPlaceholder()" />
+                </div>
+
+                @if (Mode == WizardMode.Goal)
+                {
+                    <div class="chips-container">
+                        <div class="chip" @onclick="() => { showResponsibleSelector = !showResponsibleSelector; if (showResponsibleSelector) showPeriodSelector = false; }">
+                            <span class="chip-icon">👤</span>
+                            <span>@GetResponsibleLabel()</span>
+                        </div>
+                        <div class="chip" @onclick="() => { showPeriodSelector = !showPeriodSelector; if (showPeriodSelector) showResponsibleSelector = false; }">
+                            <span class="chip-icon">📅</span>
+                            <span>@GetPeriodLabel()</span>
+                        </div>
+                        @if (IsEditMode)
+                        {
+                            <div class="chip" @onclick="() => showStatusSelector = !showStatusSelector">
+                                <span class="chip-icon">📊</span>
+                                <span>@GetStatusChipLabel()</span>
+                            </div>
+                        }
+                    </div>
+
+                    @if (IsEditMode && showStatusSelector)
+                    {
+                        <div class="form-row">
+                            <label>Status</label>
+                            <select class="input" @bind="statusValue">
+                                @foreach (var status in Enum.GetValues<GoalStatus>())
+                                {
+                                    <option value="@status">@GetStatusLabel(status)</option>
+                                }
+                            </select>
+                        </div>
+                    }
+
+                    @if (showResponsibleSelector)
+                    {
+                        <div class="goal-form-compact-row">
+                            <select class="input" value="@scopeTypeValue" @onchange="HandleScopeTypeChanged">
+                                <option value="">Tipo de escopo</option>
+                                @foreach (var scopeType in Enum.GetValues<GoalScopeType>())
+                                {
+                                    <option value="@scopeType">@GetScopeLabel(scopeType)</option>
+                                }
+                            </select>
+                            <select class="input" @bind="scopeId">
+                                <option value="">Referência</option>
+                                @foreach (var option in GetScopeOptions(scopeTypeValue))
+                                {
+                                    <option value="@option.Id">@option.Name</option>
+                                }
+                            </select>
+                        </div>
+                    }
+
+                    @if (showPeriodSelector)
+                    {
+                        <div class="goal-form-compact-row">
+                            <input type="date" class="input" @bind="startDate" @bind:format="yyyy-MM-dd" />
+                            <input type="date" class="input" @bind="endDate" @bind:format="yyyy-MM-dd" />
+                        </div>
+                    }
+                }
+            </div>
+
+            @* ── SEPARADOR ── *@
+            <div class="goal-form-divider"></div>
+
+            @* ── ÁREA DE CONTEÚDO ── *@
+            <div class="goal-form-navigation">
+                <div class="goal-form-nav-header">
+                    <div class="goal-form-nav-breadcrumb">
+                        <span class="goal-form-nav-breadcrumb-icon">📦</span>
+                        @if (IsAtRoot)
+                        {
+                            <span class="goal-form-nav-breadcrumb-current">@(string.IsNullOrWhiteSpace(name) ? OrganizationName : name)</span>
+                        }
+                        else
+                        {
+                            var segments = GetBreadcrumbSegments();
+                            @* Root mission link — click to go back to root *@
+                            <span class="goal-form-nav-breadcrumb-link" @onclick="() => NavigateTo(0)">@(string.IsNullOrWhiteSpace(name) ? OrganizationName : name)</span>
+                            @for (var i = 0; i < segments.Count; i++)
+                            {
+                                var segment = segments[i];
+                                var depth = segment.Depth;
+                                var isLast = i == segments.Count - 1;
+                                <span class="goal-form-nav-breadcrumb-sep">/</span>
+                                @if (isLast)
+                                {
+                                    <span class="goal-form-nav-breadcrumb-current">@segment.Name</span>
+                                }
+                                else
+                                {
+                                    <span class="goal-form-nav-breadcrumb-link" @onclick="() => NavigateTo(depth)">@segment.Name</span>
+                                }
+                            }
+                        }
+                    </div>
+
+                    @if (_inlineFormMode == InlineFormMode.None)
+                    {
+                        <div class="goal-form-actions">
+                            <button type="button" class="button secondary" @onclick="OpenInlineIndicatorForm">
+                                <span>+ Indicador</span>
+                            </button>
+                            <button type="button" class="button secondary goal-form-action-task" @onclick="OpenInlineTaskForm">
+                                <span>+ Tarefa</span>
+                            </button>
+                            <button type="button" class="button secondary" @onclick="OpenInlineGoalForm">
+                                <span>+ Meta</span>
+                            </button>
+                        </div>
+                    }
+                </div>
+
+                @* ── INLINE FORMS (topo, antes do conteúdo existente) ── *@
+                @if (_inlineFormMode == InlineFormMode.NewIndicator || _inlineFormMode == InlineFormMode.EditIndicator)
+                {
+                    <div class="goal-form-inline">
+                        <IndicatorFormFields Model="_inlineIndicatorModel"
+                                             OnSave="HandleInlineIndicatorSave"
+                                             OnCancel="CloseInlineForm"
+                                             SaveLabel="@(_inlineFormMode == InlineFormMode.EditIndicator ? "Salvar alterações" : "Salvar indicador")"
+                                             CancelLabel="Cancelar" />
+                    </div>
+                }
+
+                @if (_inlineFormMode == InlineFormMode.NewTask || _inlineFormMode == InlineFormMode.EditTask)
+                {
+                    <div class="goal-form-inline goal-form-inline-task">
+                        <input type="text" class="goal-inline-title-input" @bind="_inlineTaskName" @bind:event="oninput" placeholder="Nome da tarefa" maxlength="200" />
+                        <input type="text" class="goal-inline-subtitle-input" @bind="_inlineTaskDescription" @bind:event="oninput" placeholder="Descrição (opcional)" />
+                        <div class="goal-form-compact-row" style="margin-top: var(--spacing-2);">
+                            <select class="input" @bind="_inlineTaskState">
+                                <option value="@TaskState.ToDo">A fazer</option>
+                                <option value="@TaskState.Doing">Fazendo</option>
+                                <option value="@TaskState.Done">Feito</option>
+                                <option value="@TaskState.Archived">Arquivado</option>
+                            </select>
+                            <input type="date" class="goal-inline-date-input"
+                                   value="@(_inlineTaskDueDate?.ToString("yyyy-MM-dd") ?? "")"
+                                   @onchange="e => _inlineTaskDueDate = string.IsNullOrEmpty(e.Value?.ToString()) ? null : DateTime.Parse(e.Value!.ToString()!)"
+                                   title="Prazo (opcional)" />
+                        </div>
+                        <div class="form-actions" style="margin-top: var(--spacing-3);">
+                            <button type="button" class="button tertiary" @onclick="CloseInlineForm">Cancelar</button>
+                            <button type="button" class="button primary" @onclick="HandleInlineTaskSave">
+                                @(_inlineFormMode == InlineFormMode.EditTask ? "Salvar tarefa" : "Criar tarefa")
+                            </button>
+                        </div>
+                    </div>
+                }
+
+                @if (_inlineFormMode == InlineFormMode.NewGoal || _inlineFormMode == InlineFormMode.EditGoal)
+                {
+                    <div class="goal-form-inline">
+                        <input type="text" class="goal-inline-title-input" @bind="_inlineGoalName" @bind:event="oninput" placeholder="Nome da meta" />
+                        <input type="text" class="goal-inline-subtitle-input" @bind="_inlineGoalDescription" @bind:event="oninput" placeholder="Breve descrição (opcional)" />
+                        <input type="text" class="goal-inline-subtitle-input" @bind="_inlineGoalDimension" @bind:event="oninput" placeholder="Dimensão: ex. Financeiro, Processos (opcional)" maxlength="100" />
+
+                        @if (Mode == WizardMode.Goal)
+                        {
+                            <div class="chips-container" style="margin-top: var(--spacing-3);">
+                                <div class="chip" @onclick="() => { _showInlineGoalResponsible = !_showInlineGoalResponsible; if (_showInlineGoalResponsible) _showInlineGoalPeriod = false; }">
+                                    <span class="chip-icon">👤</span>
+                                    <span>@GetInlineGoalResponsibleLabel()</span>
+                                </div>
+                                <div class="chip" @onclick="() => { _showInlineGoalPeriod = !_showInlineGoalPeriod; if (_showInlineGoalPeriod) _showInlineGoalResponsible = false; }">
+                                    <span class="chip-icon">📅</span>
+                                    <span>@GetInlineGoalPeriodLabel()</span>
+                                </div>
+                            </div>
+
+                            @if (_showInlineGoalResponsible)
+                            {
+                                <div class="goal-form-compact-row">
+                                    <select class="input" value="@_inlineGoalScopeTypeValue" @onchange="HandleInlineGoalScopeTypeChanged">
+                                        <option value="">Tipo de escopo</option>
+                                        @foreach (var scopeType in Enum.GetValues<GoalScopeType>())
+                                        {
+                                            <option value="@scopeType">@GetScopeLabel(scopeType)</option>
+                                        }
+                                    </select>
+                                    <select class="input" @bind="_inlineGoalScopeId">
+                                        <option value="">Referência</option>
+                                        @foreach (var option in GetScopeOptions(_inlineGoalScopeTypeValue))
+                                        {
+                                            <option value="@option.Id">@option.Name</option>
+                                        }
+                                    </select>
+                                </div>
+                            }
+
+                            @if (_showInlineGoalPeriod)
+                            {
+                                <div class="goal-form-compact-row">
+                                    <input type="date" class="input" @bind="_inlineGoalStartDate" @bind:format="yyyy-MM-dd" />
+                                    <input type="date" class="input" @bind="_inlineGoalEndDate" @bind:format="yyyy-MM-dd" />
+                                </div>
+                            }
+                        }
+
+                        <div class="form-actions" style="margin-top: var(--spacing-3);">
+                            <button type="button" class="button tertiary" @onclick="CloseInlineForm">Cancelar</button>
+                            @if (_inlineFormMode == InlineFormMode.EditGoal)
+                            {
+                                <button type="button" class="button primary" @onclick="HandleInlineGoalSave">Salvar meta</button>
+                            }
+                            else
+                            {
+                                <button type="button" class="button primary" @onclick="HandleInlineGoalSave">Criar meta</button>
+                            }
+                        </div>
+                    </div>
+                }
+
+                <GoalFormTree Indicators="CurrentIndicators"
+                              Tasks="CurrentTasks"
+                              Children="CurrentChildren"
+                              OnEditIndicator="OpenEditInlineIndicator"
+                              OnDeleteIndicator="DeleteIndicatorByIndex"
+                              OnEditTask="OpenEditInlineTask"
+                              OnDeleteTask="DeleteTaskByIndex"
+                              OnNavigateInto="NavigateInto"
+                              OnEditGoal="OpenEditInlineGoal"
+                              OnDeleteGoal="DeleteSubgoalByIndex" />
+            </div>
+            </div>
+        </ChildContent>
+        <Footer>
+            <div class="modal-footer-actions">
+                <div class="modal-footer-secondary">
+                    <button class="button tertiary" type="button" @onclick="HandleClose">Cancelar</button>
+                </div>
+                <div class="modal-footer-primary">
+                    @if (IsEditMode)
+                    {
+                        <button class="button primary" type="button" @onclick="HandleSave">Salvar alterações</button>
+                    }
+                    else if (Mode == WizardMode.Template)
+                    {
+                        <button class="button primary" type="button" @onclick="HandleSave">Criar</button>
+                    }
+                    else
+                    {
+                        <button class="button secondary" type="button" @onclick="HandleSaveDraft">Salvar rascunho</button>
+                        <button class="button primary" type="button" @onclick="HandleSave">Criar missão</button>
+                    }
+                </div>
+            </div>
+        </Footer>
+    </Modal>
+}

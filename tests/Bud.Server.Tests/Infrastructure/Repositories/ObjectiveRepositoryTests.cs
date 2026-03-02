@@ -21,22 +21,22 @@ public sealed class ObjectiveRepositoryTests
         return new ApplicationDbContext(options, _tenantProvider);
     }
 
-    private static async Task<Mission> CreateTestMission(ApplicationDbContext context)
+    private static async Task<Goal> CreateTestMission(ApplicationDbContext context)
     {
         var org = new Organization { Id = Guid.NewGuid(), Name = "Test Org" };
         context.Organizations.Add(org);
 
-        var mission = new Mission
+        var mission = new Goal
         {
             Id = Guid.NewGuid(),
             Name = "Test Mission",
             StartDate = DateTime.UtcNow,
             EndDate = DateTime.UtcNow.AddDays(7),
-            Status = MissionStatus.Planned,
+            Status = GoalStatus.Planned,
             OrganizationId = org.Id
         };
 
-        context.Missions.Add(mission);
+        context.Goals.Add(mission);
         await context.SaveChangesAsync();
 
         return mission;
@@ -49,17 +49,17 @@ public sealed class ObjectiveRepositoryTests
     {
         // Arrange
         using var context = CreateInMemoryContext();
-        var repository = new ObjectiveRepository(context);
+        var repository = new GoalRepository(context);
         var mission = await CreateTestMission(context);
 
-        var objective = new Objective
+        var objective = new Goal
         {
             Id = Guid.NewGuid(),
             Name = "Test Objective",
-            MissionId = mission.Id,
+            ParentId = mission.Id,
             OrganizationId = mission.OrganizationId
         };
-        context.Objectives.Add(objective);
+        context.Goals.Add(objective);
         await context.SaveChangesAsync();
 
         // Act
@@ -76,7 +76,7 @@ public sealed class ObjectiveRepositoryTests
     {
         // Arrange
         using var context = CreateInMemoryContext();
-        var repository = new ObjectiveRepository(context);
+        var repository = new GoalRepository(context);
 
         // Act
         var result = await repository.GetByIdAsync(Guid.NewGuid());
@@ -94,21 +94,21 @@ public sealed class ObjectiveRepositoryTests
     {
         // Arrange
         using var context = CreateInMemoryContext();
-        var repository = new ObjectiveRepository(context);
+        var repository = new GoalRepository(context);
         var mission = await CreateTestMission(context);
 
-        var objective = new Objective
+        var objective = new Goal
         {
             Id = Guid.NewGuid(),
             Name = "Tracked Objective",
-            MissionId = mission.Id,
+            ParentId = mission.Id,
             OrganizationId = mission.OrganizationId
         };
-        context.Objectives.Add(objective);
+        context.Goals.Add(objective);
         await context.SaveChangesAsync();
 
         // Act
-        var result = await repository.GetByIdForUpdateAsync(objective.Id);
+        var result = await repository.GetByIdAsync(objective.Id);
 
         // Assert
         result.Should().NotBeNull();
@@ -121,10 +121,10 @@ public sealed class ObjectiveRepositoryTests
     {
         // Arrange
         using var context = CreateInMemoryContext();
-        var repository = new ObjectiveRepository(context);
+        var repository = new GoalRepository(context);
 
         // Act
-        var result = await repository.GetByIdForUpdateAsync(Guid.NewGuid());
+        var result = await repository.GetByIdAsync(Guid.NewGuid());
 
         // Assert
         result.Should().BeNull();
@@ -139,29 +139,29 @@ public sealed class ObjectiveRepositoryTests
     {
         // Arrange
         using var context = CreateInMemoryContext();
-        var repository = new ObjectiveRepository(context);
+        var repository = new GoalRepository(context);
         var mission1 = await CreateTestMission(context);
         var mission2 = await CreateTestMission(context);
 
-        context.Objectives.AddRange(
-            new Objective
+        context.Goals.AddRange(
+            new Goal
             {
                 Id = Guid.NewGuid(),
                 Name = "Objective A",
-                MissionId = mission1.Id,
+                ParentId = mission1.Id,
                 OrganizationId = mission1.OrganizationId
             },
-            new Objective
+            new Goal
             {
                 Id = Guid.NewGuid(),
                 Name = "Objective B",
-                MissionId = mission2.Id,
+                ParentId = mission2.Id,
                 OrganizationId = mission2.OrganizationId
             });
         await context.SaveChangesAsync();
 
         // Act
-        var result = await repository.GetAllAsync(mission1.Id, 1, 10);
+        var result = await repository.GetAllAsync(mission1.Id, null, null, null, 1, 10);
 
         // Assert
         result.Items.Should().HaveCount(1);
@@ -173,29 +173,29 @@ public sealed class ObjectiveRepositoryTests
     {
         // Arrange
         using var context = CreateInMemoryContext();
-        var repository = new ObjectiveRepository(context);
+        var repository = new GoalRepository(context);
         var mission1 = await CreateTestMission(context);
         var mission2 = await CreateTestMission(context);
 
-        context.Objectives.AddRange(
-            new Objective
+        context.Goals.AddRange(
+            new Goal
             {
                 Id = Guid.NewGuid(),
                 Name = "Objective A",
-                MissionId = mission1.Id,
+                ParentId = mission1.Id,
                 OrganizationId = mission1.OrganizationId
             },
-            new Objective
+            new Goal
             {
                 Id = Guid.NewGuid(),
                 Name = "Objective B",
-                MissionId = mission2.Id,
+                ParentId = mission2.Id,
                 OrganizationId = mission2.OrganizationId
             });
         await context.SaveChangesAsync();
 
         // Act
-        var result = await repository.GetAllAsync(null, 1, 10);
+        var result = await repository.GetAllAsync(null, null, null, null, 1, 10);
 
         // Assert
         result.Items.Should().HaveCount(2);
@@ -206,23 +206,23 @@ public sealed class ObjectiveRepositoryTests
     {
         // Arrange
         using var context = CreateInMemoryContext();
-        var repository = new ObjectiveRepository(context);
+        var repository = new GoalRepository(context);
         var mission = await CreateTestMission(context);
 
         for (int i = 0; i < 5; i++)
         {
-            context.Objectives.Add(new Objective
+            context.Goals.Add(new Goal
             {
                 Id = Guid.NewGuid(),
                 Name = $"Objective {i:D2}",
-                MissionId = mission.Id,
+                ParentId = mission.Id,
                 OrganizationId = mission.OrganizationId
             });
         }
         await context.SaveChangesAsync();
 
         // Act
-        var result = await repository.GetAllAsync(mission.Id, 1, 2);
+        var result = await repository.GetAllAsync(mission.Id, null, null, null, 1, 2);
 
         // Assert
         result.Items.Should().HaveCount(2);
@@ -236,35 +236,35 @@ public sealed class ObjectiveRepositoryTests
     {
         // Arrange
         using var context = CreateInMemoryContext();
-        var repository = new ObjectiveRepository(context);
+        var repository = new GoalRepository(context);
         var mission = await CreateTestMission(context);
 
-        context.Objectives.AddRange(
-            new Objective
+        context.Goals.AddRange(
+            new Goal
             {
                 Id = Guid.NewGuid(),
                 Name = "Charlie",
-                MissionId = mission.Id,
+                ParentId = mission.Id,
                 OrganizationId = mission.OrganizationId
             },
-            new Objective
+            new Goal
             {
                 Id = Guid.NewGuid(),
                 Name = "Alpha",
-                MissionId = mission.Id,
+                ParentId = mission.Id,
                 OrganizationId = mission.OrganizationId
             },
-            new Objective
+            new Goal
             {
                 Id = Guid.NewGuid(),
                 Name = "Bravo",
-                MissionId = mission.Id,
+                ParentId = mission.Id,
                 OrganizationId = mission.OrganizationId
             });
         await context.SaveChangesAsync();
 
         // Act
-        var result = await repository.GetAllAsync(mission.Id, 1, 10);
+        var result = await repository.GetAllAsync(mission.Id, null, null, null, 1, 10);
 
         // Assert
         result.Items.Should().HaveCount(3);
@@ -282,22 +282,26 @@ public sealed class ObjectiveRepositoryTests
     {
         // Arrange
         using var context = CreateInMemoryContext();
-        var repository = new ObjectiveRepository(context);
+        var repository = new GoalRepository(context);
         var mission = await CreateTestMission(context);
 
-        var objective = Objective.Create(
+        var objective = Goal.Create(
             Guid.NewGuid(),
             mission.OrganizationId,
-            mission.Id,
             "New Objective",
-            "A description");
+            "A description",
+            null,
+            DateTime.UtcNow,
+            DateTime.UtcNow.AddDays(7),
+            GoalStatus.Planned,
+            mission.Id);
 
         // Act
         await repository.AddAsync(objective);
         await repository.SaveChangesAsync();
 
         // Assert
-        var persisted = await context.Objectives.FindAsync(objective.Id);
+        var persisted = await context.Goals.FindAsync(objective.Id);
         persisted.Should().NotBeNull();
         persisted!.Name.Should().Be("New Objective");
     }
@@ -307,17 +311,17 @@ public sealed class ObjectiveRepositoryTests
     {
         // Arrange
         using var context = CreateInMemoryContext();
-        var repository = new ObjectiveRepository(context);
+        var repository = new GoalRepository(context);
         var mission = await CreateTestMission(context);
 
-        var objective = new Objective
+        var objective = new Goal
         {
             Id = Guid.NewGuid(),
             Name = "To Delete",
-            MissionId = mission.Id,
+            ParentId = mission.Id,
             OrganizationId = mission.OrganizationId
         };
-        context.Objectives.Add(objective);
+        context.Goals.Add(objective);
         await context.SaveChangesAsync();
 
         // Act
@@ -325,7 +329,7 @@ public sealed class ObjectiveRepositoryTests
         await repository.SaveChangesAsync();
 
         // Assert
-        var persisted = await context.Objectives.FindAsync(objective.Id);
+        var persisted = await context.Goals.FindAsync(objective.Id);
         persisted.Should().BeNull();
     }
 

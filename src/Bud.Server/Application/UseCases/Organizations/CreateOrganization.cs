@@ -1,11 +1,8 @@
 using Bud.Server.Application.Common;
-using Bud.Server.Application.Mapping;
 using Bud.Server.Domain.Model;
 using Bud.Server.Domain.Repositories;
-using Bud.Server.Settings;
 using Bud.Shared.Contracts;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
 
 namespace Bud.Server.Application.UseCases.Organizations;
 
@@ -24,16 +21,18 @@ public sealed partial class CreateOrganization(
         var owner = await collaboratorRepository.GetByIdAsync(request.OwnerId, cancellationToken);
         if (owner is null)
         {
-            LogOrganizationCreationFailed(logger, request.Name, "Owner not found");
-            return Result<Organization>.NotFound("O líder selecionado não foi encontrado.");
+            LogOrganizationCreationFailed(logger, request.Name, UserErrorMessages.SelectedOwnerNotFound);
+            return Result<Organization>.NotFound(UserErrorMessages.SelectedOwnerNotFound);
         }
 
-        if (owner.Role != CollaboratorRole.Leader)
+        try
         {
-            LogOrganizationCreationFailed(logger, request.Name, "Owner is not a leader");
-            return Result<Organization>.Failure(
-                "O proprietário da organização deve ter a função de Líder.",
-                ErrorType.Validation);
+            owner.EnsureCanOwnOrganization();
+        }
+        catch (DomainInvariantException ex)
+        {
+            LogOrganizationCreationFailed(logger, request.Name, ex.Message);
+            return Result<Organization>.Failure(ex.Message, ErrorType.Validation);
         }
 
         try

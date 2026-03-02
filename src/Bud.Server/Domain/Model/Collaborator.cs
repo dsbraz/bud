@@ -61,4 +61,25 @@ public sealed class Collaborator : ITenantEntity, IAggregateRoot
         Role = role;
         LeaderId = leaderId;
     }
+
+    public void EnsureCanLeadOrganization(Guid organizationId)
+    {
+        if (Role != CollaboratorRole.Leader)
+        {
+            throw new DomainInvariantException("O colaborador selecionado deve ter o perfil de Líder.");
+        }
+
+        if (OrganizationId != organizationId)
+        {
+            throw new DomainInvariantException("O líder deve pertencer à mesma organização.");
+        }
+    }
+
+    public void EnsureCanOwnOrganization()
+    {
+        if (Role != CollaboratorRole.Leader)
+        {
+            throw new DomainInvariantException("O proprietário da organização deve ter a função de Líder.");
+        }
+    }
 }

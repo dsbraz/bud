@@ -23,16 +23,16 @@ public sealed class DomainEventNotificationHandlersTests
     {
         var orchestratorMock = CreateOrchestratorMock();
         orchestratorMock
-            .Setup(o => o.NotifyMissionCreatedAsync(It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
+            .Setup(o => o.NotifyGoalCreatedAsync(It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
             .Returns(Task.CompletedTask);
 
-        var handler = new MissionCreatedDomainEventNotifier(orchestratorMock.Object);
-        var domainEvent = new MissionCreatedDomainEvent(Guid.NewGuid(), Guid.NewGuid());
+        var handler = new GoalCreatedDomainEventNotifier(orchestratorMock.Object);
+        var domainEvent = new GoalCreatedDomainEvent(Guid.NewGuid(), Guid.NewGuid());
 
         await handler.HandleAsync(domainEvent, CancellationToken.None);
 
         orchestratorMock.Verify(
-            o => o.NotifyMissionCreatedAsync(domainEvent.MissionId, domainEvent.OrganizationId, It.IsAny<CancellationToken>()),
+            o => o.NotifyGoalCreatedAsync(domainEvent.GoalId, domainEvent.OrganizationId, It.IsAny<CancellationToken>()),
             Times.Once);
     }
 
@@ -41,16 +41,16 @@ public sealed class DomainEventNotificationHandlersTests
     {
         var orchestratorMock = CreateOrchestratorMock();
         orchestratorMock
-            .Setup(o => o.NotifyMissionUpdatedAsync(It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
+            .Setup(o => o.NotifyGoalUpdatedAsync(It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
             .Returns(Task.CompletedTask);
 
-        var handler = new MissionUpdatedDomainEventNotifier(orchestratorMock.Object);
-        var domainEvent = new MissionUpdatedDomainEvent(Guid.NewGuid(), Guid.NewGuid());
+        var handler = new GoalUpdatedDomainEventNotifier(orchestratorMock.Object);
+        var domainEvent = new GoalUpdatedDomainEvent(Guid.NewGuid(), Guid.NewGuid());
 
         await handler.HandleAsync(domainEvent, CancellationToken.None);
 
         orchestratorMock.Verify(
-            o => o.NotifyMissionUpdatedAsync(domainEvent.MissionId, domainEvent.OrganizationId, It.IsAny<CancellationToken>()),
+            o => o.NotifyGoalUpdatedAsync(domainEvent.GoalId, domainEvent.OrganizationId, It.IsAny<CancellationToken>()),
             Times.Once);
     }
 
@@ -59,16 +59,16 @@ public sealed class DomainEventNotificationHandlersTests
     {
         var orchestratorMock = CreateOrchestratorMock();
         orchestratorMock
-            .Setup(o => o.NotifyMissionDeletedAsync(It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
+            .Setup(o => o.NotifyGoalDeletedAsync(It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
             .Returns(Task.CompletedTask);
 
-        var handler = new MissionDeletedDomainEventNotifier(orchestratorMock.Object);
-        var domainEvent = new MissionDeletedDomainEvent(Guid.NewGuid(), Guid.NewGuid());
+        var handler = new GoalDeletedDomainEventNotifier(orchestratorMock.Object);
+        var domainEvent = new GoalDeletedDomainEvent(Guid.NewGuid(), Guid.NewGuid());
 
         await handler.HandleAsync(domainEvent, CancellationToken.None);
 
         orchestratorMock.Verify(
-            o => o.NotifyMissionDeletedAsync(domainEvent.MissionId, domainEvent.OrganizationId, It.IsAny<CancellationToken>()),
+            o => o.NotifyGoalDeletedAsync(domainEvent.GoalId, domainEvent.OrganizationId, It.IsAny<CancellationToken>()),
             Times.Once);
     }
 
@@ -77,7 +77,7 @@ public sealed class DomainEventNotificationHandlersTests
     {
         var orchestratorMock = CreateOrchestratorMock();
         orchestratorMock
-            .Setup(o => o.NotifyMetricCheckinCreatedAsync(
+            .Setup(o => o.NotifyCheckinCreatedAsync(
                 It.IsAny<Guid>(),
                 It.IsAny<Guid>(),
                 It.IsAny<Guid>(),
@@ -85,8 +85,8 @@ public sealed class DomainEventNotificationHandlersTests
                 It.IsAny<CancellationToken>()))
             .Returns(Task.CompletedTask);
 
-        var handler = new MetricCheckinCreatedDomainEventNotifier(orchestratorMock.Object);
-        var domainEvent = new MetricCheckinCreatedDomainEvent(
+        var handler = new CheckinCreatedDomainEventNotifier(orchestratorMock.Object);
+        var domainEvent = new CheckinCreatedDomainEvent(
             Guid.NewGuid(),
             Guid.NewGuid(),
             Guid.NewGuid(),
@@ -95,11 +95,11 @@ public sealed class DomainEventNotificationHandlersTests
         await handler.HandleAsync(domainEvent, CancellationToken.None);
 
         orchestratorMock.Verify(
-            o => o.NotifyMetricCheckinCreatedAsync(
+            o => o.NotifyCheckinCreatedAsync(
                 domainEvent.CheckinId,
-                domainEvent.MetricId,
+                domainEvent.IndicatorId,
                 domainEvent.OrganizationId,
-                domainEvent.CreatorCollaboratorId,
+                domainEvent.CollaboratorId,
                 It.IsAny<CancellationToken>()),
             Times.Once);
     }

@@ -1,5 +1,5 @@
 using Bud.Server.Application.Common;
-using Bud.Server.Application.Mapping;
+using Bud.Server.Application.Policies;
 using Bud.Server.Domain.Model;
 using Bud.Server.Domain.Repositories;
 using Bud.Server.Settings;
@@ -29,10 +29,10 @@ public sealed partial class PatchOrganization(
         if (organization is null)
         {
             LogOrganizationPatchFailed(logger, id, "Not found");
-            return Result<Organization>.NotFound("Organização não encontrada.");
+            return Result<Organization>.NotFound(UserErrorMessages.OrganizationNotFound);
         }
 
-        if (IsProtectedOrganization(organization.Name))
+        if (OrganizationProtectionPolicy.IsProtectedOrganization(organization.Name, _globalAdminOrgName))
         {
             LogOrganizationPatchFailed(logger, id, "Protected organization");
             return Result<Organization>.Failure(
@@ -53,16 +53,18 @@ public sealed partial class PatchOrganization(
                 var newOwner = await collaboratorRepository.GetByIdAsync(ownerId, cancellationToken);
                 if (newOwner is null)
                 {
-                    LogOrganizationPatchFailed(logger, id, "New owner not found");
-                    return Result<Organization>.NotFound("O líder selecionado não foi encontrado.");
+                    LogOrganizationPatchFailed(logger, id, UserErrorMessages.SelectedOwnerNotFound);
+                    return Result<Organization>.NotFound(UserErrorMessages.SelectedOwnerNotFound);
                 }
 
-                if (newOwner.Role != CollaboratorRole.Leader)
+                try
                 {
-                    LogOrganizationPatchFailed(logger, id, "New owner is not a leader");
-                    return Result<Organization>.Failure(
-                        "O proprietário da organização deve ter a função de Líder.",
-                        ErrorType.Validation);
+                    newOwner.EnsureCanOwnOrganization();
+                }
+                catch (DomainInvariantException ex)
+                {
+                    LogOrganizationPatchFailed(logger, id, ex.Message);
+                    return Result<Organization>.Failure(ex.Message, ErrorType.Validation);
                 }
 
                 organization.AssignOwner(ownerId);
@@ -79,10 +81,6 @@ public sealed partial class PatchOrganization(
             return Result<Organization>.Failure(ex.Message, ErrorType.Validation);
         }
     }
-
-    private bool IsProtectedOrganization(string organizationName)
-        => !string.IsNullOrEmpty(_globalAdminOrgName) &&
-           organizationName.Equals(_globalAdminOrgName, StringComparison.OrdinalIgnoreCase);
 
     [LoggerMessage(EventId = 4013, Level = LogLevel.Information, Message = "Patching organization {OrganizationId}")]
     private static partial void LogPatchingOrganization(ILogger logger, Guid organizationId);

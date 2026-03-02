@@ -1,0 +1,164 @@
+@using Bud.Client.Services
+
+@{
+    var progressPercent = (int)(Progress?.OverallProgress ?? 0);
+    var circumference = 2 * Math.PI * 19;
+    var dashOffset = circumference - (circumference * progressPercent / 100);
+}
+
+<div class="goal-card @(IsExpanded ? "expanded" : "") @(Goal.Status == GoalStatus.Planned ? "draft" : "")">
+    <div class="goal-card-header" @onclick="() => OnToggleExpand.InvokeAsync()">
+        @* Círculo de Progresso *@
+        <div class="goal-progress-circle">
+            <svg width="44" height="44" viewBox="0 0 44 44">
+                <circle class="progress-bg" cx="22" cy="22" r="19" />
+                @if (Goal.Status != GoalStatus.Planned)
+                {
+                    <circle class="progress-value @GoalProgressDisplayHelper.GetGoalProgressStatusClass(Progress)"
+                            cx="22" cy="22" r="19"
+                            stroke-dasharray="@circumference.ToString("F2", System.Globalization.CultureInfo.InvariantCulture)"
+                            stroke-dashoffset="@dashOffset.ToString("F2", System.Globalization.CultureInfo.InvariantCulture)" />
+                }
+            </svg>
+            <div class="goal-progress-text">
+                <span class="goal-progress-number">@(Goal.Status == GoalStatus.Planned ? "00" : progressPercent.ToString())</span>
+                <span class="goal-progress-percent">%</span>
+            </div>
+        </div>
+
+        @* Título da Meta *@
+        <div class="goal-card-title-wrapper">
+            @if (Goal.Status == GoalStatus.Planned)
+            {
+                <span class="goal-draft-tag">RASCUNHO</span>
+            }
+            <div class="goal-card-title-row">
+                <div class="goal-card-title">@Goal.Name</div>
+                @if (Progress != null && Progress.IndicatorsWithCheckins > 0)
+                {
+                    <div class="goal-confidence-badge @GoalProgressDisplayHelper.GetConfidenceClass(Progress.AverageConfidence)" title="Nível de confiança: @GoalProgressDisplayHelper.GetConfidenceLabel(Progress.AverageConfidence)">
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                        <span>@((int)Math.Round(Progress.AverageConfidence))</span>
+                    </div>
+                }
+            </div>
+        </div>
+
+        @* Ações *@
+        <div class="goal-card-actions" @onclick:stopPropagation="true">
+            <button class="goal-action-btn" @onclick="() => OnEdit.InvokeAsync()" title="Editar meta">
+                <svg width="22" height="22" viewBox="0 0 32 32" fill="none">
+                    <path d="M22 4L28 10L10 28H4V22L22 4Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+            </button>
+            <button class="goal-action-btn @(IsDeleting ? "danger" : "")"
+                    @onclick="() => OnDeleteClick.InvokeAsync()"
+                    title="@(IsDeleting ? "Confirmar exclusão" : "Excluir")">
+                @if (IsDeleting)
+                {
+                    <span style="font-size: 10px;">OK?</span>
+                }
+                else
+                {
+                    <svg width="22" height="22" viewBox="0 0 32 32" fill="none">
+                        <path d="M4 8H6.66667H28" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        <path d="M10.6667 8V5.33333C10.6667 4.62609 10.9476 3.94781 11.4477 3.44772C11.9478 2.94762 12.6261 2.66667 13.3333 2.66667H18.6667C19.3739 2.66667 20.0522 2.94762 20.5523 3.44772C21.0524 3.94781 21.3333 4.62609 21.3333 5.33333V8M25.3333 8V26.6667C25.3333 27.3739 25.0524 28.0522 24.5523 28.5523C24.0522 29.0524 23.3739 29.3333 22.6667 29.3333H9.33333C8.62609 29.3333 7.94781 29.0524 7.44772 28.5523C6.94762 28.0522 6.66667 27.3739 6.66667 26.6667V8H25.3333Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                }
+            </button>
+            <button class="goal-action-btn" @onclick="() => OnToggleExpand.InvokeAsync()" title="@(IsExpanded ? "Recolher" : "Expandir")">
+                <svg class="goal-expand-icon @(IsExpanded ? "expanded" : "")" width="22" height="22" viewBox="0 0 32 32" fill="none">
+                    <path d="M8 12L16 20L24 12" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+            </button>
+        </div>
+    </div>
+
+    @* Conteúdo Expandido - Objetivos e Indicadores *@
+    @if (IsExpanded)
+    {
+        <div class="goal-card-content">
+            @if (Indicators is null)
+            {
+                <p class="muted">Carregando...</p>
+            }
+            else
+            {
+                var directIndicators = Indicators.Where(m => m.GoalId == Goal.Id).ToList();
+
+                @* Seção de Objetivos (sub-metas) *@
+                if (ChildGoals != null && ChildGoals.Count > 0)
+                {
+                    foreach (var childGoal in ChildGoals)
+                    {
+                        <GoalChildSection ChildGoal="childGoal"
+                                          GoalProgressResponse="@(GoalProgressCache.GetValueOrDefault(childGoal.Id))"
+                                          IsExpanded="@(ExpandedGoals.Contains(childGoal.Id))"
+                                          OnToggleExpand="() => OnToggleGoalExpand.InvokeAsync(childGoal.Id)"
+                                          Depth="0"
+                                          OnCheckinClick="OnCheckinClick"
+                                          OnHistoryClick="OnHistoryClick" />
+                    }
+                }
+
+                @* Indicadores diretos (sem objetivo) *@
+                if (directIndicators.Count > 0)
+                {
+                    if (ChildGoals != null && ChildGoals.Count > 0)
+                    {
+                        <div class="direct-indicators-label">Indicadores diretos</div>
+                    }
+                    foreach (var indicator in directIndicators)
+                    {
+                        <IndicatorRow Goal="Goal"
+                                      Indicator="indicator"
+                                      GoalProgressResponse="Progress"
+                                      IndicatorProgressResponse="@(IndicatorProgressCache.GetValueOrDefault(indicator.Id))"
+                                      OnCheckinClick="OnCheckinClick"
+                                      OnHistoryClick="OnHistoryClick" />
+                    }
+                }
+
+                @* Tarefas diretas da meta *@
+                @if (Tasks != null && Tasks.Count > 0)
+                {
+                    <div class="goal-tasks-section">
+                        @foreach (var task in Tasks)
+                        {
+                            <TaskRow Task="task"
+                                     ShowDeleteButton="false"
+                                     OnStateChange="async s => await OnTaskStateChange.InvokeAsync((task, s))" />
+                        }
+                    </div>
+                }
+
+                if (directIndicators.Count == 0 && (ChildGoals == null || ChildGoals.Count == 0) && (Tasks == null || Tasks.Count == 0))
+                {
+                    <p class="muted">Nenhum indicador, tarefa ou meta associada a esta missão.</p>
+                }
+            }
+        </div>
+    }
+</div>
+
+@code {
+    [Parameter, EditorRequired] public GoalResponse Goal { get; set; } = default!;
+    [Parameter] public GoalProgressResponse? Progress { get; set; }
+    [Parameter] public bool IsExpanded { get; set; }
+    [Parameter] public bool IsDeleting { get; set; }
+    [Parameter] public List<IndicatorResponse>? Indicators { get; set; }
+    [Parameter] public List<TaskResponse>? Tasks { get; set; }
+    [Parameter] public List<GoalResponse>? ChildGoals { get; set; }
+    [Parameter] public Dictionary<Guid, IndicatorProgressResponse> IndicatorProgressCache { get; set; } = new();
+    [Parameter] public Dictionary<Guid, GoalProgressResponse> GoalProgressCache { get; set; } = new();
+    [Parameter] public HashSet<Guid> ExpandedGoals { get; set; } = new();
+    [Parameter] public EventCallback OnToggleExpand { get; set; }
+    [Parameter] public EventCallback OnEdit { get; set; }
+    [Parameter] public EventCallback<(TaskResponse task, TaskState newState)> OnTaskStateChange { get; set; }
+    [Parameter] public EventCallback OnDeleteClick { get; set; }
+    [Parameter] public EventCallback<Guid> OnToggleGoalExpand { get; set; }
+    [Parameter] public EventCallback<IndicatorResponse> OnCheckinClick { get; set; }
+    [Parameter] public EventCallback<IndicatorResponse> OnHistoryClick { get; set; }
+}

@@ -26,21 +26,21 @@ public sealed partial class DeleteWorkspace(
         if (workspace is null)
         {
             LogWorkspaceDeletionFailed(logger, id, "Not found");
-            return Result.NotFound("Workspace não encontrado.");
+            return Result.NotFound(UserErrorMessages.WorkspaceNotFound);
         }
 
         var canDelete = await authorizationGateway.CanWriteOrganizationAsync(user, workspace.OrganizationId, cancellationToken);
         if (!canDelete)
         {
             LogWorkspaceDeletionFailed(logger, id, "Forbidden");
-            return Result.Forbidden("Você não tem permissão para excluir este workspace.");
+            return Result.Forbidden(UserErrorMessages.WorkspaceDeleteForbidden);
         }
 
-        if (await workspaceRepository.HasMissionsAsync(id, cancellationToken))
+        if (await workspaceRepository.HasGoalsAsync(id, cancellationToken))
         {
-            LogWorkspaceDeletionFailed(logger, id, "Has missions");
+            LogWorkspaceDeletionFailed(logger, id, "Has goals");
             return Result.Failure(
-                "Não é possível excluir o workspace porque existem missões associadas a ele.",
+                "Não é possível excluir o workspace porque existem metas associadas a ele.",
                 ErrorType.Conflict);
         }
 

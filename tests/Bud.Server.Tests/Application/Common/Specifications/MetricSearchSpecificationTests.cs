@@ -9,17 +9,17 @@ public sealed class MetricSearchSpecificationTests
 {
     private static readonly Guid MissionId = Guid.NewGuid();
 
-    private static readonly List<Metric> Data =
+    private static readonly List<Indicator> Data =
     [
-        new() { Id = Guid.NewGuid(), Name = "Receita Mensal", MissionId = MissionId },
-        new() { Id = Guid.NewGuid(), Name = "NPS Score", MissionId = MissionId },
-        new() { Id = Guid.NewGuid(), Name = "Taxa de Conversão", MissionId = MissionId }
+        new() { Id = Guid.NewGuid(), Name = "Receita Mensal", GoalId = MissionId },
+        new() { Id = Guid.NewGuid(), Name = "NPS Score", GoalId = MissionId },
+        new() { Id = Guid.NewGuid(), Name = "Taxa de Conversão", GoalId = MissionId }
     ];
 
     [Fact]
     public void Apply_WithSearchTerm_ShouldFilterByName()
     {
-        var spec = new MetricSearchSpecification("receita", isNpgsql: false);
+        var spec = new IndicatorSearchSpecification("receita", isNpgsql: false);
 
         var result = spec.Apply(Data.AsQueryable()).ToList();
 
@@ -33,7 +33,7 @@ public sealed class MetricSearchSpecificationTests
     [InlineData("   ")]
     public void Apply_WithNullOrEmptySearch_ShouldReturnAll(string? search)
     {
-        var spec = new MetricSearchSpecification(search, isNpgsql: false);
+        var spec = new IndicatorSearchSpecification(search, isNpgsql: false);
 
         var result = spec.Apply(Data.AsQueryable()).ToList();
 
@@ -43,7 +43,7 @@ public sealed class MetricSearchSpecificationTests
     [Fact]
     public void Apply_WithNoMatch_ShouldReturnEmpty()
     {
-        var spec = new MetricSearchSpecification("inexistente", isNpgsql: false);
+        var spec = new IndicatorSearchSpecification("inexistente", isNpgsql: false);
 
         var result = spec.Apply(Data.AsQueryable()).ToList();
 

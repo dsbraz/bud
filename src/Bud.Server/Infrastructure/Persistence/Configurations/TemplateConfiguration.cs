@@ -14,10 +14,10 @@ public sealed class TemplateConfiguration : IEntityTypeConfiguration<Template>
         builder.Property(mt => mt.Description)
             .HasMaxLength(1000);
 
-        builder.Property(mt => mt.MissionNamePattern)
+        builder.Property(mt => mt.GoalNamePattern)
             .HasMaxLength(200);
 
-        builder.Property(mt => mt.MissionDescriptionPattern)
+        builder.Property(mt => mt.GoalDescriptionPattern)
             .HasMaxLength(1000);
 
         builder.HasOne(mt => mt.Organization)
@@ -27,14 +27,14 @@ public sealed class TemplateConfiguration : IEntityTypeConfiguration<Template>
 
         builder.HasIndex(mt => mt.OrganizationId);
 
-        builder.HasMany(mt => mt.Metrics)
-            .WithOne(mtm => mtm.Template)
-            .HasForeignKey(mtm => mtm.TemplateId)
+        builder.HasMany(mt => mt.Indicators)
+            .WithOne(ti => ti.Template)
+            .HasForeignKey(ti => ti.TemplateId)
             .OnDelete(DeleteBehavior.Cascade);
 
-        builder.HasMany(mt => mt.Objectives)
-            .WithOne(mto => mto.Template)
-            .HasForeignKey(mto => mto.TemplateId)
+        builder.HasMany(mt => mt.Goals)
+            .WithOne(tg => tg.Template)
+            .HasForeignKey(tg => tg.TemplateId)
             .OnDelete(DeleteBehavior.Cascade);
     }
 }

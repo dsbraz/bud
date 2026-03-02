@@ -8,7 +8,7 @@ namespace Bud.Server.Tests.Validators;
 
 public sealed class TemplateMetricDtoValidatorTests
 {
-    private readonly TemplateMetricDtoValidator _validator = new();
+    private readonly TemplateIndicatorDtoValidator _validator = new();
 
     #region General Validation Tests
 
@@ -16,14 +16,14 @@ public sealed class TemplateMetricDtoValidatorTests
     public async Task Validate_ValidQuantitativeMetric_Passes()
     {
         // Arrange
-        var dto = new TemplateMetricRequest
+        var dto = new TemplateIndicatorRequest
         {
             Name = "Story Points",
-            Type = Bud.Shared.Contracts.MetricType.Quantitative,
+            Type = Bud.Shared.Contracts.IndicatorType.Quantitative,
             OrderIndex = 0,
-            QuantitativeType = Bud.Shared.Contracts.QuantitativeMetricType.KeepAbove,
+            QuantitativeType = Bud.Shared.Contracts.QuantitativeIndicatorType.KeepAbove,
             MinValue = 50m,
-            Unit = Bud.Shared.Contracts.MetricUnit.Points
+            Unit = Bud.Shared.Contracts.IndicatorUnit.Points
         };
 
         // Act
@@ -38,10 +38,10 @@ public sealed class TemplateMetricDtoValidatorTests
     public async Task Validate_ValidQualitativeMetric_Passes()
     {
         // Arrange
-        var dto = new TemplateMetricRequest
+        var dto = new TemplateIndicatorRequest
         {
             Name = "Qualidade do Código",
-            Type = Bud.Shared.Contracts.MetricType.Qualitative,
+            Type = Bud.Shared.Contracts.IndicatorType.Qualitative,
             OrderIndex = 0,
             TargetText = "Manter alta qualidade no código"
         };
@@ -61,10 +61,10 @@ public sealed class TemplateMetricDtoValidatorTests
     public async Task Validate_EmptyName_Fails(string? name)
     {
         // Arrange
-        var dto = new TemplateMetricRequest
+        var dto = new TemplateIndicatorRequest
         {
             Name = name!,
-            Type = Bud.Shared.Contracts.MetricType.Qualitative,
+            Type = Bud.Shared.Contracts.IndicatorType.Qualitative,
             OrderIndex = 0,
             TargetText = "Texto alvo"
         };
@@ -83,10 +83,10 @@ public sealed class TemplateMetricDtoValidatorTests
     public async Task Validate_NameExceeding200Chars_Fails()
     {
         // Arrange
-        var dto = new TemplateMetricRequest
+        var dto = new TemplateIndicatorRequest
         {
             Name = new string('A', 201),
-            Type = Bud.Shared.Contracts.MetricType.Qualitative,
+            Type = Bud.Shared.Contracts.IndicatorType.Qualitative,
             OrderIndex = 0,
             TargetText = "Texto alvo"
         };
@@ -105,10 +105,10 @@ public sealed class TemplateMetricDtoValidatorTests
     public async Task Validate_NameExactly200Chars_Passes()
     {
         // Arrange
-        var dto = new TemplateMetricRequest
+        var dto = new TemplateIndicatorRequest
         {
             Name = new string('A', 200),
-            Type = Bud.Shared.Contracts.MetricType.Qualitative,
+            Type = Bud.Shared.Contracts.IndicatorType.Qualitative,
             OrderIndex = 0,
             TargetText = "Texto alvo"
         };
@@ -124,10 +124,10 @@ public sealed class TemplateMetricDtoValidatorTests
     public async Task Validate_InvalidType_Fails()
     {
         // Arrange
-        var dto = new TemplateMetricRequest
+        var dto = new TemplateIndicatorRequest
         {
             Name = "Métrica",
-            Type = (Bud.Shared.Contracts.MetricType)99,
+            Type = (Bud.Shared.Contracts.IndicatorType)99,
             OrderIndex = 0
         };
 
@@ -145,10 +145,10 @@ public sealed class TemplateMetricDtoValidatorTests
     public async Task Validate_NegativeOrderIndex_Fails()
     {
         // Arrange
-        var dto = new TemplateMetricRequest
+        var dto = new TemplateIndicatorRequest
         {
             Name = "Métrica",
-            Type = Bud.Shared.Contracts.MetricType.Qualitative,
+            Type = Bud.Shared.Contracts.IndicatorType.Qualitative,
             OrderIndex = -1,
             TargetText = "Texto alvo"
         };
@@ -167,10 +167,10 @@ public sealed class TemplateMetricDtoValidatorTests
     public async Task Validate_ZeroOrderIndex_Passes()
     {
         // Arrange
-        var dto = new TemplateMetricRequest
+        var dto = new TemplateIndicatorRequest
         {
             Name = "Métrica",
-            Type = Bud.Shared.Contracts.MetricType.Qualitative,
+            Type = Bud.Shared.Contracts.IndicatorType.Qualitative,
             OrderIndex = 0,
             TargetText = "Texto alvo"
         };
@@ -190,10 +190,10 @@ public sealed class TemplateMetricDtoValidatorTests
     public async Task Validate_QualitativeWithoutTargetText_Passes()
     {
         // Arrange
-        var dto = new TemplateMetricRequest
+        var dto = new TemplateIndicatorRequest
         {
             Name = "Métrica Qualitativa",
-            Type = Bud.Shared.Contracts.MetricType.Qualitative,
+            Type = Bud.Shared.Contracts.IndicatorType.Qualitative,
             OrderIndex = 0,
             TargetText = null
         };
@@ -209,10 +209,10 @@ public sealed class TemplateMetricDtoValidatorTests
     public async Task Validate_QualitativeWithEmptyTargetText_Passes()
     {
         // Arrange
-        var dto = new TemplateMetricRequest
+        var dto = new TemplateIndicatorRequest
         {
             Name = "Métrica Qualitativa",
-            Type = Bud.Shared.Contracts.MetricType.Qualitative,
+            Type = Bud.Shared.Contracts.IndicatorType.Qualitative,
             OrderIndex = 0,
             TargetText = ""
         };
@@ -228,10 +228,10 @@ public sealed class TemplateMetricDtoValidatorTests
     public async Task Validate_QualitativeWithTargetTextExceeding1000Chars_Fails()
     {
         // Arrange
-        var dto = new TemplateMetricRequest
+        var dto = new TemplateIndicatorRequest
         {
             Name = "Métrica Qualitativa",
-            Type = Bud.Shared.Contracts.MetricType.Qualitative,
+            Type = Bud.Shared.Contracts.IndicatorType.Qualitative,
             OrderIndex = 0,
             TargetText = new string('A', 1001)
         };
@@ -250,10 +250,10 @@ public sealed class TemplateMetricDtoValidatorTests
     public async Task Validate_QualitativeWithTargetTextExactly1000Chars_Passes()
     {
         // Arrange
-        var dto = new TemplateMetricRequest
+        var dto = new TemplateIndicatorRequest
         {
             Name = "Métrica Qualitativa",
-            Type = Bud.Shared.Contracts.MetricType.Qualitative,
+            Type = Bud.Shared.Contracts.IndicatorType.Qualitative,
             OrderIndex = 0,
             TargetText = new string('A', 1000)
         };
@@ -273,13 +273,13 @@ public sealed class TemplateMetricDtoValidatorTests
     public async Task Validate_QuantitativeWithoutQuantitativeType_Fails()
     {
         // Arrange
-        var dto = new TemplateMetricRequest
+        var dto = new TemplateIndicatorRequest
         {
             Name = "Métrica Quantitativa",
-            Type = Bud.Shared.Contracts.MetricType.Quantitative,
+            Type = Bud.Shared.Contracts.IndicatorType.Quantitative,
             OrderIndex = 0,
             QuantitativeType = null,
-            Unit = Bud.Shared.Contracts.MetricUnit.Points,
+            Unit = Bud.Shared.Contracts.IndicatorUnit.Points,
             MinValue = 50m
         };
 
@@ -290,20 +290,20 @@ public sealed class TemplateMetricDtoValidatorTests
         result.IsValid.Should().BeFalse();
         result.Errors.Should().Contain(e =>
             e.PropertyName.Contains("QuantitativeType") &&
-            e.ErrorMessage.Contains("métricas quantitativas"));
+            e.ErrorMessage.Contains("indicadores quantitativos"));
     }
 
     [Fact]
     public async Task Validate_QuantitativeWithInvalidQuantitativeType_Fails()
     {
         // Arrange
-        var dto = new TemplateMetricRequest
+        var dto = new TemplateIndicatorRequest
         {
             Name = "Métrica Quantitativa",
-            Type = Bud.Shared.Contracts.MetricType.Quantitative,
+            Type = Bud.Shared.Contracts.IndicatorType.Quantitative,
             OrderIndex = 0,
-            QuantitativeType = (Bud.Shared.Contracts.QuantitativeMetricType)99,
-            Unit = Bud.Shared.Contracts.MetricUnit.Points,
+            QuantitativeType = (Bud.Shared.Contracts.QuantitativeIndicatorType)99,
+            Unit = Bud.Shared.Contracts.IndicatorUnit.Points,
             MinValue = 50m
         };
 
@@ -321,12 +321,12 @@ public sealed class TemplateMetricDtoValidatorTests
     public async Task Validate_QuantitativeWithoutUnit_Fails()
     {
         // Arrange
-        var dto = new TemplateMetricRequest
+        var dto = new TemplateIndicatorRequest
         {
             Name = "Métrica Quantitativa",
-            Type = Bud.Shared.Contracts.MetricType.Quantitative,
+            Type = Bud.Shared.Contracts.IndicatorType.Quantitative,
             OrderIndex = 0,
-            QuantitativeType = Bud.Shared.Contracts.QuantitativeMetricType.KeepAbove,
+            QuantitativeType = Bud.Shared.Contracts.QuantitativeIndicatorType.KeepAbove,
             Unit = null,
             MinValue = 50m
         };
@@ -338,20 +338,20 @@ public sealed class TemplateMetricDtoValidatorTests
         result.IsValid.Should().BeFalse();
         result.Errors.Should().Contain(e =>
             e.PropertyName.Contains("Unit") &&
-            e.ErrorMessage.Contains("métricas quantitativas"));
+            e.ErrorMessage.Contains("indicadores quantitativos"));
     }
 
     [Fact]
     public async Task Validate_QuantitativeWithInvalidUnit_Fails()
     {
         // Arrange
-        var dto = new TemplateMetricRequest
+        var dto = new TemplateIndicatorRequest
         {
             Name = "Métrica Quantitativa",
-            Type = Bud.Shared.Contracts.MetricType.Quantitative,
+            Type = Bud.Shared.Contracts.IndicatorType.Quantitative,
             OrderIndex = 0,
-            QuantitativeType = Bud.Shared.Contracts.QuantitativeMetricType.KeepAbove,
-            Unit = (Bud.Shared.Contracts.MetricUnit)99,
+            QuantitativeType = Bud.Shared.Contracts.QuantitativeIndicatorType.KeepAbove,
+            Unit = (Bud.Shared.Contracts.IndicatorUnit)99,
             MinValue = 50m
         };
 
@@ -373,14 +373,14 @@ public sealed class TemplateMetricDtoValidatorTests
     public async Task Validate_KeepAboveWithValidMinValue_Passes()
     {
         // Arrange
-        var dto = new TemplateMetricRequest
+        var dto = new TemplateIndicatorRequest
         {
             Name = "Story Points",
-            Type = Bud.Shared.Contracts.MetricType.Quantitative,
+            Type = Bud.Shared.Contracts.IndicatorType.Quantitative,
             OrderIndex = 0,
-            QuantitativeType = Bud.Shared.Contracts.QuantitativeMetricType.KeepAbove,
+            QuantitativeType = Bud.Shared.Contracts.QuantitativeIndicatorType.KeepAbove,
             MinValue = 50m,
-            Unit = Bud.Shared.Contracts.MetricUnit.Points
+            Unit = Bud.Shared.Contracts.IndicatorUnit.Points
         };
 
         // Act
@@ -395,14 +395,14 @@ public sealed class TemplateMetricDtoValidatorTests
     public async Task Validate_KeepAboveWithZeroMinValue_Passes()
     {
         // Arrange
-        var dto = new TemplateMetricRequest
+        var dto = new TemplateIndicatorRequest
         {
             Name = "Story Points",
-            Type = Bud.Shared.Contracts.MetricType.Quantitative,
+            Type = Bud.Shared.Contracts.IndicatorType.Quantitative,
             OrderIndex = 0,
-            QuantitativeType = Bud.Shared.Contracts.QuantitativeMetricType.KeepAbove,
+            QuantitativeType = Bud.Shared.Contracts.QuantitativeIndicatorType.KeepAbove,
             MinValue = 0m,
-            Unit = Bud.Shared.Contracts.MetricUnit.Points
+            Unit = Bud.Shared.Contracts.IndicatorUnit.Points
         };
 
         // Act
@@ -416,14 +416,14 @@ public sealed class TemplateMetricDtoValidatorTests
     public async Task Validate_KeepAboveWithoutMinValue_Fails()
     {
         // Arrange
-        var dto = new TemplateMetricRequest
+        var dto = new TemplateIndicatorRequest
         {
             Name = "Story Points",
-            Type = Bud.Shared.Contracts.MetricType.Quantitative,
+            Type = Bud.Shared.Contracts.IndicatorType.Quantitative,
             OrderIndex = 0,
-            QuantitativeType = Bud.Shared.Contracts.QuantitativeMetricType.KeepAbove,
+            QuantitativeType = Bud.Shared.Contracts.QuantitativeIndicatorType.KeepAbove,
             MinValue = null,
-            Unit = Bud.Shared.Contracts.MetricUnit.Points
+            Unit = Bud.Shared.Contracts.IndicatorUnit.Points
         };
 
         // Act
@@ -440,14 +440,14 @@ public sealed class TemplateMetricDtoValidatorTests
     public async Task Validate_KeepAboveWithNegativeMinValue_Fails()
     {
         // Arrange
-        var dto = new TemplateMetricRequest
+        var dto = new TemplateIndicatorRequest
         {
             Name = "Story Points",
-            Type = Bud.Shared.Contracts.MetricType.Quantitative,
+            Type = Bud.Shared.Contracts.IndicatorType.Quantitative,
             OrderIndex = 0,
-            QuantitativeType = Bud.Shared.Contracts.QuantitativeMetricType.KeepAbove,
+            QuantitativeType = Bud.Shared.Contracts.QuantitativeIndicatorType.KeepAbove,
             MinValue = -10m,
-            Unit = Bud.Shared.Contracts.MetricUnit.Points
+            Unit = Bud.Shared.Contracts.IndicatorUnit.Points
         };
 
         // Act
@@ -468,14 +468,14 @@ public sealed class TemplateMetricDtoValidatorTests
     public async Task Validate_KeepBelowWithValidMaxValue_Passes()
     {
         // Arrange
-        var dto = new TemplateMetricRequest
+        var dto = new TemplateIndicatorRequest
         {
             Name = "Taxa de Erro",
-            Type = Bud.Shared.Contracts.MetricType.Quantitative,
+            Type = Bud.Shared.Contracts.IndicatorType.Quantitative,
             OrderIndex = 0,
-            QuantitativeType = Bud.Shared.Contracts.QuantitativeMetricType.KeepBelow,
+            QuantitativeType = Bud.Shared.Contracts.QuantitativeIndicatorType.KeepBelow,
             MaxValue = 5m,
-            Unit = Bud.Shared.Contracts.MetricUnit.Percentage
+            Unit = Bud.Shared.Contracts.IndicatorUnit.Percentage
         };
 
         // Act
@@ -490,14 +490,14 @@ public sealed class TemplateMetricDtoValidatorTests
     public async Task Validate_KeepBelowWithZeroMaxValue_Passes()
     {
         // Arrange
-        var dto = new TemplateMetricRequest
+        var dto = new TemplateIndicatorRequest
         {
             Name = "Taxa de Erro",
-            Type = Bud.Shared.Contracts.MetricType.Quantitative,
+            Type = Bud.Shared.Contracts.IndicatorType.Quantitative,
             OrderIndex = 0,
-            QuantitativeType = Bud.Shared.Contracts.QuantitativeMetricType.KeepBelow,
+            QuantitativeType = Bud.Shared.Contracts.QuantitativeIndicatorType.KeepBelow,
             MaxValue = 0m,
-            Unit = Bud.Shared.Contracts.MetricUnit.Percentage
+            Unit = Bud.Shared.Contracts.IndicatorUnit.Percentage
         };
 
         // Act
@@ -511,14 +511,14 @@ public sealed class TemplateMetricDtoValidatorTests
     public async Task Validate_KeepBelowWithoutMaxValue_Fails()
     {
         // Arrange
-        var dto = new TemplateMetricRequest
+        var dto = new TemplateIndicatorRequest
         {
             Name = "Taxa de Erro",
-            Type = Bud.Shared.Contracts.MetricType.Quantitative,
+            Type = Bud.Shared.Contracts.IndicatorType.Quantitative,
             OrderIndex = 0,
-            QuantitativeType = Bud.Shared.Contracts.QuantitativeMetricType.KeepBelow,
+            QuantitativeType = Bud.Shared.Contracts.QuantitativeIndicatorType.KeepBelow,
             MaxValue = null,
-            Unit = Bud.Shared.Contracts.MetricUnit.Percentage
+            Unit = Bud.Shared.Contracts.IndicatorUnit.Percentage
         };
 
         // Act
@@ -535,14 +535,14 @@ public sealed class TemplateMetricDtoValidatorTests
     public async Task Validate_KeepBelowWithNegativeMaxValue_Fails()
     {
         // Arrange
-        var dto = new TemplateMetricRequest
+        var dto = new TemplateIndicatorRequest
         {
             Name = "Taxa de Erro",
-            Type = Bud.Shared.Contracts.MetricType.Quantitative,
+            Type = Bud.Shared.Contracts.IndicatorType.Quantitative,
             OrderIndex = 0,
-            QuantitativeType = Bud.Shared.Contracts.QuantitativeMetricType.KeepBelow,
+            QuantitativeType = Bud.Shared.Contracts.QuantitativeIndicatorType.KeepBelow,
             MaxValue = -5m,
-            Unit = Bud.Shared.Contracts.MetricUnit.Percentage
+            Unit = Bud.Shared.Contracts.IndicatorUnit.Percentage
         };
 
         // Act
@@ -563,15 +563,15 @@ public sealed class TemplateMetricDtoValidatorTests
     public async Task Validate_KeepBetweenWithValidValues_Passes()
     {
         // Arrange
-        var dto = new TemplateMetricRequest
+        var dto = new TemplateIndicatorRequest
         {
             Name = "Tempo de Resposta",
-            Type = Bud.Shared.Contracts.MetricType.Quantitative,
+            Type = Bud.Shared.Contracts.IndicatorType.Quantitative,
             OrderIndex = 0,
-            QuantitativeType = Bud.Shared.Contracts.QuantitativeMetricType.KeepBetween,
+            QuantitativeType = Bud.Shared.Contracts.QuantitativeIndicatorType.KeepBetween,
             MinValue = 100m,
             MaxValue = 500m,
-            Unit = Bud.Shared.Contracts.MetricUnit.Integer
+            Unit = Bud.Shared.Contracts.IndicatorUnit.Integer
         };
 
         // Act
@@ -586,15 +586,15 @@ public sealed class TemplateMetricDtoValidatorTests
     public async Task Validate_KeepBetweenWithoutMinValue_Fails()
     {
         // Arrange
-        var dto = new TemplateMetricRequest
+        var dto = new TemplateIndicatorRequest
         {
             Name = "Tempo de Resposta",
-            Type = Bud.Shared.Contracts.MetricType.Quantitative,
+            Type = Bud.Shared.Contracts.IndicatorType.Quantitative,
             OrderIndex = 0,
-            QuantitativeType = Bud.Shared.Contracts.QuantitativeMetricType.KeepBetween,
+            QuantitativeType = Bud.Shared.Contracts.QuantitativeIndicatorType.KeepBetween,
             MinValue = null,
             MaxValue = 500m,
-            Unit = Bud.Shared.Contracts.MetricUnit.Integer
+            Unit = Bud.Shared.Contracts.IndicatorUnit.Integer
         };
 
         // Act
@@ -611,15 +611,15 @@ public sealed class TemplateMetricDtoValidatorTests
     public async Task Validate_KeepBetweenWithoutMaxValue_Fails()
     {
         // Arrange
-        var dto = new TemplateMetricRequest
+        var dto = new TemplateIndicatorRequest
         {
             Name = "Tempo de Resposta",
-            Type = Bud.Shared.Contracts.MetricType.Quantitative,
+            Type = Bud.Shared.Contracts.IndicatorType.Quantitative,
             OrderIndex = 0,
-            QuantitativeType = Bud.Shared.Contracts.QuantitativeMetricType.KeepBetween,
+            QuantitativeType = Bud.Shared.Contracts.QuantitativeIndicatorType.KeepBetween,
             MinValue = 100m,
             MaxValue = null,
-            Unit = Bud.Shared.Contracts.MetricUnit.Integer
+            Unit = Bud.Shared.Contracts.IndicatorUnit.Integer
         };
 
         // Act
@@ -636,15 +636,15 @@ public sealed class TemplateMetricDtoValidatorTests
     public async Task Validate_KeepBetweenWithMinValueGreaterThanMaxValue_Fails()
     {
         // Arrange
-        var dto = new TemplateMetricRequest
+        var dto = new TemplateIndicatorRequest
         {
             Name = "Tempo de Resposta",
-            Type = Bud.Shared.Contracts.MetricType.Quantitative,
+            Type = Bud.Shared.Contracts.IndicatorType.Quantitative,
             OrderIndex = 0,
-            QuantitativeType = Bud.Shared.Contracts.QuantitativeMetricType.KeepBetween,
+            QuantitativeType = Bud.Shared.Contracts.QuantitativeIndicatorType.KeepBetween,
             MinValue = 500m,
             MaxValue = 100m,
-            Unit = Bud.Shared.Contracts.MetricUnit.Integer
+            Unit = Bud.Shared.Contracts.IndicatorUnit.Integer
         };
 
         // Act
@@ -661,15 +661,15 @@ public sealed class TemplateMetricDtoValidatorTests
     public async Task Validate_KeepBetweenWithEqualMinAndMaxValues_Fails()
     {
         // Arrange
-        var dto = new TemplateMetricRequest
+        var dto = new TemplateIndicatorRequest
         {
             Name = "Tempo de Resposta",
-            Type = Bud.Shared.Contracts.MetricType.Quantitative,
+            Type = Bud.Shared.Contracts.IndicatorType.Quantitative,
             OrderIndex = 0,
-            QuantitativeType = Bud.Shared.Contracts.QuantitativeMetricType.KeepBetween,
+            QuantitativeType = Bud.Shared.Contracts.QuantitativeIndicatorType.KeepBetween,
             MinValue = 100m,
             MaxValue = 100m,
-            Unit = Bud.Shared.Contracts.MetricUnit.Integer
+            Unit = Bud.Shared.Contracts.IndicatorUnit.Integer
         };
 
         // Act
@@ -686,15 +686,15 @@ public sealed class TemplateMetricDtoValidatorTests
     public async Task Validate_KeepBetweenWithNegativeMinValue_Fails()
     {
         // Arrange
-        var dto = new TemplateMetricRequest
+        var dto = new TemplateIndicatorRequest
         {
             Name = "Tempo de Resposta",
-            Type = Bud.Shared.Contracts.MetricType.Quantitative,
+            Type = Bud.Shared.Contracts.IndicatorType.Quantitative,
             OrderIndex = 0,
-            QuantitativeType = Bud.Shared.Contracts.QuantitativeMetricType.KeepBetween,
+            QuantitativeType = Bud.Shared.Contracts.QuantitativeIndicatorType.KeepBetween,
             MinValue = -10m,
             MaxValue = 100m,
-            Unit = Bud.Shared.Contracts.MetricUnit.Integer
+            Unit = Bud.Shared.Contracts.IndicatorUnit.Integer
         };
 
         // Act
@@ -711,15 +711,15 @@ public sealed class TemplateMetricDtoValidatorTests
     public async Task Validate_KeepBetweenWithNegativeMaxValue_Fails()
     {
         // Arrange
-        var dto = new TemplateMetricRequest
+        var dto = new TemplateIndicatorRequest
         {
             Name = "Tempo de Resposta",
-            Type = Bud.Shared.Contracts.MetricType.Quantitative,
+            Type = Bud.Shared.Contracts.IndicatorType.Quantitative,
             OrderIndex = 0,
-            QuantitativeType = Bud.Shared.Contracts.QuantitativeMetricType.KeepBetween,
+            QuantitativeType = Bud.Shared.Contracts.QuantitativeIndicatorType.KeepBetween,
             MinValue = 0m,
             MaxValue = -5m,
-            Unit = Bud.Shared.Contracts.MetricUnit.Integer
+            Unit = Bud.Shared.Contracts.IndicatorUnit.Integer
         };
 
         // Act
@@ -740,14 +740,14 @@ public sealed class TemplateMetricDtoValidatorTests
     public async Task Validate_AchieveWithValidMaxValue_Passes()
     {
         // Arrange
-        var dto = new TemplateMetricRequest
+        var dto = new TemplateIndicatorRequest
         {
             Name = "Meta de Vendas",
-            Type = Bud.Shared.Contracts.MetricType.Quantitative,
+            Type = Bud.Shared.Contracts.IndicatorType.Quantitative,
             OrderIndex = 0,
-            QuantitativeType = Bud.Shared.Contracts.QuantitativeMetricType.Achieve,
+            QuantitativeType = Bud.Shared.Contracts.QuantitativeIndicatorType.Achieve,
             MaxValue = 100m,
-            Unit = Bud.Shared.Contracts.MetricUnit.Integer
+            Unit = Bud.Shared.Contracts.IndicatorUnit.Integer
         };
 
         // Act
@@ -762,14 +762,14 @@ public sealed class TemplateMetricDtoValidatorTests
     public async Task Validate_AchieveWithZeroMaxValue_Passes()
     {
         // Arrange
-        var dto = new TemplateMetricRequest
+        var dto = new TemplateIndicatorRequest
         {
             Name = "Meta de Vendas",
-            Type = Bud.Shared.Contracts.MetricType.Quantitative,
+            Type = Bud.Shared.Contracts.IndicatorType.Quantitative,
             OrderIndex = 0,
-            QuantitativeType = Bud.Shared.Contracts.QuantitativeMetricType.Achieve,
+            QuantitativeType = Bud.Shared.Contracts.QuantitativeIndicatorType.Achieve,
             MaxValue = 0m,
-            Unit = Bud.Shared.Contracts.MetricUnit.Integer
+            Unit = Bud.Shared.Contracts.IndicatorUnit.Integer
         };
 
         // Act
@@ -783,14 +783,14 @@ public sealed class TemplateMetricDtoValidatorTests
     public async Task Validate_AchieveWithoutMaxValue_Fails()
     {
         // Arrange
-        var dto = new TemplateMetricRequest
+        var dto = new TemplateIndicatorRequest
         {
             Name = "Meta de Vendas",
-            Type = Bud.Shared.Contracts.MetricType.Quantitative,
+            Type = Bud.Shared.Contracts.IndicatorType.Quantitative,
             OrderIndex = 0,
-            QuantitativeType = Bud.Shared.Contracts.QuantitativeMetricType.Achieve,
+            QuantitativeType = Bud.Shared.Contracts.QuantitativeIndicatorType.Achieve,
             MaxValue = null,
-            Unit = Bud.Shared.Contracts.MetricUnit.Integer
+            Unit = Bud.Shared.Contracts.IndicatorUnit.Integer
         };
 
         // Act
@@ -807,14 +807,14 @@ public sealed class TemplateMetricDtoValidatorTests
     public async Task Validate_AchieveWithNegativeMaxValue_Fails()
     {
         // Arrange
-        var dto = new TemplateMetricRequest
+        var dto = new TemplateIndicatorRequest
         {
             Name = "Meta de Vendas",
-            Type = Bud.Shared.Contracts.MetricType.Quantitative,
+            Type = Bud.Shared.Contracts.IndicatorType.Quantitative,
             OrderIndex = 0,
-            QuantitativeType = Bud.Shared.Contracts.QuantitativeMetricType.Achieve,
+            QuantitativeType = Bud.Shared.Contracts.QuantitativeIndicatorType.Achieve,
             MaxValue = -50m,
-            Unit = Bud.Shared.Contracts.MetricUnit.Integer
+            Unit = Bud.Shared.Contracts.IndicatorUnit.Integer
         };
 
         // Act
@@ -835,14 +835,14 @@ public sealed class TemplateMetricDtoValidatorTests
     public async Task Validate_ReduceWithValidMaxValue_Passes()
     {
         // Arrange
-        var dto = new TemplateMetricRequest
+        var dto = new TemplateIndicatorRequest
         {
             Name = "Redução de Custos",
-            Type = Bud.Shared.Contracts.MetricType.Quantitative,
+            Type = Bud.Shared.Contracts.IndicatorType.Quantitative,
             OrderIndex = 0,
-            QuantitativeType = Bud.Shared.Contracts.QuantitativeMetricType.Reduce,
+            QuantitativeType = Bud.Shared.Contracts.QuantitativeIndicatorType.Reduce,
             MaxValue = 50m,
-            Unit = Bud.Shared.Contracts.MetricUnit.Percentage
+            Unit = Bud.Shared.Contracts.IndicatorUnit.Percentage
         };
 
         // Act
@@ -857,14 +857,14 @@ public sealed class TemplateMetricDtoValidatorTests
     public async Task Validate_ReduceWithZeroMaxValue_Passes()
     {
         // Arrange
-        var dto = new TemplateMetricRequest
+        var dto = new TemplateIndicatorRequest
         {
             Name = "Redução de Custos",
-            Type = Bud.Shared.Contracts.MetricType.Quantitative,
+            Type = Bud.Shared.Contracts.IndicatorType.Quantitative,
             OrderIndex = 0,
-            QuantitativeType = Bud.Shared.Contracts.QuantitativeMetricType.Reduce,
+            QuantitativeType = Bud.Shared.Contracts.QuantitativeIndicatorType.Reduce,
             MaxValue = 0m,
-            Unit = Bud.Shared.Contracts.MetricUnit.Percentage
+            Unit = Bud.Shared.Contracts.IndicatorUnit.Percentage
         };
 
         // Act
@@ -878,14 +878,14 @@ public sealed class TemplateMetricDtoValidatorTests
     public async Task Validate_ReduceWithoutMaxValue_Fails()
     {
         // Arrange
-        var dto = new TemplateMetricRequest
+        var dto = new TemplateIndicatorRequest
         {
             Name = "Redução de Custos",
-            Type = Bud.Shared.Contracts.MetricType.Quantitative,
+            Type = Bud.Shared.Contracts.IndicatorType.Quantitative,
             OrderIndex = 0,
-            QuantitativeType = Bud.Shared.Contracts.QuantitativeMetricType.Reduce,
+            QuantitativeType = Bud.Shared.Contracts.QuantitativeIndicatorType.Reduce,
             MaxValue = null,
-            Unit = Bud.Shared.Contracts.MetricUnit.Percentage
+            Unit = Bud.Shared.Contracts.IndicatorUnit.Percentage
         };
 
         // Act
@@ -902,14 +902,14 @@ public sealed class TemplateMetricDtoValidatorTests
     public async Task Validate_ReduceWithNegativeMaxValue_Fails()
     {
         // Arrange
-        var dto = new TemplateMetricRequest
+        var dto = new TemplateIndicatorRequest
         {
             Name = "Redução de Custos",
-            Type = Bud.Shared.Contracts.MetricType.Quantitative,
+            Type = Bud.Shared.Contracts.IndicatorType.Quantitative,
             OrderIndex = 0,
-            QuantitativeType = Bud.Shared.Contracts.QuantitativeMetricType.Reduce,
+            QuantitativeType = Bud.Shared.Contracts.QuantitativeIndicatorType.Reduce,
             MaxValue = -10m,
-            Unit = Bud.Shared.Contracts.MetricUnit.Percentage
+            Unit = Bud.Shared.Contracts.IndicatorUnit.Percentage
         };
 
         // Act
@@ -927,20 +927,20 @@ public sealed class TemplateMetricDtoValidatorTests
     #region Unit Enum Tests
 
     [Theory]
-    [InlineData(Bud.Shared.Contracts.MetricUnit.Integer)]
-    [InlineData(Bud.Shared.Contracts.MetricUnit.Decimal)]
-    [InlineData(Bud.Shared.Contracts.MetricUnit.Percentage)]
-    [InlineData(Bud.Shared.Contracts.MetricUnit.Hours)]
-    [InlineData(Bud.Shared.Contracts.MetricUnit.Points)]
-    public async Task Validate_QuantitativeWithAllValidUnits_Passes(Bud.Shared.Contracts.MetricUnit unit)
+    [InlineData(Bud.Shared.Contracts.IndicatorUnit.Integer)]
+    [InlineData(Bud.Shared.Contracts.IndicatorUnit.Decimal)]
+    [InlineData(Bud.Shared.Contracts.IndicatorUnit.Percentage)]
+    [InlineData(Bud.Shared.Contracts.IndicatorUnit.Hours)]
+    [InlineData(Bud.Shared.Contracts.IndicatorUnit.Points)]
+    public async Task Validate_QuantitativeWithAllValidUnits_Passes(Bud.Shared.Contracts.IndicatorUnit unit)
     {
         // Arrange
-        var dto = new TemplateMetricRequest
+        var dto = new TemplateIndicatorRequest
         {
             Name = "Métrica",
-            Type = Bud.Shared.Contracts.MetricType.Quantitative,
+            Type = Bud.Shared.Contracts.IndicatorType.Quantitative,
             OrderIndex = 0,
-            QuantitativeType = Bud.Shared.Contracts.QuantitativeMetricType.Achieve,
+            QuantitativeType = Bud.Shared.Contracts.QuantitativeIndicatorType.Achieve,
             MaxValue = 100m,
             Unit = unit
         };
@@ -953,23 +953,23 @@ public sealed class TemplateMetricDtoValidatorTests
     }
 
     [Theory]
-    [InlineData(Bud.Shared.Contracts.QuantitativeMetricType.KeepAbove)]
-    [InlineData(Bud.Shared.Contracts.QuantitativeMetricType.KeepBelow)]
-    [InlineData(Bud.Shared.Contracts.QuantitativeMetricType.KeepBetween)]
-    [InlineData(Bud.Shared.Contracts.QuantitativeMetricType.Achieve)]
-    [InlineData(Bud.Shared.Contracts.QuantitativeMetricType.Reduce)]
-    public async Task Validate_QuantitativeWithAllValidTypes_PassesTypeValidation(Bud.Shared.Contracts.QuantitativeMetricType quantitativeType)
+    [InlineData(Bud.Shared.Contracts.QuantitativeIndicatorType.KeepAbove)]
+    [InlineData(Bud.Shared.Contracts.QuantitativeIndicatorType.KeepBelow)]
+    [InlineData(Bud.Shared.Contracts.QuantitativeIndicatorType.KeepBetween)]
+    [InlineData(Bud.Shared.Contracts.QuantitativeIndicatorType.Achieve)]
+    [InlineData(Bud.Shared.Contracts.QuantitativeIndicatorType.Reduce)]
+    public async Task Validate_QuantitativeWithAllValidTypes_PassesTypeValidation(Bud.Shared.Contracts.QuantitativeIndicatorType quantitativeType)
     {
         // Arrange
-        var dto = new TemplateMetricRequest
+        var dto = new TemplateIndicatorRequest
         {
             Name = "Métrica",
-            Type = Bud.Shared.Contracts.MetricType.Quantitative,
+            Type = Bud.Shared.Contracts.IndicatorType.Quantitative,
             OrderIndex = 0,
             QuantitativeType = quantitativeType,
             MinValue = 10m,
             MaxValue = 100m,
-            Unit = Bud.Shared.Contracts.MetricUnit.Integer
+            Unit = Bud.Shared.Contracts.IndicatorUnit.Integer
         };
 
         // Act

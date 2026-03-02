@@ -26,27 +26,27 @@ public sealed partial class DeleteTeam(
         if (team is null)
         {
             LogTeamDeletionFailed(logger, id, "Not found");
-            return Result.NotFound("Time não encontrado.");
+            return Result.NotFound(UserErrorMessages.TeamNotFound);
         }
 
         var canDelete = await authorizationGateway.CanWriteOrganizationAsync(user, team.OrganizationId, cancellationToken);
         if (!canDelete)
         {
             LogTeamDeletionFailed(logger, id, "Forbidden");
-            return Result.Forbidden("Você não tem permissão para excluir este time.");
+            return Result.Forbidden(UserErrorMessages.TeamDeleteForbidden);
         }
 
         if (await teamRepository.HasSubTeamsAsync(id, cancellationToken))
         {
             LogTeamDeletionFailed(logger, id, "Has sub-teams");
-            return Result.Failure("Não é possível excluir um time com sub-times. Exclua os sub-times primeiro.", ErrorType.Conflict);
+            return Result.Failure(UserErrorMessages.TeamDeleteWithSubTeamsConflict, ErrorType.Conflict);
         }
 
-        if (await teamRepository.HasMissionsAsync(id, cancellationToken))
+        if (await teamRepository.HasGoalsAsync(id, cancellationToken))
         {
-            LogTeamDeletionFailed(logger, id, "Has missions");
+            LogTeamDeletionFailed(logger, id, "Has goals");
             return Result.Failure(
-                "Não é possível excluir o time porque existem missões associadas a ele.",
+                "Não é possível excluir o time porque existem metas associadas a ele.",
                 ErrorType.Conflict);
         }
 

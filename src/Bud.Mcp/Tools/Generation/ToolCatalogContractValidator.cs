@@ -6,22 +6,18 @@ public static class ToolCatalogContractValidator
 {
     private static readonly Dictionary<string, string[]> RequiredByTool = new(StringComparer.Ordinal)
     {
-        ["mission_create"] = ["name", "startDate", "endDate", "status", "scopeType", "scopeId"],
-        ["mission_metric_create"] = ["missionId", "name", "type"],
-        ["metric_checkin_create"] = ["missionMetricId", "checkinDate", "confidenceLevel"],
-        ["mission_update"] = ["id", "payload"],
-        ["mission_metric_update"] = ["id", "payload"],
-        ["metric_checkin_update"] = ["id", "payload"],
-        ["mission_get"] = ["id"],
-        ["mission_delete"] = ["id"],
-        ["mission_metric_get"] = ["id"],
-        ["mission_metric_delete"] = ["id"],
-        ["mission_objective_create"] = ["missionId", "name"],
-        ["mission_objective_update"] = ["id", "payload"],
-        ["mission_objective_get"] = ["id"],
-        ["mission_objective_delete"] = ["id"],
-        ["metric_checkin_get"] = ["id"],
-        ["metric_checkin_delete"] = ["id"]
+        ["goal_create"] = ["name", "startDate", "endDate", "status", "scopeType", "scopeId"],
+        ["goal_indicator_create"] = ["goalId", "name", "type"],
+        ["indicator_checkin_create"] = ["checkinDate", "confidenceLevel"],
+        ["goal_update"] = ["id", "payload"],
+        ["goal_indicator_update"] = ["id", "payload"],
+        ["indicator_checkin_update"] = ["indicatorId", "checkinId", "payload"],
+        ["goal_get"] = ["id"],
+        ["goal_delete"] = ["id"],
+        ["goal_indicator_get"] = ["id"],
+        ["goal_indicator_delete"] = ["id"],
+        ["indicator_checkin_get"] = ["indicatorId", "checkinId"],
+        ["indicator_checkin_delete"] = ["indicatorId", "checkinId"]
     };
 
     public static IReadOnlyList<string> ValidateRequiredFields(IReadOnlyList<McpToolDefinition> tools)

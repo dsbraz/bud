@@ -28,14 +28,14 @@ public sealed partial class PatchTeamCollaborators(
         if (team is null)
         {
             LogTeamCollaboratorsPatchFailed(logger, id, "Team not found");
-            return Result.NotFound("Time não encontrado.");
+            return Result.NotFound(UserErrorMessages.TeamNotFound);
         }
 
         var canManage = await authorizationGateway.IsOrganizationOwnerAsync(user, team.OrganizationId, cancellationToken);
         if (!canManage)
         {
             LogTeamCollaboratorsPatchFailed(logger, id, "Forbidden");
-            return Result.Forbidden("Apenas o proprietário da organização pode atribuir colaboradores.");
+            return Result.Forbidden(UserErrorMessages.TeamAssignForbidden);
         }
 
         var distinctCollaboratorIds = request.CollaboratorIds.Distinct().ToList();
@@ -43,7 +43,7 @@ public sealed partial class PatchTeamCollaborators(
         if (!distinctCollaboratorIds.Contains(team.LeaderId))
         {
             LogTeamCollaboratorsPatchFailed(logger, id, "Leader not in members list");
-            return Result.Failure("O líder da equipe deve estar incluído na lista de membros.", ErrorType.Validation);
+            return Result.Failure(UserErrorMessages.TeamLeaderMustBeMember, ErrorType.Validation);
         }
 
         if (distinctCollaboratorIds.Count > 0)
@@ -56,7 +56,7 @@ public sealed partial class PatchTeamCollaborators(
             if (validCount != distinctCollaboratorIds.Count)
             {
                 LogTeamCollaboratorsPatchFailed(logger, id, "Invalid collaborators");
-                return Result.Failure("Um ou mais colaboradores são inválidos ou pertencem a outra organização.", ErrorType.Validation);
+                return Result.Failure(UserErrorMessages.TeamMembersInvalid, ErrorType.Validation);
             }
         }
 
@@ -80,9 +80,9 @@ public sealed partial class PatchTeamCollaborators(
     [LoggerMessage(EventId = 4039, Level = LogLevel.Information, Message = "Patching collaborators for team {TeamId}")]
     private static partial void LogPatchingTeamCollaborators(ILogger logger, Guid teamId);
 
-    [LoggerMessage(EventId = 4040, Level = LogLevel.Information, Message = "Team collaborators patched successfully: {TeamId} with {Count} members")]
+    [LoggerMessage(EventId = 4039, Level = LogLevel.Information, Message = "Team collaborators patched successfully: {TeamId} with {Count} members")]
     private static partial void LogTeamCollaboratorsPatched(ILogger logger, Guid teamId, int count);
 
-    [LoggerMessage(EventId = 4041, Level = LogLevel.Warning, Message = "Team collaborators patch failed for {TeamId}: {Reason}")]
+    [LoggerMessage(EventId = 4039, Level = LogLevel.Warning, Message = "Team collaborators patch failed for {TeamId}: {Reason}")]
     private static partial void LogTeamCollaboratorsPatchFailed(ILogger logger, Guid teamId, string reason);
 }

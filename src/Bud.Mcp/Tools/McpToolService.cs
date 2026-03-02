@@ -20,21 +20,21 @@ public sealed class McpToolService(BudApiClient budApiClient, BudApiSession sess
 
     private static readonly HashSet<string> DomainToolNames = new(StringComparer.Ordinal)
     {
-        "mission_create",
-        "mission_get",
-        "mission_list",
-        "mission_update",
-        "mission_delete",
-        "mission_metric_create",
-        "mission_metric_get",
-        "mission_metric_list",
-        "mission_metric_update",
-        "mission_metric_delete",
-        "metric_checkin_create",
-        "metric_checkin_get",
-        "metric_checkin_list",
-        "metric_checkin_update",
-        "metric_checkin_delete"
+        "goal_create",
+        "goal_get",
+        "goal_list",
+        "goal_update",
+        "goal_delete",
+        "goal_indicator_create",
+        "goal_indicator_get",
+        "goal_indicator_list",
+        "goal_indicator_update",
+        "goal_indicator_delete",
+        "indicator_checkin_create",
+        "indicator_checkin_get",
+        "indicator_checkin_list",
+        "indicator_checkin_update",
+        "indicator_checkin_delete"
     };
 
     private static readonly List<McpToolDefinition> ToolDefinitions =
@@ -153,27 +153,27 @@ public sealed class McpToolService(BudApiClient budApiClient, BudApiSession sess
             "session_bootstrap" => await SessionBootstrapAsync(cancellationToken),
             "help_list_actions" => HelpListActions(),
             "help_action_schema" => HelpActionSchema(arguments),
-            "mission_create" => Serialize(await _budApiClient.CreateMissionAsync(Deserialize<CreateMissionRequest>(arguments), cancellationToken)),
-            "mission_get" => Serialize(await _budApiClient.GetMissionAsync(ParseId(arguments), cancellationToken)),
-            "mission_list" => await MissionListAsync(arguments, cancellationToken),
-            "mission_update" => await MissionUpdateAsync(arguments, cancellationToken),
-            "mission_delete" => await MissionDeleteAsync(arguments, cancellationToken),
-            "mission_metric_create" => Serialize(await _budApiClient.CreateMissionMetricAsync(Deserialize<CreateMetricRequest>(arguments), cancellationToken)),
-            "mission_metric_get" => Serialize(await _budApiClient.GetMissionMetricAsync(ParseId(arguments), cancellationToken)),
-            "mission_metric_list" => await MissionMetricListAsync(arguments, cancellationToken),
-            "mission_metric_update" => await MissionMetricUpdateAsync(arguments, cancellationToken),
-            "mission_metric_delete" => await MissionMetricDeleteAsync(arguments, cancellationToken),
-            "metric_checkin_create" => Serialize(await _budApiClient.CreateMetricCheckinAsync(
-                ParseGuid(arguments, "metricId"),
+            "goal_create" => Serialize(await _budApiClient.CreateGoalAsync(Deserialize<CreateGoalRequest>(arguments), cancellationToken)),
+            "goal_get" => Serialize(await _budApiClient.GetGoalAsync(ParseId(arguments), cancellationToken)),
+            "goal_list" => await GoalListAsync(arguments, cancellationToken),
+            "goal_update" => await GoalUpdateAsync(arguments, cancellationToken),
+            "goal_delete" => await GoalDeleteAsync(arguments, cancellationToken),
+            "goal_indicator_create" => Serialize(await _budApiClient.CreateGoalIndicatorAsync(Deserialize<CreateIndicatorRequest>(arguments), cancellationToken)),
+            "goal_indicator_get" => Serialize(await _budApiClient.GetGoalIndicatorAsync(ParseId(arguments), cancellationToken)),
+            "goal_indicator_list" => await GoalIndicatorListAsync(arguments, cancellationToken),
+            "goal_indicator_update" => await GoalIndicatorUpdateAsync(arguments, cancellationToken),
+            "goal_indicator_delete" => await GoalIndicatorDeleteAsync(arguments, cancellationToken),
+            "indicator_checkin_create" => Serialize(await _budApiClient.CreateIndicatorCheckinAsync(
+                ParseGuid(arguments, "indicatorId"),
                 Deserialize<CreateCheckinRequest>(arguments),
                 cancellationToken)),
-            "metric_checkin_get" => Serialize(await _budApiClient.GetMetricCheckinAsync(
-                ParseGuid(arguments, "metricId"),
+            "indicator_checkin_get" => Serialize(await _budApiClient.GetIndicatorCheckinAsync(
+                ParseGuid(arguments, "indicatorId"),
                 ParseGuid(arguments, "checkinId"),
                 cancellationToken)),
-            "metric_checkin_list" => await MetricCheckinListAsync(arguments, cancellationToken),
-            "metric_checkin_update" => await MetricCheckinUpdateAsync(arguments, cancellationToken),
-            "metric_checkin_delete" => await MetricCheckinDeleteAsync(arguments, cancellationToken),
+            "indicator_checkin_list" => await IndicatorCheckinListAsync(arguments, cancellationToken),
+            "indicator_checkin_update" => await IndicatorCheckinUpdateAsync(arguments, cancellationToken),
+            "indicator_checkin_delete" => await IndicatorCheckinDeleteAsync(arguments, cancellationToken),
             _ => throw new InvalidOperationException($"Tool '{name}' não é suportada.")
         };
     }
@@ -249,9 +249,9 @@ public sealed class McpToolService(BudApiClient budApiClient, BudApiSession sess
             ["nextSteps"] = new JsonArray("tenant_set_current", "help_list_actions", "help_action_schema"),
             ["starterSchemas"] = new JsonArray
             {
-                BuildActionHelp(ToolMap["mission_create"]),
-                BuildActionHelp(ToolMap["mission_metric_create"]),
-                BuildActionHelp(ToolMap["metric_checkin_create"])
+                BuildActionHelp(ToolMap["goal_create"]),
+                BuildActionHelp(ToolMap["goal_indicator_create"]),
+                BuildActionHelp(ToolMap["indicator_checkin_create"])
             }
         };
     }
@@ -293,78 +293,78 @@ public sealed class McpToolService(BudApiClient budApiClient, BudApiSession sess
         return new JsonObject { ["actions"] = actions };
     }
 
-    private async Task<JsonNode> MissionListAsync(JsonElement arguments, CancellationToken cancellationToken)
+    private async Task<JsonNode> GoalListAsync(JsonElement arguments, CancellationToken cancellationToken)
     {
-        var scopeType = TryParseEnum<MissionScopeType>(arguments, "scopeType");
+        var scopeType = TryParseEnum<GoalScopeType>(arguments, "scopeType");
         var scopeId = TryParseGuid(arguments, "scopeId");
         var search = TryGetString(arguments, "search");
         var page = TryGetInt(arguments, "page") ?? 1;
         var pageSize = TryGetInt(arguments, "pageSize") ?? 10;
-        var result = await _budApiClient.ListMissionsAsync(scopeType, scopeId, search, page, pageSize, cancellationToken);
+        var result = await _budApiClient.ListGoalsAsync(scopeType, scopeId, search, page, pageSize, cancellationToken);
         return Serialize(result);
     }
 
-    private async Task<JsonNode> MissionUpdateAsync(JsonElement arguments, CancellationToken cancellationToken)
+    private async Task<JsonNode> GoalUpdateAsync(JsonElement arguments, CancellationToken cancellationToken)
     {
         var id = ParseGuid(arguments, "id");
-        var payload = DeserializeFromProperty<PatchMissionRequest>(arguments, "payload");
-        var result = await _budApiClient.UpdateMissionAsync(id, payload, cancellationToken);
+        var payload = DeserializeFromProperty<PatchGoalRequest>(arguments, "payload");
+        var result = await _budApiClient.UpdateGoalAsync(id, payload, cancellationToken);
         return Serialize(result);
     }
 
-    private async Task<JsonObject> MissionDeleteAsync(JsonElement arguments, CancellationToken cancellationToken)
+    private async Task<JsonObject> GoalDeleteAsync(JsonElement arguments, CancellationToken cancellationToken)
     {
-        await _budApiClient.DeleteMissionAsync(ParseId(arguments), cancellationToken);
+        await _budApiClient.DeleteGoalAsync(ParseId(arguments), cancellationToken);
         return new JsonObject { ["deleted"] = true };
     }
 
-    private async Task<JsonNode> MissionMetricListAsync(JsonElement arguments, CancellationToken cancellationToken)
+    private async Task<JsonNode> GoalIndicatorListAsync(JsonElement arguments, CancellationToken cancellationToken)
     {
-        var missionId = TryParseGuid(arguments, "missionId");
+        var goalId = TryParseGuid(arguments, "goalId");
         var search = TryGetString(arguments, "search");
         var page = TryGetInt(arguments, "page") ?? 1;
         var pageSize = TryGetInt(arguments, "pageSize") ?? 10;
-        var result = await _budApiClient.ListMissionMetricsAsync(missionId, search, page, pageSize, cancellationToken);
+        var result = await _budApiClient.ListGoalIndicatorsAsync(goalId, search, page, pageSize, cancellationToken);
         return Serialize(result);
     }
 
-    private async Task<JsonNode> MissionMetricUpdateAsync(JsonElement arguments, CancellationToken cancellationToken)
+    private async Task<JsonNode> GoalIndicatorUpdateAsync(JsonElement arguments, CancellationToken cancellationToken)
     {
         var id = ParseGuid(arguments, "id");
-        var payload = DeserializeFromProperty<PatchMetricRequest>(arguments, "payload");
-        var result = await _budApiClient.UpdateMissionMetricAsync(id, payload, cancellationToken);
+        var payload = DeserializeFromProperty<PatchIndicatorRequest>(arguments, "payload");
+        var result = await _budApiClient.UpdateGoalIndicatorAsync(id, payload, cancellationToken);
         return Serialize(result);
     }
 
-    private async Task<JsonObject> MissionMetricDeleteAsync(JsonElement arguments, CancellationToken cancellationToken)
+    private async Task<JsonObject> GoalIndicatorDeleteAsync(JsonElement arguments, CancellationToken cancellationToken)
     {
-        await _budApiClient.DeleteMissionMetricAsync(ParseId(arguments), cancellationToken);
+        await _budApiClient.DeleteGoalIndicatorAsync(ParseId(arguments), cancellationToken);
         return new JsonObject { ["deleted"] = true };
     }
 
-    private async Task<JsonNode> MetricCheckinListAsync(JsonElement arguments, CancellationToken cancellationToken)
+    private async Task<JsonNode> IndicatorCheckinListAsync(JsonElement arguments, CancellationToken cancellationToken)
     {
-        var metricId = ParseGuid(arguments, "metricId");
+        var indicatorId = ParseGuid(arguments, "indicatorId");
         var page = TryGetInt(arguments, "page") ?? 1;
         var pageSize = TryGetInt(arguments, "pageSize") ?? 10;
-        var result = await _budApiClient.ListMetricCheckinsAsync(metricId, page, pageSize, cancellationToken);
+        var result = await _budApiClient.ListIndicatorCheckinsAsync(indicatorId, page, pageSize, cancellationToken);
         return Serialize(result);
     }
 
-    private async Task<JsonNode> MetricCheckinUpdateAsync(JsonElement arguments, CancellationToken cancellationToken)
+    private async Task<JsonNode> IndicatorCheckinUpdateAsync(JsonElement arguments, CancellationToken cancellationToken)
     {
-        var metricId = ParseGuid(arguments, "metricId");
+        var indicatorId = ParseGuid(arguments, "indicatorId");
         var checkinId = ParseGuid(arguments, "checkinId");
         var payload = DeserializeFromProperty<PatchCheckinRequest>(arguments, "payload");
-        var result = await _budApiClient.UpdateMetricCheckinAsync(metricId, checkinId, payload, cancellationToken);
+        var result = await _budApiClient.UpdateIndicatorCheckinAsync(indicatorId, checkinId, payload, cancellationToken);
         return Serialize(result);
     }
 
-    private async Task<JsonObject> MetricCheckinDeleteAsync(JsonElement arguments, CancellationToken cancellationToken)
+    private async Task<JsonObject> IndicatorCheckinDeleteAsync(JsonElement arguments, CancellationToken cancellationToken)
     {
-        var metricId = ParseGuid(arguments, "metricId");
+        var indicatorId = ParseGuid(arguments, "indicatorId");
         var checkinId = ParseGuid(arguments, "checkinId");
-        await _budApiClient.DeleteMetricCheckinAsync(metricId, checkinId, cancellationToken);
+        await _budApiClient.DeleteIndicatorCheckinAsync(indicatorId, checkinId, cancellationToken);
         return new JsonObject { ["deleted"] = true };
     }
 
@@ -585,28 +585,28 @@ public sealed class McpToolService(BudApiClient budApiClient, BudApiSession sess
 
         switch (toolName)
         {
-            case "mission_create":
-            case "mission_update":
-                ApplyEnumMetadata(clone, "status", typeof(MissionStatus));
-                ApplyEnumMetadata(clone, "scopeType", typeof(MissionScopeType));
+            case "goal_create":
+            case "goal_update":
+                ApplyEnumMetadata(clone, "status", typeof(GoalStatus));
+                ApplyEnumMetadata(clone, "scopeType", typeof(GoalScopeType));
                 ApplyNullableHint(clone, "description");
                 break;
-            case "mission_list":
-                ApplyEnumMetadata(clone, "scopeType", typeof(MissionScopeType));
+            case "goal_list":
+                ApplyEnumMetadata(clone, "scopeType", typeof(GoalScopeType));
                 break;
-            case "mission_metric_create":
-            case "mission_metric_update":
-                ApplyEnumMetadata(clone, "type", typeof(MetricType));
-                ApplyEnumMetadata(clone, "quantitativeType", typeof(QuantitativeMetricType));
-                ApplyEnumMetadata(clone, "unit", typeof(MetricUnit));
+            case "goal_indicator_create":
+            case "goal_indicator_update":
+                ApplyEnumMetadata(clone, "type", typeof(IndicatorType));
+                ApplyEnumMetadata(clone, "quantitativeType", typeof(QuantitativeIndicatorType));
+                ApplyEnumMetadata(clone, "unit", typeof(IndicatorUnit));
                 ApplyNullableHint(clone, "quantitativeType");
                 ApplyNullableHint(clone, "minValue");
                 ApplyNullableHint(clone, "maxValue");
                 ApplyNullableHint(clone, "unit");
                 ApplyNullableHint(clone, "targetText");
                 break;
-            case "metric_checkin_create":
-            case "metric_checkin_update":
+            case "indicator_checkin_create":
+            case "indicator_checkin_update":
                 ApplyConfidenceLevelMetadata(clone);
                 ApplyNullableHint(clone, "value");
                 ApplyNullableHint(clone, "text");
@@ -614,7 +614,7 @@ public sealed class McpToolService(BudApiClient budApiClient, BudApiSession sess
                 break;
         }
 
-        if (toolName == "mission_update" || toolName == "mission_metric_update" || toolName == "metric_checkin_update")
+        if (toolName == "goal_update" || toolName == "goal_indicator_update" || toolName == "indicator_checkin_update")
         {
             if (TryGetPropertySchema(clone, "payload", out var payloadSchema))
             {
@@ -746,25 +746,25 @@ public sealed class McpToolService(BudApiClient budApiClient, BudApiSession sess
             "tenant_set_current" => new JsonObject { ["tenantId"] = "00000000-0000-0000-0000-000000000001" },
             "session_bootstrap" => new JsonObject(),
             "help_list_actions" => new JsonObject(),
-            "help_action_schema" => new JsonObject { ["action"] = "mission_create" },
-            "mission_create" => new JsonObject
+            "help_action_schema" => new JsonObject { ["action"] = "goal_create" },
+            "goal_create" => new JsonObject
             {
                 ["name"] = "teste do claude",
-                ["description"] = "Missão criada via MCP",
+                ["description"] = "Meta criada via MCP",
                 ["startDate"] = "2026-02-08T00:00:00Z",
                 ["endDate"] = "2026-02-15T00:00:00Z",
                 ["status"] = "Planned",
                 ["scopeType"] = "Organization",
                 ["scopeId"] = "00000000-0000-0000-0000-000000000001"
             },
-            "mission_get" => new JsonObject { ["id"] = "00000000-0000-0000-0000-000000000002" },
-            "mission_list" => new JsonObject { ["scopeType"] = "Organization", ["scopeId"] = "00000000-0000-0000-0000-000000000001", ["page"] = 1, ["pageSize"] = 10 },
-            "mission_update" => new JsonObject
+            "goal_get" => new JsonObject { ["id"] = "00000000-0000-0000-0000-000000000002" },
+            "goal_list" => new JsonObject { ["scopeType"] = "Organization", ["scopeId"] = "00000000-0000-0000-0000-000000000001", ["page"] = 1, ["pageSize"] = 10 },
+            "goal_update" => new JsonObject
             {
                 ["id"] = "00000000-0000-0000-0000-000000000002",
                 ["payload"] = new JsonObject
                 {
-                    ["name"] = "Missão atualizada",
+                    ["name"] = "Meta atualizada",
                     ["description"] = "Ajuste de escopo",
                     ["startDate"] = "2026-02-08T00:00:00Z",
                     ["endDate"] = "2026-02-20T00:00:00Z",
@@ -773,17 +773,17 @@ public sealed class McpToolService(BudApiClient budApiClient, BudApiSession sess
                     ["scopeId"] = "00000000-0000-0000-0000-000000000001"
                 }
             },
-            "mission_delete" => new JsonObject { ["id"] = "00000000-0000-0000-0000-000000000002" },
-            "mission_metric_create" => new JsonObject { ["missionId"] = "00000000-0000-0000-0000-000000000002", ["name"] = "NPS", ["type"] = "Quantitative", ["quantitativeType"] = "KeepAbove", ["minValue"] = 80, ["unit"] = "Percentage" },
-            "mission_metric_get" => new JsonObject { ["id"] = "00000000-0000-0000-0000-000000000003" },
-            "mission_metric_list" => new JsonObject { ["missionId"] = "00000000-0000-0000-0000-000000000002", ["page"] = 1, ["pageSize"] = 10 },
-            "mission_metric_update" => new JsonObject { ["id"] = "00000000-0000-0000-0000-000000000003", ["payload"] = new JsonObject { ["name"] = "NPS trimestral", ["type"] = "Quantitative", ["quantitativeType"] = "KeepAbove", ["minValue"] = 85, ["unit"] = "Percentage" } },
-            "mission_metric_delete" => new JsonObject { ["id"] = "00000000-0000-0000-0000-000000000003" },
-            "metric_checkin_create" => new JsonObject { ["missionMetricId"] = "00000000-0000-0000-0000-000000000003", ["value"] = 86.5, ["checkinDate"] = "2026-02-08T00:00:00Z", ["note"] = "Evolução semanal", ["confidenceLevel"] = 4 },
-            "metric_checkin_get" => new JsonObject { ["id"] = "00000000-0000-0000-0000-000000000004" },
-            "metric_checkin_list" => new JsonObject { ["missionMetricId"] = "00000000-0000-0000-0000-000000000003", ["missionId"] = "00000000-0000-0000-0000-000000000002", ["page"] = 1, ["pageSize"] = 10 },
-            "metric_checkin_update" => new JsonObject { ["id"] = "00000000-0000-0000-0000-000000000004", ["payload"] = new JsonObject { ["value"] = 88.0, ["checkinDate"] = "2026-02-09T00:00:00Z", ["note"] = "Ajuste após revisão", ["confidenceLevel"] = 5 } },
-            "metric_checkin_delete" => new JsonObject { ["id"] = "00000000-0000-0000-0000-000000000004" },
+            "goal_delete" => new JsonObject { ["id"] = "00000000-0000-0000-0000-000000000002" },
+            "goal_indicator_create" => new JsonObject { ["goalId"] = "00000000-0000-0000-0000-000000000002", ["name"] = "NPS", ["type"] = "Quantitative", ["quantitativeType"] = "KeepAbove", ["minValue"] = 80, ["unit"] = "Percentage" },
+            "goal_indicator_get" => new JsonObject { ["id"] = "00000000-0000-0000-0000-000000000003" },
+            "goal_indicator_list" => new JsonObject { ["goalId"] = "00000000-0000-0000-0000-000000000002", ["page"] = 1, ["pageSize"] = 10 },
+            "goal_indicator_update" => new JsonObject { ["id"] = "00000000-0000-0000-0000-000000000003", ["payload"] = new JsonObject { ["name"] = "NPS trimestral", ["type"] = "Quantitative", ["quantitativeType"] = "KeepAbove", ["minValue"] = 85, ["unit"] = "Percentage" } },
+            "goal_indicator_delete" => new JsonObject { ["id"] = "00000000-0000-0000-0000-000000000003" },
+            "indicator_checkin_create" => new JsonObject { ["indicatorId"] = "00000000-0000-0000-0000-000000000003", ["value"] = 86.5, ["checkinDate"] = "2026-02-08T00:00:00Z", ["note"] = "Evolução semanal", ["confidenceLevel"] = 4 },
+            "indicator_checkin_get" => new JsonObject { ["id"] = "00000000-0000-0000-0000-000000000004" },
+            "indicator_checkin_list" => new JsonObject { ["indicatorId"] = "00000000-0000-0000-0000-000000000003", ["page"] = 1, ["pageSize"] = 10 },
+            "indicator_checkin_update" => new JsonObject { ["id"] = "00000000-0000-0000-0000-000000000004", ["payload"] = new JsonObject { ["value"] = 88.0, ["checkinDate"] = "2026-02-09T00:00:00Z", ["note"] = "Ajuste após revisão", ["confidenceLevel"] = 5 } },
+            "indicator_checkin_delete" => new JsonObject { ["id"] = "00000000-0000-0000-0000-000000000004" },
             _ => new JsonObject()
         };
     }
@@ -843,81 +843,81 @@ public sealed class McpToolService(BudApiClient budApiClient, BudApiSession sess
             },
             "help_action_schema" => new JsonObject
             {
-                ["name"] = "mission_create",
+                ["name"] = "goal_create",
                 ["required"] = new JsonArray("name", "startDate", "endDate", "status", "scopeType", "scopeId")
             },
-            "mission_create" => new JsonObject
+            "goal_create" => new JsonObject
             {
                 ["id"] = "00000000-0000-0000-0000-000000000002",
                 ["name"] = "teste do claude",
                 ["status"] = "Planned"
             },
-            "mission_get" => new JsonObject
+            "goal_get" => new JsonObject
             {
                 ["id"] = "00000000-0000-0000-0000-000000000002",
                 ["name"] = "teste do claude",
                 ["status"] = "Planned"
             },
-            "mission_list" => new JsonObject
+            "goal_list" => new JsonObject
             {
                 ["items"] = new JsonArray(),
                 ["page"] = 1,
                 ["pageSize"] = 10
             },
-            "mission_update" => new JsonObject
+            "goal_update" => new JsonObject
             {
                 ["id"] = "00000000-0000-0000-0000-000000000002",
-                ["name"] = "Missão atualizada",
+                ["name"] = "Meta atualizada",
                 ["status"] = "Active"
             },
-            "mission_delete" => new JsonObject { ["deleted"] = true },
-            "mission_metric_create" => new JsonObject
+            "goal_delete" => new JsonObject { ["deleted"] = true },
+            "goal_indicator_create" => new JsonObject
             {
                 ["id"] = "00000000-0000-0000-0000-000000000003",
                 ["name"] = "NPS",
                 ["type"] = "Quantitative"
             },
-            "mission_metric_get" => new JsonObject
+            "goal_indicator_get" => new JsonObject
             {
                 ["id"] = "00000000-0000-0000-0000-000000000003",
                 ["name"] = "NPS",
                 ["type"] = "Quantitative"
             },
-            "mission_metric_list" => new JsonObject
+            "goal_indicator_list" => new JsonObject
             {
                 ["items"] = new JsonArray(),
                 ["page"] = 1,
                 ["pageSize"] = 10
             },
-            "mission_metric_update" => new JsonObject
+            "goal_indicator_update" => new JsonObject
             {
                 ["id"] = "00000000-0000-0000-0000-000000000003",
                 ["name"] = "NPS trimestral",
                 ["type"] = "Quantitative"
             },
-            "mission_metric_delete" => new JsonObject { ["deleted"] = true },
-            "metric_checkin_create" => new JsonObject
+            "goal_indicator_delete" => new JsonObject { ["deleted"] = true },
+            "indicator_checkin_create" => new JsonObject
             {
                 ["id"] = "00000000-0000-0000-0000-000000000004",
                 ["confidenceLevel"] = 4
             },
-            "metric_checkin_get" => new JsonObject
+            "indicator_checkin_get" => new JsonObject
             {
                 ["id"] = "00000000-0000-0000-0000-000000000004",
                 ["confidenceLevel"] = 4
             },
-            "metric_checkin_list" => new JsonObject
+            "indicator_checkin_list" => new JsonObject
             {
                 ["items"] = new JsonArray(),
                 ["page"] = 1,
                 ["pageSize"] = 10
             },
-            "metric_checkin_update" => new JsonObject
+            "indicator_checkin_update" => new JsonObject
             {
                 ["id"] = "00000000-0000-0000-0000-000000000004",
                 ["confidenceLevel"] = 5
             },
-            "metric_checkin_delete" => new JsonObject { ["deleted"] = true },
+            "indicator_checkin_delete" => new JsonObject { ["deleted"] = true },
             _ => new JsonObject()
         };
     }

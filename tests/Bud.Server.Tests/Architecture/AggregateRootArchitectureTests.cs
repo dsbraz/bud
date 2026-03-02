@@ -18,8 +18,8 @@ public sealed class AggregateRootArchitectureTests
             typeof(Workspace),
             typeof(Team),
             typeof(Collaborator),
-            typeof(Mission),
-            typeof(Metric),
+            typeof(Goal),
+            typeof(Indicator),
             typeof(Template),
             typeof(Notification)
         };
@@ -37,9 +37,9 @@ public sealed class AggregateRootArchitectureTests
     {
         var nonRoots = new[]
         {
-            typeof(MetricCheckin),
-            typeof(TemplateObjective),
-            typeof(TemplateMetric),
+            typeof(Checkin),
+            typeof(TemplateGoal),
+            typeof(TemplateIndicator),
             typeof(CollaboratorTeam),
             typeof(CollaboratorAccessLog)
         };

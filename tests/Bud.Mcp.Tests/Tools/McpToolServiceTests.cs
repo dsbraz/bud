@@ -11,14 +11,14 @@ namespace Bud.Mcp.Tests.Tools;
 public sealed class McpToolServiceTests
 {
     private static readonly string[] LoginNextSteps = ["tenant_list_available", "tenant_set_current", "help_list_actions", "help_action_schema", "session_bootstrap"];
-    private static readonly string[] StarterSchemaNames = ["mission_create", "mission_metric_create", "metric_checkin_create"];
+    private static readonly string[] StarterSchemaNames = ["goal_create", "goal_indicator_create", "indicator_checkin_create"];
 
     [Fact]
     public void GetTools_MissionCreateSchema_ExposesKeyFields()
     {
         var service = CreateService();
 
-        var tool = service.GetTools().Single(t => t.Name == "mission_create");
+        var tool = service.GetTools().Single(t => t.Name == "goal_create");
         var required = tool.InputSchema["required"]!.AsArray().Select(n => n!.GetValue<string>()).ToHashSet();
 
         required.Should().Contain("name");
@@ -39,7 +39,7 @@ public sealed class McpToolServiceTests
         {}
         """);
 
-        var act = () => service.ExecuteAsync("mission_create", doc.RootElement);
+        var act = () => service.ExecuteAsync("goal_create", doc.RootElement);
 
         await act.Should().ThrowAsync<InvalidOperationException>()
             .WithMessage("Parâmetro obrigatório ausente: name.");
@@ -50,15 +50,15 @@ public sealed class McpToolServiceTests
     {
         var service = CreateService();
 
-        var metricCreate = service.GetTools().Single(t => t.Name == "mission_metric_create");
+        var metricCreate = service.GetTools().Single(t => t.Name == "goal_indicator_create");
         var metricRequired = metricCreate.InputSchema["required"]!.AsArray().Select(n => n!.GetValue<string>()).ToHashSet();
-        metricRequired.Should().Contain("missionId");
-        metricCreate.InputSchema["properties"]!.AsObject().Should().ContainKeys("missionId", "name", "type");
+        metricRequired.Should().Contain("goalId");
+        metricCreate.InputSchema["properties"]!.AsObject().Should().ContainKeys("goalId", "name", "type");
 
-        var checkinCreate = service.GetTools().Single(t => t.Name == "metric_checkin_create");
+        var checkinCreate = service.GetTools().Single(t => t.Name == "indicator_checkin_create");
         var checkinRequired = checkinCreate.InputSchema["required"]!.AsArray().Select(n => n!.GetValue<string>()).ToHashSet();
-        checkinRequired.Should().Contain("missionMetricId");
-        checkinCreate.InputSchema["properties"]!.AsObject().Should().ContainKeys("missionMetricId", "checkinDate", "confidenceLevel");
+        checkinRequired.Should().Contain("checkinDate");
+        checkinCreate.InputSchema["properties"]!.AsObject().Should().ContainKeys("checkinDate", "confidenceLevel");
 
         service.GetTools().Select(t => t.Name).Should().Contain("session_bootstrap");
     }
@@ -73,7 +73,7 @@ public sealed class McpToolServiceTests
 
         var actions = result["actions"]!.AsArray();
         actions.Should().NotBeEmpty();
-        actions.Select(item => item!["name"]!.GetValue<string>()).Should().Contain("mission_create");
+        actions.Select(item => item!["name"]!.GetValue<string>()).Should().Contain("goal_create");
     }
 
     [Fact]
@@ -86,7 +86,7 @@ public sealed class McpToolServiceTests
 
         var actions = result["actions"]!.AsArray();
         actions.Should().NotBeEmpty();
-        actions.Should().Contain(item => item!["name"]!.GetValue<string>() == "mission_create");
+        actions.Should().Contain(item => item!["name"]!.GetValue<string>() == "goal_create");
         actions.Should().Contain(item => item!["description"]!.GetValue<string>().Length > 0);
     }
 
@@ -96,13 +96,13 @@ public sealed class McpToolServiceTests
         var service = CreateService();
         using var doc = JsonDocument.Parse("""
         {
-          "action": "mission_create"
+          "action": "goal_create"
         }
         """);
 
         var result = await service.ExecuteAsync("help_action_schema", doc.RootElement);
 
-        result["name"]!.GetValue<string>().Should().Be("mission_create");
+        result["name"]!.GetValue<string>().Should().Be("goal_create");
         result["required"]!.AsArray().Select(i => i!.GetValue<string>())
             .Should().Contain("name");
         result["example"]!["scopeType"].Should().NotBeNull();
@@ -114,7 +114,7 @@ public sealed class McpToolServiceTests
         var service = CreateService();
         using var doc = JsonDocument.Parse("""
         {
-          "action": "mission_create"
+          "action": "goal_create"
         }
         """);
 
@@ -127,8 +127,8 @@ public sealed class McpToolServiceTests
     public async Task ExecuteAsync_HelpActionSchemaWithAction_ExposesEnumAndRangeMetadata()
     {
         var service = CreateService();
-        using var missionDoc = JsonDocument.Parse("""{"action":"mission_create"}""");
-        using var checkinDoc = JsonDocument.Parse("""{"action":"metric_checkin_create"}""");
+        using var missionDoc = JsonDocument.Parse("""{"action":"goal_create"}""");
+        using var checkinDoc = JsonDocument.Parse("""{"action":"indicator_checkin_create"}""");
 
         var missionResult = await service.ExecuteAsync("help_action_schema", missionDoc.RootElement);
         var checkinResult = await service.ExecuteAsync("help_action_schema", checkinDoc.RootElement);
@@ -158,6 +158,7 @@ public sealed class McpToolServiceTests
           "payload": {
             "name": "Missão atualizada",
             "description": "Ajuste com campo nullable preenchido",
+            "dimension": "Clientes",
             "startDate": "2026-02-08T00:00:00Z",
             "endDate": "2026-02-20T00:00:00Z",
             "status": "Active",
@@ -167,7 +168,7 @@ public sealed class McpToolServiceTests
         }
         """);
 
-        var act = () => service.ExecuteAsync("mission_update", updateDoc.RootElement);
+        var act = () => service.ExecuteAsync("goal_update", updateDoc.RootElement);
         await act.Should().NotThrowAsync();
     }
 
@@ -253,7 +254,7 @@ public sealed class McpToolServiceTests
     private static McpToolService CreateDomainReadyService()
     {
         var tenantId = Guid.Parse("00000000-0000-0000-0000-000000000001");
-        var missionId = Guid.Parse("00000000-0000-0000-0000-000000000002");
+        var goalId = Guid.Parse("00000000-0000-0000-0000-000000000002");
 
         var handler = new StubHttpMessageHandler(request =>
         {
@@ -276,16 +277,16 @@ public sealed class McpToolServiceTests
                 });
             }
 
-            if (request.Method == HttpMethod.Patch && request.RequestUri.AbsolutePath == $"/api/missions/{missionId}")
+            if (request.Method == HttpMethod.Patch && request.RequestUri.AbsolutePath == $"/api/goals/{goalId}")
             {
-                return JsonResponse(new MissionResponse
+                return JsonResponse(new GoalResponse
                 {
-                    Id = missionId,
+                    Id = goalId,
                     Name = "Missão atualizada",
                     Description = "Ajuste com campo nullable preenchido",
                     StartDate = DateTime.Parse("2026-02-08T00:00:00Z", CultureInfo.InvariantCulture),
                     EndDate = DateTime.Parse("2026-02-20T00:00:00Z", CultureInfo.InvariantCulture),
-                    Status = MissionStatus.Active,
+                    Status = GoalStatus.Active,
                     OrganizationId = tenantId
                 });
             }

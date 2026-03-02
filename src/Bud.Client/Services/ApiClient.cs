@@ -275,8 +275,8 @@ public sealed class ApiClient
         }
     }
 
-    public async Task<PagedResult<MissionResponse>?> GetMissionsAsync(
-        MissionScopeType? scopeType,
+    public async Task<PagedResult<GoalResponse>?> GetGoalsAsync(
+        GoalScopeType? scopeType,
         Guid? scopeId,
         string? search,
         int page = 1,
@@ -302,11 +302,11 @@ public sealed class ApiClient
         queryParams.Add($"page={page}");
         queryParams.Add($"pageSize={pageSize}");
 
-        var url = $"api/missions?{string.Join("&", queryParams)}";
-        return await GetSafeAsync<PagedResult<MissionResponse>>(url);
+        var url = $"api/goals?{string.Join("&", queryParams)}";
+        return await GetSafeAsync<PagedResult<GoalResponse>>(url);
     }
 
-    public async Task<PagedResult<MissionResponse>?> GetMyMissionsAsync(
+    public async Task<PagedResult<GoalResponse>?> GetMyGoalsAsync(
         string? search, int page = 1, int pageSize = 10)
     {
         (page, pageSize) = NormalizePagination(page, pageSize);
@@ -321,13 +321,13 @@ public sealed class ApiClient
         queryParams.Add($"page={page}");
         queryParams.Add($"pageSize={pageSize}");
 
-        var url = $"api/me/missions?{string.Join("&", queryParams)}";
-        return await GetSafeAsync<PagedResult<MissionResponse>>(url);
+        var url = $"api/me/goals?{string.Join("&", queryParams)}";
+        return await GetSafeAsync<PagedResult<GoalResponse>>(url);
     }
 
-    public async Task<MissionResponse?> CreateMissionAsync(CreateMissionRequest request)
+    public async Task<GoalResponse?> CreateGoalAsync(CreateGoalRequest request)
     {
-        var response = await _http.PostAsJsonAsync("api/missions", request);
+        var response = await _http.PostAsJsonAsync("api/goals", request);
 
         if (!response.IsSuccessStatusCode)
         {
@@ -335,7 +335,7 @@ public sealed class ApiClient
             throw new HttpRequestException(errorMessage);
         }
 
-        return await response.Content.ReadFromJsonAsync<MissionResponse>();
+        return await response.Content.ReadFromJsonAsync<GoalResponse>();
     }
 
     public async Task<MyDashboardResponse?> GetMyDashboardAsync(Guid? teamId = null)
@@ -348,15 +348,15 @@ public sealed class ApiClient
         return await GetSafeAsync<MyDashboardResponse>(url);
     }
 
-    public async Task<PagedResult<MetricResponse>?> GetMissionMetricsAsync(Guid? missionId, string? search, int page = 1, int pageSize = 10)
+    public async Task<PagedResult<IndicatorResponse>?> GetGoalIndicatorsAsync(Guid? goalId, string? search, int page = 1, int pageSize = 10)
     {
         (page, pageSize) = NormalizePagination(page, pageSize);
 
         var queryParams = new List<string>();
 
-        if (missionId.HasValue)
+        if (goalId.HasValue)
         {
-            queryParams.Add($"missionId={missionId.Value}");
+            queryParams.Add($"goalId={goalId.Value}");
         }
         if (!string.IsNullOrEmpty(search))
         {
@@ -366,13 +366,13 @@ public sealed class ApiClient
         queryParams.Add($"page={page}");
         queryParams.Add($"pageSize={pageSize}");
 
-        var url = $"api/metrics?{string.Join("&", queryParams)}";
-        return await GetSafeAsync<PagedResult<MetricResponse>>(url);
+        var url = $"api/indicators?{string.Join("&", queryParams)}";
+        return await GetSafeAsync<PagedResult<IndicatorResponse>>(url);
     }
 
-    public async Task<MetricResponse?> CreateMissionMetricAsync(CreateMetricRequest request)
+    public async Task<IndicatorResponse?> CreateGoalIndicatorAsync(CreateIndicatorRequest request)
     {
-        var response = await _http.PostAsJsonAsync("api/metrics", request);
+        var response = await _http.PostAsJsonAsync("api/indicators", request);
 
         if (!response.IsSuccessStatusCode)
         {
@@ -380,12 +380,12 @@ public sealed class ApiClient
             throw new HttpRequestException(errorMessage);
         }
 
-        return await response.Content.ReadFromJsonAsync<MetricResponse>();
+        return await response.Content.ReadFromJsonAsync<IndicatorResponse>();
     }
 
-    public async Task<MissionResponse?> UpdateMissionAsync(Guid id, PatchMissionRequest request)
+    public async Task<GoalResponse?> UpdateGoalAsync(Guid id, PatchGoalRequest request)
     {
-        var response = await _http.PatchAsJsonAsync($"api/missions/{id}", request);
+        var response = await _http.PatchAsJsonAsync($"api/goals/{id}", request);
 
         if (!response.IsSuccessStatusCode)
         {
@@ -393,36 +393,12 @@ public sealed class ApiClient
             throw new HttpRequestException(errorMessage);
         }
 
-        return await response.Content.ReadFromJsonAsync<MissionResponse>();
+        return await response.Content.ReadFromJsonAsync<GoalResponse>();
     }
 
-    public async Task DeleteMissionAsync(Guid id)
+    public async Task DeleteGoalAsync(Guid id)
     {
-        var response = await _http.DeleteAsync($"api/missions/{id}");
-
-        if (!response.IsSuccessStatusCode)
-        {
-            var errorMessage = await ExtractErrorMessageAsync(response);
-            throw new HttpRequestException(errorMessage);
-        }
-    }
-
-    public async Task<MetricResponse?> UpdateMissionMetricAsync(Guid id, PatchMetricRequest request)
-    {
-        var response = await _http.PatchAsJsonAsync($"api/metrics/{id}", request);
-
-        if (!response.IsSuccessStatusCode)
-        {
-            var errorMessage = await ExtractErrorMessageAsync(response);
-            throw new HttpRequestException(errorMessage);
-        }
-
-        return await response.Content.ReadFromJsonAsync<MetricResponse>();
-    }
-
-    public async Task DeleteMissionMetricAsync(Guid id)
-    {
-        var response = await _http.DeleteAsync($"api/metrics/{id}");
+        var response = await _http.DeleteAsync($"api/goals/{id}");
 
         if (!response.IsSuccessStatusCode)
         {
@@ -431,32 +407,98 @@ public sealed class ApiClient
         }
     }
 
-    public async Task<PagedResult<MetricResponse>?> GetMissionMetricsByMissionIdAsync(Guid missionId, int page = 1, int pageSize = 100)
+    public async Task<IndicatorResponse?> UpdateGoalIndicatorAsync(Guid id, PatchIndicatorRequest request)
+    {
+        var response = await _http.PatchAsJsonAsync($"api/indicators/{id}", request);
+
+        if (!response.IsSuccessStatusCode)
+        {
+            var errorMessage = await ExtractErrorMessageAsync(response);
+            throw new HttpRequestException(errorMessage);
+        }
+
+        return await response.Content.ReadFromJsonAsync<IndicatorResponse>();
+    }
+
+    public async Task DeleteGoalIndicatorAsync(Guid id)
+    {
+        var response = await _http.DeleteAsync($"api/indicators/{id}");
+
+        if (!response.IsSuccessStatusCode)
+        {
+            var errorMessage = await ExtractErrorMessageAsync(response);
+            throw new HttpRequestException(errorMessage);
+        }
+    }
+
+    public async Task<PagedResult<IndicatorResponse>?> GetGoalIndicatorsByGoalIdAsync(Guid goalId, int page = 1, int pageSize = 100)
     {
         (page, pageSize) = NormalizePagination(page, pageSize);
-        var url = $"api/missions/{missionId}/metrics?page={page}&pageSize={pageSize}";
-        return await GetSafeAsync<PagedResult<MetricResponse>>(url);
+        var url = $"api/goals/{goalId}/indicators?page={page}&pageSize={pageSize}";
+        return await GetSafeAsync<PagedResult<IndicatorResponse>>(url);
     }
 
-    // Objective methods
-    public async Task<PagedResult<ObjectiveResponse>?> GetMissionObjectivesAsync(Guid missionId, int page = 1, int pageSize = 100)
+    public async Task<PagedResult<GoalResponse>?> GetGoalChildrenAsync(Guid goalId, int page = 1, int pageSize = 100)
+    {
+        (page, pageSize) = NormalizePagination(page, pageSize);
+        var url = $"api/goals/{goalId}/children?page={page}&pageSize={pageSize}";
+        return await GetSafeAsync<PagedResult<GoalResponse>>(url);
+    }
+
+    public async Task<GoalResponse?> CreateChildGoalAsync(CreateGoalRequest request)
+    {
+        var response = await _http.PostAsJsonAsync("api/goals", request);
+
+        if (!response.IsSuccessStatusCode)
+        {
+            var errorMessage = await ExtractErrorMessageAsync(response);
+            throw new HttpRequestException(errorMessage);
+        }
+
+        return await response.Content.ReadFromJsonAsync<GoalResponse>();
+    }
+
+    public async Task<List<GoalProgressResponse>?> GetGoalProgressAsync(List<Guid> goalIds)
+    {
+        if (goalIds.Count == 0)
+        {
+            return [];
+        }
+
+        var ids = string.Join(",", goalIds);
+        return await GetSafeAsync<List<GoalProgressResponse>>($"api/goals/progress?ids={ids}");
+    }
+
+    public async Task<List<IndicatorProgressResponse>?> GetIndicatorProgressAsync(List<Guid> indicatorIds)
+    {
+        if (indicatorIds.Count == 0)
+        {
+            return [];
+        }
+
+        var tasks = indicatorIds.Select(id => GetSafeAsync<IndicatorProgressResponse>($"api/indicators/{id}/progress"));
+        var results = await Task.WhenAll(tasks);
+        return results.Where(r => r != null).Select(r => r!).ToList();
+    }
+
+    // Checkin methods
+    public async Task<PagedResult<CheckinResponse>?> GetCheckinsByIndicatorAsync(Guid indicatorId, int page = 1, int pageSize = 10)
     {
         (page, pageSize) = NormalizePagination(page, pageSize);
 
         var queryParams = new List<string>
         {
-            $"missionId={missionId}",
             $"page={page}",
             $"pageSize={pageSize}"
         };
 
-        var url = $"api/objectives?{string.Join("&", queryParams)}";
-        return await GetSafeAsync<PagedResult<ObjectiveResponse>>(url);
+        var url = $"api/indicators/{indicatorId}/checkins?{string.Join("&", queryParams)}";
+        return await GetSafeAsync<PagedResult<CheckinResponse>>(url);
     }
 
-    public async Task<ObjectiveResponse?> CreateMissionObjectiveAsync(CreateObjectiveRequest request)
+    public async Task<CheckinResponse?> CreateCheckinAsync(Guid indicatorId, CreateCheckinRequest request)
     {
-        var response = await _http.PostAsJsonAsync("api/objectives", request);
+        var response = await _http.PostAsJsonAsync($"api/indicators/{indicatorId}/checkins", request);
 
         if (!response.IsSuccessStatusCode)
         {
@@ -464,12 +506,12 @@ public sealed class ApiClient
             throw new HttpRequestException(errorMessage);
         }
 
-        return await response.Content.ReadFromJsonAsync<ObjectiveResponse>();
+        return await response.Content.ReadFromJsonAsync<CheckinResponse>();
     }
 
-    public async Task<ObjectiveResponse?> UpdateMissionObjectiveAsync(Guid id, PatchObjectiveRequest request)
+    public async Task<CheckinResponse?> UpdateCheckinAsync(Guid indicatorId, Guid id, PatchCheckinRequest request)
     {
-        var response = await _http.PatchAsJsonAsync($"api/objectives/{id}", request);
+        var response = await _http.PatchAsJsonAsync($"api/indicators/{indicatorId}/checkins/{id}", request);
 
         if (!response.IsSuccessStatusCode)
         {
@@ -477,98 +519,12 @@ public sealed class ApiClient
             throw new HttpRequestException(errorMessage);
         }
 
-        return await response.Content.ReadFromJsonAsync<ObjectiveResponse>();
+        return await response.Content.ReadFromJsonAsync<CheckinResponse>();
     }
 
-    public async Task DeleteMissionObjectiveAsync(Guid id)
+    public async Task DeleteCheckinAsync(Guid indicatorId, Guid id)
     {
-        var response = await _http.DeleteAsync($"api/objectives/{id}");
-
-        if (!response.IsSuccessStatusCode)
-        {
-            var errorMessage = await ExtractErrorMessageAsync(response);
-            throw new HttpRequestException(errorMessage);
-        }
-    }
-
-    public async Task<List<ObjectiveProgressResponse>?> GetObjectiveProgressAsync(List<Guid> objectiveIds)
-    {
-        if (objectiveIds.Count == 0)
-        {
-            return [];
-        }
-
-        var ids = string.Join(",", objectiveIds);
-        return await GetSafeAsync<List<ObjectiveProgressResponse>>($"api/objectives/progress?ids={ids}");
-    }
-
-    // Metric Progress
-    public async Task<List<MetricProgressResponse>?> GetMetricProgressAsync(List<Guid> metricIds)
-    {
-        if (metricIds.Count == 0)
-        {
-            return [];
-        }
-
-        var ids = string.Join(",", metricIds);
-        return await GetSafeAsync<List<MetricProgressResponse>>($"api/metrics/progress?ids={ids}");
-    }
-
-    // Mission Progress
-    public async Task<List<MissionProgressResponse>?> GetMissionProgressAsync(List<Guid> missionIds)
-    {
-        if (missionIds.Count == 0)
-        {
-            return [];
-        }
-
-        var ids = string.Join(",", missionIds);
-        return await GetSafeAsync<List<MissionProgressResponse>>($"api/missions/progress?ids={ids}");
-    }
-
-    // MetricCheckin methods
-    public async Task<PagedResult<MetricCheckinResponse>?> GetMetricCheckinsAsync(Guid metricId, int page = 1, int pageSize = 10)
-    {
-        (page, pageSize) = NormalizePagination(page, pageSize);
-
-        var queryParams = new List<string>();
-
-        queryParams.Add($"page={page}");
-        queryParams.Add($"pageSize={pageSize}");
-
-        var url = $"api/metrics/{metricId}/checkins?{string.Join("&", queryParams)}";
-        return await GetSafeAsync<PagedResult<MetricCheckinResponse>>(url);
-    }
-
-    public async Task<MetricCheckinResponse?> CreateMetricCheckinAsync(Guid metricId, CreateCheckinRequest request)
-    {
-        var response = await _http.PostAsJsonAsync($"api/metrics/{metricId}/checkins", request);
-
-        if (!response.IsSuccessStatusCode)
-        {
-            var errorMessage = await ExtractErrorMessageAsync(response);
-            throw new HttpRequestException(errorMessage);
-        }
-
-        return await response.Content.ReadFromJsonAsync<MetricCheckinResponse>();
-    }
-
-    public async Task<MetricCheckinResponse?> UpdateMetricCheckinAsync(Guid metricId, Guid id, PatchCheckinRequest request)
-    {
-        var response = await _http.PatchAsJsonAsync($"api/metrics/{metricId}/checkins/{id}", request);
-
-        if (!response.IsSuccessStatusCode)
-        {
-            var errorMessage = await ExtractErrorMessageAsync(response);
-            throw new HttpRequestException(errorMessage);
-        }
-
-        return await response.Content.ReadFromJsonAsync<MetricCheckinResponse>();
-    }
-
-    public async Task DeleteMetricCheckinAsync(Guid metricId, Guid id)
-    {
-        var response = await _http.DeleteAsync($"api/metrics/{metricId}/checkins/{id}");
+        var response = await _http.DeleteAsync($"api/indicators/{indicatorId}/checkins/{id}");
 
         if (!response.IsSuccessStatusCode)
         {
@@ -838,6 +794,45 @@ public sealed class ApiClient
     {
         var response = await _http.PatchAsync("api/notifications", null);
 
+        if (!response.IsSuccessStatusCode)
+        {
+            var errorMessage = await ExtractErrorMessageAsync(response);
+            throw new HttpRequestException(errorMessage);
+        }
+    }
+
+    public async Task<PagedResult<TaskResponse>?> GetTasksAsync(Guid goalId, int page = 1, int pageSize = 100)
+    {
+        (page, pageSize) = NormalizePagination(page, pageSize);
+        var url = $"api/goals/{goalId}/tasks?page={page}&pageSize={pageSize}";
+        return await GetSafeAsync<PagedResult<TaskResponse>>(url);
+    }
+
+    public async Task<TaskResponse?> CreateTaskAsync(Guid goalId, CreateTaskRequest request)
+    {
+        var response = await _http.PostAsJsonAsync($"api/goals/{goalId}/tasks", request);
+        if (!response.IsSuccessStatusCode)
+        {
+            var errorMessage = await ExtractErrorMessageAsync(response);
+            throw new HttpRequestException(errorMessage);
+        }
+        return await response.Content.ReadFromJsonAsync<TaskResponse>();
+    }
+
+    public async Task<TaskResponse?> UpdateTaskAsync(Guid id, PatchTaskRequest request)
+    {
+        var response = await _http.PatchAsJsonAsync($"api/tasks/{id}", request);
+        if (!response.IsSuccessStatusCode)
+        {
+            var errorMessage = await ExtractErrorMessageAsync(response);
+            throw new HttpRequestException(errorMessage);
+        }
+        return await response.Content.ReadFromJsonAsync<TaskResponse>();
+    }
+
+    public async Task DeleteTaskAsync(Guid id)
+    {
+        var response = await _http.DeleteAsync($"api/tasks/{id}");
         if (!response.IsSuccessStatusCode)
         {
             var errorMessage = await ExtractErrorMessageAsync(response);

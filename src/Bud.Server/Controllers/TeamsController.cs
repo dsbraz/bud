@@ -20,7 +20,7 @@ public sealed class TeamsController(
     ListTeams listTeams,
     ListSubTeams listSubTeams,
     ListTeamCollaborators listTeamCollaborators,
-    ListTeamCollaboratorOptions listTeamCollaboratorOptions,
+    GetTeamCollaboratorLookup listTeamCollaboratorOptions,
     PatchTeamCollaborators patchTeamCollaborators,
     ListAvailableCollaboratorsForTeam listAvailableCollaboratorsForTeam,
     IValidator<CreateTeamRequest> createValidator,

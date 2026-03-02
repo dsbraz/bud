@@ -403,33 +403,33 @@ public class DashboardReadStoreTests
         });
 
         // Active mission with recent checkin (100% missions updated)
-        var mission = new Mission
+        var mission = new Goal
         {
             Id = Guid.NewGuid(),
             Name = "M1",
             OrganizationId = org.Id,
             CollaboratorId = member.Id,
-            Status = MissionStatus.Active,
+            Status = GoalStatus.Active,
             StartDate = DateTime.UtcNow.AddDays(-30),
             EndDate = DateTime.UtcNow.AddDays(30)
         };
-        context.Missions.Add(mission);
+        context.Goals.Add(mission);
 
-        var metric = new Metric
+        var metric = new Indicator
         {
             Id = Guid.NewGuid(),
             Name = "KR1",
-            MissionId = mission.Id,
+            GoalId = mission.Id,
             OrganizationId = org.Id,
-            Type = MetricType.Quantitative
+            Type = IndicatorType.Quantitative
         };
-        context.Metrics.Add(metric);
+        context.Indicators.Add(metric);
 
         // Recent checkin with high confidence
-        context.MetricCheckins.Add(new MetricCheckin
+        context.Checkins.Add(new Checkin
         {
             Id = Guid.NewGuid(),
-            MetricId = metric.Id,
+            IndicatorId = metric.Id,
             CollaboratorId = member.Id,
             OrganizationId = org.Id,
             CheckinDate = DateTime.UtcNow.AddDays(-1),
@@ -494,31 +494,31 @@ public class DashboardReadStoreTests
             OrganizationId = org.Id
         };
 
-        var mission = new Mission
+        var mission = new Goal
         {
             Id = Guid.NewGuid(),
             Name = "Overdue Mission",
             OrganizationId = org.Id,
             CollaboratorId = collaborator.Id,
-            Status = MissionStatus.Active,
+            Status = GoalStatus.Active,
             StartDate = DateTime.UtcNow.AddDays(-30),
             EndDate = DateTime.UtcNow.AddDays(30)
         };
 
-        var metric = new Metric
+        var metric = new Indicator
         {
             Id = Guid.NewGuid(),
             Name = "KR",
-            MissionId = mission.Id,
+            GoalId = mission.Id,
             OrganizationId = org.Id,
-            Type = MetricType.Quantitative
+            Type = IndicatorType.Quantitative
         };
 
         // Checkin older than 7 days
-        var checkin = new MetricCheckin
+        var checkin = new Checkin
         {
             Id = Guid.NewGuid(),
-            MetricId = metric.Id,
+            IndicatorId = metric.Id,
             CollaboratorId = collaborator.Id,
             OrganizationId = org.Id,
             CheckinDate = DateTime.UtcNow.AddDays(-10),
@@ -528,9 +528,9 @@ public class DashboardReadStoreTests
 
         context.Organizations.Add(org);
         context.Collaborators.Add(collaborator);
-        context.Missions.Add(mission);
-        context.Metrics.Add(metric);
-        context.MetricCheckins.Add(checkin);
+        context.Goals.Add(mission);
+        context.Indicators.Add(metric);
+        context.Checkins.Add(checkin);
         await context.SaveChangesAsync();
 
         var repository = new DashboardReadStore(context);
@@ -542,7 +542,7 @@ public class DashboardReadStoreTests
         result.Should().NotBeNull();
         result!.PendingTasks.Should().HaveCount(1);
         result.PendingTasks[0].Title.Should().Be("Overdue Mission");
-        result.PendingTasks[0].TaskType.Should().Be("mission_checkin");
+        result.PendingTasks[0].TaskType.Should().Be("goal_checkin");
     }
 
     [Fact]
@@ -559,31 +559,31 @@ public class DashboardReadStoreTests
             OrganizationId = org.Id
         };
 
-        var mission = new Mission
+        var mission = new Goal
         {
             Id = Guid.NewGuid(),
             Name = "Up to date Mission",
             OrganizationId = org.Id,
             CollaboratorId = collaborator.Id,
-            Status = MissionStatus.Active,
+            Status = GoalStatus.Active,
             StartDate = DateTime.UtcNow.AddDays(-30),
             EndDate = DateTime.UtcNow.AddDays(30)
         };
 
-        var metric = new Metric
+        var metric = new Indicator
         {
             Id = Guid.NewGuid(),
             Name = "KR",
-            MissionId = mission.Id,
+            GoalId = mission.Id,
             OrganizationId = org.Id,
-            Type = MetricType.Quantitative
+            Type = IndicatorType.Quantitative
         };
 
         // Recent checkin (within 7 days)
-        var checkin = new MetricCheckin
+        var checkin = new Checkin
         {
             Id = Guid.NewGuid(),
-            MetricId = metric.Id,
+            IndicatorId = metric.Id,
             CollaboratorId = collaborator.Id,
             OrganizationId = org.Id,
             CheckinDate = DateTime.UtcNow.AddDays(-2),
@@ -593,9 +593,9 @@ public class DashboardReadStoreTests
 
         context.Organizations.Add(org);
         context.Collaborators.Add(collaborator);
-        context.Missions.Add(mission);
-        context.Metrics.Add(metric);
-        context.MetricCheckins.Add(checkin);
+        context.Goals.Add(mission);
+        context.Indicators.Add(metric);
+        context.Checkins.Add(checkin);
         await context.SaveChangesAsync();
 
         var repository = new DashboardReadStore(context);
@@ -795,28 +795,28 @@ public class DashboardReadStoreTests
         };
         var team = new Team { Id = Guid.NewGuid(), Name = "Squad Delta", OrganizationId = org.Id, WorkspaceId = workspace.Id, LeaderId = collaborator.Id };
 
-        var mission = new Mission
+        var mission = new Goal
         {
             Id = Guid.NewGuid(),
             Name = "My Personal Mission",
             OrganizationId = org.Id,
             CollaboratorId = collaborator.Id,
-            Status = MissionStatus.Active,
+            Status = GoalStatus.Active,
             StartDate = DateTime.UtcNow.AddDays(-30),
             EndDate = DateTime.UtcNow.AddDays(30)
         };
-        var metric = new Metric
+        var metric = new Indicator
         {
             Id = Guid.NewGuid(),
             Name = "KR",
-            MissionId = mission.Id,
+            GoalId = mission.Id,
             OrganizationId = org.Id,
-            Type = MetricType.Quantitative
+            Type = IndicatorType.Quantitative
         };
-        var checkin = new MetricCheckin
+        var checkin = new Checkin
         {
             Id = Guid.NewGuid(),
-            MetricId = metric.Id,
+            IndicatorId = metric.Id,
             CollaboratorId = collaborator.Id,
             OrganizationId = org.Id,
             CheckinDate = DateTime.UtcNow.AddDays(-10),
@@ -831,9 +831,9 @@ public class DashboardReadStoreTests
         context.Set<CollaboratorTeam>().Add(
             new CollaboratorTeam { CollaboratorId = collaborator.Id, TeamId = team.Id }
         );
-        context.Missions.Add(mission);
-        context.Metrics.Add(metric);
-        context.MetricCheckins.Add(checkin);
+        context.Goals.Add(mission);
+        context.Indicators.Add(metric);
+        context.Checkins.Add(checkin);
         await context.SaveChangesAsync();
 
         var repository = new DashboardReadStore(context);
@@ -923,7 +923,7 @@ public class DashboardReadStoreTests
         };
 
         // Org-scoped mission (CollaboratorId = null)
-        var orgMission = new Mission
+        var orgMission = new Goal
         {
             Id = Guid.NewGuid(),
             Name = "Org Mission",
@@ -931,23 +931,23 @@ public class DashboardReadStoreTests
             CollaboratorId = null,
             WorkspaceId = null,
             TeamId = null,
-            Status = MissionStatus.Active,
+            Status = GoalStatus.Active,
             StartDate = DateTime.UtcNow.AddDays(-30),
             EndDate = DateTime.UtcNow.AddDays(30)
         };
-        var metric = new Metric
+        var metric = new Indicator
         {
             Id = Guid.NewGuid(),
             Name = "KR",
-            MissionId = orgMission.Id,
+            GoalId = orgMission.Id,
             OrganizationId = org.Id,
-            Type = MetricType.Quantitative
+            Type = IndicatorType.Quantitative
         };
         // Old checkin (> 7 days)
-        var checkin = new MetricCheckin
+        var checkin = new Checkin
         {
             Id = Guid.NewGuid(),
-            MetricId = metric.Id,
+            IndicatorId = metric.Id,
             CollaboratorId = collaborator.Id,
             OrganizationId = org.Id,
             CheckinDate = DateTime.UtcNow.AddDays(-10),
@@ -957,9 +957,9 @@ public class DashboardReadStoreTests
 
         context.Organizations.Add(org);
         context.Collaborators.Add(collaborator);
-        context.Missions.Add(orgMission);
-        context.Metrics.Add(metric);
-        context.MetricCheckins.Add(checkin);
+        context.Goals.Add(orgMission);
+        context.Indicators.Add(metric);
+        context.Checkins.Add(checkin);
         await context.SaveChangesAsync();
 
         var repository = new DashboardReadStore(context);
@@ -989,28 +989,28 @@ public class DashboardReadStoreTests
         };
 
         // Personal mission with recent checkin
-        var personalMission = new Mission
+        var personalMission = new Goal
         {
             Id = Guid.NewGuid(),
             Name = "Personal",
             OrganizationId = org.Id,
             CollaboratorId = collaborator.Id,
-            Status = MissionStatus.Active,
+            Status = GoalStatus.Active,
             StartDate = DateTime.UtcNow.AddDays(-30),
             EndDate = DateTime.UtcNow.AddDays(30)
         };
-        var personalMetric = new Metric
+        var personalMetric = new Indicator
         {
             Id = Guid.NewGuid(),
             Name = "KR1",
-            MissionId = personalMission.Id,
+            GoalId = personalMission.Id,
             OrganizationId = org.Id,
-            Type = MetricType.Quantitative
+            Type = IndicatorType.Quantitative
         };
-        context.MetricCheckins.Add(new MetricCheckin
+        context.Checkins.Add(new Checkin
         {
             Id = Guid.NewGuid(),
-            MetricId = personalMetric.Id,
+            IndicatorId = personalMetric.Id,
             CollaboratorId = collaborator.Id,
             OrganizationId = org.Id,
             CheckinDate = DateTime.UtcNow.AddDays(-1),
@@ -1019,7 +1019,7 @@ public class DashboardReadStoreTests
         });
 
         // Org-scoped mission without checkin
-        var orgMission = new Mission
+        var orgMission = new Goal
         {
             Id = Guid.NewGuid(),
             Name = "Org Mission",
@@ -1027,23 +1027,23 @@ public class DashboardReadStoreTests
             CollaboratorId = null,
             WorkspaceId = null,
             TeamId = null,
-            Status = MissionStatus.Active,
+            Status = GoalStatus.Active,
             StartDate = DateTime.UtcNow.AddDays(-30),
             EndDate = DateTime.UtcNow.AddDays(30)
         };
-        var orgMetric = new Metric
+        var orgMetric = new Indicator
         {
             Id = Guid.NewGuid(),
             Name = "KR2",
-            MissionId = orgMission.Id,
+            GoalId = orgMission.Id,
             OrganizationId = org.Id,
-            Type = MetricType.Quantitative
+            Type = IndicatorType.Quantitative
         };
 
         context.Organizations.Add(org);
         context.Collaborators.Add(collaborator);
-        context.Missions.AddRange(personalMission, orgMission);
-        context.Metrics.AddRange(personalMetric, orgMetric);
+        context.Goals.AddRange(personalMission, orgMission);
+        context.Indicators.AddRange(personalMetric, orgMetric);
         await context.SaveChangesAsync();
 
         var repository = new DashboardReadStore(context);

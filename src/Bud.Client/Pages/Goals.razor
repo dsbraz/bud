@@ -1,0 +1,122 @@
+@page "/goals"
+@inject ApiClient Api
+@inject OrganizationContext OrgContext
+@inject AuthState AuthState
+@inject ToastService ToastService
+@inject UiOperationService UiOps
+@implements IDisposable
+
+<ManagementPageHeader
+    Kicker="Missões"
+    Title="@(_showMyGoals ? "Minhas missões" : "Todas as missões")"
+    PrimaryActionText="Criar missão"
+    OnPrimaryAction="OpenCreateModal" />
+
+<GoalsFilterBar ShowMyGoals="_showMyGoals"
+                ViewMode="@_viewMode"
+                FilterActiveOnly="_filterActiveOnly"
+                FilterStartDate="_filterStartDate"
+                FilterEndDate="_filterEndDate"
+                FilterScopeTypeValue="@_filterScopeTypeValue"
+                FilterScopeId="@_filterScopeId"
+                Search="@_search"
+                GetScopeOptions="GetScopeOptions"
+                OnSetMyGoals="SetGoalViewMode"
+                OnToggleViewMode="HandleToggleViewMode"
+                OnToggleActiveFilter="HandleToggleActiveFilter"
+                OnDateFilterApplied="HandleDateFilterApplied"
+                OnScopeTypeChanged="HandleFilterScopeTypeChanged"
+                OnScopeIdChanged="HandleFilterScopeIdChanged"
+                OnSearchSubmit="HandleSearchSubmit"
+                OnClearFilters="HandleClearFilters" />
+
+@* Cards de Resumo *@
+<SummaryCards CssClass="goals-summary">
+    <StatCard Value="@($"{GetOverallProgressDisplay()}%")" Label="@($"Esperado {GetExpectedProgressDisplay()}%")" ShowProgress="true" Progress="GetOverallProgressDisplay()" ExpectedProgress="GetExpectedProgressDisplay()" />
+    <StatCard Value="@GetActiveGoalsCount().ToString()" Label="Missões ativas" />
+    <StatCard Value="@GetOutdatedIndicatorsCount().ToString()" Label="Indicadores desatualizados" />
+</SummaryCards>
+
+@* Lista de Metas em Cards *@
+@if (_goals is null)
+{
+    <div class="goals-loading">
+        <p class="muted">Carregando...</p>
+    </div>
+}
+else if (_goals.Items.Count == 0)
+{
+    <div class="goals-empty">
+        <div class="goals-empty-icon">📋</div>
+        <p class="muted">Nenhuma missão encontrada.</p>
+    </div>
+}
+else
+{
+    @if (_viewMode == "grid")
+    {
+        <GoalGridView @key="_cardRefreshToken"
+                      RootGoals="_goals"
+                      RootGoalProgress="_goalProgress"
+                      DeletingGoalId="_deletingGoalId"
+                      OnEdit="async (goal) => await OpenEditWizard(goal)"
+                      OnDeleteClick="(id) => HandleDeleteClick(id)"
+                      OnCheckinClick="t => OpenCheckinModalForIndicator(t.goal, t.indicator)"
+                      OnHistoryClick="t => OpenCheckinHistoryModal(t.goal, t.indicator)" />
+    }
+    else
+    {
+        <div class="goals-list">
+            @foreach (var goal in _goals.Items)
+            {
+                <GoalCard @key="@($"{goal.Id}-{_cardRefreshToken}")" Goal="goal"
+                          Progress="@(_goalProgress.GetValueOrDefault(goal.Id))"
+                          IsExpanded="@(_expandedGoals.Contains(goal.Id))"
+                          IsDeleting="@(_deletingGoalId == goal.Id)"
+                          Indicators="@(_goalIndicatorsCache.GetValueOrDefault(goal.Id))"
+                          Tasks="@(_goalTasksCache.GetValueOrDefault(goal.Id))"
+                          ChildGoals="@(_goalChildrenCache.GetValueOrDefault(goal.Id))"
+                          IndicatorProgressCache="_indicatorProgressCache"
+                          GoalProgressCache="_childGoalProgressCache"
+                          ExpandedGoals="_expandedChildGoals"
+                          OnToggleExpand="async () => await ToggleExpand(goal.Id)"
+                          OnEdit="async () => await OpenEditWizard(goal)"
+                          OnDeleteClick="() => HandleDeleteClick(goal.Id)"
+                          OnToggleGoalExpand="ToggleChildGoalExpand"
+                          OnCheckinClick="m => OpenCheckinModalForIndicator(goal, m)"
+                          OnHistoryClick="m => OpenCheckinHistoryModal(goal, m)"
+                          OnTaskStateChange="t => HandleTaskStateChange(goal.Id, t.task, t.newState)" />
+            }
+        </div>
+    }
+    <p class="muted" style="margin-top: var(--spacing-4);">Total: @_goals.Total</p>
+}
+
+<GoalTemplatePicker IsOpen="_isTemplatePickerOpen"
+                    Templates="_availableTemplates"
+                    OnClose="() => _isTemplatePickerOpen = false"
+                    OnCreateFromScratch="OpenCreateModalFromScratch"
+                    OnSelectTemplate="OpenCreateModalFromTemplate" />
+
+<GoalFormModal IsOpen="_isWizardOpen"
+               IsEditMode="_isEditMode"
+               OrganizationName="@GetSelectedOrganizationName()"
+               InitialModel="_wizardInitialModel"
+               GetScopeOptions="GetScopeOptions"
+               OnClose="CloseWizard"
+               OnSave="HandleWizardSave"
+               OnSaveDraft="HandleWizardSaveDraft" />
+
+
+<CheckinModal IsOpen="@(_isCheckinModalOpen && _selectedCheckinIndicator != null)"
+              Indicator="_selectedCheckinIndicator"
+              OnClose="CloseCheckinModal"
+              OnSubmit="HandleCheckinSubmit" />
+
+<CheckinHistoryModal IsOpen="@(_isCheckinHistoryModalOpen && _historyIndicator != null)"
+                     Indicator="_historyIndicator"
+                     Checkins="_indicatorCheckins"
+                     IsLoading="_isLoadingCheckins"
+                     OnClose="CloseCheckinHistoryModal"
+                     OnNewCheckin="OpenCheckinFromHistory" />
+

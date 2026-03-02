@@ -27,14 +27,14 @@ public sealed partial class DeleteCollaborator(
         if (collaborator is null)
         {
             LogCollaboratorDeletionFailed(logger, id, "Not found");
-            return Result.NotFound("Colaborador não encontrado.");
+            return Result.NotFound(UserErrorMessages.CollaboratorNotFound);
         }
 
         var canDelete = await authorizationGateway.IsOrganizationOwnerAsync(user, collaborator.OrganizationId, cancellationToken);
         if (!canDelete)
         {
             LogCollaboratorDeletionFailed(logger, id, "Forbidden");
-            return Result.Forbidden("Apenas o proprietário da organização pode excluir colaboradores.");
+            return Result.Forbidden(UserErrorMessages.CollaboratorDeleteForbidden);
         }
 
         if (await collaboratorRepository.IsOrganizationOwnerAsync(id, cancellationToken))
@@ -53,11 +53,11 @@ public sealed partial class DeleteCollaborator(
                 ErrorType.Conflict);
         }
 
-        if (await collaboratorRepository.HasMissionsAsync(id, cancellationToken))
+        if (await collaboratorRepository.HasGoalsAsync(id, cancellationToken))
         {
-            LogCollaboratorDeletionFailed(logger, id, "Has missions");
+            LogCollaboratorDeletionFailed(logger, id, "Has goals");
             return Result.Failure(
-                "Não é possível excluir o colaborador porque existem missões associadas a ele.",
+                "Não é possível excluir o colaborador porque existem metas associadas a ele.",
                 ErrorType.Conflict);
         }
 
@@ -68,12 +68,12 @@ public sealed partial class DeleteCollaborator(
         return Result.Success();
     }
 
-    [LoggerMessage(EventId = 4048, Level = LogLevel.Information, Message = "Deleting collaborator {CollaboratorId}")]
+    [LoggerMessage(EventId = 4046, Level = LogLevel.Information, Message = "Deleting collaborator {CollaboratorId}")]
     private static partial void LogDeletingCollaborator(ILogger logger, Guid collaboratorId);
 
-    [LoggerMessage(EventId = 4049, Level = LogLevel.Information, Message = "Collaborator deleted successfully: {CollaboratorId}")]
+    [LoggerMessage(EventId = 4047, Level = LogLevel.Information, Message = "Collaborator deleted successfully: {CollaboratorId}")]
     private static partial void LogCollaboratorDeleted(ILogger logger, Guid collaboratorId);
 
-    [LoggerMessage(EventId = 4050, Level = LogLevel.Warning, Message = "Collaborator deletion failed for {CollaboratorId}: {Reason}")]
+    [LoggerMessage(EventId = 4048, Level = LogLevel.Warning, Message = "Collaborator deletion failed for {CollaboratorId}: {Reason}")]
     private static partial void LogCollaboratorDeletionFailed(ILogger logger, Guid collaboratorId, string reason);
 }

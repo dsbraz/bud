@@ -17,12 +17,12 @@ public sealed class ToolCatalogContractValidatorTests
     public void ValidateRequiredFields_WhenRequiredFieldIsMissing_ReturnsError()
     {
         var tools = CreateValidTools().ToList();
-        var missionCreate = tools.Single(tool => tool.Name == "mission_create");
+        var missionCreate = tools.Single(tool => tool.Name == "goal_create");
         missionCreate.InputSchema["required"] = new JsonArray("name");
 
         var errors = ToolCatalogContractValidator.ValidateRequiredFields(tools);
 
-        errors.Should().Contain(error => error.Contains("mission_create", StringComparison.Ordinal));
+        errors.Should().Contain(error => error.Contains("goal_create", StringComparison.Ordinal));
         errors.Should().Contain(error => error.Contains("startDate", StringComparison.Ordinal));
     }
 
@@ -30,26 +30,21 @@ public sealed class ToolCatalogContractValidatorTests
     {
         return
         [
-            CreateTool("mission_create", ["name", "startDate", "endDate", "status", "scopeType", "scopeId"]),
-            CreateTool("mission_get", ["id"]),
-            CreateTool("mission_list", []),
-            CreateTool("mission_update", ["id", "payload"]),
-            CreateTool("mission_delete", ["id"]),
-            CreateTool("mission_metric_create", ["missionId", "name", "type"]),
-            CreateTool("mission_metric_get", ["id"]),
-            CreateTool("mission_metric_list", []),
-            CreateTool("mission_metric_update", ["id", "payload"]),
-            CreateTool("mission_metric_delete", ["id"]),
-            CreateTool("mission_objective_create", ["missionId", "name"]),
-            CreateTool("mission_objective_get", ["id"]),
-            CreateTool("mission_objective_list", []),
-            CreateTool("mission_objective_update", ["id", "payload"]),
-            CreateTool("mission_objective_delete", ["id"]),
-            CreateTool("metric_checkin_create", ["missionMetricId", "checkinDate", "confidenceLevel"]),
-            CreateTool("metric_checkin_get", ["id"]),
-            CreateTool("metric_checkin_list", []),
-            CreateTool("metric_checkin_update", ["id", "payload"]),
-            CreateTool("metric_checkin_delete", ["id"])
+            CreateTool("goal_create", ["name", "startDate", "endDate", "status", "scopeType", "scopeId"]),
+            CreateTool("goal_get", ["id"]),
+            CreateTool("goal_list", []),
+            CreateTool("goal_update", ["id", "payload"]),
+            CreateTool("goal_delete", ["id"]),
+            CreateTool("goal_indicator_create", ["goalId", "name", "type"]),
+            CreateTool("goal_indicator_get", ["id"]),
+            CreateTool("goal_indicator_list", []),
+            CreateTool("goal_indicator_update", ["id", "payload"]),
+            CreateTool("goal_indicator_delete", ["id"]),
+            CreateTool("indicator_checkin_create", ["checkinDate", "confidenceLevel"]),
+            CreateTool("indicator_checkin_get", ["indicatorId", "checkinId"]),
+            CreateTool("indicator_checkin_list", []),
+            CreateTool("indicator_checkin_update", ["indicatorId", "checkinId", "payload"]),
+            CreateTool("indicator_checkin_delete", ["indicatorId", "checkinId"])
         ];
     }
 

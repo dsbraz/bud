@@ -39,7 +39,7 @@ public sealed class DbSeederTests
         templateNames.Should().BeEquivalentTo(
             ["BSC", "Mapa Estratégico", "OKR", "PDI", "Planejamento Estratégico Anual"]);
 
-        var dimensions = await context.TemplateObjectives
+        var dimensions = await context.TemplateGoals
             .IgnoreQueryFilters()
             .Where(o => o.OrganizationId == organization.Id)
             .Select(o => o.Dimension)
@@ -77,18 +77,18 @@ public sealed class DbSeederTests
             Id = Guid.NewGuid(),
             OrganizationId = organization.Id,
             Name = "OKR",
-            Metrics =
+            Indicators =
             [
-                new TemplateMetric
+                new TemplateIndicator
                 {
                     Id = Guid.NewGuid(),
                     OrganizationId = organization.Id,
                     Name = "Resultado-chave 1",
-                    Type = MetricType.Quantitative,
+                    Type = IndicatorType.Quantitative,
                     OrderIndex = 0,
-                    QuantitativeType = QuantitativeMetricType.Achieve,
+                    QuantitativeType = QuantitativeIndicatorType.Achieve,
                     MaxValue = 100,
-                    Unit = MetricUnit.Percentage
+                    Unit = IndicatorUnit.Percentage
                 }
             ]
         });
@@ -108,7 +108,7 @@ public sealed class DbSeederTests
         templateNames.Should().Contain(["BSC", "Mapa Estratégico", "OKR", "PDI", "Planejamento Estratégico Anual"]);
         templateNames.Count(name => name == "OKR").Should().Be(1);
 
-        var dimensions = await context.TemplateObjectives
+        var dimensions = await context.TemplateGoals
             .IgnoreQueryFilters()
             .Where(o => o.OrganizationId == organization.Id)
             .Select(o => o.Dimension)
@@ -133,13 +133,13 @@ public sealed class DbSeederTests
 
         var bscTemplate = await context.Templates
             .IgnoreQueryFilters()
-            .Include(t => t.Objectives)
-            .Include(t => t.Metrics)
+            .Include(t => t.Goals)
+            .Include(t => t.Indicators)
             .SingleAsync(t => t.OrganizationId == organization.Id && t.Name == "BSC");
 
-        bscTemplate.Objectives.Should().NotBeEmpty();
-        bscTemplate.Metrics.Should().NotBeEmpty();
-        bscTemplate.Metrics.Should().OnlyContain(m => m.TemplateObjectiveId.HasValue);
-        bscTemplate.Objectives.Select(o => o.Id).Should().Contain(bscTemplate.Metrics.Select(m => m.TemplateObjectiveId!.Value));
+        bscTemplate.Goals.Should().NotBeEmpty();
+        bscTemplate.Indicators.Should().NotBeEmpty();
+        bscTemplate.Indicators.Should().OnlyContain(m => m.TemplateGoalId.HasValue);
+        bscTemplate.Goals.Select(o => o.Id).Should().Contain(bscTemplate.Indicators.Select(m => m.TemplateGoalId!.Value));
     }
 }

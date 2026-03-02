@@ -74,7 +74,7 @@ public class MissionsEndpointsTests : IClassFixture<CustomWebApplicationFactory>
     {
         var watch = Stopwatch.StartNew();
 
-        var response = await _client.GetAsync("/api/missions?page=1&pageSize=20");
+        var response = await _client.GetAsync("/api/goals?page=1&pageSize=20");
 
         watch.Stop();
         response.StatusCode.Should().Be(HttpStatusCode.OK);
@@ -94,22 +94,22 @@ public class MissionsEndpointsTests : IClassFixture<CustomWebApplicationFactory>
             });
         var org = await orgResponse.Content.ReadFromJsonAsync<Organization>();
 
-        var request = new CreateMissionRequest
+        var request = new CreateGoalRequest
         {
             Name = "Test Mission",
             StartDate = DateTime.UtcNow,
             EndDate = DateTime.UtcNow.AddDays(7),
-            Status = Bud.Shared.Contracts.MissionStatus.Planned,
-            ScopeType = Bud.Shared.Contracts.MissionScopeType.Organization,
+            Status = Bud.Shared.Contracts.GoalStatus.Planned,
+            ScopeType = Bud.Shared.Contracts.GoalScopeType.Organization,
             ScopeId = org!.Id
         };
 
         // Act
-        var response = await _client.PostAsJsonAsync("/api/missions", request);
+        var response = await _client.PostAsJsonAsync("/api/goals", request);
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.Created);
-        var mission = await response.Content.ReadFromJsonAsync<Mission>();
+        var mission = await response.Content.ReadFromJsonAsync<Goal>();
         mission.Should().NotBeNull();
         mission!.Name.Should().Be("Test Mission");
         mission.OrganizationId.Should().Be(org.Id);
@@ -142,18 +142,18 @@ public class MissionsEndpointsTests : IClassFixture<CustomWebApplicationFactory>
         var collaborator = await CreateNonOwnerCollaborator(org1!.Id);
         var tenantClient = _factory.CreateTenantClient(org1.Id, collaborator.Email, collaborator.Id);
 
-        var request = new CreateMissionRequest
+        var request = new CreateGoalRequest
         {
             Name = "Mission Forbidden",
             StartDate = DateTime.UtcNow,
             EndDate = DateTime.UtcNow.AddDays(7),
-            Status = Bud.Shared.Contracts.MissionStatus.Planned,
-            ScopeType = Bud.Shared.Contracts.MissionScopeType.Organization,
+            Status = Bud.Shared.Contracts.GoalStatus.Planned,
+            ScopeType = Bud.Shared.Contracts.GoalScopeType.Organization,
             ScopeId = org2!.Id
         };
 
         // Act
-        var response = await tenantClient.PostAsJsonAsync("/api/missions", request);
+        var response = await tenantClient.PostAsJsonAsync("/api/goals", request);
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.Forbidden);
@@ -163,18 +163,18 @@ public class MissionsEndpointsTests : IClassFixture<CustomWebApplicationFactory>
     public async Task Create_WithInvalidScopeId_ReturnsNotFound()
     {
         // Arrange
-        var request = new CreateMissionRequest
+        var request = new CreateGoalRequest
         {
             Name = "Test Mission",
             StartDate = DateTime.UtcNow,
             EndDate = DateTime.UtcNow.AddDays(7),
-            Status = Bud.Shared.Contracts.MissionStatus.Planned,
-            ScopeType = Bud.Shared.Contracts.MissionScopeType.Organization,
+            Status = Bud.Shared.Contracts.GoalStatus.Planned,
+            ScopeType = Bud.Shared.Contracts.GoalScopeType.Organization,
             ScopeId = Guid.NewGuid() // Non-existent ID
         };
 
         // Act
-        var response = await _client.PostAsJsonAsync("/api/missions", request);
+        var response = await _client.PostAsJsonAsync("/api/goals", request);
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.NotFound);
@@ -193,18 +193,18 @@ public class MissionsEndpointsTests : IClassFixture<CustomWebApplicationFactory>
             });
         var org = await orgResponse.Content.ReadFromJsonAsync<Organization>();
 
-        var request = new CreateMissionRequest
+        var request = new CreateGoalRequest
         {
             Name = "Test Mission",
             StartDate = DateTime.UtcNow.AddDays(7),
             EndDate = DateTime.UtcNow, // Before start date
-            Status = Bud.Shared.Contracts.MissionStatus.Planned,
-            ScopeType = Bud.Shared.Contracts.MissionScopeType.Organization,
+            Status = Bud.Shared.Contracts.GoalStatus.Planned,
+            ScopeType = Bud.Shared.Contracts.GoalScopeType.Organization,
             ScopeId = org!.Id
         };
 
         // Act
-        var response = await _client.PostAsJsonAsync("/api/missions", request);
+        var response = await _client.PostAsJsonAsync("/api/goals", request);
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
@@ -235,7 +235,7 @@ public class MissionsEndpointsTests : IClassFixture<CustomWebApplicationFactory>
 
         var content = new StringContent(JsonSerializer.Serialize(payload), Encoding.UTF8, "application/json");
 
-        var response = await _client.PostAsync("/api/missions", content);
+        var response = await _client.PostAsync("/api/goals", content);
 
         response.StatusCode.Should().Be(HttpStatusCode.Created);
     }
@@ -265,7 +265,7 @@ public class MissionsEndpointsTests : IClassFixture<CustomWebApplicationFactory>
 
         var content = new StringContent(JsonSerializer.Serialize(payload), Encoding.UTF8, "application/json");
 
-        var response = await _client.PostAsync("/api/missions", content);
+        var response = await _client.PostAsync("/api/goals", content);
 
         response.StatusCode.Should().Be(HttpStatusCode.Created);
     }
@@ -303,24 +303,24 @@ public class MissionsEndpointsTests : IClassFixture<CustomWebApplicationFactory>
             new CreateOrganizationRequest { Name = "test-missions.com", OwnerId = leaderId });
         var org = await orgResponse.Content.ReadFromJsonAsync<Organization>();
 
-        var createRequest = new CreateMissionRequest
+        var createRequest = new CreateGoalRequest
         {
             Name = "Test Mission for GetById",
             StartDate = DateTime.UtcNow,
             EndDate = DateTime.UtcNow.AddDays(7),
-            Status = Bud.Shared.Contracts.MissionStatus.Planned,
-            ScopeType = Bud.Shared.Contracts.MissionScopeType.Organization,
+            Status = Bud.Shared.Contracts.GoalStatus.Planned,
+            ScopeType = Bud.Shared.Contracts.GoalScopeType.Organization,
             ScopeId = org!.Id
         };
-        var createResponse = await _client.PostAsJsonAsync("/api/missions", createRequest);
-        var created = await createResponse.Content.ReadFromJsonAsync<Mission>();
+        var createResponse = await _client.PostAsJsonAsync("/api/goals", createRequest);
+        var created = await createResponse.Content.ReadFromJsonAsync<Goal>();
 
         // Act
-        var response = await _client.GetAsync($"/api/missions/{created!.Id}");
+        var response = await _client.GetAsync($"/api/goals/{created!.Id}");
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.OK);
-        var mission = await response.Content.ReadFromJsonAsync<Mission>();
+        var mission = await response.Content.ReadFromJsonAsync<Goal>();
         mission.Should().NotBeNull();
         mission!.Id.Should().Be(created.Id);
         mission.Name.Should().Be("Test Mission for GetById");
@@ -333,7 +333,7 @@ public class MissionsEndpointsTests : IClassFixture<CustomWebApplicationFactory>
         var nonExistingId = Guid.NewGuid();
 
         // Act
-        var response = await _client.GetAsync($"/api/missions/{nonExistingId}");
+        var response = await _client.GetAsync($"/api/goals/{nonExistingId}");
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.NotFound);
@@ -365,32 +365,32 @@ public class MissionsEndpointsTests : IClassFixture<CustomWebApplicationFactory>
         var org2 = await org2Response.Content.ReadFromJsonAsync<Organization>();
 
         // Create missions for each org
-        await _client.PostAsJsonAsync("/api/missions", new CreateMissionRequest
+        await _client.PostAsJsonAsync("/api/goals", new CreateGoalRequest
         {
             Name = "Mission Org 1",
             StartDate = DateTime.UtcNow,
             EndDate = DateTime.UtcNow.AddDays(7),
-            Status = Bud.Shared.Contracts.MissionStatus.Planned,
-            ScopeType = Bud.Shared.Contracts.MissionScopeType.Organization,
+            Status = Bud.Shared.Contracts.GoalStatus.Planned,
+            ScopeType = Bud.Shared.Contracts.GoalScopeType.Organization,
             ScopeId = org1!.Id
         });
 
-        await _client.PostAsJsonAsync("/api/missions", new CreateMissionRequest
+        await _client.PostAsJsonAsync("/api/goals", new CreateGoalRequest
         {
             Name = "Mission Org 2",
             StartDate = DateTime.UtcNow,
             EndDate = DateTime.UtcNow.AddDays(7),
-            Status = Bud.Shared.Contracts.MissionStatus.Planned,
-            ScopeType = Bud.Shared.Contracts.MissionScopeType.Organization,
+            Status = Bud.Shared.Contracts.GoalStatus.Planned,
+            ScopeType = Bud.Shared.Contracts.GoalScopeType.Organization,
             ScopeId = org2!.Id
         });
 
         // Act - Filter by org1
-        var response = await _client.GetAsync($"/api/missions?scopeType={MissionScopeType.Organization}&scopeId={org1.Id}");
+        var response = await _client.GetAsync($"/api/goals?scopeType={GoalScopeType.Organization}&scopeId={org1.Id}");
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.OK);
-        var result = await response.Content.ReadFromJsonAsync<PagedResult<Mission>>();
+        var result = await response.Content.ReadFromJsonAsync<PagedResult<Goal>>();
         result.Should().NotBeNull();
         result!.Items.Should().OnlyContain(m => m.OrganizationId == org1.Id);
     }
@@ -406,23 +406,23 @@ public class MissionsEndpointsTests : IClassFixture<CustomWebApplicationFactory>
 
         for (int i = 1; i <= 15; i++)
         {
-            await _client.PostAsJsonAsync("/api/missions", new CreateMissionRequest
+            await _client.PostAsJsonAsync("/api/goals", new CreateGoalRequest
             {
                 Name = $"Mission {i}",
                 StartDate = DateTime.UtcNow,
                 EndDate = DateTime.UtcNow.AddDays(7),
-                Status = Bud.Shared.Contracts.MissionStatus.Planned,
-                ScopeType = Bud.Shared.Contracts.MissionScopeType.Organization,
+                Status = Bud.Shared.Contracts.GoalStatus.Planned,
+                ScopeType = Bud.Shared.Contracts.GoalScopeType.Organization,
                 ScopeId = org!.Id
             });
         }
 
         // Act
-        var response = await _client.GetAsync("/api/missions?page=1&pageSize=10");
+        var response = await _client.GetAsync("/api/goals?page=1&pageSize=10");
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.OK);
-        var result = await response.Content.ReadFromJsonAsync<PagedResult<Mission>>();
+        var result = await response.Content.ReadFromJsonAsync<PagedResult<Goal>>();
         result.Should().NotBeNull();
         result!.Page.Should().Be(1);
         result.PageSize.Should().Be(10);
@@ -433,7 +433,7 @@ public class MissionsEndpointsTests : IClassFixture<CustomWebApplicationFactory>
     public async Task GetAll_WithInvalidPageSize_ReturnsBadRequest()
     {
         // Act
-        var response = await _client.GetAsync("/api/missions?page=1&pageSize=101");
+        var response = await _client.GetAsync("/api/goals?page=1&pageSize=101");
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
@@ -449,7 +449,7 @@ public class MissionsEndpointsTests : IClassFixture<CustomWebApplicationFactory>
         var search = new string('a', 201);
 
         // Act
-        var response = await _client.GetAsync($"/api/missions?search={search}");
+        var response = await _client.GetAsync($"/api/goals?search={search}");
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
@@ -462,7 +462,7 @@ public class MissionsEndpointsTests : IClassFixture<CustomWebApplicationFactory>
     public async Task GetProgress_WithInvalidIds_ReturnsBadRequest()
     {
         // Act
-        var response = await _client.GetAsync("/api/missions/progress?ids=abc");
+        var response = await _client.GetAsync("/api/goals/progress?ids=abc");
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
@@ -522,33 +522,33 @@ public class MissionsEndpointsTests : IClassFixture<CustomWebApplicationFactory>
         await dbContext.SaveChangesAsync();
 
         // Create missions at each level
-        await _client.PostAsJsonAsync("/api/missions", new CreateMissionRequest
+        await _client.PostAsJsonAsync("/api/goals", new CreateGoalRequest
         {
             Name = "Org Mission",
             StartDate = DateTime.UtcNow,
             EndDate = DateTime.UtcNow.AddDays(7),
-            Status = Bud.Shared.Contracts.MissionStatus.Planned,
-            ScopeType = Bud.Shared.Contracts.MissionScopeType.Organization,
+            Status = Bud.Shared.Contracts.GoalStatus.Planned,
+            ScopeType = Bud.Shared.Contracts.GoalScopeType.Organization,
             ScopeId = org.Id
         });
 
-        await _client.PostAsJsonAsync("/api/missions", new CreateMissionRequest
+        await _client.PostAsJsonAsync("/api/goals", new CreateGoalRequest
         {
             Name = "Collaborator Mission",
             StartDate = DateTime.UtcNow,
             EndDate = DateTime.UtcNow.AddDays(7),
-            Status = Bud.Shared.Contracts.MissionStatus.Planned,
-            ScopeType = Bud.Shared.Contracts.MissionScopeType.Collaborator,
+            Status = Bud.Shared.Contracts.GoalStatus.Planned,
+            ScopeType = Bud.Shared.Contracts.GoalScopeType.Collaborator,
             ScopeId = collaborator!.Id
         });
 
         // Act
         var collaboratorClient = _factory.CreateTenantClient(org.Id, collaborator.Email, collaborator.Id);
-        var response = await collaboratorClient.GetAsync("/api/me/missions");
+        var response = await collaboratorClient.GetAsync("/api/me/goals");
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.OK);
-        var result = await response.Content.ReadFromJsonAsync<PagedResult<Mission>>();
+        var result = await response.Content.ReadFromJsonAsync<PagedResult<Goal>>();
         result.Should().NotBeNull();
         result!.Items.Should().HaveCountGreaterOrEqualTo(2);
         result.Items.Should().Contain(m => m.Name == "Org Mission");
@@ -568,35 +568,35 @@ public class MissionsEndpointsTests : IClassFixture<CustomWebApplicationFactory>
             new CreateOrganizationRequest { Name = "test-missions.com", OwnerId = leaderId });
         var org = await orgResponse.Content.ReadFromJsonAsync<Organization>();
 
-        var createRequest = new CreateMissionRequest
+        var createRequest = new CreateGoalRequest
         {
             Name = "Original Name",
             StartDate = DateTime.UtcNow,
             EndDate = DateTime.UtcNow.AddDays(7),
-            Status = Bud.Shared.Contracts.MissionStatus.Planned,
-            ScopeType = Bud.Shared.Contracts.MissionScopeType.Organization,
+            Status = Bud.Shared.Contracts.GoalStatus.Planned,
+            ScopeType = Bud.Shared.Contracts.GoalScopeType.Organization,
             ScopeId = org!.Id
         };
-        var createResponse = await _client.PostAsJsonAsync("/api/missions", createRequest);
-        var created = await createResponse.Content.ReadFromJsonAsync<Mission>();
+        var createResponse = await _client.PostAsJsonAsync("/api/goals", createRequest);
+        var created = await createResponse.Content.ReadFromJsonAsync<Goal>();
 
-        var updateRequest = new PatchMissionRequest
+        var updateRequest = new PatchGoalRequest
         {
             Name = "Updated Name",
             StartDate = created!.StartDate,
             EndDate = created.EndDate,
-            Status = Bud.Shared.Contracts.MissionStatus.Active
+            Status = Bud.Shared.Contracts.GoalStatus.Active
         };
 
         // Act
-        var response = await _client.PatchAsJsonAsync($"/api/missions/{created.Id}", updateRequest);
+        var response = await _client.PatchAsJsonAsync($"/api/goals/{created.Id}", updateRequest);
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.OK);
-        var updated = await response.Content.ReadFromJsonAsync<Mission>();
+        var updated = await response.Content.ReadFromJsonAsync<Goal>();
         updated.Should().NotBeNull();
         updated!.Name.Should().Be("Updated Name");
-        updated.Status.Should().Be(MissionStatus.Active);
+        updated.Status.Should().Be(GoalStatus.Active);
     }
 
     #endregion
@@ -612,26 +612,26 @@ public class MissionsEndpointsTests : IClassFixture<CustomWebApplicationFactory>
             new CreateOrganizationRequest { Name = "test-missions.com", OwnerId = leaderId });
         var org = await orgResponse.Content.ReadFromJsonAsync<Organization>();
 
-        var createRequest = new CreateMissionRequest
+        var createRequest = new CreateGoalRequest
         {
             Name = "Mission to Delete",
             StartDate = DateTime.UtcNow,
             EndDate = DateTime.UtcNow.AddDays(7),
-            Status = Bud.Shared.Contracts.MissionStatus.Planned,
-            ScopeType = Bud.Shared.Contracts.MissionScopeType.Organization,
+            Status = Bud.Shared.Contracts.GoalStatus.Planned,
+            ScopeType = Bud.Shared.Contracts.GoalScopeType.Organization,
             ScopeId = org!.Id
         };
-        var createResponse = await _client.PostAsJsonAsync("/api/missions", createRequest);
-        var created = await createResponse.Content.ReadFromJsonAsync<Mission>();
+        var createResponse = await _client.PostAsJsonAsync("/api/goals", createRequest);
+        var created = await createResponse.Content.ReadFromJsonAsync<Goal>();
 
         // Act
-        var response = await _client.DeleteAsync($"/api/missions/{created!.Id}");
+        var response = await _client.DeleteAsync($"/api/goals/{created!.Id}");
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.NoContent);
 
         // Verify it's deleted
-        var getResponse = await _client.GetAsync($"/api/missions/{created.Id}");
+        var getResponse = await _client.GetAsync($"/api/goals/{created.Id}");
         getResponse.StatusCode.Should().Be(HttpStatusCode.NotFound);
     }
 
@@ -642,7 +642,7 @@ public class MissionsEndpointsTests : IClassFixture<CustomWebApplicationFactory>
         var unauthenticatedClient = _factory.CreateClient();
 
         // Act
-        var response = await unauthenticatedClient.GetAsync("/api/missions");
+        var response = await unauthenticatedClient.GetAsync("/api/goals");
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);

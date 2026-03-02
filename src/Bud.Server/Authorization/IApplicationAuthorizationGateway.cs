@@ -10,7 +10,7 @@ public interface IApplicationAuthorizationGateway
 
     Task<bool> CanAccessTenantOrganizationAsync(ClaimsPrincipal user, Guid organizationId, CancellationToken cancellationToken = default);
 
-    Task<bool> CanAccessMissionScopeAsync(
+    Task<bool> CanAccessGoalScopeAsync(
         ClaimsPrincipal user,
         Guid? workspaceId,
         Guid? teamId,

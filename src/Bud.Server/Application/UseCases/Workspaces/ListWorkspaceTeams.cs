@@ -20,7 +20,7 @@ public sealed class ListWorkspaceTeams(IWorkspaceRepository workspaceRepository)
 
         if (!await workspaceRepository.ExistsAsync(id, cancellationToken))
         {
-            return Result<Bud.Shared.Contracts.Common.PagedResult<Team>>.NotFound("Workspace não encontrado.");
+            return Result<Bud.Shared.Contracts.Common.PagedResult<Team>>.NotFound(UserErrorMessages.WorkspaceNotFound);
         }
 
         var result = await workspaceRepository.GetTeamsAsync(id, page, pageSize, cancellationToken);

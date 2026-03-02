@@ -16,13 +16,13 @@ public sealed class BudApiClientTests
         await session.InitializeAsync();
 
         var client = new BudApiClient(httpClient, session);
-        var act = () => client.CreateMissionAsync(new CreateMissionRequest
+        var act = () => client.CreateGoalAsync(new CreateGoalRequest
         {
             Name = "Missão Teste",
             StartDate = DateTime.UtcNow,
             EndDate = DateTime.UtcNow.AddDays(30),
-            Status = MissionStatus.Active,
-            ScopeType = MissionScopeType.Organization,
+            Status = GoalStatus.Active,
+            ScopeType = GoalScopeType.Organization,
             ScopeId = Guid.NewGuid()
         });
 
@@ -56,7 +56,7 @@ public sealed class BudApiClientTests
                 });
             }
 
-            if (request.RequestUri.AbsolutePath == "/api/missions" && request.Method == HttpMethod.Post)
+            if (request.RequestUri.AbsolutePath == "/api/goals" && request.Method == HttpMethod.Post)
             {
                 request.Headers.Authorization.Should().NotBeNull();
                 request.Headers.Authorization!.Scheme.Should().Be("Bearer");
@@ -68,17 +68,17 @@ public sealed class BudApiClientTests
                 var payload = JsonDocument.Parse(request.Content!.ReadAsStringAsync().GetAwaiter().GetResult()).RootElement;
                 payload.TryGetProperty("request", out _).Should().BeFalse();
                 payload.GetProperty("status").ValueKind.Should().Be(JsonValueKind.Number);
-                payload.GetProperty("status").GetInt32().Should().Be((int)MissionStatus.Active);
+                payload.GetProperty("status").GetInt32().Should().Be((int)GoalStatus.Active);
                 payload.GetProperty("scopeType").ValueKind.Should().Be(JsonValueKind.Number);
-                payload.GetProperty("scopeType").GetInt32().Should().Be((int)MissionScopeType.Organization);
+                payload.GetProperty("scopeType").GetInt32().Should().Be((int)GoalScopeType.Organization);
 
-                return JsonResponse(new MissionResponse
+                return JsonResponse(new GoalResponse
                 {
                     Id = responseMissionId,
                     Name = "Missão Teste",
                     StartDate = DateTime.UtcNow,
                     EndDate = DateTime.UtcNow.AddDays(30),
-                    Status = MissionStatus.Active,
+                    Status = GoalStatus.Active,
                     OrganizationId = tenantId
                 });
             }
@@ -93,13 +93,13 @@ public sealed class BudApiClientTests
         await session.SetCurrentTenantAsync(tenantId);
 
         var client = new BudApiClient(httpClient, session);
-        var mission = await client.CreateMissionAsync(new CreateMissionRequest
+        var mission = await client.CreateGoalAsync(new CreateGoalRequest
         {
             Name = "Missão Teste",
             StartDate = DateTime.UtcNow,
             EndDate = DateTime.UtcNow.AddDays(30),
-            Status = MissionStatus.Active,
-            ScopeType = MissionScopeType.Organization,
+            Status = GoalStatus.Active,
+            ScopeType = GoalScopeType.Organization,
             ScopeId = tenantId
         });
 
@@ -130,13 +130,13 @@ public sealed class BudApiClientTests
         await session.InitializeAsync();
 
         var client = new BudApiClient(httpClient, session);
-        var act = () => client.CreateMissionAsync(new CreateMissionRequest
+        var act = () => client.CreateGoalAsync(new CreateGoalRequest
         {
             Name = "Missão Teste",
             StartDate = DateTime.UtcNow,
             EndDate = DateTime.UtcNow.AddDays(30),
-            Status = MissionStatus.Active,
-            ScopeType = MissionScopeType.Organization,
+            Status = GoalStatus.Active,
+            ScopeType = GoalScopeType.Organization,
             ScopeId = Guid.NewGuid()
         });
 

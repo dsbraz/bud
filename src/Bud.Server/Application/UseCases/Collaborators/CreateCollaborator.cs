@@ -28,26 +28,26 @@ public sealed partial class CreateCollaborator(
         if (!organizationId.HasValue)
         {
             LogCollaboratorCreationFailed(logger, request.FullName, "Organization context not found");
-            return Result<Collaborator>.Failure("Contexto de organização não encontrado.", ErrorType.Validation);
+            return Result<Collaborator>.Failure(UserErrorMessages.CollaboratorContextNotFound, ErrorType.Validation);
         }
 
         var canCreate = await authorizationGateway.IsOrganizationOwnerAsync(user, organizationId.Value, cancellationToken);
         if (!canCreate)
         {
             LogCollaboratorCreationFailed(logger, request.FullName, "Forbidden");
-            return Result<Collaborator>.Forbidden("Apenas o proprietário da organização pode criar colaboradores.");
+            return Result<Collaborator>.Forbidden(UserErrorMessages.CollaboratorCreateForbidden);
         }
 
         if (!EmailAddress.TryCreate(request.Email, out var emailAddress))
         {
             LogCollaboratorCreationFailed(logger, request.FullName, "Invalid email");
-            return Result<Collaborator>.Failure("E-mail inválido.", ErrorType.Validation);
+            return Result<Collaborator>.Failure(UserErrorMessages.CollaboratorInvalidEmail, ErrorType.Validation);
         }
 
         if (!PersonName.TryCreate(request.FullName, out var personName))
         {
             LogCollaboratorCreationFailed(logger, request.FullName, "Invalid name");
-            return Result<Collaborator>.Failure("O nome do colaborador é obrigatório.", ErrorType.Validation);
+            return Result<Collaborator>.Failure(UserErrorMessages.CollaboratorNameRequired, ErrorType.Validation);
         }
 
         try
@@ -75,12 +75,12 @@ public sealed partial class CreateCollaborator(
         }
     }
 
-    [LoggerMessage(EventId = 4042, Level = LogLevel.Information, Message = "Creating collaborator '{FullName}'")]
+    [LoggerMessage(EventId = 4040, Level = LogLevel.Information, Message = "Creating collaborator '{FullName}'")]
     private static partial void LogCreatingCollaborator(ILogger logger, string fullName);
 
-    [LoggerMessage(EventId = 4043, Level = LogLevel.Information, Message = "Collaborator created successfully: {CollaboratorId} - '{FullName}'")]
+    [LoggerMessage(EventId = 4041, Level = LogLevel.Information, Message = "Collaborator created successfully: {CollaboratorId} - '{FullName}'")]
     private static partial void LogCollaboratorCreated(ILogger logger, Guid collaboratorId, string fullName);
 
-    [LoggerMessage(EventId = 4044, Level = LogLevel.Warning, Message = "Collaborator creation failed for '{FullName}': {Reason}")]
+    [LoggerMessage(EventId = 4042, Level = LogLevel.Warning, Message = "Collaborator creation failed for '{FullName}': {Reason}")]
     private static partial void LogCollaboratorCreationFailed(ILogger logger, string fullName, string reason);
 }

@@ -28,14 +28,14 @@ public sealed partial class PatchTemplate(
         if (template is null)
         {
             LogTemplatePatchFailed(logger, id, "Not found");
-            return Result<Template>.NotFound("Template de missão não encontrado.");
+            return Result<Template>.NotFound(UserErrorMessages.TemplateNotFound);
         }
 
         var canUpdate = await authorizationGateway.CanAccessTenantOrganizationAsync(user, template.OrganizationId, cancellationToken);
         if (!canUpdate)
         {
             LogTemplatePatchFailed(logger, id, "Forbidden");
-            return Result<Template>.Forbidden("Você não tem permissão para atualizar templates nesta organização.");
+            return Result<Template>.Forbidden(UserErrorMessages.TemplateUpdateForbidden);
         }
 
         try
@@ -43,34 +43,35 @@ public sealed partial class PatchTemplate(
             template.UpdateBasics(
                 request.Name.HasValue ? (request.Name.Value ?? template.Name) : template.Name,
                 request.Description.HasValue ? request.Description.Value : template.Description,
-                request.MissionNamePattern.HasValue ? request.MissionNamePattern.Value : template.MissionNamePattern,
-                request.MissionDescriptionPattern.HasValue ? request.MissionDescriptionPattern.Value : template.MissionDescriptionPattern);
+                request.GoalNamePattern.HasValue ? request.GoalNamePattern.Value : template.GoalNamePattern,
+                request.GoalDescriptionPattern.HasValue ? request.GoalDescriptionPattern.Value : template.GoalDescriptionPattern);
 
-            var previousMetrics = template.Metrics.ToList();
-            var previousObjectives = template.Objectives.ToList();
-            var objectiveRequests = request.Objectives.AsEnumerable().ToList();
-            var metricRequests = request.Metrics.AsEnumerable().ToList();
+            var previousIndicators = template.Indicators.ToList();
+            var previousGoals = template.Goals.ToList();
+            var goalRequests = request.Goals.AsEnumerable().ToList();
+            var indicatorRequests = request.Indicators.AsEnumerable().ToList();
 
-            template.ReplaceObjectivesAndMetrics(
-                objectiveRequests.Select(objective => new TemplateObjectiveDraft(
-                    objective.Id,
-                    objective.Name,
-                    objective.Description,
-                    objective.OrderIndex,
-                    objective.Dimension)),
-                metricRequests.Select(metric => new TemplateMetricDraft(
-                    metric.Name,
-                    metric.Type,
-                    metric.OrderIndex,
-                    metric.TemplateObjectiveId,
-                    metric.QuantitativeType,
-                    metric.MinValue,
-                    metric.MaxValue,
-                    metric.Unit,
-                    metric.TargetText)));
+            template.ReplaceGoalsAndIndicators(
+                goalRequests.Select(goal => new TemplateGoalDraft(
+                    goal.Id,
+                    goal.ParentId,
+                    goal.Name,
+                    goal.Description,
+                    goal.OrderIndex,
+                    goal.Dimension)),
+                indicatorRequests.Select(indicator => new TemplateIndicatorDraft(
+                    indicator.Name,
+                    indicator.Type,
+                    indicator.OrderIndex,
+                    indicator.TemplateGoalId,
+                    indicator.QuantitativeType,
+                    indicator.MinValue,
+                    indicator.MaxValue,
+                    indicator.Unit,
+                    indicator.TargetText)));
 
-            await templateRepository.RemoveObjectivesAndMetricsAsync(previousObjectives, previousMetrics, cancellationToken);
-            await templateRepository.AddObjectivesAndMetricsAsync(template.Objectives, template.Metrics, cancellationToken);
+            await templateRepository.RemoveGoalsAndIndicatorsAsync(previousGoals, previousIndicators, cancellationToken);
+            await templateRepository.AddGoalsAndIndicatorsAsync(template.Goals, template.Indicators, cancellationToken);
             await unitOfWork.CommitAsync(templateRepository.SaveChangesAsync, cancellationToken);
 
             var reloadedTemplate = await templateRepository.GetByIdReadOnlyAsync(id, cancellationToken);
@@ -84,12 +85,12 @@ public sealed partial class PatchTemplate(
         }
     }
 
-    [LoggerMessage(EventId = 4075, Level = LogLevel.Information, Message = "Patching template {TemplateId}")]
+    [LoggerMessage(EventId = 4073, Level = LogLevel.Information, Message = "Patching template {TemplateId}")]
     private static partial void LogPatchingTemplate(ILogger logger, Guid templateId);
 
-    [LoggerMessage(EventId = 4076, Level = LogLevel.Information, Message = "Template patched successfully: {TemplateId} - '{Name}'")]
+    [LoggerMessage(EventId = 4074, Level = LogLevel.Information, Message = "Template patched successfully: {TemplateId} - '{Name}'")]
     private static partial void LogTemplatePatched(ILogger logger, Guid templateId, string name);
 
-    [LoggerMessage(EventId = 4077, Level = LogLevel.Warning, Message = "Template patch failed for {TemplateId}: {Reason}")]
+    [LoggerMessage(EventId = 4075, Level = LogLevel.Warning, Message = "Template patch failed for {TemplateId}: {Reason}")]
     private static partial void LogTemplatePatchFailed(ILogger logger, Guid templateId, string reason);
 }

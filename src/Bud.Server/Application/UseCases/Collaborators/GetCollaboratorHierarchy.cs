@@ -13,7 +13,7 @@ public sealed class GetCollaboratorHierarchy(ICollaboratorRepository collaborato
     {
         if (!await collaboratorRepository.ExistsAsync(collaboratorId, cancellationToken))
         {
-            return Result<List<CollaboratorSubordinateResponse>>.NotFound("Colaborador não encontrado.");
+            return Result<List<CollaboratorSubordinateResponse>>.NotFound(UserErrorMessages.CollaboratorNotFound);
         }
 
         var subordinates = await collaboratorRepository.GetSubordinatesAsync(collaboratorId, 5, cancellationToken);

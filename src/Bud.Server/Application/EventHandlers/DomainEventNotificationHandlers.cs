@@ -2,60 +2,60 @@ using Bud.Server.Domain.Events;
 
 namespace Bud.Server.Application.EventHandlers;
 
-public sealed class MissionCreatedDomainEventNotifier(
-    NotificationOrchestrator notificationOrchestrator) : IDomainEventNotifier<MissionCreatedDomainEvent>
+public sealed class GoalCreatedDomainEventNotifier(
+    NotificationOrchestrator notificationOrchestrator) : IDomainEventNotifier<GoalCreatedDomainEvent>
 {
     public async Task HandleAsync(
-        MissionCreatedDomainEvent domainEvent,
+        GoalCreatedDomainEvent domainEvent,
         CancellationToken cancellationToken = default)
     {
-        await notificationOrchestrator.NotifyMissionCreatedAsync(
-            domainEvent.MissionId,
+        await notificationOrchestrator.NotifyGoalCreatedAsync(
+            domainEvent.GoalId,
             domainEvent.OrganizationId,
             cancellationToken);
     }
 }
 
-public sealed class MissionUpdatedDomainEventNotifier(
-    NotificationOrchestrator notificationOrchestrator) : IDomainEventNotifier<MissionUpdatedDomainEvent>
+public sealed class GoalUpdatedDomainEventNotifier(
+    NotificationOrchestrator notificationOrchestrator) : IDomainEventNotifier<GoalUpdatedDomainEvent>
 {
     public async Task HandleAsync(
-        MissionUpdatedDomainEvent domainEvent,
+        GoalUpdatedDomainEvent domainEvent,
         CancellationToken cancellationToken = default)
     {
-        await notificationOrchestrator.NotifyMissionUpdatedAsync(
-            domainEvent.MissionId,
+        await notificationOrchestrator.NotifyGoalUpdatedAsync(
+            domainEvent.GoalId,
             domainEvent.OrganizationId,
             cancellationToken);
     }
 }
 
-public sealed class MissionDeletedDomainEventNotifier(
-    NotificationOrchestrator notificationOrchestrator) : IDomainEventNotifier<MissionDeletedDomainEvent>
+public sealed class GoalDeletedDomainEventNotifier(
+    NotificationOrchestrator notificationOrchestrator) : IDomainEventNotifier<GoalDeletedDomainEvent>
 {
     public async Task HandleAsync(
-        MissionDeletedDomainEvent domainEvent,
+        GoalDeletedDomainEvent domainEvent,
         CancellationToken cancellationToken = default)
     {
-        await notificationOrchestrator.NotifyMissionDeletedAsync(
-            domainEvent.MissionId,
+        await notificationOrchestrator.NotifyGoalDeletedAsync(
+            domainEvent.GoalId,
             domainEvent.OrganizationId,
             cancellationToken);
     }
 }
 
-public sealed class MetricCheckinCreatedDomainEventNotifier(
-    NotificationOrchestrator notificationOrchestrator) : IDomainEventNotifier<MetricCheckinCreatedDomainEvent>
+public sealed class CheckinCreatedDomainEventNotifier(
+    NotificationOrchestrator notificationOrchestrator) : IDomainEventNotifier<CheckinCreatedDomainEvent>
 {
     public async Task HandleAsync(
-        MetricCheckinCreatedDomainEvent domainEvent,
+        CheckinCreatedDomainEvent domainEvent,
         CancellationToken cancellationToken = default)
     {
-        await notificationOrchestrator.NotifyMetricCheckinCreatedAsync(
+        await notificationOrchestrator.NotifyCheckinCreatedAsync(
             domainEvent.CheckinId,
-            domainEvent.MetricId,
+            domainEvent.IndicatorId,
             domainEvent.OrganizationId,
-            domainEvent.CreatorCollaboratorId,
+            domainEvent.CollaboratorId,
             cancellationToken);
     }
 }

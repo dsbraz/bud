@@ -20,7 +20,7 @@ public sealed class ListOrganizationCollaborators(IOrganizationRepository organi
 
         if (!await organizationRepository.ExistsAsync(id, cancellationToken))
         {
-            return Result<Bud.Shared.Contracts.Common.PagedResult<Collaborator>>.NotFound("Organização não encontrada.");
+            return Result<Bud.Shared.Contracts.Common.PagedResult<Collaborator>>.NotFound(UserErrorMessages.OrganizationNotFound);
         }
 
         var result = await organizationRepository.GetCollaboratorsAsync(id, page, pageSize, cancellationToken);

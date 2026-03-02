@@ -14,7 +14,7 @@ public sealed class GetWorkspaceById(IWorkspaceRepository workspaceRepository)
     {
         var workspace = await workspaceRepository.GetByIdAsync(id, cancellationToken);
         return workspace is null
-            ? Result<Workspace>.NotFound("Workspace não encontrado.")
+            ? Result<Workspace>.NotFound(UserErrorMessages.WorkspaceNotFound)
             : Result<Workspace>.Success(workspace);
     }
 }

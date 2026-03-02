@@ -17,7 +17,7 @@ public sealed class ListNotifications(
     {
         if (tenantProvider.CollaboratorId is null)
         {
-            return Result<Bud.Shared.Contracts.Common.PagedResult<NotificationResponse>>.Forbidden("Colaborador não identificado.");
+            return Result<Bud.Shared.Contracts.Common.PagedResult<NotificationResponse>>.Forbidden(UserErrorMessages.CollaboratorNotIdentified);
         }
 
         var pagedSummaries = await notificationRepository.GetByRecipientAsync(

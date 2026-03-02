@@ -64,7 +64,7 @@ public sealed class NotificationWriteUseCasesTests
             OrganizationId = Guid.NewGuid(),
             Title = "Test",
             Message = "Test",
-            Type = NotificationType.MissionCreated,
+            Type = NotificationType.GoalCreated,
             CreatedAtUtc = DateTime.UtcNow
         };
         _repo.Setup(r => r.GetByIdAsync(notificationId, It.IsAny<CancellationToken>()))
@@ -91,7 +91,7 @@ public sealed class NotificationWriteUseCasesTests
             OrganizationId = Guid.NewGuid(),
             Title = "Test",
             Message = "Test",
-            Type = NotificationType.MissionCreated,
+            Type = NotificationType.GoalCreated,
             IsRead = true,
             ReadAtUtc = DateTime.UtcNow,
             CreatedAtUtc = DateTime.UtcNow
@@ -119,7 +119,7 @@ public sealed class NotificationWriteUseCasesTests
             OrganizationId = Guid.NewGuid(),
             Title = "Test",
             Message = "Test",
-            Type = NotificationType.MissionCreated,
+            Type = NotificationType.GoalCreated,
             IsRead = false,
             CreatedAtUtc = DateTime.UtcNow
         };

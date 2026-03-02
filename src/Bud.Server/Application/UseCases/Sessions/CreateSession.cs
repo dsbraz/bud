@@ -20,7 +20,7 @@ public sealed partial class CreateSession(
         if (!result.IsSuccess)
         {
             LogSessionCreationFailed(logger, result.Error ?? "Unknown error");
-            return Result<SessionResponse>.Failure(result.Error ?? "Falha ao autenticar.", result.ErrorType);
+            return Result<SessionResponse>.Failure(result.Error ?? UserErrorMessages.AuthenticationFailed, result.ErrorType);
         }
 
         LogSessionCreated(logger);

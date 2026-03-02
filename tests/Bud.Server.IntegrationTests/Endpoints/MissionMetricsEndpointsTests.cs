@@ -63,7 +63,7 @@ public class MissionMetricsEndpointsTests : IClassFixture<CustomWebApplicationFa
         return adminLeader.Id;
     }
 
-    private async Task<Mission> CreateTestMission()
+    private async Task<Goal> CreateTestMission()
     {
         var leaderId = await GetOrCreateAdminLeader();
         var orgResponse = await _client.PostAsJsonAsync("/api/organizations",
@@ -74,18 +74,18 @@ public class MissionMetricsEndpointsTests : IClassFixture<CustomWebApplicationFa
             });
         var org = await orgResponse.Content.ReadFromJsonAsync<Organization>();
 
-        var missionResponse = await _client.PostAsJsonAsync("/api/missions",
-            new CreateMissionRequest
+        var missionResponse = await _client.PostAsJsonAsync("/api/goals",
+            new CreateGoalRequest
             {
                 Name = "Test Mission",
                 StartDate = DateTime.UtcNow,
                 EndDate = DateTime.UtcNow.AddDays(7),
-                Status = Bud.Shared.Contracts.MissionStatus.Planned,
-                ScopeType = Bud.Shared.Contracts.MissionScopeType.Organization,
+                Status = Bud.Shared.Contracts.GoalStatus.Planned,
+                ScopeType = Bud.Shared.Contracts.GoalScopeType.Organization,
                 ScopeId = org!.Id
             });
 
-        return (await missionResponse.Content.ReadFromJsonAsync<Mission>())!;
+        return (await missionResponse.Content.ReadFromJsonAsync<Goal>())!;
     }
 
     #region Create Tests
@@ -96,28 +96,28 @@ public class MissionMetricsEndpointsTests : IClassFixture<CustomWebApplicationFa
         // Arrange
         var mission = await CreateTestMission();
 
-        var request = new CreateMetricRequest
+        var request = new CreateIndicatorRequest
         {
-            MissionId = mission.Id,
+            GoalId = mission.Id,
             Name = "Quality Metric",
-            Type = Bud.Shared.Contracts.MetricType.Qualitative,
+            Type = Bud.Shared.Contracts.IndicatorType.Qualitative,
             TargetText = "Achieve high quality standards"
         };
 
         // Act
-        var response = await _client.PostAsJsonAsync("/api/metrics", request);
+        var response = await _client.PostAsJsonAsync("/api/indicators", request);
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.Created);
-        var metric = await response.Content.ReadFromJsonAsync<Metric>();
-        metric.Should().NotBeNull();
-        metric!.Name.Should().Be("Quality Metric");
-        metric.Type.Should().Be(MetricType.Qualitative);
-        metric.TargetText.Should().Be("Achieve high quality standards");
-        metric.QuantitativeType.Should().BeNull();
-        metric.MinValue.Should().BeNull();
-        metric.MaxValue.Should().BeNull();
-        metric.Unit.Should().BeNull();
+        var indicator = await response.Content.ReadFromJsonAsync<Indicator>();
+        indicator.Should().NotBeNull();
+        indicator!.Name.Should().Be("Quality Metric");
+        indicator.Type.Should().Be(IndicatorType.Qualitative);
+        indicator.TargetText.Should().Be("Achieve high quality standards");
+        indicator.QuantitativeType.Should().BeNull();
+        indicator.MinValue.Should().BeNull();
+        indicator.MaxValue.Should().BeNull();
+        indicator.Unit.Should().BeNull();
     }
 
     [Fact]
@@ -126,30 +126,30 @@ public class MissionMetricsEndpointsTests : IClassFixture<CustomWebApplicationFa
         // Arrange
         var mission = await CreateTestMission();
 
-        var request = new CreateMetricRequest
+        var request = new CreateIndicatorRequest
         {
-            MissionId = mission.Id,
+            GoalId = mission.Id,
             Name = "Story Points",
-            Type = Bud.Shared.Contracts.MetricType.Quantitative,
-            QuantitativeType = Bud.Shared.Contracts.QuantitativeMetricType.KeepAbove,
+            Type = Bud.Shared.Contracts.IndicatorType.Quantitative,
+            QuantitativeType = Bud.Shared.Contracts.QuantitativeIndicatorType.KeepAbove,
             MinValue = 50m,
-            Unit = Bud.Shared.Contracts.MetricUnit.Points
+            Unit = Bud.Shared.Contracts.IndicatorUnit.Points
         };
 
         // Act
-        var response = await _client.PostAsJsonAsync("/api/metrics", request);
+        var response = await _client.PostAsJsonAsync("/api/indicators", request);
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.Created);
-        var metric = await response.Content.ReadFromJsonAsync<Metric>();
-        metric.Should().NotBeNull();
-        metric!.Name.Should().Be("Story Points");
-        metric.Type.Should().Be(MetricType.Quantitative);
-        metric.QuantitativeType.Should().Be(QuantitativeMetricType.KeepAbove);
-        metric.MinValue.Should().Be(50m);
-        metric.MaxValue.Should().BeNull();
-        metric.Unit.Should().Be(MetricUnit.Points);
-        metric.TargetText.Should().BeNull();
+        var indicator = await response.Content.ReadFromJsonAsync<Indicator>();
+        indicator.Should().NotBeNull();
+        indicator!.Name.Should().Be("Story Points");
+        indicator.Type.Should().Be(IndicatorType.Quantitative);
+        indicator.QuantitativeType.Should().Be(QuantitativeIndicatorType.KeepAbove);
+        indicator.MinValue.Should().Be(50m);
+        indicator.MaxValue.Should().BeNull();
+        indicator.Unit.Should().Be(IndicatorUnit.Points);
+        indicator.TargetText.Should().BeNull();
     }
 
     [Fact]
@@ -158,30 +158,30 @@ public class MissionMetricsEndpointsTests : IClassFixture<CustomWebApplicationFa
         // Arrange
         var mission = await CreateTestMission();
 
-        var request = new CreateMetricRequest
+        var request = new CreateIndicatorRequest
         {
-            MissionId = mission.Id,
+            GoalId = mission.Id,
             Name = "Error Rate",
-            Type = Bud.Shared.Contracts.MetricType.Quantitative,
-            QuantitativeType = Bud.Shared.Contracts.QuantitativeMetricType.KeepBelow,
+            Type = Bud.Shared.Contracts.IndicatorType.Quantitative,
+            QuantitativeType = Bud.Shared.Contracts.QuantitativeIndicatorType.KeepBelow,
             MaxValue = 5m,
-            Unit = Bud.Shared.Contracts.MetricUnit.Percentage
+            Unit = Bud.Shared.Contracts.IndicatorUnit.Percentage
         };
 
         // Act
-        var response = await _client.PostAsJsonAsync("/api/metrics", request);
+        var response = await _client.PostAsJsonAsync("/api/indicators", request);
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.Created);
-        var metric = await response.Content.ReadFromJsonAsync<Metric>();
-        metric.Should().NotBeNull();
-        metric!.Name.Should().Be("Error Rate");
-        metric.Type.Should().Be(MetricType.Quantitative);
-        metric.QuantitativeType.Should().Be(QuantitativeMetricType.KeepBelow);
-        metric.MinValue.Should().BeNull();
-        metric.MaxValue.Should().Be(5m);
-        metric.Unit.Should().Be(MetricUnit.Percentage);
-        metric.TargetText.Should().BeNull();
+        var indicator = await response.Content.ReadFromJsonAsync<Indicator>();
+        indicator.Should().NotBeNull();
+        indicator!.Name.Should().Be("Error Rate");
+        indicator.Type.Should().Be(IndicatorType.Quantitative);
+        indicator.QuantitativeType.Should().Be(QuantitativeIndicatorType.KeepBelow);
+        indicator.MinValue.Should().BeNull();
+        indicator.MaxValue.Should().Be(5m);
+        indicator.Unit.Should().Be(IndicatorUnit.Percentage);
+        indicator.TargetText.Should().BeNull();
     }
 
     [Fact]
@@ -190,47 +190,47 @@ public class MissionMetricsEndpointsTests : IClassFixture<CustomWebApplicationFa
         // Arrange
         var mission = await CreateTestMission();
 
-        var request = new CreateMetricRequest
+        var request = new CreateIndicatorRequest
         {
-            MissionId = mission.Id,
+            GoalId = mission.Id,
             Name = "Response Time",
-            Type = Bud.Shared.Contracts.MetricType.Quantitative,
-            QuantitativeType = Bud.Shared.Contracts.QuantitativeMetricType.KeepBetween,
+            Type = Bud.Shared.Contracts.IndicatorType.Quantitative,
+            QuantitativeType = Bud.Shared.Contracts.QuantitativeIndicatorType.KeepBetween,
             MinValue = 100m,
             MaxValue = 500m,
-            Unit = Bud.Shared.Contracts.MetricUnit.Integer
+            Unit = Bud.Shared.Contracts.IndicatorUnit.Integer
         };
 
         // Act
-        var response = await _client.PostAsJsonAsync("/api/metrics", request);
+        var response = await _client.PostAsJsonAsync("/api/indicators", request);
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.Created);
-        var metric = await response.Content.ReadFromJsonAsync<Metric>();
-        metric.Should().NotBeNull();
-        metric!.Name.Should().Be("Response Time");
-        metric.Type.Should().Be(MetricType.Quantitative);
-        metric.QuantitativeType.Should().Be(QuantitativeMetricType.KeepBetween);
-        metric.MinValue.Should().Be(100m);
-        metric.MaxValue.Should().Be(500m);
-        metric.Unit.Should().Be(MetricUnit.Integer);
-        metric.TargetText.Should().BeNull();
+        var indicator = await response.Content.ReadFromJsonAsync<Indicator>();
+        indicator.Should().NotBeNull();
+        indicator!.Name.Should().Be("Response Time");
+        indicator.Type.Should().Be(IndicatorType.Quantitative);
+        indicator.QuantitativeType.Should().Be(QuantitativeIndicatorType.KeepBetween);
+        indicator.MinValue.Should().Be(100m);
+        indicator.MaxValue.Should().Be(500m);
+        indicator.Unit.Should().Be(IndicatorUnit.Integer);
+        indicator.TargetText.Should().BeNull();
     }
 
     [Fact]
     public async Task Create_WithInvalidMissionId_ReturnsNotFound()
     {
         // Arrange
-        var request = new CreateMetricRequest
+        var request = new CreateIndicatorRequest
         {
-            MissionId = Guid.NewGuid(), // Non-existent mission
+            GoalId = Guid.NewGuid(), // Non-existent goal
             Name = "Test Metric",
-            Type = Bud.Shared.Contracts.MetricType.Qualitative,
+            Type = Bud.Shared.Contracts.IndicatorType.Qualitative,
             TargetText = "Test"
         };
 
         // Act
-        var response = await _client.PostAsJsonAsync("/api/metrics", request);
+        var response = await _client.PostAsJsonAsync("/api/indicators", request);
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.NotFound);
@@ -242,30 +242,30 @@ public class MissionMetricsEndpointsTests : IClassFixture<CustomWebApplicationFa
         // Arrange
         var mission = await CreateTestMission();
 
-        var request = new CreateMetricRequest
+        var request = new CreateIndicatorRequest
         {
-            MissionId = mission.Id,
+            GoalId = mission.Id,
             Name = "Sales Target",
-            Type = Bud.Shared.Contracts.MetricType.Quantitative,
-            QuantitativeType = Bud.Shared.Contracts.QuantitativeMetricType.Achieve,
+            Type = Bud.Shared.Contracts.IndicatorType.Quantitative,
+            QuantitativeType = Bud.Shared.Contracts.QuantitativeIndicatorType.Achieve,
             MaxValue = 100m,
-            Unit = Bud.Shared.Contracts.MetricUnit.Integer
+            Unit = Bud.Shared.Contracts.IndicatorUnit.Integer
         };
 
         // Act
-        var response = await _client.PostAsJsonAsync("/api/metrics", request);
+        var response = await _client.PostAsJsonAsync("/api/indicators", request);
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.Created);
-        var metric = await response.Content.ReadFromJsonAsync<Metric>();
-        metric.Should().NotBeNull();
-        metric!.Name.Should().Be("Sales Target");
-        metric.Type.Should().Be(MetricType.Quantitative);
-        metric.QuantitativeType.Should().Be(QuantitativeMetricType.Achieve);
-        metric.MinValue.Should().BeNull();
-        metric.MaxValue.Should().Be(100m);
-        metric.Unit.Should().Be(MetricUnit.Integer);
-        metric.TargetText.Should().BeNull();
+        var indicator = await response.Content.ReadFromJsonAsync<Indicator>();
+        indicator.Should().NotBeNull();
+        indicator!.Name.Should().Be("Sales Target");
+        indicator.Type.Should().Be(IndicatorType.Quantitative);
+        indicator.QuantitativeType.Should().Be(QuantitativeIndicatorType.Achieve);
+        indicator.MinValue.Should().BeNull();
+        indicator.MaxValue.Should().Be(100m);
+        indicator.Unit.Should().Be(IndicatorUnit.Integer);
+        indicator.TargetText.Should().BeNull();
     }
 
     [Fact]
@@ -274,30 +274,30 @@ public class MissionMetricsEndpointsTests : IClassFixture<CustomWebApplicationFa
         // Arrange
         var mission = await CreateTestMission();
 
-        var request = new CreateMetricRequest
+        var request = new CreateIndicatorRequest
         {
-            MissionId = mission.Id,
+            GoalId = mission.Id,
             Name = "Cost Reduction",
-            Type = Bud.Shared.Contracts.MetricType.Quantitative,
-            QuantitativeType = Bud.Shared.Contracts.QuantitativeMetricType.Reduce,
+            Type = Bud.Shared.Contracts.IndicatorType.Quantitative,
+            QuantitativeType = Bud.Shared.Contracts.QuantitativeIndicatorType.Reduce,
             MaxValue = 50m,
-            Unit = Bud.Shared.Contracts.MetricUnit.Percentage
+            Unit = Bud.Shared.Contracts.IndicatorUnit.Percentage
         };
 
         // Act
-        var response = await _client.PostAsJsonAsync("/api/metrics", request);
+        var response = await _client.PostAsJsonAsync("/api/indicators", request);
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.Created);
-        var metric = await response.Content.ReadFromJsonAsync<Metric>();
-        metric.Should().NotBeNull();
-        metric!.Name.Should().Be("Cost Reduction");
-        metric.Type.Should().Be(MetricType.Quantitative);
-        metric.QuantitativeType.Should().Be(QuantitativeMetricType.Reduce);
-        metric.MinValue.Should().BeNull();
-        metric.MaxValue.Should().Be(50m);
-        metric.Unit.Should().Be(MetricUnit.Percentage);
-        metric.TargetText.Should().BeNull();
+        var indicator = await response.Content.ReadFromJsonAsync<Indicator>();
+        indicator.Should().NotBeNull();
+        indicator!.Name.Should().Be("Cost Reduction");
+        indicator.Type.Should().Be(IndicatorType.Quantitative);
+        indicator.QuantitativeType.Should().Be(QuantitativeIndicatorType.Reduce);
+        indicator.MinValue.Should().BeNull();
+        indicator.MaxValue.Should().Be(50m);
+        indicator.Unit.Should().Be(IndicatorUnit.Percentage);
+        indicator.TargetText.Should().BeNull();
     }
 
     #endregion
@@ -310,41 +310,41 @@ public class MissionMetricsEndpointsTests : IClassFixture<CustomWebApplicationFa
         // Arrange: Create qualitative metric
         var mission = await CreateTestMission();
 
-        var createRequest = new CreateMetricRequest
+        var createRequest = new CreateIndicatorRequest
         {
-            MissionId = mission.Id,
+            GoalId = mission.Id,
             Name = "Original Metric",
-            Type = Bud.Shared.Contracts.MetricType.Qualitative,
+            Type = Bud.Shared.Contracts.IndicatorType.Qualitative,
             TargetText = "Original text"
         };
 
-        var createResponse = await _client.PostAsJsonAsync("/api/metrics", createRequest);
-        var created = await createResponse.Content.ReadFromJsonAsync<Metric>();
+        var createResponse = await _client.PostAsJsonAsync("/api/indicators", createRequest);
+        var created = await createResponse.Content.ReadFromJsonAsync<Indicator>();
 
         // Update to quantitative
-        var updateRequest = new PatchMetricRequest
+        var updateRequest = new PatchIndicatorRequest
         {
             Name = "Updated Metric",
-            Type = Bud.Shared.Contracts.MetricType.Quantitative,
-            QuantitativeType = Bud.Shared.Contracts.QuantitativeMetricType.KeepBetween,
+            Type = Bud.Shared.Contracts.IndicatorType.Quantitative,
+            QuantitativeType = Bud.Shared.Contracts.QuantitativeIndicatorType.KeepBetween,
             MinValue = 50m,
             MaxValue = 100m,
-            Unit = Bud.Shared.Contracts.MetricUnit.Hours
+            Unit = Bud.Shared.Contracts.IndicatorUnit.Hours
         };
 
         // Act
-        var response = await _client.PatchAsJsonAsync($"/api/metrics/{created!.Id}", updateRequest);
+        var response = await _client.PatchAsJsonAsync($"/api/indicators/{created!.Id}", updateRequest);
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.OK);
-        var updated = await response.Content.ReadFromJsonAsync<Metric>();
+        var updated = await response.Content.ReadFromJsonAsync<Indicator>();
         updated.Should().NotBeNull();
         updated!.Name.Should().Be("Updated Metric");
-        updated.Type.Should().Be(MetricType.Quantitative);
-        updated.QuantitativeType.Should().Be(QuantitativeMetricType.KeepBetween);
+        updated.Type.Should().Be(IndicatorType.Quantitative);
+        updated.QuantitativeType.Should().Be(QuantitativeIndicatorType.KeepBetween);
         updated.MinValue.Should().Be(50m);
         updated.MaxValue.Should().Be(100m);
-        updated.Unit.Should().Be(MetricUnit.Hours);
+        updated.Unit.Should().Be(IndicatorUnit.Hours);
         updated.TargetText.Should().BeNull(); // Should be cleared
     }
 
@@ -360,40 +360,40 @@ public class MissionMetricsEndpointsTests : IClassFixture<CustomWebApplicationFa
         var mission2 = await CreateTestMission();
 
         // Create metrics for each mission
-        await _client.PostAsJsonAsync("/api/metrics",
-            new CreateMetricRequest
+        await _client.PostAsJsonAsync("/api/indicators",
+            new CreateIndicatorRequest
             {
-                MissionId = mission1.Id,
+                GoalId = mission1.Id,
                 Name = "Metric Mission 1",
-                Type = Bud.Shared.Contracts.MetricType.Qualitative,
+                Type = Bud.Shared.Contracts.IndicatorType.Qualitative,
                 TargetText = "Test"
             });
 
-        await _client.PostAsJsonAsync("/api/metrics",
-            new CreateMetricRequest
+        await _client.PostAsJsonAsync("/api/indicators",
+            new CreateIndicatorRequest
             {
-                MissionId = mission2.Id,
+                GoalId = mission2.Id,
                 Name = "Metric Mission 2",
-                Type = Bud.Shared.Contracts.MetricType.Qualitative,
+                Type = Bud.Shared.Contracts.IndicatorType.Qualitative,
                 TargetText = "Test"
             });
 
         // Act - Filter by mission1
-        var response = await _client.GetAsync($"/api/metrics?missionId={mission1.Id}");
+        var response = await _client.GetAsync($"/api/indicators?goalId={mission1.Id}");
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.OK);
-        var result = await response.Content.ReadFromJsonAsync<PagedResult<Metric>>();
+        var result = await response.Content.ReadFromJsonAsync<PagedResult<Indicator>>();
         result.Should().NotBeNull();
         result!.Items.Should().HaveCount(1);
-        result.Items.Should().OnlyContain(m => m.MissionId == mission1.Id);
+        result.Items.Should().OnlyContain(m => m.GoalId == mission1.Id);
     }
 
     [Fact]
     public async Task GetAll_WithInvalidPageSize_ReturnsBadRequest()
     {
         // Act
-        var response = await _client.GetAsync("/api/metrics?page=1&pageSize=101");
+        var response = await _client.GetAsync("/api/indicators?page=1&pageSize=101");
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
@@ -409,7 +409,7 @@ public class MissionMetricsEndpointsTests : IClassFixture<CustomWebApplicationFa
         var search = new string('a', 201);
 
         // Act
-        var response = await _client.GetAsync($"/api/metrics?search={search}");
+        var response = await _client.GetAsync($"/api/indicators?search={search}");
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
@@ -419,16 +419,13 @@ public class MissionMetricsEndpointsTests : IClassFixture<CustomWebApplicationFa
     }
 
     [Fact]
-    public async Task GetProgress_WithInvalidIds_ReturnsBadRequest()
+    public async Task GetProgress_WithNonExistentId_ReturnsNotFound()
     {
         // Act
-        var response = await _client.GetAsync("/api/metrics/progress?ids=abc");
+        var response = await _client.GetAsync($"/api/indicators/{Guid.NewGuid()}/progress");
 
         // Assert
-        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
-        var problem = await response.Content.ReadFromJsonAsync<ProblemDetails>();
-        problem.Should().NotBeNull();
-        problem!.Detail.Should().Be("O parâmetro 'ids' contém valores inválidos. Informe GUIDs separados por vírgula.");
+        response.StatusCode.Should().Be(HttpStatusCode.NotFound);
     }
 
     [Fact]
@@ -452,31 +449,31 @@ public class MissionMetricsEndpointsTests : IClassFixture<CustomWebApplicationFa
             });
         var org2 = await org2Response.Content.ReadFromJsonAsync<Organization>();
 
-        var missionResponse = await _client.PostAsJsonAsync("/api/missions",
-            new CreateMissionRequest
+        var missionResponse = await _client.PostAsJsonAsync("/api/goals",
+            new CreateGoalRequest
             {
                 Name = "Mission Org 2",
                 StartDate = DateTime.UtcNow,
                 EndDate = DateTime.UtcNow.AddDays(7),
-                Status = Bud.Shared.Contracts.MissionStatus.Planned,
-                ScopeType = Bud.Shared.Contracts.MissionScopeType.Organization,
+                Status = Bud.Shared.Contracts.GoalStatus.Planned,
+                ScopeType = Bud.Shared.Contracts.GoalScopeType.Organization,
                 ScopeId = org2!.Id
             });
-        var mission = await missionResponse.Content.ReadFromJsonAsync<Mission>();
+        var mission = await missionResponse.Content.ReadFromJsonAsync<Goal>();
 
         var collaborator = await CreateNonOwnerCollaborator(org1!.Id);
         var tenantClient = _factory.CreateTenantClient(org1.Id, collaborator.Email, collaborator.Id);
 
-        var request = new CreateMetricRequest
+        var request = new CreateIndicatorRequest
         {
-            MissionId = mission!.Id,
+            GoalId = mission!.Id,
             Name = "Metric Forbidden",
-            Type = Bud.Shared.Contracts.MetricType.Qualitative,
+            Type = Bud.Shared.Contracts.IndicatorType.Qualitative,
             TargetText = "Teste"
         };
 
         // Act
-        var response = await tenantClient.PostAsJsonAsync("/api/metrics", request);
+        var response = await tenantClient.PostAsJsonAsync("/api/indicators", request);
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.NotFound);
@@ -489,7 +486,7 @@ public class MissionMetricsEndpointsTests : IClassFixture<CustomWebApplicationFa
         var unauthenticatedClient = _factory.CreateClient();
 
         // Act
-        var response = await unauthenticatedClient.GetAsync("/api/metrics");
+        var response = await unauthenticatedClient.GetAsync("/api/indicators");
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);

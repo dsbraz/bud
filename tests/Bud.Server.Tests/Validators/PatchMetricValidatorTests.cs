@@ -7,15 +7,15 @@ namespace Bud.Server.Tests.Validators;
 
 public sealed class PatchMetricValidatorTests
 {
-    private readonly PatchMetricValidator _validator = new();
+    private readonly PatchIndicatorValidator _validator = new();
 
     [Fact]
     public async Task Validate_WithValidRequest_Passes()
     {
-        var request = new PatchMetricRequest
+        var request = new PatchIndicatorRequest
         {
             Name = "Métrica atualizada",
-            Type = MetricType.Qualitative,
+            Type = IndicatorType.Qualitative,
             TargetText = "Texto alvo"
         };
 
@@ -28,7 +28,7 @@ public sealed class PatchMetricValidatorTests
     [Fact]
     public async Task Validate_WithNoFieldsSet_Passes()
     {
-        var request = new PatchMetricRequest();
+        var request = new PatchIndicatorRequest();
 
         var result = await _validator.ValidateAsync(request);
 
@@ -43,7 +43,7 @@ public sealed class PatchMetricValidatorTests
     [InlineData(null)]
     public async Task Validate_WithEmptyName_Fails(string? name)
     {
-        var request = new PatchMetricRequest
+        var request = new PatchIndicatorRequest
         {
             Name = name!
         };
@@ -57,7 +57,7 @@ public sealed class PatchMetricValidatorTests
     [Fact]
     public async Task Validate_WithNameExceeding200Characters_Fails()
     {
-        var request = new PatchMetricRequest
+        var request = new PatchIndicatorRequest
         {
             Name = new string('A', 201)
         };
@@ -77,9 +77,9 @@ public sealed class PatchMetricValidatorTests
     [Fact]
     public async Task Validate_WithInvalidType_Fails()
     {
-        var request = new PatchMetricRequest
+        var request = new PatchIndicatorRequest
         {
-            Type = (MetricType)999
+            Type = (IndicatorType)999
         };
 
         var result = await _validator.ValidateAsync(request);
@@ -97,7 +97,7 @@ public sealed class PatchMetricValidatorTests
     [Fact]
     public async Task Validate_WithTargetTextExceeding1000Characters_Fails()
     {
-        var request = new PatchMetricRequest
+        var request = new PatchIndicatorRequest
         {
             TargetText = new string('A', 1001)
         };
@@ -117,9 +117,9 @@ public sealed class PatchMetricValidatorTests
     [Fact]
     public async Task Validate_WithInvalidQuantitativeType_Fails()
     {
-        var request = new PatchMetricRequest
+        var request = new PatchIndicatorRequest
         {
-            QuantitativeType = new Optional<QuantitativeMetricType?>((QuantitativeMetricType)999)
+            QuantitativeType = new Optional<QuantitativeIndicatorType?>((QuantitativeIndicatorType)999)
         };
 
         var result = await _validator.ValidateAsync(request);
@@ -137,9 +137,9 @@ public sealed class PatchMetricValidatorTests
     [Fact]
     public async Task Validate_WithInvalidUnit_Fails()
     {
-        var request = new PatchMetricRequest
+        var request = new PatchIndicatorRequest
         {
-            Unit = new Optional<MetricUnit?>((MetricUnit)999)
+            Unit = new Optional<IndicatorUnit?>((IndicatorUnit)999)
         };
 
         var result = await _validator.ValidateAsync(request);
@@ -157,7 +157,7 @@ public sealed class PatchMetricValidatorTests
     [Fact]
     public async Task Validate_WithNegativeMinValue_Fails()
     {
-        var request = new PatchMetricRequest
+        var request = new PatchIndicatorRequest
         {
             MinValue = new Optional<decimal?>(-10m)
         };
@@ -173,7 +173,7 @@ public sealed class PatchMetricValidatorTests
     [Fact]
     public async Task Validate_WithZeroMinValue_Passes()
     {
-        var request = new PatchMetricRequest
+        var request = new PatchIndicatorRequest
         {
             MinValue = new Optional<decimal?>(0m)
         };
@@ -190,7 +190,7 @@ public sealed class PatchMetricValidatorTests
     [Fact]
     public async Task Validate_WithNegativeMaxValue_Fails()
     {
-        var request = new PatchMetricRequest
+        var request = new PatchIndicatorRequest
         {
             MaxValue = new Optional<decimal?>(-5m)
         };
@@ -206,7 +206,7 @@ public sealed class PatchMetricValidatorTests
     [Fact]
     public async Task Validate_WithZeroMaxValue_Passes()
     {
-        var request = new PatchMetricRequest
+        var request = new PatchIndicatorRequest
         {
             MaxValue = new Optional<decimal?>(0m)
         };

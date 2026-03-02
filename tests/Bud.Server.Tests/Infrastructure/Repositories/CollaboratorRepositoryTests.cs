@@ -706,20 +706,20 @@ public sealed class CollaboratorRepositoryTests
         context.Collaborators.Add(collaborator);
         await context.SaveChangesAsync();
 
-        context.Missions.Add(new Mission
+        context.Goals.Add(new Goal
         {
             Id = Guid.NewGuid(),
             Name = "Test Mission",
             StartDate = DateTime.UtcNow,
             EndDate = DateTime.UtcNow.AddDays(7),
-            Status = MissionStatus.Planned,
+            Status = GoalStatus.Planned,
             OrganizationId = org.Id,
             CollaboratorId = collaborator.Id
         });
         await context.SaveChangesAsync();
 
         // Act
-        var result = await repository.HasMissionsAsync(collaborator.Id);
+        var result = await repository.HasGoalsAsync(collaborator.Id);
 
         // Assert
         result.Should().BeTrue();
@@ -738,7 +738,7 @@ public sealed class CollaboratorRepositoryTests
         await context.SaveChangesAsync();
 
         // Act
-        var result = await repository.HasMissionsAsync(collaborator.Id);
+        var result = await repository.HasGoalsAsync(collaborator.Id);
 
         // Assert
         result.Should().BeFalse();

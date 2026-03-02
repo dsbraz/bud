@@ -24,8 +24,8 @@ public sealed class MissionScopeAccessHandlerTests
     }
 
     private static AuthorizationHandlerContext CreateAuthContext(
-        MissionScopeAccessRequirement requirement,
-        MissionScopeResource resource)
+        GoalScopeAccessRequirement requirement,
+        GoalScopeResource resource)
     {
         return new AuthorizationHandlerContext(
             [requirement],
@@ -41,9 +41,9 @@ public sealed class MissionScopeAccessHandlerTests
         // Arrange
         var tenantProvider = new TestTenantProvider { IsGlobalAdmin = true };
         using var context = CreateInMemoryContext(tenantProvider);
-        var handler = new MissionScopeAccessHandler(tenantProvider, context);
-        var requirement = new MissionScopeAccessRequirement();
-        var resource = new MissionScopeResource(Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid());
+        var handler = new GoalScopeAccessHandler(tenantProvider, context);
+        var requirement = new GoalScopeAccessRequirement();
+        var resource = new GoalScopeResource(Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid());
         var authContext = CreateAuthContext(requirement, resource);
 
         // Act
@@ -67,9 +67,9 @@ public sealed class MissionScopeAccessHandlerTests
             CollaboratorId = null
         };
         using var context = CreateInMemoryContext(tenantProvider);
-        var handler = new MissionScopeAccessHandler(tenantProvider, context);
-        var requirement = new MissionScopeAccessRequirement();
-        var resource = new MissionScopeResource(null, null, null);
+        var handler = new GoalScopeAccessHandler(tenantProvider, context);
+        var requirement = new GoalScopeAccessRequirement();
+        var resource = new GoalScopeResource(null, null, null);
         var authContext = CreateAuthContext(requirement, resource);
 
         // Act
@@ -94,9 +94,9 @@ public sealed class MissionScopeAccessHandlerTests
             CollaboratorId = collaboratorId
         };
         using var context = CreateInMemoryContext(tenantProvider);
-        var handler = new MissionScopeAccessHandler(tenantProvider, context);
-        var requirement = new MissionScopeAccessRequirement();
-        var resource = new MissionScopeResource(null, null, null);
+        var handler = new GoalScopeAccessHandler(tenantProvider, context);
+        var requirement = new GoalScopeAccessRequirement();
+        var resource = new GoalScopeResource(null, null, null);
         var authContext = CreateAuthContext(requirement, resource);
 
         // Act
@@ -121,9 +121,9 @@ public sealed class MissionScopeAccessHandlerTests
             CollaboratorId = collaboratorId
         };
         using var context = CreateInMemoryContext(tenantProvider);
-        var handler = new MissionScopeAccessHandler(tenantProvider, context);
-        var requirement = new MissionScopeAccessRequirement();
-        var resource = new MissionScopeResource(null, null, collaboratorId);
+        var handler = new GoalScopeAccessHandler(tenantProvider, context);
+        var requirement = new GoalScopeAccessRequirement();
+        var resource = new GoalScopeResource(null, null, collaboratorId);
         var authContext = CreateAuthContext(requirement, resource);
 
         // Act
@@ -145,9 +145,9 @@ public sealed class MissionScopeAccessHandlerTests
             CollaboratorId = collaboratorId
         };
         using var context = CreateInMemoryContext(tenantProvider);
-        var handler = new MissionScopeAccessHandler(tenantProvider, context);
-        var requirement = new MissionScopeAccessRequirement();
-        var resource = new MissionScopeResource(null, null, otherCollaboratorId);
+        var handler = new GoalScopeAccessHandler(tenantProvider, context);
+        var requirement = new GoalScopeAccessRequirement();
+        var resource = new GoalScopeResource(null, null, otherCollaboratorId);
         var authContext = CreateAuthContext(requirement, resource);
 
         // Act
@@ -197,9 +197,9 @@ public sealed class MissionScopeAccessHandlerTests
         });
         await context.SaveChangesAsync();
 
-        var handler = new MissionScopeAccessHandler(tenantProvider, context);
-        var requirement = new MissionScopeAccessRequirement();
-        var resource = new MissionScopeResource(null, teamId, null);
+        var handler = new GoalScopeAccessHandler(tenantProvider, context);
+        var requirement = new GoalScopeAccessRequirement();
+        var resource = new GoalScopeResource(null, teamId, null);
         var authContext = CreateAuthContext(requirement, resource);
 
         // Act
@@ -240,9 +240,9 @@ public sealed class MissionScopeAccessHandlerTests
         // No CollaboratorTeam link -- collaborator is NOT in the team
         await context.SaveChangesAsync();
 
-        var handler = new MissionScopeAccessHandler(tenantProvider, context);
-        var requirement = new MissionScopeAccessRequirement();
-        var resource = new MissionScopeResource(null, teamId, null);
+        var handler = new GoalScopeAccessHandler(tenantProvider, context);
+        var requirement = new GoalScopeAccessRequirement();
+        var resource = new GoalScopeResource(null, teamId, null);
         var authContext = CreateAuthContext(requirement, resource);
 
         // Act
@@ -292,9 +292,9 @@ public sealed class MissionScopeAccessHandlerTests
         });
         await context.SaveChangesAsync();
 
-        var handler = new MissionScopeAccessHandler(tenantProvider, context);
-        var requirement = new MissionScopeAccessRequirement();
-        var resource = new MissionScopeResource(workspaceId, null, null);
+        var handler = new GoalScopeAccessHandler(tenantProvider, context);
+        var requirement = new GoalScopeAccessRequirement();
+        var resource = new GoalScopeResource(workspaceId, null, null);
         var authContext = CreateAuthContext(requirement, resource);
 
         // Act
@@ -350,9 +350,9 @@ public sealed class MissionScopeAccessHandlerTests
         });
         await context.SaveChangesAsync();
 
-        var handler = new MissionScopeAccessHandler(tenantProvider, context);
-        var requirement = new MissionScopeAccessRequirement();
-        var resource = new MissionScopeResource(workspaceId, null, null);
+        var handler = new GoalScopeAccessHandler(tenantProvider, context);
+        var requirement = new GoalScopeAccessRequirement();
+        var resource = new GoalScopeResource(workspaceId, null, null);
         var authContext = CreateAuthContext(requirement, resource);
 
         // Act

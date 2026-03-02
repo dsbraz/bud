@@ -1,6 +1,5 @@
 using System.Security.Claims;
 using Bud.Server.Application.UseCases.Me;
-using Bud.Server.Application.UseCases.Missions;
 using Bud.Server.Authorization;
 using Bud.Server.MultiTenancy;
 using Bud.Shared.Contracts;
@@ -17,7 +16,7 @@ namespace Bud.Server.Controllers;
 public sealed class MeController(
     ListMyOrganizations listMyOrganizations,
     GetMyDashboard getMyDashboard,
-    ListCollaboratorMissions listCollaboratorMissions,
+    ListMyGoals listMyGoals,
     ITenantProvider tenantProvider) : ApiControllerBase
 {
     /// <summary>
@@ -55,14 +54,14 @@ public sealed class MeController(
     }
 
     /// <summary>
-    /// Lista missões do colaborador autenticado.
+    /// Lista metas do colaborador autenticado.
     /// </summary>
     [Authorize(Policy = AuthorizationPolicies.TenantSelected)]
-    [HttpGet("missions")]
-    [ProducesResponseType(typeof(PagedResult<Mission>), StatusCodes.Status200OK)]
+    [HttpGet("goals")]
+    [ProducesResponseType(typeof(PagedResult<Goal>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status403Forbidden)]
-    public async Task<ActionResult<PagedResult<Mission>>> GetMissions(
+    public async Task<ActionResult<PagedResult<Goal>>> GetGoals(
         [FromQuery] string? search,
         [FromQuery] int page = 1,
         [FromQuery] int pageSize = 10,
@@ -86,7 +85,7 @@ public sealed class MeController(
             return paginationValidation;
         }
 
-        var result = await listCollaboratorMissions.ExecuteAsync(
+        var result = await listMyGoals.ExecuteAsync(
             collaboratorId.Value,
             searchValidation.Value,
             page,

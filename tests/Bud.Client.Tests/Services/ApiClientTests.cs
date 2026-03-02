@@ -58,12 +58,12 @@ public sealed class ApiClientTests
     }
 
     [Fact]
-    public async Task GetMissionsAsync_WhenPageSizeExceedsLimit_ClampsTo100()
+    public async Task GetGoalsAsync_WhenPageSizeExceedsLimit_ClampsTo100()
     {
         var handler = CreateSuccessHandler();
         var client = CreateClient(handler);
 
-        _ = await client.GetMissionsAsync(MissionScopeType.Organization, Guid.NewGuid(), null, 1, 200);
+        _ = await client.GetGoalsAsync(GoalScopeType.Organization, Guid.NewGuid(), null, 1, 200);
 
         handler.LastRequest.Should().NotBeNull();
         handler.LastRequest!.RequestUri!.Query.Should().Contain("pageSize=100");
@@ -144,15 +144,15 @@ public sealed class ApiClientTests
     }
 
     [Fact]
-    public async Task GetMetricCheckinsAsync_WhenPageSizeExceedsLimit_ClampsTo100()
+    public async Task GetCheckinsByIndicatorAsync_WhenPageSizeExceedsLimit_ClampsTo100()
     {
         var handler = CreateSuccessHandler();
         var client = CreateClient(handler);
 
-        _ = await client.GetMetricCheckinsAsync(Guid.NewGuid(), 1, 1000);
+        _ = await client.GetCheckinsByIndicatorAsync(Guid.NewGuid(), 1, 1000);
 
         handler.LastRequest.Should().NotBeNull();
-        handler.LastRequest!.RequestUri!.PathAndQuery.Should().MatchRegex("^/api/metrics/.+/checkins\\?page=1&pageSize=100$");
+        handler.LastRequest!.RequestUri!.PathAndQuery.Should().MatchRegex("^/api/indicators/.+/checkins\\?page=1&pageSize=100$");
     }
 
     [Fact]
@@ -167,17 +167,17 @@ public sealed class ApiClientTests
             });
 
         var client = CreateClient(handler);
-        var request = new CreateMissionRequest
+        var request = new CreateGoalRequest
         {
             Name = "Missão teste",
             StartDate = DateTime.UtcNow,
             EndDate = DateTime.UtcNow.AddDays(1),
-            Status = MissionStatus.Planned,
-            ScopeType = MissionScopeType.Organization,
+            Status = GoalStatus.Planned,
+            ScopeType = GoalScopeType.Organization,
             ScopeId = Guid.NewGuid()
         };
 
-        Func<Task> act = async () => await client.CreateMissionAsync(request);
+        Func<Task> act = async () => await client.CreateGoalAsync(request);
 
         await act.Should()
             .ThrowAsync<HttpRequestException>()
@@ -235,7 +235,7 @@ public sealed class ApiClientTests
             toastService);
 
         _ = await client.GetOrganizationsAsync(search: null);
-        _ = await client.GetMissionsAsync(null, null, null);
+        _ = await client.GetGoalsAsync(null, null, null);
         _ = await client.GetMyDashboardAsync();
 
         toastCount.Should().Be(1);

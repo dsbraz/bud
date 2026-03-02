@@ -69,7 +69,7 @@ public sealed class WorkspaceWriteUseCasesTests
     {
         var workspace = new Workspace { Id = Guid.NewGuid(), Name = "Workspace", OrganizationId = Guid.NewGuid() };
         _wsRepo.Setup(r => r.GetByIdAsync(workspace.Id, It.IsAny<CancellationToken>())).ReturnsAsync(workspace);
-        _wsRepo.Setup(r => r.HasMissionsAsync(workspace.Id, It.IsAny<CancellationToken>())).ReturnsAsync(false);
+        _wsRepo.Setup(r => r.HasGoalsAsync(workspace.Id, It.IsAny<CancellationToken>())).ReturnsAsync(false);
         _authGateway
             .Setup(g => g.CanWriteOrganizationAsync(User, workspace.OrganizationId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(true);
@@ -88,7 +88,7 @@ public sealed class WorkspaceWriteUseCasesTests
     {
         var workspace = new Workspace { Id = Guid.NewGuid(), Name = "Workspace", OrganizationId = Guid.NewGuid() };
         _wsRepo.Setup(r => r.GetByIdAsync(workspace.Id, It.IsAny<CancellationToken>())).ReturnsAsync(workspace);
-        _wsRepo.Setup(r => r.HasMissionsAsync(workspace.Id, It.IsAny<CancellationToken>())).ReturnsAsync(true);
+        _wsRepo.Setup(r => r.HasGoalsAsync(workspace.Id, It.IsAny<CancellationToken>())).ReturnsAsync(true);
         _authGateway
             .Setup(g => g.CanWriteOrganizationAsync(User, workspace.OrganizationId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(true);

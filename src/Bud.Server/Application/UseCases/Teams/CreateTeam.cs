@@ -1,5 +1,6 @@
 using System.Security.Claims;
 using Bud.Server.Application.Common;
+using Bud.Server.Application.Policies;
 using Bud.Server.Application.Mapping;
 using Bud.Server.Authorization;
 using Bud.Server.Domain.Model;
@@ -28,14 +29,14 @@ public sealed partial class CreateTeam(
         if (workspace is null)
         {
             LogTeamCreationFailed(logger, request.Name, "Workspace not found");
-            return Result<Team>.NotFound("Workspace não encontrado.");
+            return Result<Team>.NotFound(UserErrorMessages.WorkspaceNotFound);
         }
 
         var canCreate = await authorizationGateway.IsOrganizationOwnerAsync(user, workspace.OrganizationId, cancellationToken);
         if (!canCreate)
         {
             LogTeamCreationFailed(logger, request.Name, "Forbidden");
-            return Result<Team>.Forbidden("Apenas o proprietário da organização pode criar times.");
+            return Result<Team>.Forbidden(UserErrorMessages.TeamCreateForbidden);
         }
 
         if (request.ParentTeamId.HasValue)
@@ -44,17 +45,17 @@ public sealed partial class CreateTeam(
             if (parentTeam is null)
             {
                 LogTeamCreationFailed(logger, request.Name, "Parent team not found");
-                return Result<Team>.NotFound("Time pai não encontrado.");
+                return Result<Team>.NotFound(UserErrorMessages.ParentTeamNotFound);
             }
 
             if (parentTeam.WorkspaceId != request.WorkspaceId)
             {
                 LogTeamCreationFailed(logger, request.Name, "Parent team belongs to different workspace");
-                return Result<Team>.Failure("O time pai deve pertencer ao mesmo workspace.");
+                return Result<Team>.Failure(UserErrorMessages.TeamParentMustBeSameWorkspace);
             }
         }
 
-        var leaderValidation = await TeamLeaderValidation.ValidateAsync(
+        var leaderValidation = await CollaboratorLeadershipPolicy.ValidateLeaderForOrganizationAsync<Team>(
             collaboratorRepository,
             request.LeaderId,
             workspace.OrganizationId,

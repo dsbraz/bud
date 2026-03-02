@@ -7,7 +7,7 @@ namespace Bud.Server.Tests.Validators;
 
 public class PatchMetricCheckinValidatorTests
 {
-    private readonly PatchMetricCheckinValidator _validator = new();
+    private readonly PatchCheckinValidator _validator = new();
 
     [Fact]
     public async Task Validate_ValidRequest_Passes()

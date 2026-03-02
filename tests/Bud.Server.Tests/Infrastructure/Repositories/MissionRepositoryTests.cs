@@ -52,12 +52,12 @@ public sealed class MissionRepositoryTests
         return team;
     }
 
-    private static Mission CreateTestMission(
+    private static Goal CreateTestMission(
         Guid organizationId,
         string name = "Test Mission",
-        MissionStatus status = MissionStatus.Planned)
+        GoalStatus status = GoalStatus.Planned)
     {
-        return new Mission
+        return new Goal
         {
             Id = Guid.NewGuid(),
             Name = name,
@@ -75,11 +75,11 @@ public sealed class MissionRepositoryTests
     {
         // Arrange
         using var context = CreateInMemoryContext();
-        var repository = new MissionRepository(context);
+        var repository = new GoalRepository(context);
         var org = await CreateTestOrganization(context);
 
         var mission = CreateTestMission(org.Id);
-        context.Missions.Add(mission);
+        context.Goals.Add(mission);
         await context.SaveChangesAsync();
 
         // Act
@@ -96,7 +96,7 @@ public sealed class MissionRepositoryTests
     {
         // Arrange
         using var context = CreateInMemoryContext();
-        var repository = new MissionRepository(context);
+        var repository = new GoalRepository(context);
 
         // Act
         var result = await repository.GetByIdAsync(Guid.NewGuid());
@@ -114,11 +114,11 @@ public sealed class MissionRepositoryTests
     {
         // Arrange
         using var context = CreateInMemoryContext();
-        var repository = new MissionRepository(context);
+        var repository = new GoalRepository(context);
         var org = await CreateTestOrganization(context);
 
         var mission = CreateTestMission(org.Id, "ReadOnly Mission");
-        context.Missions.Add(mission);
+        context.Goals.Add(mission);
         await context.SaveChangesAsync();
 
         // Act
@@ -135,7 +135,7 @@ public sealed class MissionRepositoryTests
     {
         // Arrange
         using var context = CreateInMemoryContext();
-        var repository = new MissionRepository(context);
+        var repository = new GoalRepository(context);
 
         // Act
         var result = await repository.GetByIdReadOnlyAsync(Guid.NewGuid());
@@ -153,17 +153,17 @@ public sealed class MissionRepositoryTests
     {
         // Arrange
         using var context = CreateInMemoryContext();
-        var repository = new MissionRepository(context);
+        var repository = new GoalRepository(context);
         var org = await CreateTestOrganization(context);
 
         for (int i = 0; i < 5; i++)
         {
-            context.Missions.Add(CreateTestMission(org.Id, $"Mission {i:D2}"));
+            context.Goals.Add(CreateTestMission(org.Id, $"Mission {i:D2}"));
         }
         await context.SaveChangesAsync();
 
         // Act
-        var result = await repository.GetAllAsync(null, null, null, 1, 2);
+        var result = await repository.GetAllAsync(null, null, null, null, 1, 2);
 
         // Assert
         result.Items.Should().HaveCount(2);
@@ -177,16 +177,16 @@ public sealed class MissionRepositoryTests
     {
         // Arrange
         using var context = CreateInMemoryContext();
-        var repository = new MissionRepository(context);
+        var repository = new GoalRepository(context);
         var org = await CreateTestOrganization(context);
 
-        context.Missions.AddRange(
+        context.Goals.AddRange(
             CreateTestMission(org.Id, "ALPHA Mission"),
             CreateTestMission(org.Id, "Beta Mission"));
         await context.SaveChangesAsync();
 
         // Act
-        var result = await repository.GetAllAsync(null, null, "alpha", 1, 10);
+        var result = await repository.GetAllAsync(null, null, null, "alpha", 1, 10);
 
         // Assert
         result.Items.Should().HaveCount(1);
@@ -198,17 +198,17 @@ public sealed class MissionRepositoryTests
     {
         // Arrange
         using var context = CreateInMemoryContext();
-        var repository = new MissionRepository(context);
+        var repository = new GoalRepository(context);
         var org = await CreateTestOrganization(context);
 
-        context.Missions.AddRange(
+        context.Goals.AddRange(
             CreateTestMission(org.Id, "Zebra"),
             CreateTestMission(org.Id, "Alpha"),
             CreateTestMission(org.Id, "Mango"));
         await context.SaveChangesAsync();
 
         // Act
-        var result = await repository.GetAllAsync(null, null, null, 1, 10);
+        var result = await repository.GetAllAsync(null, null, null, null, 1, 10);
 
         // Assert
         result.Items.Should().HaveCount(3);
@@ -219,14 +219,14 @@ public sealed class MissionRepositoryTests
 
     #endregion
 
-    #region GetMyMissionsAsync Tests
+    #region GetMyGoalsAsync Tests
 
     [Fact]
-    public async Task GetMyMissionsAsync_ReturnsMissionsForCollaborator()
+    public async Task GetMyGoalsAsync_ReturnsMissionsForCollaborator()
     {
         // Arrange
         using var context = CreateInMemoryContext();
-        var repository = new MissionRepository(context);
+        var repository = new GoalRepository(context);
         var org = await CreateTestOrganization(context);
 
         var collaborator = new Collaborator
@@ -245,11 +245,11 @@ public sealed class MissionRepositoryTests
         var otherMission = CreateTestMission(org.Id, "Other Mission");
         otherMission.CollaboratorId = Guid.NewGuid();
 
-        context.Missions.AddRange(myMission, otherMission);
+        context.Goals.AddRange(myMission, otherMission);
         await context.SaveChangesAsync();
 
         // Act
-        var result = await repository.GetMyMissionsAsync(
+        var result = await repository.GetMyGoalsAsync(
             collaborator.Id, org.Id, new List<Guid>(), new List<Guid>(), null, 1, 10);
 
         // Assert
@@ -258,11 +258,11 @@ public sealed class MissionRepositoryTests
     }
 
     [Fact]
-    public async Task GetMyMissionsAsync_IncludesTeamMissions()
+    public async Task GetMyGoalsAsync_IncludesTeamMissions()
     {
         // Arrange
         using var context = CreateInMemoryContext();
-        var repository = new MissionRepository(context);
+        var repository = new GoalRepository(context);
         var org = await CreateTestOrganization(context);
 
         var leader = new Collaborator
@@ -281,11 +281,11 @@ public sealed class MissionRepositoryTests
 
         var teamMission = CreateTestMission(org.Id, "Team Mission");
         teamMission.TeamId = team.Id;
-        context.Missions.Add(teamMission);
+        context.Goals.Add(teamMission);
         await context.SaveChangesAsync();
 
         // Act
-        var result = await repository.GetMyMissionsAsync(
+        var result = await repository.GetMyGoalsAsync(
             leader.Id, org.Id, new List<Guid> { team.Id }, new List<Guid>(), null, 1, 10);
 
         // Assert
@@ -294,11 +294,11 @@ public sealed class MissionRepositoryTests
     }
 
     [Fact]
-    public async Task GetMyMissionsAsync_IncludesOrganizationLevelMissions()
+    public async Task GetMyGoalsAsync_IncludesOrganizationLevelMissions()
     {
         // Arrange
         using var context = CreateInMemoryContext();
-        var repository = new MissionRepository(context);
+        var repository = new GoalRepository(context);
         var org = await CreateTestOrganization(context);
 
         var collaborator = new Collaborator
@@ -313,11 +313,11 @@ public sealed class MissionRepositoryTests
 
         // Organization-level mission (no workspace, team, or collaborator scope)
         var orgMission = CreateTestMission(org.Id, "Org Mission");
-        context.Missions.Add(orgMission);
+        context.Goals.Add(orgMission);
         await context.SaveChangesAsync();
 
         // Act
-        var result = await repository.GetMyMissionsAsync(
+        var result = await repository.GetMyGoalsAsync(
             collaborator.Id, org.Id, new List<Guid>(), new List<Guid>(), null, 1, 10);
 
         // Assert
@@ -326,11 +326,11 @@ public sealed class MissionRepositoryTests
     }
 
     [Fact]
-    public async Task GetMyMissionsAsync_ReturnsPaginatedResults()
+    public async Task GetMyGoalsAsync_ReturnsPaginatedResults()
     {
         // Arrange
         using var context = CreateInMemoryContext();
-        var repository = new MissionRepository(context);
+        var repository = new GoalRepository(context);
         var org = await CreateTestOrganization(context);
 
         var collaborator = new Collaborator
@@ -347,12 +347,12 @@ public sealed class MissionRepositoryTests
         {
             var m = CreateTestMission(org.Id, $"Mission {i:D2}");
             m.CollaboratorId = collaborator.Id;
-            context.Missions.Add(m);
+            context.Goals.Add(m);
         }
         await context.SaveChangesAsync();
 
         // Act
-        var result = await repository.GetMyMissionsAsync(
+        var result = await repository.GetMyGoalsAsync(
             collaborator.Id, org.Id, new List<Guid>(), new List<Guid>(), null, 1, 2);
 
         // Assert
@@ -364,14 +364,14 @@ public sealed class MissionRepositoryTests
 
     #endregion
 
-    #region FindCollaboratorForMyMissionsAsync Tests
+    #region FindCollaboratorForMyGoalsAsync Tests
 
     [Fact]
-    public async Task FindCollaboratorForMyMissionsAsync_WhenExists_ReturnsCollaborator()
+    public async Task FindCollaboratorForMyGoalsAsync_WhenExists_ReturnsCollaborator()
     {
         // Arrange
         using var context = CreateInMemoryContext();
-        var repository = new MissionRepository(context);
+        var repository = new GoalRepository(context);
         var org = await CreateTestOrganization(context);
 
         var collaborator = new Collaborator
@@ -385,7 +385,7 @@ public sealed class MissionRepositoryTests
         await context.SaveChangesAsync();
 
         // Act
-        var result = await repository.FindCollaboratorForMyMissionsAsync(collaborator.Id);
+        var result = await repository.FindCollaboratorForMyGoalsAsync(collaborator.Id);
 
         // Assert
         result.Should().NotBeNull();
@@ -393,14 +393,14 @@ public sealed class MissionRepositoryTests
     }
 
     [Fact]
-    public async Task FindCollaboratorForMyMissionsAsync_WhenNotFound_ReturnsNull()
+    public async Task FindCollaboratorForMyGoalsAsync_WhenNotFound_ReturnsNull()
     {
         // Arrange
         using var context = CreateInMemoryContext();
-        var repository = new MissionRepository(context);
+        var repository = new GoalRepository(context);
 
         // Act
-        var result = await repository.FindCollaboratorForMyMissionsAsync(Guid.NewGuid());
+        var result = await repository.FindCollaboratorForMyGoalsAsync(Guid.NewGuid());
 
         // Assert
         result.Should().BeNull();
@@ -415,7 +415,7 @@ public sealed class MissionRepositoryTests
     {
         // Arrange
         using var context = CreateInMemoryContext();
-        var repository = new MissionRepository(context);
+        var repository = new GoalRepository(context);
         var org = await CreateTestOrganization(context);
 
         var leader = new Collaborator
@@ -466,7 +466,7 @@ public sealed class MissionRepositoryTests
     {
         // Arrange
         using var context = CreateInMemoryContext();
-        var repository = new MissionRepository(context);
+        var repository = new GoalRepository(context);
         var org = await CreateTestOrganization(context);
 
         var leader = new Collaborator
@@ -518,7 +518,7 @@ public sealed class MissionRepositoryTests
     {
         // Arrange
         using var context = CreateInMemoryContext();
-        var repository = new MissionRepository(context);
+        var repository = new GoalRepository(context);
         var org = await CreateTestOrganization(context);
 
         var leader = new Collaborator
@@ -553,7 +553,7 @@ public sealed class MissionRepositoryTests
     {
         // Arrange
         using var context = CreateInMemoryContext();
-        var repository = new MissionRepository(context);
+        var repository = new GoalRepository(context);
 
         // Act
         var result = await repository.GetWorkspaceIdsForTeamsAsync(new List<Guid>());
@@ -564,41 +564,41 @@ public sealed class MissionRepositoryTests
 
     #endregion
 
-    #region GetMetricsAsync Tests
+    #region GetIndicatorsAsync Tests
 
     [Fact]
-    public async Task GetMetricsAsync_ReturnsMetricsForMission()
+    public async Task GetIndicatorsAsync_ReturnsMetricsForMission()
     {
         // Arrange
         using var context = CreateInMemoryContext();
-        var repository = new MissionRepository(context);
+        var repository = new GoalRepository(context);
         var org = await CreateTestOrganization(context);
 
         var mission = CreateTestMission(org.Id);
-        context.Missions.Add(mission);
+        context.Goals.Add(mission);
         await context.SaveChangesAsync();
 
-        context.Metrics.AddRange(
-            new Metric
+        context.Indicators.AddRange(
+            new Indicator
             {
                 Id = Guid.NewGuid(),
                 Name = "Metric A",
-                Type = MetricType.Qualitative,
-                MissionId = mission.Id,
+                Type = IndicatorType.Qualitative,
+                GoalId = mission.Id,
                 OrganizationId = org.Id
             },
-            new Metric
+            new Indicator
             {
                 Id = Guid.NewGuid(),
                 Name = "Metric B",
-                Type = MetricType.Quantitative,
-                MissionId = mission.Id,
+                Type = IndicatorType.Quantitative,
+                GoalId = mission.Id,
                 OrganizationId = org.Id
             });
         await context.SaveChangesAsync();
 
         // Act
-        var result = await repository.GetMetricsAsync(mission.Id, 1, 10);
+        var result = await repository.GetIndicatorsAsync(mission.Id, 1, 10);
 
         // Assert
         result.Items.Should().HaveCount(2);
@@ -606,25 +606,25 @@ public sealed class MissionRepositoryTests
     }
 
     [Fact]
-    public async Task GetMetricsAsync_DoesNotReturnMetricsFromOtherMissions()
+    public async Task GetIndicatorsAsync_DoesNotReturnMetricsFromOtherMissions()
     {
         // Arrange
         using var context = CreateInMemoryContext();
-        var repository = new MissionRepository(context);
+        var repository = new GoalRepository(context);
         var org = await CreateTestOrganization(context);
 
         var mission1 = CreateTestMission(org.Id, "Mission 1");
         var mission2 = CreateTestMission(org.Id, "Mission 2");
-        context.Missions.AddRange(mission1, mission2);
+        context.Goals.AddRange(mission1, mission2);
         await context.SaveChangesAsync();
 
-        context.Metrics.AddRange(
-            new Metric { Id = Guid.NewGuid(), Name = "Metric M1", Type = MetricType.Qualitative, MissionId = mission1.Id, OrganizationId = org.Id },
-            new Metric { Id = Guid.NewGuid(), Name = "Metric M2", Type = MetricType.Qualitative, MissionId = mission2.Id, OrganizationId = org.Id });
+        context.Indicators.AddRange(
+            new Indicator { Id = Guid.NewGuid(), Name = "Metric M1", Type = IndicatorType.Qualitative, GoalId = mission1.Id, OrganizationId = org.Id },
+            new Indicator { Id = Guid.NewGuid(), Name = "Metric M2", Type = IndicatorType.Qualitative, GoalId = mission2.Id, OrganizationId = org.Id });
         await context.SaveChangesAsync();
 
         // Act
-        var result = await repository.GetMetricsAsync(mission1.Id, 1, 10);
+        var result = await repository.GetIndicatorsAsync(mission1.Id, 1, 10);
 
         // Assert
         result.Items.Should().HaveCount(1);
@@ -632,32 +632,32 @@ public sealed class MissionRepositoryTests
     }
 
     [Fact]
-    public async Task GetMetricsAsync_ReturnsPaginatedResults()
+    public async Task GetIndicatorsAsync_ReturnsPaginatedResults()
     {
         // Arrange
         using var context = CreateInMemoryContext();
-        var repository = new MissionRepository(context);
+        var repository = new GoalRepository(context);
         var org = await CreateTestOrganization(context);
 
         var mission = CreateTestMission(org.Id);
-        context.Missions.Add(mission);
+        context.Goals.Add(mission);
         await context.SaveChangesAsync();
 
         for (int i = 0; i < 5; i++)
         {
-            context.Metrics.Add(new Metric
+            context.Indicators.Add(new Indicator
             {
                 Id = Guid.NewGuid(),
                 Name = $"Metric {i:D2}",
-                Type = MetricType.Qualitative,
-                MissionId = mission.Id,
+                Type = IndicatorType.Qualitative,
+                GoalId = mission.Id,
                 OrganizationId = org.Id
             });
         }
         await context.SaveChangesAsync();
 
         // Act
-        var result = await repository.GetMetricsAsync(mission.Id, 1, 2);
+        var result = await repository.GetIndicatorsAsync(mission.Id, 1, 2);
 
         // Assert
         result.Items.Should().HaveCount(2);
@@ -675,11 +675,11 @@ public sealed class MissionRepositoryTests
     {
         // Arrange
         using var context = CreateInMemoryContext();
-        var repository = new MissionRepository(context);
+        var repository = new GoalRepository(context);
         var org = await CreateTestOrganization(context);
 
         var mission = CreateTestMission(org.Id);
-        context.Missions.Add(mission);
+        context.Goals.Add(mission);
         await context.SaveChangesAsync();
 
         // Act
@@ -694,7 +694,7 @@ public sealed class MissionRepositoryTests
     {
         // Arrange
         using var context = CreateInMemoryContext();
-        var repository = new MissionRepository(context);
+        var repository = new GoalRepository(context);
 
         // Act
         var result = await repository.ExistsAsync(Guid.NewGuid());
@@ -712,7 +712,7 @@ public sealed class MissionRepositoryTests
     {
         // Arrange
         using var context = CreateInMemoryContext();
-        var repository = new MissionRepository(context);
+        var repository = new GoalRepository(context);
         var org = await CreateTestOrganization(context);
 
         var mission = CreateTestMission(org.Id, "New Mission");
@@ -722,7 +722,7 @@ public sealed class MissionRepositoryTests
         await repository.SaveChangesAsync();
 
         // Assert
-        var persisted = await context.Missions.FindAsync(mission.Id);
+        var persisted = await context.Goals.FindAsync(mission.Id);
         persisted.Should().NotBeNull();
         persisted!.Name.Should().Be("New Mission");
     }
@@ -732,22 +732,22 @@ public sealed class MissionRepositoryTests
     {
         // Arrange
         using var context = CreateInMemoryContext();
-        var repository = new MissionRepository(context);
+        var repository = new GoalRepository(context);
         var org = await CreateTestOrganization(context);
 
         var mission = CreateTestMission(org.Id, "To Delete");
-        context.Missions.Add(mission);
+        context.Goals.Add(mission);
         await context.SaveChangesAsync();
 
         // Re-fetch tracked entity
-        var tracked = await context.Missions.FirstAsync(m => m.Id == mission.Id);
+        var tracked = await context.Goals.FirstAsync(m => m.Id == mission.Id);
 
         // Act
         await repository.RemoveAsync(tracked);
         await repository.SaveChangesAsync();
 
         // Assert
-        var persisted = await context.Missions.FindAsync(mission.Id);
+        var persisted = await context.Goals.FindAsync(mission.Id);
         persisted.Should().BeNull();
     }
 

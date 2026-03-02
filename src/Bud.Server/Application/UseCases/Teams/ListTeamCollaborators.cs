@@ -20,7 +20,7 @@ public sealed class ListTeamCollaborators(ITeamRepository teamRepository)
 
         if (!await teamRepository.ExistsAsync(id, cancellationToken))
         {
-            return Result<Bud.Shared.Contracts.Common.PagedResult<Collaborator>>.NotFound("Time não encontrado.");
+            return Result<Bud.Shared.Contracts.Common.PagedResult<Collaborator>>.NotFound(UserErrorMessages.TeamNotFound);
         }
 
         var result = await teamRepository.GetCollaboratorsAsync(id, page, pageSize, cancellationToken);

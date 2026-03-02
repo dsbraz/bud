@@ -94,10 +94,10 @@ public static class DbSeeder
 
     private static Template BuildBscTemplate(Guid organizationId)
     {
-        var financeiraObjectiveId = Guid.NewGuid();
-        var clientesObjectiveId = Guid.NewGuid();
-        var processosObjectiveId = Guid.NewGuid();
-        var aprendizadoObjectiveId = Guid.NewGuid();
+        var financeiraGoalId = Guid.NewGuid();
+        var clientesGoalId = Guid.NewGuid();
+        var processosGoalId = Guid.NewGuid();
+        var aprendizadoGoalId = Guid.NewGuid();
 
         return new Template
         {
@@ -105,40 +105,40 @@ public static class DbSeeder
             OrganizationId = organizationId,
             Name = "BSC",
             Description = "Balanced Scorecard — framework para equilibrar execução estratégica entre finanças, clientes, processos e aprendizado.",
-            MissionNamePattern = "BSC — ",
-            MissionDescriptionPattern = "Missão estratégica baseada nas perspectivas do Balanced Scorecard.",
-            Objectives =
+            GoalNamePattern = "BSC — ",
+            GoalDescriptionPattern = "Meta estratégica baseada nas perspectivas do Balanced Scorecard.",
+            Goals =
             [
-                new TemplateObjective
+                new TemplateGoal
                 {
-                    Id = financeiraObjectiveId,
+                    Id = financeiraGoalId,
                     OrganizationId = organizationId,
                     Name = "Perspectiva Financeira",
                     Description = "Objetivos de desempenho econômico e sustentabilidade financeira.",
                     OrderIndex = 0,
                     Dimension = "Financeira"
                 },
-                new TemplateObjective
+                new TemplateGoal
                 {
-                    Id = clientesObjectiveId,
+                    Id = clientesGoalId,
                     OrganizationId = organizationId,
                     Name = "Perspectiva de Clientes",
                     Description = "Objetivos relacionados à proposta de valor e satisfação do cliente.",
                     OrderIndex = 1,
                     Dimension = "Clientes"
                 },
-                new TemplateObjective
+                new TemplateGoal
                 {
-                    Id = processosObjectiveId,
+                    Id = processosGoalId,
                     OrganizationId = organizationId,
                     Name = "Perspectiva de Processos Internos",
                     Description = "Objetivos de eficiência e excelência operacional.",
                     OrderIndex = 2,
                     Dimension = "Processos Internos"
                 },
-                new TemplateObjective
+                new TemplateGoal
                 {
-                    Id = aprendizadoObjectiveId,
+                    Id = aprendizadoGoalId,
                     OrganizationId = organizationId,
                     Name = "Perspectiva de Aprendizado e Crescimento",
                     Description = "Objetivos de capacidade organizacional, pessoas e inovação.",
@@ -146,56 +146,56 @@ public static class DbSeeder
                     Dimension = "Aprendizado e Crescimento"
                 }
             ],
-            Metrics =
+            Indicators =
             [
-                new TemplateMetric
+                new TemplateIndicator
                 {
                     Id = Guid.NewGuid(),
                     OrganizationId = organizationId,
                     Name = "Resultado Financeiro",
-                    Type = MetricType.Quantitative,
+                    Type = IndicatorType.Quantitative,
                     OrderIndex = 0,
-                    TemplateObjectiveId = financeiraObjectiveId,
-                    QuantitativeType = QuantitativeMetricType.Achieve,
+                    TemplateGoalId = financeiraGoalId,
+                    QuantitativeType = QuantitativeIndicatorType.Achieve,
                     MaxValue = 100,
-                    Unit = MetricUnit.Percentage
+                    Unit = IndicatorUnit.Percentage
                 },
-                new TemplateMetric
+                new TemplateIndicator
                 {
                     Id = Guid.NewGuid(),
                     OrganizationId = organizationId,
                     Name = "Satisfação de Clientes",
-                    Type = MetricType.Quantitative,
+                    Type = IndicatorType.Quantitative,
                     OrderIndex = 1,
-                    TemplateObjectiveId = clientesObjectiveId,
-                    QuantitativeType = QuantitativeMetricType.KeepAbove,
+                    TemplateGoalId = clientesGoalId,
+                    QuantitativeType = QuantitativeIndicatorType.KeepAbove,
                     MinValue = 70,
                     MaxValue = 100,
-                    Unit = MetricUnit.Points
+                    Unit = IndicatorUnit.Points
                 },
-                new TemplateMetric
+                new TemplateIndicator
                 {
                     Id = Guid.NewGuid(),
                     OrganizationId = organizationId,
                     Name = "Eficiência de Processos Internos",
-                    Type = MetricType.Quantitative,
+                    Type = IndicatorType.Quantitative,
                     OrderIndex = 2,
-                    TemplateObjectiveId = processosObjectiveId,
-                    QuantitativeType = QuantitativeMetricType.Achieve,
+                    TemplateGoalId = processosGoalId,
+                    QuantitativeType = QuantitativeIndicatorType.Achieve,
                     MaxValue = 100,
-                    Unit = MetricUnit.Percentage
+                    Unit = IndicatorUnit.Percentage
                 },
-                new TemplateMetric
+                new TemplateIndicator
                 {
                     Id = Guid.NewGuid(),
                     OrganizationId = organizationId,
                     Name = "Capacitação e Aprendizado",
-                    Type = MetricType.Quantitative,
+                    Type = IndicatorType.Quantitative,
                     OrderIndex = 3,
-                    TemplateObjectiveId = aprendizadoObjectiveId,
-                    QuantitativeType = QuantitativeMetricType.Achieve,
+                    TemplateGoalId = aprendizadoGoalId,
+                    QuantitativeType = QuantitativeIndicatorType.Achieve,
                     MaxValue = 100,
-                    Unit = MetricUnit.Percentage
+                    Unit = IndicatorUnit.Percentage
                 }
             ]
         };
@@ -203,10 +203,10 @@ public static class DbSeeder
 
     private static Template BuildStrategicMapTemplate(Guid organizationId)
     {
-        var crescimentoObjectiveId = Guid.NewGuid();
-        var processosObjectiveId = Guid.NewGuid();
-        var clientesObjectiveId = Guid.NewGuid();
-        var financeiraObjectiveId = Guid.NewGuid();
+        var crescimentoGoalId = Guid.NewGuid();
+        var processosGoalId = Guid.NewGuid();
+        var clientesGoalId = Guid.NewGuid();
+        var financeiraGoalId = Guid.NewGuid();
 
         return new Template
         {
@@ -214,40 +214,40 @@ public static class DbSeeder
             OrganizationId = organizationId,
             Name = "Mapa Estratégico",
             Description = "Mapa Estratégico — template para explicitar objetivos estratégicos e relações de causa e efeito.",
-            MissionNamePattern = "Mapa Estratégico — ",
-            MissionDescriptionPattern = "Missão para construção e acompanhamento do mapa estratégico.",
-            Objectives =
+            GoalNamePattern = "Mapa Estratégico — ",
+            GoalDescriptionPattern = "Meta para construção e acompanhamento do mapa estratégico.",
+            Goals =
             [
-                new TemplateObjective
+                new TemplateGoal
                 {
-                    Id = crescimentoObjectiveId,
+                    Id = crescimentoGoalId,
                     OrganizationId = organizationId,
                     Name = "Capacidades Organizacionais",
                     Description = "Base de pessoas, cultura e inovação que viabiliza a estratégia.",
                     OrderIndex = 0,
                     Dimension = "Aprendizado e Crescimento"
                 },
-                new TemplateObjective
+                new TemplateGoal
                 {
-                    Id = processosObjectiveId,
+                    Id = processosGoalId,
                     OrganizationId = organizationId,
                     Name = "Excelência de Processos",
                     Description = "Processos críticos para entregar valor com previsibilidade.",
                     OrderIndex = 1,
                     Dimension = "Processos Internos"
                 },
-                new TemplateObjective
+                new TemplateGoal
                 {
-                    Id = clientesObjectiveId,
+                    Id = clientesGoalId,
                     OrganizationId = organizationId,
                     Name = "Valor para Clientes",
                     Description = "Resultados percebidos pelos clientes e posicionamento competitivo.",
                     OrderIndex = 2,
                     Dimension = "Clientes"
                 },
-                new TemplateObjective
+                new TemplateGoal
                 {
-                    Id = financeiraObjectiveId,
+                    Id = financeiraGoalId,
                     OrganizationId = organizationId,
                     Name = "Resultados Financeiros",
                     Description = "Impacto econômico final esperado da estratégia.",
@@ -255,46 +255,46 @@ public static class DbSeeder
                     Dimension = "Financeira"
                 }
             ],
-            Metrics =
+            Indicators =
             [
-                new TemplateMetric
+                new TemplateIndicator
                 {
                     Id = Guid.NewGuid(),
                     OrganizationId = organizationId,
                     Name = "Objetivo Estratégico 1",
-                    Type = MetricType.Qualitative,
+                    Type = IndicatorType.Qualitative,
                     OrderIndex = 0,
-                    TemplateObjectiveId = crescimentoObjectiveId,
+                    TemplateGoalId = crescimentoGoalId,
                     TargetText = "Descreva o objetivo e as relações de causa e efeito."
                 },
-                new TemplateMetric
+                new TemplateIndicator
                 {
                     Id = Guid.NewGuid(),
                     OrganizationId = organizationId,
                     Name = "Objetivo Estratégico 2",
-                    Type = MetricType.Qualitative,
+                    Type = IndicatorType.Qualitative,
                     OrderIndex = 1,
-                    TemplateObjectiveId = processosObjectiveId,
+                    TemplateGoalId = processosGoalId,
                     TargetText = "Descreva o objetivo e as relações de causa e efeito."
                 },
-                new TemplateMetric
+                new TemplateIndicator
                 {
                     Id = Guid.NewGuid(),
                     OrganizationId = organizationId,
                     Name = "Objetivo Estratégico 3",
-                    Type = MetricType.Qualitative,
+                    Type = IndicatorType.Qualitative,
                     OrderIndex = 2,
-                    TemplateObjectiveId = clientesObjectiveId,
+                    TemplateGoalId = clientesGoalId,
                     TargetText = "Descreva o objetivo e as relações de causa e efeito."
                 },
-                new TemplateMetric
+                new TemplateIndicator
                 {
                     Id = Guid.NewGuid(),
                     OrganizationId = organizationId,
                     Name = "Objetivo Estratégico 4",
-                    Type = MetricType.Qualitative,
+                    Type = IndicatorType.Qualitative,
                     OrderIndex = 3,
-                    TemplateObjectiveId = financeiraObjectiveId,
+                    TemplateGoalId = financeiraGoalId,
                     TargetText = "Descreva o objetivo e as relações de causa e efeito."
                 }
             ]
@@ -303,9 +303,9 @@ public static class DbSeeder
 
     private static Template BuildAnnualStrategicPlanningTemplate(Guid organizationId)
     {
-        var portfolioObjectiveId = Guid.NewGuid();
-        var executionObjectiveId = Guid.NewGuid();
-        var productsObjectiveId = Guid.NewGuid();
+        var portfolioGoalId = Guid.NewGuid();
+        var executionGoalId = Guid.NewGuid();
+        var productsGoalId = Guid.NewGuid();
 
         return new Template
         {
@@ -313,31 +313,31 @@ public static class DbSeeder
             OrganizationId = organizationId,
             Name = "Planejamento Estratégico Anual",
             Description = "Template para consolidar prioridades, entregas e marcos estratégicos de um ciclo anual.",
-            MissionNamePattern = "Plano Estratégico Anual — ",
-            MissionDescriptionPattern = "Planejamento estratégico anual com marcos e prioridades do ciclo.",
-            Objectives =
+            GoalNamePattern = "Plano Estratégico Anual — ",
+            GoalDescriptionPattern = "Planejamento estratégico anual com marcos e prioridades do ciclo.",
+            Goals =
             [
-                new TemplateObjective
+                new TemplateGoal
                 {
-                    Id = portfolioObjectiveId,
+                    Id = portfolioGoalId,
                     OrganizationId = organizationId,
                     Name = "Priorização Estratégica",
                     Description = "Definição das frentes prioritárias do ano.",
                     OrderIndex = 0,
                     Dimension = "Financeira"
                 },
-                new TemplateObjective
+                new TemplateGoal
                 {
-                    Id = executionObjectiveId,
+                    Id = executionGoalId,
                     OrganizationId = organizationId,
                     Name = "Execução e Governança",
                     Description = "Ritmo e disciplina de execução do plano.",
                     OrderIndex = 1,
                     Dimension = "Processos Internos"
                 },
-                new TemplateObjective
+                new TemplateGoal
                 {
-                    Id = productsObjectiveId,
+                    Id = productsGoalId,
                     OrganizationId = organizationId,
                     Name = "Evolução de Produtos",
                     Description = "Resultados estratégicos esperados para produtos no ciclo.",
@@ -345,39 +345,39 @@ public static class DbSeeder
                     Dimension = "Produtos"
                 }
             ],
-            Metrics =
+            Indicators =
             [
-                new TemplateMetric
+                new TemplateIndicator
                 {
                     Id = Guid.NewGuid(),
                     OrganizationId = organizationId,
                     Name = "Prioridade Estratégica 1",
-                    Type = MetricType.Qualitative,
+                    Type = IndicatorType.Qualitative,
                     OrderIndex = 0,
-                    TemplateObjectiveId = portfolioObjectiveId,
+                    TemplateGoalId = portfolioGoalId,
                     TargetText = "Descreva o objetivo e os entregáveis da prioridade."
                 },
-                new TemplateMetric
+                new TemplateIndicator
                 {
                     Id = Guid.NewGuid(),
                     OrganizationId = organizationId,
                     Name = "Prioridade Estratégica 2",
-                    Type = MetricType.Qualitative,
+                    Type = IndicatorType.Qualitative,
                     OrderIndex = 1,
-                    TemplateObjectiveId = productsObjectiveId,
+                    TemplateGoalId = productsGoalId,
                     TargetText = "Descreva o objetivo e os entregáveis da prioridade."
                 },
-                new TemplateMetric
+                new TemplateIndicator
                 {
                     Id = Guid.NewGuid(),
                     OrganizationId = organizationId,
                     Name = "Execução do Plano no Ano",
-                    Type = MetricType.Quantitative,
+                    Type = IndicatorType.Quantitative,
                     OrderIndex = 2,
-                    TemplateObjectiveId = executionObjectiveId,
-                    QuantitativeType = QuantitativeMetricType.Achieve,
+                    TemplateGoalId = executionGoalId,
+                    QuantitativeType = QuantitativeIndicatorType.Achieve,
                     MaxValue = 100,
-                    Unit = MetricUnit.Percentage
+                    Unit = IndicatorUnit.Percentage
                 }
             ]
         };
@@ -385,7 +385,7 @@ public static class DbSeeder
 
     private static Template BuildOkrTemplate(Guid organizationId)
     {
-        var objectiveId = Guid.NewGuid();
+        var goalId = Guid.NewGuid();
 
         return new Template
         {
@@ -393,13 +393,13 @@ public static class DbSeeder
             OrganizationId = organizationId,
             Name = "OKR",
             Description = "Objectives and Key Results — framework para definir e acompanhar objetivos com resultados-chave mensuráveis.",
-            MissionNamePattern = "OKR — ",
-            MissionDescriptionPattern = "Missão seguindo o framework OKR com resultados-chave quantitativos.",
-            Objectives =
+            GoalNamePattern = "OKR — ",
+            GoalDescriptionPattern = "Meta seguindo o framework OKR com resultados-chave quantitativos.",
+            Goals =
             [
-                new TemplateObjective
+                new TemplateGoal
                 {
-                    Id = objectiveId,
+                    Id = goalId,
                     OrganizationId = organizationId,
                     Name = "Objetivo Principal",
                     Description = "Objetivo aspiracional do ciclo de OKR.",
@@ -407,43 +407,43 @@ public static class DbSeeder
                     Dimension = "Clientes"
                 }
             ],
-            Metrics =
+            Indicators =
             [
-                new TemplateMetric
+                new TemplateIndicator
                 {
                     Id = Guid.NewGuid(),
                     OrganizationId = organizationId,
                     Name = "Resultado-chave 1",
-                    Type = MetricType.Quantitative,
+                    Type = IndicatorType.Quantitative,
                     OrderIndex = 0,
-                    TemplateObjectiveId = objectiveId,
-                    QuantitativeType = QuantitativeMetricType.Achieve,
+                    TemplateGoalId = goalId,
+                    QuantitativeType = QuantitativeIndicatorType.Achieve,
                     MaxValue = 100,
-                    Unit = MetricUnit.Percentage
+                    Unit = IndicatorUnit.Percentage
                 },
-                new TemplateMetric
+                new TemplateIndicator
                 {
                     Id = Guid.NewGuid(),
                     OrganizationId = organizationId,
                     Name = "Resultado-chave 2",
-                    Type = MetricType.Quantitative,
+                    Type = IndicatorType.Quantitative,
                     OrderIndex = 1,
-                    TemplateObjectiveId = objectiveId,
-                    QuantitativeType = QuantitativeMetricType.Achieve,
+                    TemplateGoalId = goalId,
+                    QuantitativeType = QuantitativeIndicatorType.Achieve,
                     MaxValue = 100,
-                    Unit = MetricUnit.Percentage
+                    Unit = IndicatorUnit.Percentage
                 },
-                new TemplateMetric
+                new TemplateIndicator
                 {
                     Id = Guid.NewGuid(),
                     OrganizationId = organizationId,
                     Name = "Resultado-chave 3",
-                    Type = MetricType.Quantitative,
+                    Type = IndicatorType.Quantitative,
                     OrderIndex = 2,
-                    TemplateObjectiveId = objectiveId,
-                    QuantitativeType = QuantitativeMetricType.Achieve,
+                    TemplateGoalId = goalId,
+                    QuantitativeType = QuantitativeIndicatorType.Achieve,
                     MaxValue = 100,
-                    Unit = MetricUnit.Percentage
+                    Unit = IndicatorUnit.Percentage
                 }
             ]
         };
@@ -451,7 +451,7 @@ public static class DbSeeder
 
     private static Template BuildPdiTemplate(Guid organizationId)
     {
-        var objectiveId = Guid.NewGuid();
+        var goalId = Guid.NewGuid();
 
         return new Template
         {
@@ -459,13 +459,13 @@ public static class DbSeeder
             OrganizationId = organizationId,
             Name = "PDI",
             Description = "Plano de Desenvolvimento Individual — framework para acompanhar ações de desenvolvimento pessoal e profissional.",
-            MissionNamePattern = "PDI — ",
-            MissionDescriptionPattern = "Plano de desenvolvimento individual com ações qualitativas e acompanhamento de progresso.",
-            Objectives =
+            GoalNamePattern = "PDI — ",
+            GoalDescriptionPattern = "Plano de desenvolvimento individual com ações qualitativas e acompanhamento de progresso.",
+            Goals =
             [
-                new TemplateObjective
+                new TemplateGoal
                 {
-                    Id = objectiveId,
+                    Id = goalId,
                     OrganizationId = organizationId,
                     Name = "Desenvolvimento Individual",
                     Description = "Capacidades e competências a desenvolver no ciclo.",
@@ -473,39 +473,39 @@ public static class DbSeeder
                     Dimension = "Aprendizado e Crescimento"
                 }
             ],
-            Metrics =
+            Indicators =
             [
-                new TemplateMetric
+                new TemplateIndicator
                 {
                     Id = Guid.NewGuid(),
                     OrganizationId = organizationId,
                     Name = "Ação de desenvolvimento 1",
-                    Type = MetricType.Qualitative,
+                    Type = IndicatorType.Qualitative,
                     OrderIndex = 0,
-                    TemplateObjectiveId = objectiveId,
+                    TemplateGoalId = goalId,
                     TargetText = "Descreva a ação de desenvolvimento"
                 },
-                new TemplateMetric
+                new TemplateIndicator
                 {
                     Id = Guid.NewGuid(),
                     OrganizationId = organizationId,
                     Name = "Ação de desenvolvimento 2",
-                    Type = MetricType.Qualitative,
+                    Type = IndicatorType.Qualitative,
                     OrderIndex = 1,
-                    TemplateObjectiveId = objectiveId,
+                    TemplateGoalId = goalId,
                     TargetText = "Descreva a ação de desenvolvimento"
                 },
-                new TemplateMetric
+                new TemplateIndicator
                 {
                     Id = Guid.NewGuid(),
                     OrganizationId = organizationId,
                     Name = "Progresso geral",
-                    Type = MetricType.Quantitative,
+                    Type = IndicatorType.Quantitative,
                     OrderIndex = 2,
-                    TemplateObjectiveId = objectiveId,
-                    QuantitativeType = QuantitativeMetricType.Achieve,
+                    TemplateGoalId = goalId,
+                    QuantitativeType = QuantitativeIndicatorType.Achieve,
                     MaxValue = 100,
-                    Unit = MetricUnit.Percentage
+                    Unit = IndicatorUnit.Percentage
                 }
             ]
         };

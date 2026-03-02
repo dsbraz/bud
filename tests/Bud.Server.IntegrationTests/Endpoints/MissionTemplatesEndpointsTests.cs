@@ -36,16 +36,16 @@ public class TemplatesEndpointsTests : IClassFixture<CustomWebApplicationFactory
         {
             Name = $"Template {Guid.NewGuid():N}",
             Description = "Test template",
-            Metrics = new List<TemplateMetricRequest>
+            Indicators = new List<TemplateIndicatorRequest>
             {
                 new()
                 {
                     Name = "Metric 1",
-                    Type = Bud.Shared.Contracts.MetricType.Quantitative,
+                    Type = Bud.Shared.Contracts.IndicatorType.Quantitative,
                     OrderIndex = 0,
-                    QuantitativeType = Bud.Shared.Contracts.QuantitativeMetricType.Achieve,
+                    QuantitativeType = Bud.Shared.Contracts.QuantitativeIndicatorType.Achieve,
                     MaxValue = 100,
-                    Unit = Bud.Shared.Contracts.MetricUnit.Percentage
+                    Unit = Bud.Shared.Contracts.IndicatorUnit.Percentage
                 }
             }
         };
@@ -64,23 +64,23 @@ public class TemplatesEndpointsTests : IClassFixture<CustomWebApplicationFactory
         {
             Name = "Valid Template",
             Description = "A valid mission template",
-            MissionNamePattern = "Mission - {name}",
-            MissionDescriptionPattern = "Description for {name}",
-            Metrics = new List<TemplateMetricRequest>
+            GoalNamePattern = "Mission - {name}",
+            GoalDescriptionPattern = "Description for {name}",
+            Indicators = new List<TemplateIndicatorRequest>
             {
                 new()
                 {
                     Name = "Revenue Target",
-                    Type = Bud.Shared.Contracts.MetricType.Quantitative,
+                    Type = Bud.Shared.Contracts.IndicatorType.Quantitative,
                     OrderIndex = 0,
-                    QuantitativeType = Bud.Shared.Contracts.QuantitativeMetricType.Achieve,
+                    QuantitativeType = Bud.Shared.Contracts.QuantitativeIndicatorType.Achieve,
                     MaxValue = 1000,
-                    Unit = Bud.Shared.Contracts.MetricUnit.Integer
+                    Unit = Bud.Shared.Contracts.IndicatorUnit.Integer
                 },
                 new()
                 {
                     Name = "Quality Check",
-                    Type = Bud.Shared.Contracts.MetricType.Qualitative,
+                    Type = Bud.Shared.Contracts.IndicatorType.Qualitative,
                     OrderIndex = 1,
                     TargetText = "Ensure all deliverables meet standards"
                 }
@@ -96,39 +96,39 @@ public class TemplatesEndpointsTests : IClassFixture<CustomWebApplicationFactory
         template.Should().NotBeNull();
         template!.Name.Should().Be("Valid Template");
         template.Description.Should().Be("A valid mission template");
-        template.MissionNamePattern.Should().Be("Mission - {name}");
-        template.MissionDescriptionPattern.Should().Be("Description for {name}");
-        template.Metrics.Should().HaveCount(2);
+        template.GoalNamePattern.Should().Be("Mission - {name}");
+        template.GoalDescriptionPattern.Should().Be("Description for {name}");
+        template.Indicators.Should().HaveCount(2);
     }
 
     [Fact]
     public async Task Create_WithObjectivesAndObjectiveMetric_ReturnsCreatedWithObjectiveLink()
     {
         // Arrange
-        var objectiveId = Guid.NewGuid();
+        var goalId = Guid.NewGuid();
         var request = new CreateTemplateRequest
         {
             Name = "Template com objetivos",
-            Objectives =
+            Goals =
             [
-                new TemplateObjectiveRequest
+                new TemplateGoalRequest
                 {
-                    Id = objectiveId,
+                    Id = goalId,
                     Name = "Objetivo estratégico",
                     OrderIndex = 0
                 }
             ],
-            Metrics =
+            Indicators =
             [
-                new TemplateMetricRequest
+                new TemplateIndicatorRequest
                 {
                     Name = "Métrica vinculada",
-                    Type = Bud.Shared.Contracts.MetricType.Quantitative,
+                    Type = Bud.Shared.Contracts.IndicatorType.Quantitative,
                     OrderIndex = 0,
-                    TemplateObjectiveId = objectiveId,
-                    QuantitativeType = Bud.Shared.Contracts.QuantitativeMetricType.Achieve,
+                    TemplateGoalId = goalId,
+                    QuantitativeType = Bud.Shared.Contracts.QuantitativeIndicatorType.Achieve,
                     MaxValue = 100,
-                    Unit = Bud.Shared.Contracts.MetricUnit.Percentage
+                    Unit = Bud.Shared.Contracts.IndicatorUnit.Percentage
                 }
             ]
         };
@@ -140,9 +140,9 @@ public class TemplatesEndpointsTests : IClassFixture<CustomWebApplicationFactory
         response.StatusCode.Should().Be(HttpStatusCode.Created);
         var template = await response.Content.ReadFromJsonAsync<Template>();
         template.Should().NotBeNull();
-        template!.Objectives.Should().ContainSingle();
-        template.Metrics.Should().ContainSingle();
-        template.Metrics.First().TemplateObjectiveId.Should().Be(template.Objectives.First().Id);
+        template!.Goals.Should().ContainSingle();
+        template.Indicators.Should().ContainSingle();
+        template.Indicators.First().TemplateGoalId.Should().Be(template.Goals.First().Id);
     }
 
     [Fact]
@@ -182,7 +182,7 @@ public class TemplatesEndpointsTests : IClassFixture<CustomWebApplicationFactory
         template!.Id.Should().Be(created.Id);
         template.Name.Should().Be(created.Name);
         template.Description.Should().Be("Test template");
-        template.Metrics.Should().HaveCount(1);
+        template.Indicators.Should().HaveCount(1);
     }
 
     [Fact]
@@ -236,19 +236,19 @@ public class TemplatesEndpointsTests : IClassFixture<CustomWebApplicationFactory
         {
             Name = "Updated Template Name",
             Description = "Updated description",
-            MissionNamePattern = "Updated - {name}",
-            MissionDescriptionPattern = "Updated desc for {name}",
-            Metrics = new List<TemplateMetricRequest>
+            GoalNamePattern = "Updated - {name}",
+            GoalDescriptionPattern = "Updated desc for {name}",
+            Indicators = new List<TemplateIndicatorRequest>
             {
                 new()
                 {
                     Name = "Updated Metric",
-                    Type = Bud.Shared.Contracts.MetricType.Quantitative,
+                    Type = Bud.Shared.Contracts.IndicatorType.Quantitative,
                     OrderIndex = 0,
-                    QuantitativeType = Bud.Shared.Contracts.QuantitativeMetricType.Reduce,
+                    QuantitativeType = Bud.Shared.Contracts.QuantitativeIndicatorType.Reduce,
                     MinValue = 0,
                     MaxValue = 50,
-                    Unit = Bud.Shared.Contracts.MetricUnit.Percentage
+                    Unit = Bud.Shared.Contracts.IndicatorUnit.Percentage
                 }
             }
         };
@@ -262,9 +262,9 @@ public class TemplatesEndpointsTests : IClassFixture<CustomWebApplicationFactory
         updated.Should().NotBeNull();
         updated!.Name.Should().Be("Updated Template Name");
         updated.Description.Should().Be("Updated description");
-        updated.MissionNamePattern.Should().Be("Updated - {name}");
-        updated.MissionDescriptionPattern.Should().Be("Updated desc for {name}");
-        updated.Metrics.Should().HaveCount(1);
+        updated.GoalNamePattern.Should().Be("Updated - {name}");
+        updated.GoalDescriptionPattern.Should().Be("Updated desc for {name}");
+        updated.Indicators.Should().HaveCount(1);
     }
 
     #endregion

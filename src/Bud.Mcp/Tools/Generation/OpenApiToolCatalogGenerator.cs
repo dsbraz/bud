@@ -23,29 +23,23 @@ public sealed class OpenApiToolCatalogGenerator
 
     private static readonly ToolOperationMap[] ToolMappings =
     [
-        new("mission_create", "Cria uma missão.", "post", "/api/missions", ToolSchemaKind.Create),
-        new("mission_get", "Busca uma missão por ID.", "get", "/api/missions/{id}", ToolSchemaKind.GetById),
-        new("mission_list", "Lista missões com filtros.", "get", "/api/missions", ToolSchemaKind.List),
-        new("mission_update", "Atualiza uma missão.", "patch", "/api/missions/{id}", ToolSchemaKind.Update),
-        new("mission_delete", "Remove uma missão.", "delete", "/api/missions/{id}", ToolSchemaKind.Delete),
+        new("goal_create", "Cria uma meta.", "post", "/api/goals", ToolSchemaKind.Create),
+        new("goal_get", "Busca uma meta por ID.", "get", "/api/goals/{id}", ToolSchemaKind.GetById),
+        new("goal_list", "Lista metas com filtros.", "get", "/api/goals", ToolSchemaKind.List),
+        new("goal_update", "Atualiza uma meta.", "patch", "/api/goals/{id}", ToolSchemaKind.Update),
+        new("goal_delete", "Remove uma meta.", "delete", "/api/goals/{id}", ToolSchemaKind.Delete),
 
-        new("mission_metric_create", "Cria uma métrica de missão.", "post", "/api/metrics", ToolSchemaKind.Create),
-        new("mission_metric_get", "Busca uma métrica por ID.", "get", "/api/metrics/{id}", ToolSchemaKind.GetById),
-        new("mission_metric_list", "Lista métricas de missão.", "get", "/api/metrics", ToolSchemaKind.List),
-        new("mission_metric_update", "Atualiza uma métrica de missão.", "patch", "/api/metrics/{id}", ToolSchemaKind.Update),
-        new("mission_metric_delete", "Remove uma métrica de missão.", "delete", "/api/metrics/{id}", ToolSchemaKind.Delete),
+        new("goal_indicator_create", "Cria um indicador de meta.", "post", "/api/indicators", ToolSchemaKind.Create),
+        new("goal_indicator_get", "Busca um indicador por ID.", "get", "/api/indicators/{id}", ToolSchemaKind.GetById),
+        new("goal_indicator_list", "Lista indicadores de meta.", "get", "/api/indicators", ToolSchemaKind.List),
+        new("goal_indicator_update", "Atualiza um indicador de meta.", "patch", "/api/indicators/{id}", ToolSchemaKind.Update),
+        new("goal_indicator_delete", "Remove um indicador de meta.", "delete", "/api/indicators/{id}", ToolSchemaKind.Delete),
 
-        new("mission_objective_create", "Cria um objetivo de missão.", "post", "/api/objectives", ToolSchemaKind.Create),
-        new("mission_objective_get", "Busca um objetivo por ID.", "get", "/api/objectives/{id}", ToolSchemaKind.GetById),
-        new("mission_objective_list", "Lista objetivos de uma missão.", "get", "/api/objectives", ToolSchemaKind.List),
-        new("mission_objective_update", "Atualiza um objetivo de missão.", "patch", "/api/objectives/{id}", ToolSchemaKind.Update),
-        new("mission_objective_delete", "Remove um objetivo de missão.", "delete", "/api/objectives/{id}", ToolSchemaKind.Delete),
-
-        new("metric_checkin_create", "Cria um check-in de métrica.", "post", "/api/metrics/{metricId}/checkins", ToolSchemaKind.Create),
-        new("metric_checkin_get", "Busca um check-in por ID.", "get", "/api/metrics/{metricId}/checkins/{checkinId}", ToolSchemaKind.GetById),
-        new("metric_checkin_list", "Lista check-ins com filtros.", "get", "/api/metrics/{metricId}/checkins", ToolSchemaKind.List),
-        new("metric_checkin_update", "Atualiza um check-in.", "patch", "/api/metrics/{metricId}/checkins/{checkinId}", ToolSchemaKind.Update),
-        new("metric_checkin_delete", "Remove um check-in.", "delete", "/api/metrics/{metricId}/checkins/{checkinId}", ToolSchemaKind.Delete)
+        new("indicator_checkin_create", "Cria um check-in de indicador.", "post", "/api/indicators/{indicatorId}/checkins", ToolSchemaKind.Create),
+        new("indicator_checkin_get", "Busca um check-in por ID.", "get", "/api/indicators/{indicatorId}/checkins/{checkinId}", ToolSchemaKind.GetById),
+        new("indicator_checkin_list", "Lista check-ins com filtros.", "get", "/api/indicators/{indicatorId}/checkins", ToolSchemaKind.List),
+        new("indicator_checkin_update", "Atualiza um check-in.", "patch", "/api/indicators/{indicatorId}/checkins/{checkinId}", ToolSchemaKind.Update),
+        new("indicator_checkin_delete", "Remove um check-in.", "delete", "/api/indicators/{indicatorId}/checkins/{checkinId}", ToolSchemaKind.Delete)
     ];
 
     public static JsonArray GenerateToolsFromOpenApi(string openApiJson)

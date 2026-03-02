@@ -33,7 +33,7 @@ public sealed partial class CreateTemplate(
             if (!canCreate)
             {
                 LogTemplateCreationFailed(logger, request.Name, "Forbidden");
-                return Result<Template>.Forbidden("Você não tem permissão para criar templates nesta organização.");
+                return Result<Template>.Forbidden(UserErrorMessages.TemplateCreateForbidden);
             }
         }
 
@@ -44,26 +44,27 @@ public sealed partial class CreateTemplate(
                 Guid.Empty,
                 request.Name,
                 request.Description,
-                request.MissionNamePattern,
-                request.MissionDescriptionPattern);
+                request.GoalNamePattern,
+                request.GoalDescriptionPattern);
 
-            template.ReplaceObjectivesAndMetrics(
-                request.Objectives.Select(objective => new TemplateObjectiveDraft(
-                    objective.Id,
-                    objective.Name,
-                    objective.Description,
-                    objective.OrderIndex,
-                    objective.Dimension)),
-                request.Metrics.Select(metric => new TemplateMetricDraft(
-                    metric.Name,
-                    metric.Type,
-                    metric.OrderIndex,
-                    metric.TemplateObjectiveId,
-                    metric.QuantitativeType,
-                    metric.MinValue,
-                    metric.MaxValue,
-                    metric.Unit,
-                    metric.TargetText)));
+            template.ReplaceGoalsAndIndicators(
+                request.Goals.Select(goal => new TemplateGoalDraft(
+                    goal.Id,
+                    goal.ParentId,
+                    goal.Name,
+                    goal.Description,
+                    goal.OrderIndex,
+                    goal.Dimension)),
+                request.Indicators.Select(indicator => new TemplateIndicatorDraft(
+                    indicator.Name,
+                    indicator.Type,
+                    indicator.OrderIndex,
+                    indicator.TemplateGoalId,
+                    indicator.QuantitativeType,
+                    indicator.MinValue,
+                    indicator.MaxValue,
+                    indicator.Unit,
+                    indicator.TargetText)));
 
             await templateRepository.AddAsync(template, cancellationToken);
             await unitOfWork.CommitAsync(templateRepository.SaveChangesAsync, cancellationToken);
@@ -78,12 +79,12 @@ public sealed partial class CreateTemplate(
         }
     }
 
-    [LoggerMessage(EventId = 4072, Level = LogLevel.Information, Message = "Creating template '{Name}'")]
+    [LoggerMessage(EventId = 4070, Level = LogLevel.Information, Message = "Creating template '{Name}'")]
     private static partial void LogCreatingTemplate(ILogger logger, string name);
 
-    [LoggerMessage(EventId = 4073, Level = LogLevel.Information, Message = "Template created successfully: {TemplateId} - '{Name}'")]
+    [LoggerMessage(EventId = 4071, Level = LogLevel.Information, Message = "Template created successfully: {TemplateId} - '{Name}'")]
     private static partial void LogTemplateCreated(ILogger logger, Guid templateId, string name);
 
-    [LoggerMessage(EventId = 4074, Level = LogLevel.Warning, Message = "Template creation failed for '{Name}': {Reason}")]
+    [LoggerMessage(EventId = 4072, Level = LogLevel.Warning, Message = "Template creation failed for '{Name}': {Reason}")]
     private static partial void LogTemplateCreationFailed(ILogger logger, string name, string reason);
 }

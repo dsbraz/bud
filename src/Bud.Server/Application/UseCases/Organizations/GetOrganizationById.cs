@@ -14,7 +14,7 @@ public sealed class GetOrganizationById(IOrganizationRepository organizationRepo
     {
         var organization = await organizationRepository.GetByIdAsync(id, cancellationToken);
         return organization is null
-            ? Result<Organization>.NotFound("Organização não encontrada.")
+            ? Result<Organization>.NotFound(UserErrorMessages.OrganizationNotFound)
             : Result<Organization>.Success(organization);
     }
 }

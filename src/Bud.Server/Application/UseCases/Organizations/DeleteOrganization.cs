@@ -1,5 +1,5 @@
 using Bud.Server.Application.Common;
-using Bud.Server.Application.Mapping;
+using Bud.Server.Application.Policies;
 using Bud.Server.Domain.Model;
 using Bud.Server.Domain.Repositories;
 using Bud.Server.Settings;
@@ -25,10 +25,10 @@ public sealed partial class DeleteOrganization(
         if (organization is null)
         {
             LogOrganizationDeletionFailed(logger, id, "Not found");
-            return Result.NotFound("Organização não encontrada.");
+            return Result.NotFound(UserErrorMessages.OrganizationNotFound);
         }
 
-        if (IsProtectedOrganization(organization.Name))
+        if (OrganizationProtectionPolicy.IsProtectedOrganization(organization.Name, _globalAdminOrgName))
         {
             LogOrganizationDeletionFailed(logger, id, "Protected organization");
             return Result.Failure(
@@ -58,10 +58,6 @@ public sealed partial class DeleteOrganization(
         LogOrganizationDeleted(logger, id);
         return Result.Success();
     }
-
-    private bool IsProtectedOrganization(string organizationName)
-        => !string.IsNullOrEmpty(_globalAdminOrgName) &&
-           organizationName.Equals(_globalAdminOrgName, StringComparison.OrdinalIgnoreCase);
 
     [LoggerMessage(EventId = 4016, Level = LogLevel.Information, Message = "Deleting organization {OrganizationId}")]
     private static partial void LogDeletingOrganization(ILogger logger, Guid organizationId);
