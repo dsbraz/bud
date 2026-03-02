@@ -3375,7 +3375,7 @@ a {
 /* Grid layout — 3 fixed columns */
 .goal-grid-tree {
     display: grid;
-    grid-template-columns: repeat(3, 1fr);
+    grid-template-columns: repeat(4, 1fr);
     gap: var(--spacing-3);
 }
 
@@ -3427,12 +3427,28 @@ a {
     flex-shrink: 0;
 }
 
-/* Overlay behind expanded container */
-.goal-grid-overlay {
+/* Backdrop for modal (non-expanded) and expanded overlay */
+.goal-grid-overlay,
+.goal-grid-modal-backdrop {
     position: fixed;
     inset: 0;
     background: rgba(0, 0, 0, 0.4);
     z-index: 999;
+}
+
+/* Centered modal (non-expanded state) */
+.goal-grid-modal {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 1000;
+    width: 1200px;
+    height: 700px;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    animation: goalGridExpandAnimation var(--transition-base) ease-out;
 }
 
 /* Expanded container - fullscreen */
@@ -3493,6 +3509,8 @@ a {
     grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
     gap: var(--spacing-2);
     margin-top: var(--spacing-2);
+    overflow-y: auto;
+    padding: var(--spacing-2);
 }
 
 /* Type label (Meta / Indicador) */

@@ -65,6 +65,14 @@ public partial class GoalGridView
         _isExpanded = !_isExpanded;
     }
 
+    private void HandleModalBackdropClick()
+    {
+        if (_isExpanded)
+            ToggleExpand();
+        else
+            CloseContainer();
+    }
+
     private async Task NavigateInto(GoalResponse goal)
     {
         _breadcrumb.Add(goal);
