@@ -1,6 +1,7 @@
 using System.Globalization;
 using Bud.Client.Services;
 using Bud.Shared.Contracts;
+using Bud.Shared.Contracts.Requests;
 using Bud.Shared.Contracts.Responses;
 using Microsoft.AspNetCore.Components;
 
@@ -19,12 +20,12 @@ public partial class GoalGridView
     [Parameter] public Guid? DeletingGoalId { get; set; }
     [Parameter] public EventCallback<(GoalResponse goal, IndicatorResponse indicator)> OnCheckinClick { get; set; }
     [Parameter] public EventCallback<(GoalResponse goal, IndicatorResponse indicator)> OnHistoryClick { get; set; }
-    [Parameter] public EventCallback<(GoalResponse goal, IndicatorResponse indicator)> OnEditIndicator { get; set; }
 
     private Guid? _openRootGoalId;
     private List<GoalResponse> _breadcrumb = [];
     private List<GoalResponse>? _currentGoals;
     private List<IndicatorResponse>? _currentIndicators;
+    private List<TaskResponse>? _currentTasks;
     private Dictionary<Guid, GoalProgressResponse> _currentGoalProgress = new();
     private Dictionary<Guid, IndicatorProgressResponse> _currentIndicatorProgress = new();
     private bool _isLoading;
@@ -33,6 +34,8 @@ public partial class GoalGridView
     private IReadOnlyList<GoalResponse> DisplayGoals => _currentGoals ?? [];
 
     private IReadOnlyList<IndicatorResponse> DisplayIndicators => _currentIndicators ?? [];
+
+    private IReadOnlyList<TaskResponse> DisplayTasks => _currentTasks ?? [];
 
     private GoalResponse? CurrentParent =>
         _breadcrumb.Count > 0 ? _breadcrumb[^1] : null;
@@ -51,6 +54,7 @@ public partial class GoalGridView
         _breadcrumb.Clear();
         _currentGoals = null;
         _currentIndicators = null;
+        _currentTasks = null;
         _currentGoalProgress.Clear();
         _currentIndicatorProgress.Clear();
         StateHasChanged();
@@ -78,6 +82,7 @@ public partial class GoalGridView
         _isLoading = true;
         _currentGoals = null;
         _currentIndicators = null;
+        _currentTasks = null;
         _currentGoalProgress.Clear();
         _currentIndicatorProgress.Clear();
         StateHasChanged();
@@ -86,14 +91,16 @@ public partial class GoalGridView
         {
             var childrenTask = Api.GetGoalChildrenAsync(goalId);
             var indicatorsTask = Api.GetGoalIndicatorsByGoalIdAsync(goalId);
+            var tasksTask = Api.GetTasksAsync(goalId);
 
-            await Task.WhenAll(childrenTask, indicatorsTask);
+            await Task.WhenAll(childrenTask, indicatorsTask, tasksTask);
 
             var children = childrenTask.Result;
             var indicators = indicatorsTask.Result;
 
             _currentGoals = children?.Items.ToList() ?? [];
             _currentIndicators = indicators?.Items.ToList() ?? [];
+            _currentTasks = tasksTask.Result?.Items.ToList() ?? [];
 
             var goalIds = _currentGoals.Select(g => g.Id).ToList();
             var indicatorIds = _currentIndicators.Select(i => i.Id).ToList();
@@ -164,11 +171,34 @@ public partial class GoalGridView
         }
     }
 
-    private async Task HandleEditIndicatorClick(IndicatorResponse indicator)
+    private async Task HandleTaskStateChange(TaskResponse task, TaskState newState)
     {
-        if (CurrentParent is not null)
+        try
         {
-            await OnEditIndicator.InvokeAsync((CurrentParent, indicator));
+            await Api.UpdateTaskAsync(task.Id, new PatchTaskRequest { State = newState });
+            if (_currentTasks is not null)
+            {
+                var idx = _currentTasks.FindIndex(t => t.Id == task.Id);
+                if (idx >= 0)
+                {
+                    _currentTasks[idx] = new TaskResponse
+                    {
+                        Id = task.Id,
+                        OrganizationId = task.OrganizationId,
+                        GoalId = task.GoalId,
+                        Name = task.Name,
+                        Description = task.Description,
+                        State = newState,
+                        DueDate = task.DueDate
+                    };
+                    _currentTasks = [.._currentTasks];
+                }
+            }
+            StateHasChanged();
+        }
+        catch (Exception)
+        {
+            // silent failure
         }
     }
 
@@ -212,5 +242,70 @@ public partial class GoalGridView
     private static int GetGoalItemCount(GoalProgressResponse? progress)
     {
         return progress?.TotalIndicators ?? 0;
+    }
+
+    private static bool IsDueDateActiveForTask(TaskResponse t) =>
+        t.DueDate.HasValue && t.State != TaskState.Done && t.State != TaskState.Archived;
+
+    private static string GetTaskGridStatusClass(TaskResponse t) => t.State switch
+    {
+        TaskState.ToDo => "task-todo",
+        TaskState.Doing => "task-doing",
+        TaskState.Done => "task-done-state",
+        TaskState.Archived => "task-archived",
+        _ => "task-todo"
+    };
+
+    private static string GetTaskGridStatusLabel(TaskResponse t) => t.State switch
+    {
+        TaskState.ToDo => "A fazer",
+        TaskState.Doing => "Fazendo",
+        TaskState.Done => "Feito",
+        TaskState.Archived => "Arquivado",
+        _ => "A fazer"
+    };
+
+    private static string GetNextTaskStateLabel(TaskResponse t) => t.State switch
+    {
+        TaskState.ToDo => "Iniciar",
+        TaskState.Doing => "Concluir",
+        TaskState.Done => "Reabrir",
+        TaskState.Archived => "Reabrir",
+        _ => "Avançar"
+    };
+
+    private static TaskState GetNextTaskState(TaskResponse t) => t.State switch
+    {
+        TaskState.ToDo => TaskState.Doing,
+        TaskState.Doing => TaskState.Done,
+        TaskState.Done => TaskState.ToDo,
+        TaskState.Archived => TaskState.ToDo,
+        _ => TaskState.ToDo
+    };
+
+    private static string GetTaskDueDateRowClass(TaskResponse t)
+    {
+        if (!IsDueDateActiveForTask(t)) return "";
+        var days = (t.DueDate!.Value.Date - DateTime.Today).TotalDays;
+        if (days < 0)  return "task-row-overdue";
+        if (days <= 7) return "task-row-warning";
+        return "";
+    }
+
+    private static string GetTaskDueDateChipClass(TaskResponse t)
+    {
+        if (!IsDueDateActiveForTask(t)) return "";
+        var days = (t.DueDate!.Value.Date - DateTime.Today).TotalDays;
+        if (days < 0)  return "task-due-overdue";
+        if (days <= 7) return "task-due-warning";
+        return "";
+    }
+
+    private static string FormatGridTaskDueDate(TaskResponse t)
+    {
+        var days = (t.DueDate!.Value.Date - DateTime.Today).TotalDays;
+        if (days < 0)  return $"Venceu em {t.DueDate.Value:dd/MM}";
+        if (days == 0) return "Vence hoje";
+        return $"Vence em {t.DueDate.Value:dd/MM}";
     }
 }

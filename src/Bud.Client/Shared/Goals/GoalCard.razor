@@ -121,9 +121,22 @@
                     }
                 }
 
-                if (directIndicators.Count == 0 && (ChildGoals == null || ChildGoals.Count == 0))
+                @* Tarefas diretas da meta *@
+                @if (Tasks != null && Tasks.Count > 0)
                 {
-                    <p class="muted">Nenhum indicador ou meta associada a esta missão.</p>
+                    <div class="goal-tasks-section">
+                        @foreach (var task in Tasks)
+                        {
+                            <TaskRow Task="task"
+                                     ShowDeleteButton="false"
+                                     OnStateChange="async s => await OnTaskStateChange.InvokeAsync((task, s))" />
+                        }
+                    </div>
+                }
+
+                if (directIndicators.Count == 0 && (ChildGoals == null || ChildGoals.Count == 0) && (Tasks == null || Tasks.Count == 0))
+                {
+                    <p class="muted">Nenhum indicador, tarefa ou meta associada a esta missão.</p>
                 }
             }
         </div>
@@ -136,12 +149,14 @@
     [Parameter] public bool IsExpanded { get; set; }
     [Parameter] public bool IsDeleting { get; set; }
     [Parameter] public List<IndicatorResponse>? Indicators { get; set; }
+    [Parameter] public List<TaskResponse>? Tasks { get; set; }
     [Parameter] public List<GoalResponse>? ChildGoals { get; set; }
     [Parameter] public Dictionary<Guid, IndicatorProgressResponse> IndicatorProgressCache { get; set; } = new();
     [Parameter] public Dictionary<Guid, GoalProgressResponse> GoalProgressCache { get; set; } = new();
     [Parameter] public HashSet<Guid> ExpandedGoals { get; set; } = new();
     [Parameter] public EventCallback OnToggleExpand { get; set; }
     [Parameter] public EventCallback OnEdit { get; set; }
+    [Parameter] public EventCallback<(TaskResponse task, TaskState newState)> OnTaskStateChange { get; set; }
     [Parameter] public EventCallback OnDeleteClick { get; set; }
     [Parameter] public EventCallback<Guid> OnToggleGoalExpand { get; set; }
     [Parameter] public EventCallback<IndicatorResponse> OnCheckinClick { get; set; }

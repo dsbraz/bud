@@ -33,6 +33,7 @@ public sealed class Goal : ITenantEntity, IAggregateRoot, IHasDomainEvents
     public Collaborator? Collaborator { get; set; }
 
     public ICollection<Indicator> Indicators { get; set; } = [];
+    public ICollection<GoalTask> Tasks { get; set; } = [];
 
     [NotMapped]
     public IReadOnlyCollection<IDomainEvent> DomainEvents => _domainEvents.AsReadOnly();

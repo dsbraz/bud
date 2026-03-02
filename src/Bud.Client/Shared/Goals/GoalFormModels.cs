@@ -2,9 +2,16 @@ namespace Bud.Client.Shared.Goals;
 
 public enum WizardMode { Goal, Template }
 
-public enum InlineFormMode { None, NewIndicator, EditIndicator, NewGoal, EditGoal }
+public enum InlineFormMode { None, NewIndicator, EditIndicator, NewGoal, EditGoal, NewTask, EditTask }
 
 public sealed record ScopeOption(string Id, string Name);
+
+public sealed record TempTask(
+    Guid? OriginalId,
+    string Name,
+    string? Description,
+    TaskState State,
+    DateTime? DueDate = null);
 
 public sealed record TempIndicator(
     Guid? OriginalId,
@@ -30,6 +37,7 @@ public sealed record TempGoal(
     string? StatusValue = null)
 {
     public List<TempIndicator> Indicators { get; init; } = [];
+    public List<TempTask> Tasks { get; init; } = [];
     public List<TempGoal> Children { get; init; } = [];
 }
 
@@ -44,6 +52,7 @@ public sealed record GoalFormModel
     public string? ScopeId { get; init; }
     public string? StatusValue { get; init; }
     public List<TempIndicator> Indicators { get; init; } = [];
+    public List<TempTask> Tasks { get; init; } = [];
     public List<TempGoal> Children { get; init; } = [];
 }
 
@@ -58,7 +67,9 @@ public sealed record GoalFormResult
     public string? ScopeId { get; init; }
     public string? StatusValue { get; init; }
     public required List<TempIndicator> Indicators { get; init; }
+    public required List<TempTask> Tasks { get; init; }
     public required List<TempGoal> Children { get; init; }
     public HashSet<Guid> DeletedIndicatorIds { get; init; } = [];
+    public HashSet<Guid> DeletedTaskIds { get; init; } = [];
     public HashSet<Guid> DeletedGoalIds { get; init; } = [];
 }

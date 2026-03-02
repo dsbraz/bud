@@ -11,4 +11,6 @@ public sealed class GoalProgressSnapshot
     public int OutdatedIndicators { get; set; }
     public int DirectChildren { get; set; }
     public int DirectIndicators { get; set; }
+    public int TodoTasks { get; set; }
+    public int DoingTasks { get; set; }
 }

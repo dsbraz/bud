@@ -116,6 +116,9 @@
                             <button type="button" class="button secondary" @onclick="OpenInlineIndicatorForm">
                                 <span>+ Indicador</span>
                             </button>
+                            <button type="button" class="button secondary goal-form-action-task" @onclick="OpenInlineTaskForm">
+                                <span>+ Tarefa</span>
+                            </button>
                             <button type="button" class="button secondary" @onclick="OpenInlineGoalForm">
                                 <span>+ Meta</span>
                             </button>
@@ -132,6 +135,32 @@
                                              OnCancel="CloseInlineForm"
                                              SaveLabel="@(_inlineFormMode == InlineFormMode.EditIndicator ? "Salvar alterações" : "Salvar indicador")"
                                              CancelLabel="Cancelar" />
+                    </div>
+                }
+
+                @if (_inlineFormMode == InlineFormMode.NewTask || _inlineFormMode == InlineFormMode.EditTask)
+                {
+                    <div class="goal-form-inline goal-form-inline-task">
+                        <input type="text" class="goal-inline-title-input" @bind="_inlineTaskName" @bind:event="oninput" placeholder="Nome da tarefa" maxlength="200" />
+                        <input type="text" class="goal-inline-subtitle-input" @bind="_inlineTaskDescription" @bind:event="oninput" placeholder="Descrição (opcional)" />
+                        <div class="goal-form-compact-row" style="margin-top: var(--spacing-2);">
+                            <select class="input" @bind="_inlineTaskState">
+                                <option value="@TaskState.ToDo">A fazer</option>
+                                <option value="@TaskState.Doing">Fazendo</option>
+                                <option value="@TaskState.Done">Feito</option>
+                                <option value="@TaskState.Archived">Arquivado</option>
+                            </select>
+                            <input type="date" class="goal-inline-date-input"
+                                   value="@(_inlineTaskDueDate?.ToString("yyyy-MM-dd") ?? "")"
+                                   @onchange="e => _inlineTaskDueDate = string.IsNullOrEmpty(e.Value?.ToString()) ? null : DateTime.Parse(e.Value!.ToString()!)"
+                                   title="Prazo (opcional)" />
+                        </div>
+                        <div class="form-actions" style="margin-top: var(--spacing-3);">
+                            <button type="button" class="button tertiary" @onclick="CloseInlineForm">Cancelar</button>
+                            <button type="button" class="button primary" @onclick="HandleInlineTaskSave">
+                                @(_inlineFormMode == InlineFormMode.EditTask ? "Salvar tarefa" : "Criar tarefa")
+                            </button>
+                        </div>
                     </div>
                 }
 
@@ -199,9 +228,12 @@
                 }
 
                 <GoalFormTree Indicators="CurrentIndicators"
+                              Tasks="CurrentTasks"
                               Children="CurrentChildren"
                               OnEditIndicator="OpenEditInlineIndicator"
                               OnDeleteIndicator="DeleteIndicatorByIndex"
+                              OnEditTask="OpenEditInlineTask"
+                              OnDeleteTask="DeleteTaskByIndex"
                               OnNavigateInto="NavigateInto"
                               OnEditGoal="OpenEditInlineGoal"
                               OnDeleteGoal="DeleteSubgoalByIndex" />

@@ -55,5 +55,10 @@ public sealed class GoalConfiguration : IEntityTypeConfiguration<Goal>
             .WithOne(i => i.Goal)
             .HasForeignKey(i => i.GoalId)
             .OnDelete(DeleteBehavior.Cascade);
+
+        builder.HasMany(g => g.Tasks)
+            .WithOne(t => t.Goal)
+            .HasForeignKey(t => t.GoalId)
+            .OnDelete(DeleteBehavior.Cascade);
     }
 }

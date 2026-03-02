@@ -25,6 +25,7 @@ public sealed class LoggerEventIdRangesTests
             ["Indicators"] = (4050, 4059),
             ["Checkins"] = (4060, 4069),
             ["Templates"] = (4070, 4079),
+            ["Tasks"] = (4080, 4089),
             ["Sessions"] = (4090, 4099),
             ["Notifications"] = (4090, 4099)
         };

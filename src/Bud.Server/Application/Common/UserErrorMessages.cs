@@ -62,4 +62,8 @@ internal static class UserErrorMessages
     public const string IndicatorProgressCalculationFailed = "Falha ao calcular progresso do indicador.";
     public const string GoalProgressCalculationFailed = "Falha ao calcular progresso das metas.";
     public const string ListOrganizationsFailed = "Falha ao carregar organizações.";
+    public const string TaskNotFound = "Tarefa não encontrada.";
+    public const string TaskCreateForbidden = "Você não tem permissão para criar tarefas nesta meta.";
+    public const string TaskUpdateForbidden = "Você não tem permissão para atualizar esta tarefa.";
+    public const string TaskDeleteForbidden = "Você não tem permissão para excluir esta tarefa.";
 }

@@ -32,6 +32,7 @@ public partial class GoalFormModal
 
     // Tree data (root level)
     private List<TempIndicator> tempIndicators = [];
+    private List<TempTask> tempTasks = [];
     private List<TempGoal> tempGoals = [];
 
     // Navigation stack: indices into children at each depth
@@ -41,6 +42,13 @@ public partial class GoalFormModal
     private InlineFormMode _inlineFormMode;
     private IndicatorFormFields.IndicatorFormModel _inlineIndicatorModel = new();
     private int? _editingInlineIndicatorIndex;
+
+    // Inline task form state
+    private string _inlineTaskName = "";
+    private string? _inlineTaskDescription;
+    private TaskState _inlineTaskState = TaskState.ToDo;
+    private DateTime? _inlineTaskDueDate;
+    private int? _editingInlineTaskIndex;
 
     // Inline goal form state
     private string _inlineGoalName = "";
@@ -57,6 +65,7 @@ public partial class GoalFormModal
 
     // Edit tracking
     private HashSet<Guid> deletedIndicatorIds = [];
+    private HashSet<Guid> deletedTaskIds = [];
     private HashSet<Guid> deletedGoalIds = [];
 
     private bool wasOpen;
@@ -72,6 +81,16 @@ public partial class GoalFormModal
             if (IsAtRoot) return tempIndicators;
             var goal = ResolveGoalAtPath();
             return goal.Indicators;
+        }
+    }
+
+    private List<TempTask> CurrentTasks
+    {
+        get
+        {
+            if (IsAtRoot) return tempTasks;
+            var goal = ResolveGoalAtPath();
+            return goal.Tasks;
         }
     }
 
@@ -107,10 +126,12 @@ public partial class GoalFormModal
         showPeriodSelector = false;
         showStatusSelector = false;
         tempIndicators = model?.Indicators?.ToList() ?? [];
+        tempTasks = model?.Tasks?.ToList() ?? [];
         tempGoals = model?.Children?.ToList() ?? [];
         _navigationPath = [];
         CloseInlineForm();
         deletedIndicatorIds = [];
+        deletedTaskIds = [];
         deletedGoalIds = [];
     }
 
@@ -224,8 +245,10 @@ public partial class GoalFormModal
         ScopeId = scopeId,
         StatusValue = statusValue,
         Indicators = tempIndicators.ToList(),
+        Tasks = tempTasks.ToList(),
         Children = tempGoals.ToList(),
         DeletedIndicatorIds = new HashSet<Guid>(deletedIndicatorIds),
+        DeletedTaskIds = new HashSet<Guid>(deletedTaskIds),
         DeletedGoalIds = new HashSet<Guid>(deletedGoalIds)
     };
 
@@ -313,6 +336,60 @@ public partial class GoalFormModal
         {
             indicators.Add(indicator);
         }
+
+        CloseInlineForm();
+    }
+
+    // ---- Inline Task Form ----
+
+    private void OpenInlineTaskForm()
+    {
+        _inlineFormMode = InlineFormMode.NewTask;
+        _inlineTaskName = "";
+        _inlineTaskDescription = null;
+        _inlineTaskState = TaskState.ToDo;
+        _inlineTaskDueDate = null;
+        _editingInlineTaskIndex = null;
+    }
+
+    private void OpenEditInlineTask(int index)
+    {
+        var tasks = CurrentTasks;
+        if (index < 0 || index >= tasks.Count) return;
+
+        var existing = tasks[index];
+        _inlineFormMode = InlineFormMode.EditTask;
+        _editingInlineTaskIndex = index;
+        _inlineTaskName = existing.Name;
+        _inlineTaskDescription = existing.Description;
+        _inlineTaskState = existing.State;
+        _inlineTaskDueDate = existing.DueDate;
+    }
+
+    private void HandleInlineTaskSave()
+    {
+        if (string.IsNullOrWhiteSpace(_inlineTaskName))
+        {
+            ToastService.ShowError("Erro ao salvar tarefa", "Informe o nome da tarefa.");
+            return;
+        }
+
+        var tasks = CurrentTasks;
+        var originalId = _editingInlineTaskIndex.HasValue && _editingInlineTaskIndex.Value < tasks.Count
+            ? tasks[_editingInlineTaskIndex.Value].OriginalId
+            : null;
+
+        var task = new TempTask(
+            OriginalId: originalId,
+            Name: _inlineTaskName.Trim(),
+            Description: string.IsNullOrWhiteSpace(_inlineTaskDescription) ? null : _inlineTaskDescription.Trim(),
+            State: _inlineTaskState,
+            DueDate: _inlineTaskDueDate);
+
+        if (_editingInlineTaskIndex.HasValue && _editingInlineTaskIndex.Value < tasks.Count)
+            tasks[_editingInlineTaskIndex.Value] = task;
+        else
+            tasks.Add(task);
 
         CloseInlineForm();
     }
@@ -441,6 +518,11 @@ public partial class GoalFormModal
         _inlineFormMode = InlineFormMode.None;
         _inlineIndicatorModel = new IndicatorFormFields.IndicatorFormModel();
         _editingInlineIndicatorIndex = null;
+        _inlineTaskName = "";
+        _inlineTaskDescription = null;
+        _inlineTaskState = TaskState.ToDo;
+        _inlineTaskDueDate = null;
+        _editingInlineTaskIndex = null;
         _inlineGoalName = "";
         _inlineGoalDescription = null;
         _inlineGoalDimension = null;
@@ -466,6 +548,18 @@ public partial class GoalFormModal
             deletedIndicatorIds.Add(indicator.OriginalId.Value);
         }
         indicators.RemoveAt(index);
+    }
+
+    private void DeleteTaskByIndex(int index)
+    {
+        var tasks = CurrentTasks;
+        if (index < 0 || index >= tasks.Count) return;
+        var task = tasks[index];
+        if (IsEditMode && task.OriginalId.HasValue)
+        {
+            deletedTaskIds.Add(task.OriginalId.Value);
+        }
+        tasks.RemoveAt(index);
     }
 
     private void DeleteSubgoalByIndex(int index)

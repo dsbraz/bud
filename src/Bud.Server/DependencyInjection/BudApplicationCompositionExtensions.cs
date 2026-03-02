@@ -1,6 +1,7 @@
 using Bud.Server.Application.UseCases.Collaborators;
 using Bud.Server.Application.UseCases.Me;
 using Bud.Server.Application.UseCases.Goals;
+using Bud.Server.Application.UseCases.Tasks;
 using Bud.Server.Application.UseCases.Indicators;
 using Bud.Server.Application.UseCases.Checkins;
 using Bud.Server.Application.UseCases.Templates;
@@ -76,6 +77,12 @@ public static class BudApplicationCompositionExtensions
         services.AddScoped<ListGoalChildren>();
         services.AddScoped<ListGoalIndicators>();
         services.AddScoped<ListGoalProgress>();
+
+        services.AddScoped<ITaskRepository, TaskRepository>();
+        services.AddScoped<CreateTask>();
+        services.AddScoped<PatchTask>();
+        services.AddScoped<DeleteTask>();
+        services.AddScoped<ListTasks>();
 
         services.AddScoped<IIndicatorRepository, IndicatorRepository>();
         services.AddScoped<CreateIndicator>();

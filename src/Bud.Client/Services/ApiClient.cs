@@ -801,6 +801,45 @@ public sealed class ApiClient
         }
     }
 
+    public async Task<PagedResult<TaskResponse>?> GetTasksAsync(Guid goalId, int page = 1, int pageSize = 100)
+    {
+        (page, pageSize) = NormalizePagination(page, pageSize);
+        var url = $"api/goals/{goalId}/tasks?page={page}&pageSize={pageSize}";
+        return await GetSafeAsync<PagedResult<TaskResponse>>(url);
+    }
+
+    public async Task<TaskResponse?> CreateTaskAsync(Guid goalId, CreateTaskRequest request)
+    {
+        var response = await _http.PostAsJsonAsync($"api/goals/{goalId}/tasks", request);
+        if (!response.IsSuccessStatusCode)
+        {
+            var errorMessage = await ExtractErrorMessageAsync(response);
+            throw new HttpRequestException(errorMessage);
+        }
+        return await response.Content.ReadFromJsonAsync<TaskResponse>();
+    }
+
+    public async Task<TaskResponse?> UpdateTaskAsync(Guid id, PatchTaskRequest request)
+    {
+        var response = await _http.PatchAsJsonAsync($"api/tasks/{id}", request);
+        if (!response.IsSuccessStatusCode)
+        {
+            var errorMessage = await ExtractErrorMessageAsync(response);
+            throw new HttpRequestException(errorMessage);
+        }
+        return await response.Content.ReadFromJsonAsync<TaskResponse>();
+    }
+
+    public async Task DeleteTaskAsync(Guid id)
+    {
+        var response = await _http.DeleteAsync($"api/tasks/{id}");
+        if (!response.IsSuccessStatusCode)
+        {
+            var errorMessage = await ExtractErrorMessageAsync(response);
+            throw new HttpRequestException(errorMessage);
+        }
+    }
+
     private static (int Page, int PageSize) NormalizePagination(int page, int pageSize)
     {
         var normalizedPage = Math.Max(1, page);

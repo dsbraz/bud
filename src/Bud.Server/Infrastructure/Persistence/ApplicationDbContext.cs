@@ -35,6 +35,7 @@ public sealed class ApplicationDbContext : DbContext
     public DbSet<TemplateIndicator> TemplateIndicators => Set<TemplateIndicator>();
     public DbSet<CollaboratorAccessLog> CollaboratorAccessLogs => Set<CollaboratorAccessLog>();
     public DbSet<Notification> Notifications => Set<Notification>();
+    public DbSet<GoalTask> GoalTasks => Set<GoalTask>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -126,6 +127,13 @@ public sealed class ApplicationDbContext : DbContext
                 !_applyTenantFilter ||
                 (_isGlobalAdmin && _tenantId == null) ||
                 (_tenantId != null && n.OrganizationId == _tenantId)
+            );
+
+        modelBuilder.Entity<GoalTask>()
+            .HasQueryFilter(gt =>
+                !_applyTenantFilter ||
+                (_isGlobalAdmin && _tenantId == null) ||
+                (_tenantId != null && gt.OrganizationId == _tenantId)
             );
     }
 }

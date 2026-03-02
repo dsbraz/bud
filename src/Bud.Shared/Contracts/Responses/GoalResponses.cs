@@ -21,6 +21,7 @@ public sealed class GoalResponse
     public CollaboratorResponse? Collaborator { get; set; }
     public List<GoalResponse> Children { get; set; } = [];
     public List<IndicatorResponse> Indicators { get; set; } = [];
+    public List<TaskResponse> Tasks { get; set; } = [];
 }
 
 public sealed class GoalProgressResponse
@@ -34,4 +35,6 @@ public sealed class GoalProgressResponse
     public int OutdatedIndicators { get; set; }
     public int DirectChildren { get; set; }
     public int DirectIndicators { get; set; }
+    public int TodoTasks { get; set; }
+    public int DoingTasks { get; set; }
 }

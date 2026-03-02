@@ -2,6 +2,7 @@ using Bud.Server.Infrastructure.Persistence;
 using Bud.Server.Application.Ports;
 using Bud.Server.Application.ReadModels;
 using Bud.Server.Domain.Model;
+using Bud.Shared.Contracts;
 using Microsoft.EntityFrameworkCore;
 using Bud.Server.Application.Common;
 
@@ -30,6 +31,21 @@ public sealed class GoalProgressService(ApplicationDbContext dbContext) : IGoalP
             .Include(g => g.Indicators)
             .Where(g => allGoalIds.Contains(g.Id))
             .ToListAsync(ct);
+
+        // Fetch task counts per goal for the requested goal IDs
+        var taskCounts = await dbContext.GoalTasks
+            .AsNoTracking()
+            .Where(t => goalIds.Contains(t.GoalId))
+            .GroupBy(t => new { t.GoalId, t.State })
+            .Select(g => new { g.Key.GoalId, g.Key.State, Count = g.Count() })
+            .ToListAsync(ct);
+
+        var todoTasksByGoal = taskCounts
+            .Where(t => t.State == TaskState.ToDo)
+            .ToDictionary(t => t.GoalId, t => t.Count);
+        var doingTasksByGoal = taskCounts
+            .Where(t => t.State == TaskState.Doing)
+            .ToDictionary(t => t.GoalId, t => t.Count);
 
         var goalsById = goals.ToDictionary(g => g.Id);
 
@@ -132,7 +148,9 @@ public sealed class GoalProgressService(ApplicationDbContext dbContext) : IGoalP
                 IndicatorsWithCheckins = indicatorsWithCheckins,
                 OutdatedIndicators = outdatedIndicators,
                 DirectChildren = directChildren,
-                DirectIndicators = directIndicators
+                DirectIndicators = directIndicators,
+                TodoTasks = todoTasksByGoal.GetValueOrDefault(goalId, 0),
+                DoingTasks = doingTasksByGoal.GetValueOrDefault(goalId, 0)
             });
         }
 

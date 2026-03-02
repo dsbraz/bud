@@ -16,7 +16,9 @@ internal static class ProgressContractMapper
             IndicatorsWithCheckins = source.IndicatorsWithCheckins,
             OutdatedIndicators = source.OutdatedIndicators,
             DirectChildren = source.DirectChildren,
-            DirectIndicators = source.DirectIndicators
+            DirectIndicators = source.DirectIndicators,
+            TodoTasks = source.TodoTasks,
+            DoingTasks = source.DoingTasks
         };
     }
 

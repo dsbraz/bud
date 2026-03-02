@@ -1,4 +1,5 @@
 using Bud.Server.Application.UseCases.Goals;
+using Bud.Server.Application.UseCases.Tasks;
 using Bud.Server.Authorization;
 using Bud.Shared.Contracts;
 using Bud.Shared.Contracts.Requests;
@@ -23,6 +24,7 @@ public sealed class GoalsController(
     ListGoalProgress listGoalProgress,
     ListGoalIndicators listGoalIndicators,
     ListGoalChildren listGoalChildren,
+    ListTasks listTasks,
     IValidator<CreateGoalRequest> createValidator,
     IValidator<PatchGoalRequest> updateValidator) : ApiControllerBase
 {
@@ -211,6 +213,32 @@ public sealed class GoalsController(
         }
 
         var result = await listGoalChildren.ExecuteAsync(id, page, pageSize, cancellationToken);
+        return FromResultOk(result);
+    }
+
+    /// <summary>
+    /// Lista tarefas de uma meta.
+    /// </summary>
+    /// <response code="200">Tarefas retornadas com sucesso.</response>
+    /// <response code="400">Parâmetros de paginação inválidos.</response>
+    /// <response code="404">Meta não encontrada.</response>
+    [HttpGet("{id:guid}/tasks")]
+    [ProducesResponseType(typeof(PagedResult<TaskResponse>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<PagedResult<TaskResponse>>> GetTasks(
+        Guid id,
+        [FromQuery] int page = 1,
+        [FromQuery] int pageSize = 50,
+        CancellationToken cancellationToken = default)
+    {
+        var paginationValidation = ValidatePagination(page, pageSize);
+        if (paginationValidation is not null)
+        {
+            return paginationValidation;
+        }
+
+        var result = await listTasks.ExecuteAsync(id, page, pageSize, cancellationToken);
         return FromResultOk(result);
     }
 }

@@ -2,6 +2,7 @@ using Bud.Server.Application.ReadModels;
 using Bud.Server.Application.Ports;
 using Bud.Server.Infrastructure.Persistence;
 using Bud.Server.Domain.Model;
+using Bud.Shared.Contracts;
 using Microsoft.EntityFrameworkCore;
 
 namespace Bud.Server.Infrastructure.Repositories;
@@ -227,30 +228,49 @@ public sealed class DashboardReadStore(ApplicationDbContext dbContext) : IMyDash
             .Select(i => i.Id)
             .ToListAsync(ct);
 
-        if (indicatorIdsForActiveGoals.Count == 0)
+        // Goals updated via checkins this week
+        var thisWeekUpdatedViaCheckins = indicatorIdsForActiveGoals.Count > 0
+            ? await dbContext.Checkins
+                .AsNoTracking()
+                .Where(c => indicatorIdsForActiveGoals.Contains(c.IndicatorId)
+                    && c.CheckinDate >= thisWeekStart)
+                .Select(c => c.Indicator.GoalId)
+                .Distinct()
+                .ToListAsync(ct)
+            : new List<Guid>();
+
+        // Goals updated via Doing tasks (considered "atualizada")
+        var goalsWithDoingTasks = await dbContext.GoalTasks
+            .AsNoTracking()
+            .Where(t => activeGoalIds.Contains(t.GoalId) && t.State == TaskState.Doing)
+            .Select(t => t.GoalId)
+            .Distinct()
+            .ToListAsync(ct);
+
+        var thisWeekUpdatedGoalIds = thisWeekUpdatedViaCheckins
+            .Union(goalsWithDoingTasks)
+            .Intersect(activeGoalIds)
+            .ToHashSet();
+
+        // Last week: only checkin-based (tasks are a current snapshot, not historical)
+        var lastWeekUpdated = indicatorIdsForActiveGoals.Count > 0
+            ? await dbContext.Checkins
+                .AsNoTracking()
+                .Where(c => indicatorIdsForActiveGoals.Contains(c.IndicatorId)
+                    && c.CheckinDate >= lastWeekStart
+                    && c.CheckinDate < thisWeekStart)
+                .Select(c => c.Indicator.GoalId)
+                .Distinct()
+                .CountAsync(ct)
+            : 0;
+
+        var totalActive = activeGoalIds.Count;
+        if (totalActive == 0)
         {
             return PerformanceIndicator.Zero();
         }
 
-        var thisWeekUpdated = await dbContext.Checkins
-            .AsNoTracking()
-            .Where(c => indicatorIdsForActiveGoals.Contains(c.IndicatorId)
-                && c.CheckinDate >= thisWeekStart)
-            .Select(c => c.Indicator.GoalId)
-            .Distinct()
-            .CountAsync(ct);
-
-        var lastWeekUpdated = await dbContext.Checkins
-            .AsNoTracking()
-            .Where(c => indicatorIdsForActiveGoals.Contains(c.IndicatorId)
-                && c.CheckinDate >= lastWeekStart
-                && c.CheckinDate < thisWeekStart)
-            .Select(c => c.Indicator.GoalId)
-            .Distinct()
-            .CountAsync(ct);
-
-        var totalActive = activeGoalIds.Count;
-        var currentPct = (int)Math.Round(thisWeekUpdated * 100.0 / totalActive);
+        var currentPct = (int)Math.Round(thisWeekUpdatedGoalIds.Count * 100.0 / totalActive);
         var previousPct = (int)Math.Round(lastWeekUpdated * 100.0 / totalActive);
 
         return PerformanceIndicator.Create(currentPct, currentPct - previousPct);
@@ -339,8 +359,40 @@ public sealed class DashboardReadStore(ApplicationDbContext dbContext) : IMyDash
             }
         }
 
+        // Add active GoalTasks (ToDo and Doing) from accessible goals
+        var myGoalIds = myGoals.Select(g => g.Id).ToList();
+        if (myGoalIds.Count > 0)
+        {
+            var activeTasks = await dbContext.GoalTasks
+                .AsNoTracking()
+                .Where(t => myGoalIds.Contains(t.GoalId)
+                    && (t.State == TaskState.ToDo || t.State == TaskState.Doing))
+                .ToListAsync(ct);
+
+            var goalNameById = myGoals.ToDictionary(g => g.Id, g => g.Name);
+            foreach (var goalTask in activeTasks)
+            {
+                var goalName = goalNameById.GetValueOrDefault(goalTask.GoalId, string.Empty);
+                tasks.Add(new PendingTaskSnapshot
+                {
+                    ReferenceId = goalTask.Id,
+                    TaskType = "goal_task",
+                    Title = goalTask.Name,
+                    Description = $"Meta: {goalName} — {GetTaskStateLabel(goalTask.State)}",
+                    NavigateUrl = $"/goals/{goalTask.GoalId}"
+                });
+            }
+        }
+
         return tasks;
     }
+
+    private static string GetTaskStateLabel(TaskState state) => state switch
+    {
+        TaskState.ToDo => "A fazer",
+        TaskState.Doing => "Em andamento",
+        _ => string.Empty
+    };
 
     private static string GetInitials(string fullName)
     {

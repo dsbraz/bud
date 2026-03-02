@@ -30,6 +30,7 @@ public partial class Goals
     private HashSet<Guid> _expandedGoals = new();
     private Dictionary<Guid, List<IndicatorResponse>> _goalIndicatorsCache = new();
     private Dictionary<Guid, IndicatorProgressResponse> _indicatorProgressCache = new();
+    private Dictionary<Guid, List<TaskResponse>> _goalTasksCache = new();
     private Dictionary<Guid, List<GoalResponse>> _goalChildrenCache = new();
     private Dictionary<Guid, GoalProgressResponse> _childGoalProgressCache = new();
     private HashSet<Guid> _expandedChildGoals = new();
@@ -56,11 +57,6 @@ public partial class Goals
     private GoalResponse? _historyGoal;
     private List<CheckinResponse> _indicatorCheckins = new();
     private bool _isLoadingCheckins;
-
-    // Indicator edit modal state
-    private bool _isIndicatorEditModalOpen;
-    private IndicatorResponse? _editingIndicator;
-    private GoalResponse? _editingIndicatorGoal;
 
     // Delete confirmation state
     private Guid? _deletingGoalId;
@@ -484,6 +480,7 @@ public partial class Goals
                 {
                     var failedCount = 0;
                     failedCount += await CreateIndicatorsForGoalAsync(createdGoal.Id, result.Indicators);
+                    failedCount += await CreateTasksForGoalAsync(createdGoal.Id, result.Tasks);
                     failedCount += await CreateChildrenRecursiveAsync(createdGoal, result.Children);
                     ShowPartialFailureIfAny(failedCount);
                 }
@@ -524,6 +521,7 @@ public partial class Goals
                 if (created is not null)
                 {
                     failedCount += await CreateIndicatorsForGoalAsync(created.Id, child.Indicators);
+                    failedCount += await CreateTasksForGoalAsync(created.Id, child.Tasks);
                     failedCount += await CreateChildrenRecursiveAsync(created, child.Children);
                 }
             }
@@ -560,6 +558,31 @@ public partial class Goals
             }
         }
 
+        return failedCount;
+    }
+
+    private async Task<int> CreateTasksForGoalAsync(Guid goalId, List<TempTask> tasks)
+    {
+        var failedCount = 0;
+        foreach (var tempTask in tasks)
+        {
+            try
+            {
+                await Api.CreateTaskAsync(goalId, new CreateTaskRequest
+                {
+                    GoalId = goalId,
+                    Name = tempTask.Name,
+                    Description = tempTask.Description,
+                    State = tempTask.State,
+                    DueDate = tempTask.DueDate
+                });
+            }
+            catch (Exception ex)
+            {
+                Console.Error.WriteLine($"Erro ao criar tarefa '{tempTask.Name}' para meta {goalId}: {ex.Message}");
+                failedCount++;
+            }
+        }
         return failedCount;
     }
 
@@ -624,12 +647,13 @@ public partial class Goals
     {
         var indicatorsTask = Api.GetGoalIndicatorsByGoalIdAsync(goalId);
         var childGoalsTask = Api.GetGoalChildrenAsync(goalId);
-        await Task.WhenAll(indicatorsTask, childGoalsTask);
+        var tasksTask = Api.GetTasksAsync(goalId);
+        await Task.WhenAll(indicatorsTask, childGoalsTask, tasksTask);
 
         var indicators = indicatorsTask.Result?.Items.ToList() ?? [];
         var childGoals = childGoalsTask.Result?.Items.ToList() ?? [];
-
         _goalIndicatorsCache[goalId] = indicators;
+        _goalTasksCache[goalId] = tasksTask.Result?.Items.ToList() ?? [];
         _goalChildrenCache[goalId] = childGoals;
 
         return (indicators, childGoals);
@@ -669,6 +693,40 @@ public partial class Goals
             {
                 _indicatorProgressCache[progress.IndicatorId] = progress;
             }
+        }
+    }
+
+    // ---- Task State Change ----
+
+    private async Task HandleTaskStateChange(Guid goalId, TaskResponse task, TaskState newState)
+    {
+        try
+        {
+            await Api.UpdateTaskAsync(task.Id, new PatchTaskRequest { State = newState });
+            if (_goalTasksCache.TryGetValue(goalId, out var tasks))
+            {
+                var idx = tasks.FindIndex(t => t.Id == task.Id);
+                if (idx >= 0)
+                {
+                    tasks[idx] = new TaskResponse
+                    {
+                        Id = task.Id,
+                        OrganizationId = task.OrganizationId,
+                        GoalId = task.GoalId,
+                        Name = task.Name,
+                        Description = task.Description,
+                        State = newState,
+                        DueDate = task.DueDate
+                    };
+                    _goalTasksCache[goalId] = [..tasks];
+                }
+            }
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"Erro ao atualizar tarefa {task.Id}: {ex.Message}");
+            ToastService.ShowError("Erro ao atualizar tarefa", "Não foi possível atualizar o estado da tarefa.");
         }
     }
 
@@ -756,77 +814,6 @@ public partial class Goals
         return _goalProgress.Values.Sum(p => p.OutdatedIndicators);
     }
 
-    // ---- Indicator Edit Modal Methods ----
-
-    private void OpenEditIndicatorModal(GoalResponse goal, IndicatorResponse indicator)
-    {
-        _editingIndicatorGoal = goal;
-        _editingIndicator = indicator;
-        _isIndicatorEditModalOpen = true;
-    }
-
-    private void CloseIndicatorEditModal()
-    {
-        _isIndicatorEditModalOpen = false;
-        _editingIndicator = null;
-        _editingIndicatorGoal = null;
-    }
-
-    private TempIndicator? GetEditingIndicatorModel()
-    {
-        if (_editingIndicator is null)
-        {
-            return null;
-        }
-
-        return new TempIndicator(
-            OriginalId: _editingIndicator.Id,
-            Name: _editingIndicator.Name,
-            Type: _editingIndicator.Type.ToString(),
-            Details: IndicatorDisplayHelper.GetTargetLabel(_editingIndicator),
-            QuantitativeType: _editingIndicator.QuantitativeType?.ToString(),
-            MinValue: _editingIndicator.MinValue,
-            MaxValue: _editingIndicator.MaxValue,
-            TargetText: _editingIndicator.TargetText,
-            Unit: _editingIndicator.Unit?.ToString());
-    }
-
-    private async Task HandleIndicatorEditSave(TempIndicator tempIndicator)
-    {
-        if (_editingIndicator is null)
-        {
-            return;
-        }
-
-        await UiOps.RunAsync(
-            async () =>
-            {
-                var request = new PatchIndicatorRequest
-                {
-                    Name = tempIndicator.Name,
-                    Type = Enum.Parse<IndicatorType>(tempIndicator.Type),
-                    QuantitativeType = !string.IsNullOrEmpty(tempIndicator.QuantitativeType)
-                        ? Enum.Parse<QuantitativeIndicatorType>(tempIndicator.QuantitativeType)
-                        : null,
-                    MinValue = tempIndicator.MinValue,
-                    MaxValue = tempIndicator.MaxValue,
-                    Unit = !string.IsNullOrEmpty(tempIndicator.Unit)
-                        ? Enum.Parse<IndicatorUnit>(tempIndicator.Unit)
-                        : null,
-                    TargetText = tempIndicator.TargetText
-                };
-
-                await Api.UpdateGoalIndicatorAsync(_editingIndicator.Id, request);
-                ToastService.ShowSuccess("Indicador atualizado", "O indicador foi atualizado com sucesso.");
-                var goalId = _editingIndicatorGoal?.Id;
-                CloseIndicatorEditModal();
-                _cardRefreshToken++;
-                await RefreshExpandedGoalProgressAsync(goalId);
-            },
-            "Erro ao atualizar indicador",
-            "Não foi possível atualizar o indicador. Verifique os dados e tente novamente.");
-    }
-
     // ---- Checkin Modal Methods ----
 
     private void OpenCheckinModalForIndicator(GoalResponse goal, IndicatorResponse indicator)
@@ -910,7 +897,7 @@ public partial class Goals
 
         var (scopeType, scopeId) = GetGoalScope(goal);
 
-        var (directIndicators, tempGoals) = await LoadGoalChildrenForEditAsync(goal.Id);
+        var (directIndicators, directTasks, tempGoals) = await LoadGoalChildrenForEditAsync(goal.Id);
 
         _wizardInitialModel = new GoalFormModel
         {
@@ -922,20 +909,23 @@ public partial class Goals
             ScopeId = scopeId.ToString(),
             StatusValue = goal.Status.ToString(),
             Indicators = directIndicators,
+            Tasks = directTasks,
             Children = tempGoals
         };
 
         _isWizardOpen = true;
     }
 
-    private async Task<(List<TempIndicator> directIndicators, List<TempGoal> children)> LoadGoalChildrenForEditAsync(Guid goalId)
+    private async Task<(List<TempIndicator> directIndicators, List<TempTask> directTasks, List<TempGoal> children)> LoadGoalChildrenForEditAsync(Guid goalId)
     {
         var indicatorsTask = Api.GetGoalIndicatorsByGoalIdAsync(goalId);
         var childGoalsTask = Api.GetGoalChildrenAsync(goalId);
-        await Task.WhenAll(indicatorsTask, childGoalsTask);
+        var tasksTask = Api.GetTasksAsync(goalId);
+        await Task.WhenAll(indicatorsTask, childGoalsTask, tasksTask);
 
         var apiIndicators = indicatorsTask.Result?.Items.ToList() ?? new List<IndicatorResponse>();
         var apiChildGoals = childGoalsTask.Result?.Items.ToList() ?? new List<GoalResponse>();
+        var apiTasks = tasksTask.Result?.Items.ToList() ?? new List<TaskResponse>();
 
         var childGoalIds = apiChildGoals.Select(o => o.Id).ToHashSet();
         var directIndicators = apiIndicators
@@ -943,13 +933,20 @@ public partial class Goals
             .Select(BuildTempIndicatorFromApi)
             .ToList();
 
+        var directTasks = apiTasks.Select(t => new TempTask(
+            OriginalId: t.Id,
+            Name: t.Name,
+            Description: t.Description,
+            State: t.State,
+            DueDate: t.DueDate)).ToList();
+
         var tempGoals = new List<TempGoal>();
         foreach (var childGoal in apiChildGoals)
         {
             var (childScopeType, childScopeId) = GetGoalScope(childGoal);
 
-            // Recursively load child's own indicators and grandchildren
-            var (childIndicators, grandChildren) = await LoadGoalChildrenForEditAsync(childGoal.Id);
+            // Recursively load child's own indicators, tasks and grandchildren
+            var (childIndicators, childTasks, grandChildren) = await LoadGoalChildrenForEditAsync(childGoal.Id);
 
             tempGoals.Add(new TempGoal(
                 TempId: Guid.NewGuid().ToString(),
@@ -964,11 +961,12 @@ public partial class Goals
                 StatusValue: childGoal.Status.ToString())
             {
                 Indicators = childIndicators,
+                Tasks = childTasks,
                 Children = grandChildren
             });
         }
 
-        return (directIndicators, tempGoals);
+        return (directIndicators, directTasks, tempGoals);
     }
 
     private static TempIndicator BuildTempIndicatorFromApi(IndicatorResponse m)
@@ -1001,6 +999,9 @@ public partial class Goals
 
                 // Process direct indicators (update existing, create new)
                 failureCount += await ProcessIndicatorChangesForGoalAsync(goalId, result.Indicators);
+
+                // Process direct tasks (update existing, create new)
+                failureCount += await ProcessTaskChangesForGoalAsync(goalId, result.Tasks);
 
                 // Process child goals recursively
                 failureCount += await ProcessChildGoalChangesRecursiveAsync(goalId, result);
@@ -1048,6 +1049,19 @@ public partial class Goals
             catch (Exception ex)
             {
                 Console.Error.WriteLine($"Erro ao excluir indicador {indicatorId}: {ex.Message}");
+                failureCount++;
+            }
+        }
+
+        foreach (var taskId in result.DeletedTaskIds)
+        {
+            try
+            {
+                await Api.DeleteTaskAsync(taskId);
+            }
+            catch (Exception ex)
+            {
+                Console.Error.WriteLine($"Erro ao excluir tarefa {taskId}: {ex.Message}");
                 failureCount++;
             }
         }
@@ -1112,6 +1126,52 @@ public partial class Goals
         return failureCount;
     }
 
+    private async Task<int> ProcessTaskChangesForGoalAsync(Guid goalId, List<TempTask> tasks)
+    {
+        var failureCount = 0;
+
+        foreach (var task in tasks.Where(t => t.OriginalId.HasValue))
+        {
+            try
+            {
+                await Api.UpdateTaskAsync(task.OriginalId!.Value, new PatchTaskRequest
+                {
+                    Name = task.Name,
+                    Description = task.Description,
+                    State = task.State,
+                    DueDate = task.DueDate
+                });
+            }
+            catch (Exception ex)
+            {
+                Console.Error.WriteLine($"Erro ao atualizar tarefa '{task.Name}': {ex.Message}");
+                failureCount++;
+            }
+        }
+
+        foreach (var task in tasks.Where(t => !t.OriginalId.HasValue))
+        {
+            try
+            {
+                await Api.CreateTaskAsync(goalId, new CreateTaskRequest
+                {
+                    GoalId = goalId,
+                    Name = task.Name,
+                    Description = task.Description,
+                    State = task.State,
+                    DueDate = task.DueDate
+                });
+            }
+            catch (Exception ex)
+            {
+                Console.Error.WriteLine($"Erro ao criar tarefa '{task.Name}': {ex.Message}");
+                failureCount++;
+            }
+        }
+
+        return failureCount;
+    }
+
     private async Task<int> ProcessChildGoalChangesRecursiveAsync(Guid parentGoalId, GoalFormResult result)
     {
         var failureCount = 0;
@@ -1139,6 +1199,9 @@ public partial class Goals
                 // Process this child's indicators
                 failureCount += await ProcessIndicatorChangesForGoalAsync(child.OriginalId.Value, child.Indicators);
 
+                // Process this child's tasks
+                failureCount += await ProcessTaskChangesForGoalAsync(child.OriginalId.Value, child.Tasks);
+
                 // Recursively process grandchildren
                 var childResult = new GoalFormResult
                 {
@@ -1150,8 +1213,10 @@ public partial class Goals
                     ScopeId = child.ScopeId ?? result.ScopeId,
                     StatusValue = child.StatusValue ?? result.StatusValue,
                     Indicators = child.Indicators,
+                    Tasks = child.Tasks,
                     Children = child.Children,
                     DeletedIndicatorIds = result.DeletedIndicatorIds,
+                    DeletedTaskIds = result.DeletedTaskIds,
                     DeletedGoalIds = result.DeletedGoalIds
                 };
                 failureCount += await ProcessChildGoalChangesRecursiveAsync(child.OriginalId.Value, childResult);
@@ -1207,6 +1272,7 @@ public partial class Goals
                 if (created is not null)
                 {
                     failureCount += await CreateIndicatorsForGoalAsync(created.Id, child.Indicators);
+                    failureCount += await CreateTasksForGoalAsync(created.Id, child.Tasks);
                     failureCount += await CreateChildrenRecursiveAsync(created, child.Children);
                 }
             }

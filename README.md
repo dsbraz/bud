@@ -781,6 +781,7 @@ Ranges estáveis de EventId por domínio:
 | 4050–4059 | Indicator |
 | 4060–4069 | Checkin |
 | 4070–4079 | Template |
+| 4080–4089 | GoalTask |
 | 4090–4099 | Session / Notification |
 | 5000–5009 | McpRequestLoggingMiddleware (Bud.Mcp) |
 
@@ -862,7 +863,16 @@ Referência completa com exemplos interativos disponível em `/swagger` (ambient
 - `GET /api/goals/progress`
 - `GET /api/goals/{id}/children` — sub-metas (árvore recursiva via `parentId`)
 - `GET /api/goals/{id}/indicators` — indicadores da meta
+- `GET /api/goals/{id}/tasks` — tarefas da meta
 - Campo opcional nos payloads de criação/atualização: `dimension` (texto livre) e `parentId` (para sub-metas).
+
+### GoalTasks (CRUD)
+
+- `POST /api/goals/{goalId}/tasks` — cria tarefa para a meta
+- `GET /api/goals/{id}/tasks` — lista tarefas (paginada)
+- `PATCH /api/tasks/{id}` — atualiza nome, descrição ou estado da tarefa
+- `DELETE /api/tasks/{id}` — remove tarefa
+- Estados possíveis: `ToDo`, `Doing`, `Done`, `Archived`.
 
 ### Indicators (CRUD + progress)
 

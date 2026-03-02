@@ -1,4 +1,5 @@
 @using Bud.Client.Services
+@using Bud.Shared.Contracts.Requests
 
 <div class="subgoal-section @(IsExpanded ? "expanded" : "")">
     <div class="subgoal-header" @onclick="() => OnToggleExpand.InvokeAsync()" @onclick:stopPropagation="true">
@@ -53,9 +54,20 @@
                                   OnHistoryClick="OnHistoryClick" />
                 }
 
-                @if (_children.Count == 0 && _indicators.Count == 0)
+                @if (_tasks != null && _tasks.Count > 0)
                 {
-                    <p class="muted" style="padding: var(--spacing-2) var(--spacing-4); font-size: var(--font-size-xs);">Nenhum indicador ou meta nesta missão.</p>
+                    <div class="goal-tasks-section" style="padding: 0 var(--spacing-4);">
+                        @foreach (var task in _tasks)
+                        {
+                            <TaskRow Task="task" ShowDeleteButton="false"
+                                     OnStateChange="async s => await HandleTaskStateChange(task, s)" />
+                        }
+                    </div>
+                }
+
+                @if (_children.Count == 0 && _indicators.Count == 0 && (_tasks == null || _tasks.Count == 0))
+                {
+                    <p class="muted" style="padding: var(--spacing-2) var(--spacing-4); font-size: var(--font-size-xs);">Nenhum indicador, tarefa ou meta nesta missão.</p>
                 }
             }
         </div>
@@ -75,6 +87,7 @@
 
     private List<GoalResponse>? _children;
     private List<IndicatorResponse>? _indicators;
+    private List<TaskResponse>? _tasks;
     private Dictionary<Guid, GoalProgressResponse> _childProgressCache = new();
     private Dictionary<Guid, IndicatorProgressResponse> _indicatorProgressCache = new();
     private HashSet<Guid> _expandedChildren = new();
@@ -100,10 +113,12 @@
         {
             var childrenTask = Api.GetGoalChildrenAsync(ChildGoal.Id);
             var indicatorsTask = Api.GetGoalIndicatorsByGoalIdAsync(ChildGoal.Id);
-            await Task.WhenAll(childrenTask, indicatorsTask);
+            var tasksTask = Api.GetTasksAsync(ChildGoal.Id);
+            await Task.WhenAll(childrenTask, indicatorsTask, tasksTask);
 
             _children = childrenTask.Result?.Items.ToList() ?? [];
             _indicators = indicatorsTask.Result?.Items.ToList() ?? [];
+            _tasks = tasksTask.Result?.Items.ToList() ?? [];
 
             if (_children.Count > 0)
             {
@@ -131,6 +146,36 @@
         if (!_expandedChildren.Remove(childId))
         {
             _expandedChildren.Add(childId);
+        }
+    }
+
+    private async Task HandleTaskStateChange(TaskResponse task, TaskState newState)
+    {
+        try
+        {
+            await Api.UpdateTaskAsync(task.Id, new PatchTaskRequest { State = newState });
+            if (_tasks is not null)
+            {
+                var idx = _tasks.FindIndex(t => t.Id == task.Id);
+                if (idx >= 0)
+                {
+                    _tasks[idx] = new TaskResponse
+                    {
+                        Id = task.Id,
+                        OrganizationId = task.OrganizationId,
+                        GoalId = task.GoalId,
+                        Name = task.Name,
+                        Description = task.Description,
+                        State = newState,
+                        DueDate = task.DueDate
+                    };
+                    _tasks = [.._tasks];
+                }
+            }
+        }
+        catch (Exception)
+        {
+            // silent failure; task will show stale state until next expand
         }
     }
 
