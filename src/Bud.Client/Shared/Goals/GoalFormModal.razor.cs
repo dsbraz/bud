@@ -895,4 +895,20 @@ public partial class GoalFormModal
             _ => ""
         };
     }
+
+    // ── Review helpers ──────────────────────────────────────────────────────
+
+    private sealed record ReviewItem(int Depth, string Icon, string IconClass, string Name, string? Detail);
+
+    private static IEnumerable<ReviewItem> FlattenGoalForReview(TempGoal goal, int depth)
+    {
+        yield return new ReviewItem(depth, "◎", "goal", goal.Name, null);
+        foreach (var ind in goal.Indicators)
+            yield return new ReviewItem(depth + 1, "◆", "indicator", ind.Name, string.IsNullOrEmpty(ind.Details) ? null : ind.Details);
+        foreach (var tsk in goal.Tasks)
+            yield return new ReviewItem(depth + 1, "✓", "task", tsk.Name, null);
+        foreach (var child in goal.Children)
+            foreach (var item in FlattenGoalForReview(child, depth + 1))
+                yield return item;
+    }
 }

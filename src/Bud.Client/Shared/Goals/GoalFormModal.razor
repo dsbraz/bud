@@ -484,7 +484,10 @@
                                 <div class="wizard-review-item">
                                     <span class="wizard-review-item-icon wizard-review-item-icon--indicator">◆</span>
                                     <span class="wizard-review-item-name">@indicator.Name</span>
-                                    <span class="wizard-review-item-detail">@indicator.Details</span>
+                                    @if (!string.IsNullOrEmpty(indicator.Details))
+                                    {
+                                        <span class="wizard-review-item-detail">@indicator.Details</span>
+                                    }
                                 </div>
                             }
                             @foreach (var task in tempTasks)
@@ -496,15 +499,17 @@
                             }
                             @foreach (var goal in tempGoals)
                             {
-                                var itemCount = goal.Indicators.Count + goal.Tasks.Count + goal.Children.Count;
-                                <div class="wizard-review-item">
-                                    <span class="wizard-review-item-icon wizard-review-item-icon--goal">◎</span>
-                                    <span class="wizard-review-item-name">@goal.Name</span>
-                                    @if (itemCount > 0)
-                                    {
-                                        <span class="wizard-review-item-detail">@itemCount item(ns)</span>
-                                    }
-                                </div>
+                                @foreach (var item in FlattenGoalForReview(goal, 0))
+                                {
+                                    <div class="wizard-review-item" style="--review-depth: @item.Depth;">
+                                        <span class="wizard-review-item-icon wizard-review-item-icon--@item.IconClass">@item.Icon</span>
+                                        <span class="wizard-review-item-name">@item.Name</span>
+                                        @if (item.Detail is not null)
+                                        {
+                                            <span class="wizard-review-item-detail">@item.Detail</span>
+                                        }
+                                    </div>
+                                }
                             }
                         </div>
                     }

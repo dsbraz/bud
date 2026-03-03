@@ -5778,11 +5778,14 @@ button.wizard-add-item-header {
    ======================================== */
 
 .wizard-review {
-    padding: var(--spacing-4) 0;
+    padding: var(--spacing-2) var(--spacing-6);
+    overflow-y: auto;
+    flex: 1;
+    min-height: 0;
 }
 
 .wizard-review-header {
-    margin-bottom: var(--spacing-4);
+    margin-bottom: var(--spacing-3);
 }
 
 .wizard-review-title {
@@ -5802,7 +5805,7 @@ button.wizard-add-item-header {
     display: flex;
     gap: var(--spacing-3);
     flex-wrap: wrap;
-    margin-bottom: var(--spacing-4);
+    margin-bottom: var(--spacing-3);
 }
 
 .wizard-review-chip {
@@ -5833,6 +5836,7 @@ button.wizard-add-item-header {
     align-items: center;
     gap: var(--spacing-2);
     padding: var(--spacing-2) 0;
+    padding-left: calc(var(--review-depth, 0) * var(--spacing-5));
     border-bottom: 1px solid var(--caramel-100);
 }
 
@@ -5863,10 +5867,16 @@ button.wizard-add-item-header {
     font-size: var(--font-size-sm);
     font-weight: var(--font-weight-medium);
     color: var(--color-text-primary);
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
 .wizard-review-item-detail {
     font-size: var(--font-size-xs);
     color: var(--color-text-secondary);
     margin-left: auto;
+    flex-shrink: 0;
+    white-space: nowrap;
 }
