@@ -295,12 +295,11 @@ public sealed class McpToolService(BudApiClient budApiClient, BudApiSession sess
 
     private async Task<JsonNode> GoalListAsync(JsonElement arguments, CancellationToken cancellationToken)
     {
-        var scopeType = TryParseEnum<GoalScopeType>(arguments, "scopeType");
-        var scopeId = TryParseGuid(arguments, "scopeId");
+        var filter = TryParseEnum<GoalFilter>(arguments, "filter");
         var search = TryGetString(arguments, "search");
         var page = TryGetInt(arguments, "page") ?? 1;
         var pageSize = TryGetInt(arguments, "pageSize") ?? 10;
-        var result = await _budApiClient.ListGoalsAsync(scopeType, scopeId, search, page, pageSize, cancellationToken);
+        var result = await _budApiClient.ListGoalsAsync(filter, search, page, pageSize, cancellationToken);
         return Serialize(result);
     }
 
@@ -588,11 +587,10 @@ public sealed class McpToolService(BudApiClient budApiClient, BudApiSession sess
             case "goal_create":
             case "goal_update":
                 ApplyEnumMetadata(clone, "status", typeof(GoalStatus));
-                ApplyEnumMetadata(clone, "scopeType", typeof(GoalScopeType));
                 ApplyNullableHint(clone, "description");
                 break;
             case "goal_list":
-                ApplyEnumMetadata(clone, "scopeType", typeof(GoalScopeType));
+                ApplyEnumMetadata(clone, "filter", typeof(GoalFilter));
                 break;
             case "goal_indicator_create":
             case "goal_indicator_update":
@@ -753,24 +751,20 @@ public sealed class McpToolService(BudApiClient budApiClient, BudApiSession sess
                 ["description"] = "Meta criada via MCP",
                 ["startDate"] = "2026-02-08T00:00:00Z",
                 ["endDate"] = "2026-02-15T00:00:00Z",
-                ["status"] = "Planned",
-                ["scopeType"] = "Organization",
-                ["scopeId"] = "00000000-0000-0000-0000-000000000001"
+                ["status"] = "Planned"
             },
             "goal_get" => new JsonObject { ["id"] = "00000000-0000-0000-0000-000000000002" },
-            "goal_list" => new JsonObject { ["scopeType"] = "Organization", ["scopeId"] = "00000000-0000-0000-0000-000000000001", ["page"] = 1, ["pageSize"] = 10 },
+            "goal_list" => new JsonObject { ["filter"] = "All", ["page"] = 1, ["pageSize"] = 10 },
             "goal_update" => new JsonObject
             {
                 ["id"] = "00000000-0000-0000-0000-000000000002",
                 ["payload"] = new JsonObject
                 {
                     ["name"] = "Meta atualizada",
-                    ["description"] = "Ajuste de escopo",
+                    ["description"] = "Ajuste de responsável",
                     ["startDate"] = "2026-02-08T00:00:00Z",
                     ["endDate"] = "2026-02-20T00:00:00Z",
-                    ["status"] = "Active",
-                    ["scopeType"] = "Organization",
-                    ["scopeId"] = "00000000-0000-0000-0000-000000000001"
+                    ["status"] = "Active"
                 }
             },
             "goal_delete" => new JsonObject { ["id"] = "00000000-0000-0000-0000-000000000002" },
@@ -844,7 +838,7 @@ public sealed class McpToolService(BudApiClient budApiClient, BudApiSession sess
             "help_action_schema" => new JsonObject
             {
                 ["name"] = "goal_create",
-                ["required"] = new JsonArray("name", "startDate", "endDate", "status", "scopeType", "scopeId")
+                ["required"] = new JsonArray("name", "startDate", "endDate", "status")
             },
             "goal_create" => new JsonObject
             {

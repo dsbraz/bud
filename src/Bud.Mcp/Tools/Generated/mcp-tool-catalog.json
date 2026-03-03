@@ -33,11 +33,11 @@
           "status": {
             "type": "integer"
           },
-          "scopeType": {
-            "type": "integer"
-          },
-          "scopeId": {
-            "type": "string",
+          "collaboratorId": {
+            "type": [
+              "null",
+              "string"
+            ],
             "format": "uuid"
           },
           "parentId": {
@@ -53,9 +53,7 @@
           "name",
           "startDate",
           "endDate",
-          "status",
-          "scopeType",
-          "scopeId"
+          "status"
         ]
       }
     },
@@ -83,12 +81,8 @@
         "type": "object",
         "additionalProperties": false,
         "properties": {
-          "scopeType": {
+          "filter": {
             "type": "integer"
-          },
-          "scopeId": {
-            "type": "string",
-            "format": "uuid"
           },
           "search": {
             "type": "string"
@@ -138,8 +132,7 @@
               "startDate": {},
               "endDate": {},
               "status": {},
-              "scopeType": {},
-              "scopeId": {}
+              "collaboratorId": {}
             },
             "additionalProperties": false,
             "required": [
@@ -148,9 +141,7 @@
               "dimension",
               "startDate",
               "endDate",
-              "status",
-              "scopeType",
-              "scopeId"
+              "status"
             ]
           }
         }

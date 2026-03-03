@@ -1,23 +1,18 @@
+@using Bud.Shared.Contracts
 @* Barra de Filtros Compacta *@
 <div class="goals-filter-bar">
     <div class="goals-filter-left">
         <div class="filter-chip-group">
-            <button class="filter-chip @(ShowMyGoals ? "active" : "")" @onclick="() => OnSetMyGoals.InvokeAsync(true)">
-                <span>Minhas metas</span>
+            <button class="filter-chip @(Filter == GoalFilter.Mine ? "active" : "")" @onclick="() => OnSetFilter.InvokeAsync(GoalFilter.Mine)">
+                <span>Minhas missões</span>
             </button>
-            <button class="filter-chip @(!ShowMyGoals ? "active" : "")" @onclick="() => OnSetMyGoals.InvokeAsync(false)">
-                <span>Todas as metas</span>
+            <button class="filter-chip @(Filter == GoalFilter.MyTeam ? "active" : "")" @onclick="() => OnSetFilter.InvokeAsync(GoalFilter.MyTeam)">
+                <span>Missões do time</span>
+            </button>
+            <button class="filter-chip @(Filter == GoalFilter.All ? "active" : "")" @onclick="() => OnSetFilter.InvokeAsync(GoalFilter.All)">
+                <span>Todas as missões</span>
             </button>
         </div>
-        @if (!ShowMyGoals)
-        {
-            <button class="filter-chip @(showFilterPanel ? "active" : "")" @onclick="ToggleFilterPanel">
-                <svg width="16" height="16" viewBox="0 0 32 32" fill="none">
-                    <path d="M28 6H4L14 17.6V26L18 28V17.6L28 6Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                </svg>
-                <span>Filtrar</span>
-            </button>
-        }
         <div class="filter-chip-wrapper">
             <button class="filter-chip @(FilterStartDate.HasValue || FilterEndDate.HasValue ? "active" : "")" @onclick="ToggleDatePicker">
                 <svg width="16" height="16" viewBox="0 0 32 32" fill="none">
@@ -81,60 +76,21 @@
     </button>
 </div>
 
-@* Painel de Filtros Expandido *@
-@if (showFilterPanel && !ShowMyGoals)
-{
-    <div class="goals-filter-panel">
-        <div class="filter-panel-row">
-            <div class="filter-panel-field">
-                <label>Escopo</label>
-                <select class="input" value="@FilterScopeTypeValue" @onchange="HandleScopeTypeChanged">
-                    <option value="">Todos</option>
-                    @foreach (var scopeType in Enum.GetValues<GoalScopeType>())
-                    {
-                        <option value="@scopeType">@GetScopeLabel(scopeType)</option>
-                    }
-                </select>
-            </div>
-            <div class="filter-panel-field">
-                <label>Referência</label>
-                <select class="input" value="@FilterScopeId" @onchange="HandleScopeIdChanged">
-                    <option value="">Todas</option>
-                    @foreach (var option in GetScopeOptions(FilterScopeTypeValue))
-                    {
-                        <option value="@option.Id">@option.Name</option>
-                    }
-                </select>
-            </div>
-            <div class="filter-panel-field">
-                <label>Busca</label>
-                <InputText class="input" @bind-Value="localSearch" @onkeyup="HandleSearchKeyUp" placeholder="Buscar metas..." />
-            </div>
-        </div>
-    </div>
-}
-
 @code {
-    [Parameter] public bool ShowMyGoals { get; set; }
+    [Parameter] public GoalFilter Filter { get; set; } = GoalFilter.Mine;
     [Parameter] public string ViewMode { get; set; } = "list";
     [Parameter] public bool FilterActiveOnly { get; set; }
     [Parameter] public DateTime? FilterStartDate { get; set; }
     [Parameter] public DateTime? FilterEndDate { get; set; }
-    [Parameter] public string? FilterScopeTypeValue { get; set; }
-    [Parameter] public string? FilterScopeId { get; set; }
     [Parameter] public string? Search { get; set; }
-    [Parameter] public Func<string?, IEnumerable<ScopeOption>> GetScopeOptions { get; set; } = _ => [];
 
-    [Parameter] public EventCallback<bool> OnSetMyGoals { get; set; }
+    [Parameter] public EventCallback<GoalFilter> OnSetFilter { get; set; }
     [Parameter] public EventCallback OnToggleViewMode { get; set; }
     [Parameter] public EventCallback OnToggleActiveFilter { get; set; }
     [Parameter] public EventCallback<(DateTime?, DateTime?)> OnDateFilterApplied { get; set; }
-    [Parameter] public EventCallback<string?> OnScopeTypeChanged { get; set; }
-    [Parameter] public EventCallback<string?> OnScopeIdChanged { get; set; }
     [Parameter] public EventCallback<string?> OnSearchSubmit { get; set; }
     [Parameter] public EventCallback OnClearFilters { get; set; }
 
-    private bool showFilterPanel;
     private bool showDatePicker;
     private string? localSearch;
     private DateTime? localStartDate;
@@ -145,11 +101,6 @@
 
     protected override void OnParametersSet()
     {
-        if (ShowMyGoals)
-        {
-            showFilterPanel = false;
-        }
-
         if (Search != previousSearch)
         {
             localSearch = Search;
@@ -167,7 +118,6 @@
         }
     }
 
-    private void ToggleFilterPanel() => showFilterPanel = !showFilterPanel;
     private void ToggleDatePicker() => showDatePicker = !showDatePicker;
 
     private void OnStartDateChanged(ChangeEventArgs e)
@@ -186,29 +136,8 @@
         await OnDateFilterApplied.InvokeAsync((localStartDate, localEndDate));
     }
 
-    private async Task HandleScopeTypeChanged(ChangeEventArgs e)
-    {
-        var value = string.IsNullOrEmpty(e.Value?.ToString()) ? null : e.Value?.ToString();
-        await OnScopeTypeChanged.InvokeAsync(value);
-    }
-
-    private async Task HandleScopeIdChanged(ChangeEventArgs e)
-    {
-        var value = string.IsNullOrEmpty(e.Value?.ToString()) ? null : e.Value?.ToString();
-        await OnScopeIdChanged.InvokeAsync(value);
-    }
-
-    private async Task HandleSearchKeyUp(KeyboardEventArgs e)
-    {
-        if (e.Key == "Enter")
-        {
-            await OnSearchSubmit.InvokeAsync(localSearch);
-        }
-    }
-
     private async Task HandleClearFilters()
     {
-        showFilterPanel = false;
         showDatePicker = false;
         localSearch = null;
         localStartDate = null;
@@ -231,17 +160,7 @@
         FilterActiveOnly ? "Status ativo" : "Todos os status";
 
     private bool HasActiveFilters() =>
-        (!ShowMyGoals && !string.IsNullOrEmpty(FilterScopeTypeValue))
-        || !string.IsNullOrEmpty(Search)
+        !string.IsNullOrEmpty(Search)
         || FilterStartDate.HasValue
         || FilterEndDate.HasValue;
-
-    private static string GetScopeLabel(GoalScopeType scopeType) => scopeType switch
-    {
-        GoalScopeType.Organization => "Organização",
-        GoalScopeType.Workspace => "Espaço de trabalho",
-        GoalScopeType.Team => "Equipe",
-        GoalScopeType.Collaborator => "Colaborador",
-        _ => scopeType.ToString()
-    };
 }

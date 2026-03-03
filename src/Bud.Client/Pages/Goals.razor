@@ -8,25 +8,20 @@
 
 <ManagementPageHeader
     Kicker="Missões"
-    Title="@(_showMyGoals ? "Minhas missões" : "Todas as missões")"
+    Title="@GetFilterTitle()"
     PrimaryActionText="Criar missão"
     OnPrimaryAction="OpenCreateModal" />
 
-<GoalsFilterBar ShowMyGoals="_showMyGoals"
+<GoalsFilterBar Filter="_filter"
                 ViewMode="@_viewMode"
                 FilterActiveOnly="_filterActiveOnly"
                 FilterStartDate="_filterStartDate"
                 FilterEndDate="_filterEndDate"
-                FilterScopeTypeValue="@_filterScopeTypeValue"
-                FilterScopeId="@_filterScopeId"
                 Search="@_search"
-                GetScopeOptions="GetScopeOptions"
-                OnSetMyGoals="SetGoalViewMode"
+                OnSetFilter="SetGoalFilter"
                 OnToggleViewMode="HandleToggleViewMode"
                 OnToggleActiveFilter="HandleToggleActiveFilter"
                 OnDateFilterApplied="HandleDateFilterApplied"
-                OnScopeTypeChanged="HandleFilterScopeTypeChanged"
-                OnScopeIdChanged="HandleFilterScopeIdChanged"
                 OnSearchSubmit="HandleSearchSubmit"
                 OnClearFilters="HandleClearFilters" />
 
@@ -92,17 +87,12 @@ else
     <p class="muted" style="margin-top: var(--spacing-4);">Total: @_goals.Total</p>
 }
 
-<GoalTemplatePicker IsOpen="_isTemplatePickerOpen"
-                    Templates="_availableTemplates"
-                    OnClose="() => _isTemplatePickerOpen = false"
-                    OnCreateFromScratch="OpenCreateModalFromScratch"
-                    OnSelectTemplate="OpenCreateModalFromTemplate" />
-
 <GoalFormModal IsOpen="_isWizardOpen"
                IsEditMode="_isEditMode"
                OrganizationName="@GetSelectedOrganizationName()"
                InitialModel="_wizardInitialModel"
-               GetScopeOptions="GetScopeOptions"
+               Templates="_availableTemplates"
+               CollaboratorOptions="GetCollaboratorOptions()"
                OnClose="CloseWizard"
                OnSave="HandleWizardSave"
                OnSaveDraft="HandleWizardSaveDraft" />

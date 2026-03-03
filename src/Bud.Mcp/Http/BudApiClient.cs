@@ -26,11 +26,10 @@ public sealed class BudApiClient(HttpClient httpClient, BudApiSession session)
     public Task<GoalResponse> GetGoalAsync(Guid id, CancellationToken cancellationToken = default)
         => GetAsync<GoalResponse>($"/api/goals/{id}", cancellationToken);
 
-    public Task<PagedResult<GoalResponse>> ListGoalsAsync(GoalScopeType? scopeType, Guid? scopeId, string? search, int page, int pageSize, CancellationToken cancellationToken = default)
+    public Task<PagedResult<GoalResponse>> ListGoalsAsync(GoalFilter? filter, string? search, int page, int pageSize, CancellationToken cancellationToken = default)
         => GetAsync<PagedResult<GoalResponse>>(BuildQueryPath(
             "/api/goals",
-            ("scopeType", scopeType?.ToString()),
-            ("scopeId", scopeId?.ToString()),
+            ("filter", filter?.ToString()),
             ("search", search),
             ("page", page.ToString(CultureInfo.InvariantCulture)),
             ("pageSize", pageSize.ToString(CultureInfo.InvariantCulture))), cancellationToken);

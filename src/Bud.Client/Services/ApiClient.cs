@@ -276,8 +276,7 @@ public sealed class ApiClient
     }
 
     public async Task<PagedResult<GoalResponse>?> GetGoalsAsync(
-        GoalScopeType? scopeType,
-        Guid? scopeId,
+        GoalFilter? filter,
         string? search,
         int page = 1,
         int pageSize = 10)
@@ -286,13 +285,9 @@ public sealed class ApiClient
 
         var queryParams = new List<string>();
 
-        if (scopeType.HasValue)
+        if (filter.HasValue)
         {
-            queryParams.Add($"scopeType={scopeType.Value}");
-        }
-        if (scopeId.HasValue)
-        {
-            queryParams.Add($"scopeId={scopeId.Value}");
+            queryParams.Add($"filter={filter.Value}");
         }
         if (!string.IsNullOrEmpty(search))
         {
@@ -303,25 +298,6 @@ public sealed class ApiClient
         queryParams.Add($"pageSize={pageSize}");
 
         var url = $"api/goals?{string.Join("&", queryParams)}";
-        return await GetSafeAsync<PagedResult<GoalResponse>>(url);
-    }
-
-    public async Task<PagedResult<GoalResponse>?> GetMyGoalsAsync(
-        string? search, int page = 1, int pageSize = 10)
-    {
-        (page, pageSize) = NormalizePagination(page, pageSize);
-
-        var queryParams = new List<string>();
-
-        if (!string.IsNullOrEmpty(search))
-        {
-            queryParams.Add($"search={Uri.EscapeDataString(search)}");
-        }
-
-        queryParams.Add($"page={page}");
-        queryParams.Add($"pageSize={pageSize}");
-
-        var url = $"api/me/goals?{string.Join("&", queryParams)}";
         return await GetSafeAsync<PagedResult<GoalResponse>>(url);
     }
 

@@ -6,7 +6,7 @@ public static class ToolCatalogContractValidator
 {
     private static readonly Dictionary<string, string[]> RequiredByTool = new(StringComparer.Ordinal)
     {
-        ["goal_create"] = ["name", "startDate", "endDate", "status", "scopeType", "scopeId"],
+        ["goal_create"] = ["name", "startDate", "endDate", "status"],
         ["goal_indicator_create"] = ["goalId", "name", "type"],
         ["indicator_checkin_create"] = ["checkinDate", "confidenceLevel"],
         ["goal_update"] = ["id", "payload"],

@@ -2,7 +2,10 @@ namespace Bud.Client.Shared.Goals;
 
 public enum WizardMode { Goal, Template }
 
-public enum InlineFormMode { None, NewIndicator, EditIndicator, NewGoal, EditGoal, NewTask, EditTask }
+public enum WizardStep { ChooseTemplate = 1, BuildMission = 2, Review = 3 }
+
+public enum ItemType { None, Indicator, Task, ChildGoal }
+
 
 public sealed record ScopeOption(string Id, string Name);
 
@@ -32,8 +35,7 @@ public sealed record TempGoal(
     string? Dimension = null,
     DateTime? StartDate = null,
     DateTime? EndDate = null,
-    string? ScopeTypeValue = null,
-    string? ScopeId = null,
+    string? CollaboratorId = null,
     string? StatusValue = null)
 {
     public List<TempIndicator> Indicators { get; init; } = [];
@@ -48,8 +50,7 @@ public sealed record GoalFormModel
     public string? Dimension { get; init; }
     public DateTime StartDate { get; init; } = DateTime.Today;
     public DateTime EndDate { get; init; } = DateTime.Today.AddDays(7);
-    public string? ScopeTypeValue { get; init; }
-    public string? ScopeId { get; init; }
+    public string? CollaboratorId { get; init; }
     public string? StatusValue { get; init; }
     public List<TempIndicator> Indicators { get; init; } = [];
     public List<TempTask> Tasks { get; init; } = [];
@@ -63,8 +64,7 @@ public sealed record GoalFormResult
     public string? Dimension { get; init; }
     public DateTime StartDate { get; init; }
     public DateTime EndDate { get; init; }
-    public string? ScopeTypeValue { get; init; }
-    public string? ScopeId { get; init; }
+    public string? CollaboratorId { get; init; }
     public string? StatusValue { get; init; }
     public required List<TempIndicator> Indicators { get; init; }
     public required List<TempTask> Tasks { get; init; }
