@@ -150,7 +150,7 @@ Main projects:
 ## Authorization Pattern (MUST)
 
 - Prefer `[Authorize(Policy = ...)]` in controllers.
-- Reuse existing policies (`TenantSelected`, `GlobalAdmin`, `OrganizationOwner`, `OrganizationWrite`, `TenantOrganizationMatch`, `GoalScopeAccess`).
+- Reuse existing policies (`TenantSelected`, `GlobalAdmin`, `OrganizationOwner`, `OrganizationWrite`, `TenantOrganizationMatch`).
 - New authorization rule -> new Requirement + Handler registered in `BudSecurityCompositionExtensions`.
 
 ## Controller Pattern (MUST)

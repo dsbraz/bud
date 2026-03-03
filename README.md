@@ -594,9 +594,7 @@ curl -s -X POST "$BUD_BASE_URL/api/goals" \
     "description":"Validação ponta a ponta",
     "startDate":"2026-01-01T00:00:00Z",
     "endDate":"2026-12-31T23:59:59Z",
-    "status":"Planned",
-    "scopeType":"Organization",
-    "scopeId":"'"$BUD_ORG_ID"'"
+    "status":"Planned"
   }'
 ```
 
@@ -805,7 +803,6 @@ Referência completa com exemplos interativos disponível em `/swagger` (ambient
 
 - `GET /api/me/organizations` — organizações disponíveis
 - `GET /api/me/dashboard` — dashboard do colaborador autenticado
-- `GET /api/me/goals` — metas do colaborador autenticado
 
 ### Organizations (CRUD + relacionamentos)
 
@@ -856,7 +853,7 @@ Referência completa com exemplos interativos disponível em `/swagger` (ambient
 ### Goals (CRUD + consultas)
 
 - `POST /api/goals`
-- `GET /api/goals` — listagem paginada (filtro por `scopeType`, `scopeId`, `parentId`)
+- `GET /api/goals` — listagem paginada (filtro por `filter`, `parentId`)
 - `GET /api/goals/{id}`
 - `PATCH /api/goals/{id}`
 - `DELETE /api/goals/{id}`
@@ -949,8 +946,6 @@ Referência completa com exemplos interativos disponível em `/swagger` (ambient
   "startDate": "2026-01-01T00:00:00Z",
   "endDate": "2026-03-31T23:59:59Z",
   "status": "Planned",
-  "scopeType": "Workspace",
-  "scopeId": "00000000-0000-0000-0000-000000000000",
   "parentId": null
 }
 ```
