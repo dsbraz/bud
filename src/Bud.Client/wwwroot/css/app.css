@@ -1383,6 +1383,19 @@ a {
     justify-content: center;
 }
 
+.chip-select {
+    background: transparent;
+    border: none;
+    font-size: var(--font-size-sm);
+    font-weight: var(--font-weight-medium);
+    color: var(--color-text-primary);
+    cursor: pointer;
+    padding: 0;
+    outline: none;
+    -webkit-appearance: none;
+    appearance: none;
+}
+
 .chip-more {
     width: 36px;
     height: 36px;
@@ -5302,4 +5315,124 @@ a {
     margin-top: var(--spacing-2);
     padding-top: var(--spacing-2);
     border-top: 1px solid var(--neutral-100);
+}
+
+/* ========================================
+   DATE RANGE PICKER
+   ======================================== */
+
+.date-range-picker {
+    position: relative;
+}
+
+.date-range-trigger {
+    cursor: pointer;
+}
+
+.date-range-backdrop {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: calc(var(--z-index-dropdown) - 1);
+}
+
+.date-range-dropdown {
+    position: absolute;
+    top: calc(100% + 4px);
+    left: 0;
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    padding: var(--spacing-3);
+    box-shadow: var(--shadow-dropdown);
+    z-index: var(--z-index-dropdown);
+    min-width: 280px;
+}
+
+.date-range-nav {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: var(--spacing-2);
+}
+
+.date-range-nav-btn {
+    background: none;
+    border: 1px solid var(--color-border-light);
+    border-radius: var(--radius-sm);
+    width: 28px;
+    height: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    color: var(--color-text-secondary);
+    font-size: var(--font-size-sm);
+}
+
+.date-range-nav-btn:hover {
+    background: var(--color-hover);
+}
+
+.date-range-nav-title {
+    font-size: var(--font-size-base);
+    font-weight: var(--font-weight-semibold);
+    color: var(--color-text-primary);
+    text-transform: capitalize;
+}
+
+.date-range-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 2px;
+}
+
+.date-range-weekday {
+    text-align: center;
+    font-size: var(--font-size-xs);
+    font-weight: var(--font-weight-semibold);
+    color: var(--color-text-muted);
+    padding: var(--spacing-1) 0;
+}
+
+.date-range-day {
+    text-align: center;
+    font-size: var(--font-size-sm);
+    padding: 6px 0;
+    border: none;
+    background: none;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    color: var(--color-text-primary);
+    transition: background var(--transition-fast);
+}
+
+.date-range-day.empty {
+    cursor: default;
+}
+
+.date-range-day:not(.empty):hover {
+    background: var(--color-hover);
+}
+
+.date-range-day.today {
+    font-weight: var(--font-weight-bold);
+    color: var(--color-brand-primary);
+}
+
+.date-range-day.range-edge {
+    background: var(--color-brand-primary);
+    color: var(--color-text-inverse);
+    font-weight: var(--font-weight-semibold);
+}
+
+.date-range-day.range-edge:hover {
+    background: var(--color-brand-primary-hover);
+}
+
+.date-range-day.in-range {
+    background: var(--orange-50);
+    color: var(--color-brand-primary-hover);
 }

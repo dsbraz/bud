@@ -13,7 +13,7 @@ public partial class GoalFormModal
     [Parameter] public WizardMode Mode { get; set; } = WizardMode.Goal;
     [Parameter] public string OrganizationName { get; set; } = "Organização";
     [Parameter] public GoalFormModel? InitialModel { get; set; }
-    [Parameter] public Func<string?, IEnumerable<ScopeOption>> GetScopeOptions { get; set; } = _ => [];
+    [Parameter] public IEnumerable<ScopeOption> CollaboratorOptions { get; set; } = [];
     [Parameter] public EventCallback OnClose { get; set; }
     [Parameter] public EventCallback<GoalFormResult> OnSave { get; set; }
     [Parameter] public EventCallback<GoalFormResult> OnSaveDraft { get; set; }
@@ -23,12 +23,8 @@ public partial class GoalFormModal
     private string? description;
     private DateTime startDate = DateTime.Today;
     private DateTime endDate = DateTime.Today.AddDays(7);
-    private string? scopeTypeValue;
-    private string? scopeId;
+    private string? collaboratorId;
     private string? statusValue;
-    private bool showResponsibleSelector;
-    private bool showPeriodSelector;
-    private bool showStatusSelector;
 
     // Tree data (root level)
     private List<TempIndicator> tempIndicators = [];
@@ -56,11 +52,8 @@ public partial class GoalFormModal
     private string? _inlineGoalDimension;
     private DateTime _inlineGoalStartDate = DateTime.Today;
     private DateTime _inlineGoalEndDate = DateTime.Today.AddDays(7);
-    private string? _inlineGoalScopeTypeValue;
-    private string? _inlineGoalScopeId;
+    private string? _inlineGoalCollaboratorId;
     private string? _inlineGoalStatusValue;
-    private bool _showInlineGoalResponsible;
-    private bool _showInlineGoalPeriod;
     private int? _editingInlineGoalIndex;
 
     // Edit tracking
@@ -119,12 +112,8 @@ public partial class GoalFormModal
         description = model?.Description;
         startDate = model?.StartDate ?? DateTime.Today;
         endDate = model?.EndDate ?? DateTime.Today.AddDays(7);
-        scopeTypeValue = model?.ScopeTypeValue;
-        scopeId = model?.ScopeId;
+        collaboratorId = model?.CollaboratorId;
         statusValue = model?.StatusValue;
-        showResponsibleSelector = false;
-        showPeriodSelector = false;
-        showStatusSelector = false;
         tempIndicators = model?.Indicators?.ToList() ?? [];
         tempTasks = model?.Tasks?.ToList() ?? [];
         tempGoals = model?.Children?.ToList() ?? [];
@@ -216,16 +205,6 @@ public partial class GoalFormModal
         }
         if (Mode == WizardMode.Goal)
         {
-            if (string.IsNullOrEmpty(scopeTypeValue) || !Enum.TryParse<GoalScopeType>(scopeTypeValue, out _))
-            {
-                ToastService.ShowError(errorTitle, "Selecione o escopo.");
-                return false;
-            }
-            if (string.IsNullOrEmpty(scopeId) || !Guid.TryParse(scopeId, out _))
-            {
-                ToastService.ShowError(errorTitle, "Selecione a referência do escopo.");
-                return false;
-            }
             if (endDate < startDate)
             {
                 ToastService.ShowError(errorTitle, "A data de fim precisa ser igual ou maior que a data de início.");
@@ -241,8 +220,7 @@ public partial class GoalFormModal
         Description = description,
         StartDate = startDate,
         EndDate = endDate,
-        ScopeTypeValue = scopeTypeValue,
-        ScopeId = scopeId,
+        CollaboratorId = collaboratorId,
         StatusValue = statusValue,
         Indicators = tempIndicators.ToList(),
         Tasks = tempTasks.ToList(),
@@ -252,18 +230,18 @@ public partial class GoalFormModal
         DeletedGoalIds = new HashSet<Guid>(deletedGoalIds)
     };
 
-    // ---- Scope ----
+    // ---- Collaborator ----
 
-    private void HandleScopeTypeChanged(ChangeEventArgs e)
+    private void HandleCollaboratorChanged(ChangeEventArgs e)
     {
-        scopeTypeValue = e.Value?.ToString();
-        scopeId = null;
+        var value = e.Value?.ToString();
+        collaboratorId = string.IsNullOrEmpty(value) ? null : value;
     }
 
-    private void HandleInlineGoalScopeTypeChanged(ChangeEventArgs e)
+    private void HandleInlineGoalCollaboratorChanged(ChangeEventArgs e)
     {
-        _inlineGoalScopeTypeValue = e.Value?.ToString();
-        _inlineGoalScopeId = null;
+        var value = e.Value?.ToString();
+        _inlineGoalCollaboratorId = string.IsNullOrEmpty(value) ? null : value;
     }
 
     // ---- Inline Indicator Form ----
@@ -405,11 +383,8 @@ public partial class GoalFormModal
         // Inherit dates and scope from the root mission
         _inlineGoalStartDate = startDate;
         _inlineGoalEndDate = endDate;
-        _inlineGoalScopeTypeValue = scopeTypeValue;
-        _inlineGoalScopeId = scopeId;
+        _inlineGoalCollaboratorId = collaboratorId;
         _inlineGoalStatusValue = null;
-        _showInlineGoalResponsible = false;
-        _showInlineGoalPeriod = false;
         _editingInlineGoalIndex = null;
     }
 
@@ -426,11 +401,8 @@ public partial class GoalFormModal
         _inlineGoalDimension = existing.Dimension;
         _inlineGoalStartDate = existing.StartDate ?? DateTime.Today;
         _inlineGoalEndDate = existing.EndDate ?? DateTime.Today.AddDays(7);
-        _inlineGoalScopeTypeValue = existing.ScopeTypeValue;
-        _inlineGoalScopeId = existing.ScopeId;
+        _inlineGoalCollaboratorId = existing.CollaboratorId;
         _inlineGoalStatusValue = existing.StatusValue;
-        _showInlineGoalResponsible = !string.IsNullOrEmpty(existing.ScopeTypeValue);
-        _showInlineGoalPeriod = existing.StartDate.HasValue;
     }
 
     private DateTime GetCurrentParentStartDate()
@@ -491,8 +463,7 @@ public partial class GoalFormModal
             Dimension: string.IsNullOrWhiteSpace(_inlineGoalDimension) ? null : _inlineGoalDimension.Trim(),
             StartDate: _inlineGoalStartDate,
             EndDate: _inlineGoalEndDate,
-            ScopeTypeValue: _inlineGoalScopeTypeValue,
-            ScopeId: _inlineGoalScopeId,
+            CollaboratorId: _inlineGoalCollaboratorId,
             StatusValue: _inlineGoalStatusValue)
         {
             Indicators = existingIndicators,
@@ -528,11 +499,8 @@ public partial class GoalFormModal
         _inlineGoalDimension = null;
         _inlineGoalStartDate = DateTime.Today;
         _inlineGoalEndDate = DateTime.Today.AddDays(7);
-        _inlineGoalScopeTypeValue = null;
-        _inlineGoalScopeId = null;
+        _inlineGoalCollaboratorId = null;
         _inlineGoalStatusValue = null;
-        _showInlineGoalResponsible = false;
-        _showInlineGoalPeriod = false;
         _editingInlineGoalIndex = null;
     }
 
@@ -607,45 +575,6 @@ public partial class GoalFormModal
     private string GetDescriptionPlaceholder() =>
         Mode == WizardMode.Template ? "Descrição do template" : "Adicionar breve descrição";
 
-    private string GetResponsibleLabel()
-    {
-        if (!string.IsNullOrEmpty(scopeId) && Enum.TryParse<GoalScopeType>(scopeTypeValue, out _))
-        {
-            var option = GetScopeOptions(scopeTypeValue).FirstOrDefault(o => o.Id == scopeId);
-            if (option != null) return $"Responsável: {option.Name}";
-        }
-        return "Responsável";
-    }
-
-    private string GetPeriodLabel()
-    {
-        if (startDate != DateTime.MinValue && endDate != DateTime.MinValue)
-            return $"Período de início e fim: {startDate:dd/MM/yyyy} - {endDate:dd/MM/yyyy}";
-        return "Período de início e fim";
-    }
-
-    private string GetStatusChipLabel()
-    {
-        if (Enum.TryParse<GoalStatus>(statusValue, out var status))
-            return $"Status: {GetStatusLabel(status)}";
-        return "Status";
-    }
-
-    private string GetInlineGoalResponsibleLabel()
-    {
-        if (!string.IsNullOrEmpty(_inlineGoalScopeId) && Enum.TryParse<GoalScopeType>(_inlineGoalScopeTypeValue, out _))
-        {
-            var option = GetScopeOptions(_inlineGoalScopeTypeValue).FirstOrDefault(o => o.Id == _inlineGoalScopeId);
-            if (option != null) return $"Responsável: {option.Name}";
-        }
-        return "Responsável";
-    }
-
-    private string GetInlineGoalPeriodLabel()
-    {
-        return $"Período: {_inlineGoalStartDate:dd/MM/yyyy} - {_inlineGoalEndDate:dd/MM/yyyy}";
-    }
-
     private static string GetStatusLabel(GoalStatus status) => status switch
     {
         GoalStatus.Planned => "Planejada",
@@ -653,15 +582,6 @@ public partial class GoalFormModal
         GoalStatus.Completed => "Concluída",
         GoalStatus.Cancelled => "Cancelada",
         _ => status.ToString()
-    };
-
-    private static string GetScopeLabel(GoalScopeType scopeType) => scopeType switch
-    {
-        GoalScopeType.Organization => "Organização",
-        GoalScopeType.Workspace => "Espaço de trabalho",
-        GoalScopeType.Team => "Equipe",
-        GoalScopeType.Collaborator => "Colaborador",
-        _ => scopeType.ToString()
     };
 
     private static string BuildQuantitativeDetails(string? quantitativeType, decimal? minValue, decimal? maxValue, string? unit)

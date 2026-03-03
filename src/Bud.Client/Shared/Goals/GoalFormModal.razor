@@ -14,64 +14,34 @@
 
                 @if (Mode == WizardMode.Goal)
                 {
-                    <div class="chips-container">
-                        <div class="chip" @onclick="() => { showResponsibleSelector = !showResponsibleSelector; if (showResponsibleSelector) showPeriodSelector = false; }">
+                    <div class="goal-form-compact-row">
+                        <div class="chip">
                             <span class="chip-icon">👤</span>
-                            <span>@GetResponsibleLabel()</span>
-                        </div>
-                        <div class="chip" @onclick="() => { showPeriodSelector = !showPeriodSelector; if (showPeriodSelector) showResponsibleSelector = false; }">
-                            <span class="chip-icon">📅</span>
-                            <span>@GetPeriodLabel()</span>
-                        </div>
-                        @if (IsEditMode)
-                        {
-                            <div class="chip" @onclick="() => showStatusSelector = !showStatusSelector">
-                                <span class="chip-icon">📊</span>
-                                <span>@GetStatusChipLabel()</span>
-                            </div>
-                        }
-                    </div>
-
-                    @if (IsEditMode && showStatusSelector)
-                    {
-                        <div class="form-row">
-                            <label>Status</label>
-                            <select class="input" @bind="statusValue">
-                                @foreach (var status in Enum.GetValues<GoalStatus>())
-                                {
-                                    <option value="@status">@GetStatusLabel(status)</option>
-                                }
-                            </select>
-                        </div>
-                    }
-
-                    @if (showResponsibleSelector)
-                    {
-                        <div class="goal-form-compact-row">
-                            <select class="input" value="@scopeTypeValue" @onchange="HandleScopeTypeChanged">
-                                <option value="">Tipo de escopo</option>
-                                @foreach (var scopeType in Enum.GetValues<GoalScopeType>())
-                                {
-                                    <option value="@scopeType">@GetScopeLabel(scopeType)</option>
-                                }
-                            </select>
-                            <select class="input" @bind="scopeId">
-                                <option value="">Referência</option>
-                                @foreach (var option in GetScopeOptions(scopeTypeValue))
+                            <select class="chip-select" value="@collaboratorId" @onchange="HandleCollaboratorChanged">
+                                <option value="">Responsável</option>
+                                @foreach (var option in CollaboratorOptions)
                                 {
                                     <option value="@option.Id">@option.Name</option>
                                 }
                             </select>
                         </div>
-                    }
-
-                    @if (showPeriodSelector)
-                    {
-                        <div class="goal-form-compact-row">
-                            <input type="date" class="input" @bind="startDate" @bind:format="yyyy-MM-dd" />
-                            <input type="date" class="input" @bind="endDate" @bind:format="yyyy-MM-dd" />
-                        </div>
-                    }
+                        <DateRangePicker StartDate="startDate"
+                                         EndDate="endDate"
+                                         StartDateChanged="d => { startDate = d; StateHasChanged(); }"
+                                         EndDateChanged="d => { endDate = d; StateHasChanged(); }" />
+                        @if (IsEditMode)
+                        {
+                            <div class="chip">
+                                <span class="chip-icon">📊</span>
+                                <select class="chip-select" @bind="statusValue">
+                                    @foreach (var status in Enum.GetValues<GoalStatus>())
+                                    {
+                                        <option value="@status">@GetStatusLabel(status)</option>
+                                    }
+                                </select>
+                            </div>
+                        }
+                    </div>
                 }
             </div>
 
@@ -173,44 +143,22 @@
 
                         @if (Mode == WizardMode.Goal)
                         {
-                            <div class="chips-container" style="margin-top: var(--spacing-3);">
-                                <div class="chip" @onclick="() => { _showInlineGoalResponsible = !_showInlineGoalResponsible; if (_showInlineGoalResponsible) _showInlineGoalPeriod = false; }">
+                            <div class="goal-form-compact-row" style="margin-top: var(--spacing-3);">
+                                <div class="chip">
                                     <span class="chip-icon">👤</span>
-                                    <span>@GetInlineGoalResponsibleLabel()</span>
-                                </div>
-                                <div class="chip" @onclick="() => { _showInlineGoalPeriod = !_showInlineGoalPeriod; if (_showInlineGoalPeriod) _showInlineGoalResponsible = false; }">
-                                    <span class="chip-icon">📅</span>
-                                    <span>@GetInlineGoalPeriodLabel()</span>
-                                </div>
-                            </div>
-
-                            @if (_showInlineGoalResponsible)
-                            {
-                                <div class="goal-form-compact-row">
-                                    <select class="input" value="@_inlineGoalScopeTypeValue" @onchange="HandleInlineGoalScopeTypeChanged">
-                                        <option value="">Tipo de escopo</option>
-                                        @foreach (var scopeType in Enum.GetValues<GoalScopeType>())
-                                        {
-                                            <option value="@scopeType">@GetScopeLabel(scopeType)</option>
-                                        }
-                                    </select>
-                                    <select class="input" @bind="_inlineGoalScopeId">
-                                        <option value="">Referência</option>
-                                        @foreach (var option in GetScopeOptions(_inlineGoalScopeTypeValue))
+                                    <select class="chip-select" value="@_inlineGoalCollaboratorId" @onchange="HandleInlineGoalCollaboratorChanged">
+                                        <option value="">Responsável</option>
+                                        @foreach (var option in CollaboratorOptions)
                                         {
                                             <option value="@option.Id">@option.Name</option>
                                         }
                                     </select>
                                 </div>
-                            }
-
-                            @if (_showInlineGoalPeriod)
-                            {
-                                <div class="goal-form-compact-row">
-                                    <input type="date" class="input" @bind="_inlineGoalStartDate" @bind:format="yyyy-MM-dd" />
-                                    <input type="date" class="input" @bind="_inlineGoalEndDate" @bind:format="yyyy-MM-dd" />
-                                </div>
-                            }
+                                <DateRangePicker StartDate="_inlineGoalStartDate"
+                                                 EndDate="_inlineGoalEndDate"
+                                                 StartDateChanged="d => { _inlineGoalStartDate = d; StateHasChanged(); }"
+                                                 EndDateChanged="d => { _inlineGoalEndDate = d; StateHasChanged(); }" />
+                            </div>
                         }
 
                         <div class="form-actions" style="margin-top: var(--spacing-3);">
