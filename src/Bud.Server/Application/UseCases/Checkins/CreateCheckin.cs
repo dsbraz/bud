@@ -40,19 +40,6 @@ public sealed partial class CreateCheckin(
             return Result<Checkin>.Forbidden(UserErrorMessages.CheckinCreateForbidden);
         }
 
-        var goal = indicator.Goal;
-        var hasScopeAccess = await authorizationGateway.CanAccessGoalScopeAsync(
-            user,
-            goal.WorkspaceId,
-            goal.TeamId,
-            goal.CollaboratorId,
-            cancellationToken);
-        if (!hasScopeAccess)
-        {
-            LogCheckinCreationFailed(logger, indicatorId, "Forbidden (scope)");
-            return Result<Checkin>.Forbidden(UserErrorMessages.CheckinScopeForbidden);
-        }
-
         var collaboratorId = tenantProvider.CollaboratorId;
         if (!collaboratorId.HasValue)
         {
@@ -67,6 +54,7 @@ public sealed partial class CreateCheckin(
             return Result<Checkin>.NotFound(UserErrorMessages.CollaboratorNotFound);
         }
 
+        var goal = indicator.Goal;
         if (goal.Status != GoalStatus.Active)
         {
             LogCheckinCreationFailed(logger, indicatorId, "Goal not active");

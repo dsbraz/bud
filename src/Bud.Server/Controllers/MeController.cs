@@ -1,11 +1,8 @@
 using System.Security.Claims;
 using Bud.Server.Application.UseCases.Me;
 using Bud.Server.Authorization;
-using Bud.Server.MultiTenancy;
-using Bud.Shared.Contracts;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Bud.Server.Domain.Model;
 
 namespace Bud.Server.Controllers;
 
@@ -15,9 +12,7 @@ namespace Bud.Server.Controllers;
 [Produces("application/json")]
 public sealed class MeController(
     ListMyOrganizations listMyOrganizations,
-    GetMyDashboard getMyDashboard,
-    ListMyGoals listMyGoals,
-    ITenantProvider tenantProvider) : ApiControllerBase
+    GetMyDashboard getMyDashboard) : ApiControllerBase
 {
     /// <summary>
     /// Lista organizações disponíveis para o usuário autenticado.
@@ -50,47 +45,6 @@ public sealed class MeController(
         CancellationToken cancellationToken)
     {
         var result = await getMyDashboard.ExecuteAsync(User, teamId, cancellationToken);
-        return FromResultOk(result);
-    }
-
-    /// <summary>
-    /// Lista metas do colaborador autenticado.
-    /// </summary>
-    [Authorize(Policy = AuthorizationPolicies.TenantSelected)]
-    [HttpGet("goals")]
-    [ProducesResponseType(typeof(PagedResult<Goal>), StatusCodes.Status200OK)]
-    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
-    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status403Forbidden)]
-    public async Task<ActionResult<PagedResult<Goal>>> GetGoals(
-        [FromQuery] string? search,
-        [FromQuery] int page = 1,
-        [FromQuery] int pageSize = 10,
-        CancellationToken cancellationToken = default)
-    {
-        var collaboratorId = tenantProvider.CollaboratorId;
-        if (!collaboratorId.HasValue)
-        {
-            return ForbiddenProblem("Colaborador não identificado.");
-        }
-
-        var searchValidation = ValidateAndNormalizeSearch(search);
-        if (searchValidation.Failure is not null)
-        {
-            return searchValidation.Failure;
-        }
-
-        var paginationValidation = ValidatePagination(page, pageSize);
-        if (paginationValidation is not null)
-        {
-            return paginationValidation;
-        }
-
-        var result = await listMyGoals.ExecuteAsync(
-            collaboratorId.Value,
-            searchValidation.Value,
-            page,
-            pageSize,
-            cancellationToken);
         return FromResultOk(result);
     }
 }

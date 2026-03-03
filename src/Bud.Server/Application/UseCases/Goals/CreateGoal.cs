@@ -4,15 +4,15 @@ using Bud.Server.Application.Policies;
 using Bud.Server.Authorization;
 using Bud.Server.Domain.Model;
 using Bud.Server.Domain.Repositories;
-using Bud.Server.Application.Ports;
-using Bud.Shared.Contracts;
+using Bud.Server.MultiTenancy;
 using Microsoft.Extensions.Logging;
 
 namespace Bud.Server.Application.UseCases.Goals;
 
 public sealed partial class CreateGoal(
     IGoalRepository goalRepository,
-    IGoalScopeResolver goalScopeResolver,
+    ICollaboratorRepository collaboratorRepository,
+    ITenantProvider tenantProvider,
     IApplicationAuthorizationGateway authorizationGateway,
     ILogger<CreateGoal> logger,
     IUnitOfWork? unitOfWork = null)
@@ -22,22 +22,16 @@ public sealed partial class CreateGoal(
         CreateGoalRequest request,
         CancellationToken cancellationToken = default)
     {
-        LogCreatingGoal(logger, request.Name, request.ScopeType);
+        LogCreatingGoal(logger, request.Name);
 
-        var scopeResolution = await goalScopeResolver.ResolveScopeOrganizationIdAsync(
-            request.ScopeType,
-            request.ScopeId,
-            ignoreQueryFilters: true,
-            ct: cancellationToken);
-
-        if (!scopeResolution.IsSuccess)
+        var organizationId = tenantProvider.TenantId;
+        if (!organizationId.HasValue)
         {
-            var error = scopeResolution.Error ?? UserErrorMessages.ScopeNotFound;
-            LogGoalCreationFailed(logger, request.Name, error);
-            return Result<Goal>.NotFound(error);
+            LogGoalCreationFailed(logger, request.Name, "Tenant not selected");
+            return Result<Goal>.Forbidden(UserErrorMessages.GoalCreateForbidden);
         }
 
-        var canCreate = await authorizationGateway.CanAccessTenantOrganizationAsync(user, scopeResolution.Value, cancellationToken);
+        var canCreate = await authorizationGateway.CanAccessTenantOrganizationAsync(user, organizationId.Value, cancellationToken);
         if (!canCreate)
         {
             LogGoalCreationFailed(logger, request.Name, "Forbidden");
@@ -70,7 +64,7 @@ public sealed partial class CreateGoal(
         {
             var goal = Goal.Create(
                 Guid.NewGuid(),
-                scopeResolution.Value,
+                organizationId.Value,
                 request.Name,
                 request.Description,
                 request.Dimension,
@@ -79,7 +73,23 @@ public sealed partial class CreateGoal(
                 request.Status,
                 parentGoal?.Id);
 
-            goal.SetScope(request.ScopeType, request.ScopeId);
+            if (request.CollaboratorId.HasValue)
+            {
+                var collaborator = await collaboratorRepository.GetByIdAsync(request.CollaboratorId.Value, cancellationToken);
+                if (collaborator is null)
+                {
+                    LogGoalCreationFailed(logger, request.Name, UserErrorMessages.CollaboratorNotFound);
+                    return Result<Goal>.NotFound(UserErrorMessages.CollaboratorNotFound);
+                }
+
+                if (collaborator.OrganizationId != organizationId.Value)
+                {
+                    LogGoalCreationFailed(logger, request.Name, "Collaborator belongs to different organization");
+                    return Result<Goal>.Forbidden(UserErrorMessages.GoalCreateForbidden);
+                }
+
+                goal.CollaboratorId = request.CollaboratorId.Value;
+            }
 
             await goalRepository.AddAsync(goal, cancellationToken);
             await unitOfWork.CommitAsync(goalRepository.SaveChangesAsync, cancellationToken);
@@ -94,8 +104,8 @@ public sealed partial class CreateGoal(
         }
     }
 
-    [LoggerMessage(EventId = 4000, Level = LogLevel.Information, Message = "Creating goal '{Name}' with scope type '{ScopeType}'")]
-    private static partial void LogCreatingGoal(ILogger logger, string name, GoalScopeType scopeType);
+    [LoggerMessage(EventId = 4000, Level = LogLevel.Information, Message = "Creating goal '{Name}'")]
+    private static partial void LogCreatingGoal(ILogger logger, string name);
 
     [LoggerMessage(EventId = 4001, Level = LogLevel.Information, Message = "Goal created successfully: {GoalId} - '{Name}'")]
     private static partial void LogGoalCreated(ILogger logger, Guid goalId, string name);

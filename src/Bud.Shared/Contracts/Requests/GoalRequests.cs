@@ -12,8 +12,7 @@ public sealed class CreateGoalRequest
     public DateTime StartDate { get; set; }
     public DateTime EndDate { get; set; }
     public GoalStatus Status { get; set; }
-    public GoalScopeType ScopeType { get; set; }
-    public Guid ScopeId { get; set; }
+    public Guid? CollaboratorId { get; set; }
     public Guid? ParentId { get; set; }
 }
 
@@ -32,7 +31,5 @@ public sealed class PatchGoalRequest
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
     public Optional<GoalStatus> Status { get; set; }
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
-    public Optional<GoalScopeType> ScopeType { get; set; }
-    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
-    public Optional<Guid> ScopeId { get; set; }
+    public Optional<Guid?> CollaboratorId { get; set; }
 }

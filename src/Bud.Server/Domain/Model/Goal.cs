@@ -24,11 +24,7 @@ public sealed class Goal : ITenantEntity, IAggregateRoot, IHasDomainEvents
     public Goal? Parent { get; set; }
     public ICollection<Goal> Children { get; set; } = [];
 
-    // Scope FKs — only one is set (inherits from parent when null)
-    public Guid? WorkspaceId { get; set; }
-    public Workspace? Workspace { get; set; }
-    public Guid? TeamId { get; set; }
-    public Team? Team { get; set; }
+    // Responsible collaborator (optional)
     public Guid? CollaboratorId { get; set; }
     public Collaborator? Collaborator { get; set; }
 
@@ -121,34 +117,5 @@ public sealed class Goal : ITenantEntity, IAggregateRoot, IHasDomainEvents
     private void AddDomainEvent(IDomainEvent domainEvent)
     {
         _domainEvents.Add(domainEvent);
-    }
-
-    public void SetScope(GoalScopeType scopeType, Guid scopeId)
-    {
-        SetScope(GoalScope.Create(scopeType, scopeId));
-    }
-
-    public void SetScope(GoalScope scope)
-    {
-        WorkspaceId = null;
-        TeamId = null;
-        CollaboratorId = null;
-
-        switch (scope.ScopeType)
-        {
-            case GoalScopeType.Organization:
-                return;
-            case GoalScopeType.Workspace:
-                WorkspaceId = scope.ScopeId;
-                return;
-            case GoalScopeType.Team:
-                TeamId = scope.ScopeId;
-                return;
-            case GoalScopeType.Collaborator:
-                CollaboratorId = scope.ScopeId;
-                return;
-            default:
-                throw new DomainInvariantException("Escopo da meta inválido.");
-        }
     }
 }

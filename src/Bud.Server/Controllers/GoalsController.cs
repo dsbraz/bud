@@ -1,6 +1,7 @@
 using Bud.Server.Application.UseCases.Goals;
 using Bud.Server.Application.UseCases.Tasks;
 using Bud.Server.Authorization;
+using Bud.Server.MultiTenancy;
 using Bud.Shared.Contracts;
 using Bud.Shared.Contracts.Requests;
 using Bud.Shared.Contracts.Responses;
@@ -25,6 +26,7 @@ public sealed class GoalsController(
     ListGoalIndicators listGoalIndicators,
     ListGoalChildren listGoalChildren,
     ListTasks listTasks,
+    ITenantProvider tenantProvider,
     IValidator<CreateGoalRequest> createValidator,
     IValidator<PatchGoalRequest> updateValidator) : ApiControllerBase
 {
@@ -33,16 +35,14 @@ public sealed class GoalsController(
     /// </summary>
     /// <remarks>
     /// Exemplo de payload:
-    /// { "name": "Aumentar NPS", "scopeType": "Workspace", "scopeId": "GUID", "startDate": "2026-01-01", "endDate": "2026-03-31" }
+    /// { "name": "Aumentar NPS", "startDate": "2026-01-01", "endDate": "2026-03-31", "status": "Planned" }
     /// </remarks>
     /// <response code="201">Meta criada com sucesso.</response>
     /// <response code="400">Payload inválido ou erro de validação.</response>
-    /// <response code="404">Escopo da meta não encontrado.</response>
     [HttpPost]
     [Consumes("application/json")]
     [ProducesResponseType(typeof(GoalResponse), StatusCodes.Status201Created)]
     [ProducesResponseType(typeof(ValidationProblemDetails), StatusCodes.Status400BadRequest)]
-    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
     public async Task<ActionResult<Goal>> Create(CreateGoalRequest request, CancellationToken cancellationToken)
     {
         var validationResult = await createValidator.ValidateAsync(request, cancellationToken);
@@ -119,8 +119,7 @@ public sealed class GoalsController(
     [ProducesResponseType(typeof(PagedResult<Goal>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
     public async Task<ActionResult<PagedResult<Goal>>> GetAll(
-        [FromQuery] GoalScopeType? scopeType,
-        [FromQuery] Guid? scopeId,
+        [FromQuery] GoalFilter? filter,
         [FromQuery] string? search,
         [FromQuery] int page = 1,
         [FromQuery] int pageSize = 10,
@@ -138,7 +137,7 @@ public sealed class GoalsController(
             return paginationValidation;
         }
 
-        var result = await listGoals.ExecuteAsync(scopeType, scopeId, searchValidation.Value, page, pageSize, cancellationToken);
+        var result = await listGoals.ExecuteAsync(filter, tenantProvider.CollaboratorId, searchValidation.Value, page, pageSize, cancellationToken);
         return FromResultOk(result);
     }
 

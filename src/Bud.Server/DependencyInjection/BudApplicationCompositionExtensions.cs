@@ -11,12 +11,12 @@ using Bud.Server.Application.UseCases.Organizations;
 using Bud.Server.Application.UseCases.Sessions;
 using Bud.Server.Application.UseCases.Teams;
 using Bud.Server.Application.UseCases.Workspaces;
+using Bud.Server.Application.Ports;
 using Bud.Server.Authorization;
 using Bud.Server.Domain.Events;
 using Bud.Server.Domain.Repositories;
 using Bud.Server.Infrastructure.Repositories;
 using Bud.Server.Infrastructure.Services;
-using Bud.Server.Application.Ports;
 
 namespace Bud.Server.DependencyInjection;
 
@@ -101,7 +101,6 @@ public static class BudApplicationCompositionExtensions
         services.AddScoped<IAuthService, AuthService>();
         services.AddScoped<CreateSession>();
         services.AddScoped<ListMyOrganizations>();
-        services.AddScoped<ListMyGoals>();
         services.AddScoped<DeleteCurrentSession>();
 
         services.AddScoped<ITemplateRepository, TemplateRepository>();
@@ -115,8 +114,6 @@ public static class BudApplicationCompositionExtensions
         services.AddScoped<GetMyDashboard>();
 
         services.AddScoped<IGoalProgressService, GoalProgressService>();
-        services.AddScoped<IGoalScopeResolver, GoalScopeResolver>();
-
         services.AddScoped<INotificationRepository, NotificationRepository>();
         services.AddScoped<INotificationRecipientResolver, NotificationRecipientResolver>();
         services.AddScoped<NotificationOrchestrator>();
