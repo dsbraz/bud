@@ -3535,11 +3535,15 @@ a {
 /* Inner grid inside container */
 .goal-grid-tree-inner {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
-    gap: var(--spacing-2);
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+    gap: var(--spacing-3);
     margin-top: var(--spacing-2);
     overflow-y: auto;
     padding: var(--spacing-2);
+}
+
+.goal-grid-modal .goal-grid-node {
+    min-height: 220px;
 }
 
 /* Type label (Meta / Indicador) */
