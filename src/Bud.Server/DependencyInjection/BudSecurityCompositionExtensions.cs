@@ -83,11 +83,6 @@ public static class BudSecurityCompositionExtensions
                 policy.RequireAuthenticatedUser();
                 policy.AddRequirements(new OrganizationWriteRequirement());
             });
-            options.AddPolicy(AuthorizationPolicies.GoalScopeAccess, policy =>
-            {
-                policy.RequireAuthenticatedUser();
-                policy.AddRequirements(new GoalScopeAccessRequirement());
-            });
         });
 
         services.AddScoped<IAuthorizationHandler, TenantSelectedHandler>();
@@ -95,8 +90,6 @@ public static class BudSecurityCompositionExtensions
         services.AddScoped<IAuthorizationHandler, TenantOrganizationMatchHandler>();
         services.AddScoped<IAuthorizationHandler, OrganizationOwnerHandler>();
         services.AddScoped<IAuthorizationHandler, OrganizationWriteHandler>();
-        services.AddScoped<IAuthorizationHandler, GoalScopeAccessHandler>();
-
         services.AddScoped<ITenantAuthorizationService, TenantAuthorizationService>();
         services.AddScoped<IOrganizationAuthorizationService, OrganizationAuthorizationService>();
 

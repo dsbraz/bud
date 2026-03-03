@@ -160,7 +160,7 @@ public sealed class GoalFormTreeTests : TestContext
             .Add(p => p.Children, children)
             .Add(p => p.OnNavigateInto, idx => navigatedIndex = idx));
 
-        cut.Find(".goal-form-tree-goal").Click();
+        cut.Find(".goal-form-tree-row").Click();
 
         navigatedIndex.Should().Be(0);
     }
@@ -206,7 +206,7 @@ public sealed class GoalFormTreeTests : TestContext
     }
 
     [Fact]
-    public void Render_GoalCard_ShouldShowMetaLabel()
+    public void Render_GoalCard_ShouldNotShowMetaLabel()
     {
         var children = new List<TempGoal>
         {
@@ -217,7 +217,7 @@ public sealed class GoalFormTreeTests : TestContext
             .Add(p => p.Indicators, [])
             .Add(p => p.Children, children));
 
-        var label = cut.Find(".goal-form-tree-goal .goal-form-tree-type-label");
-        label.TextContent.Should().Be("Meta");
+        var labels = cut.FindAll(".goal-form-tree-goal .goal-form-tree-type-label");
+        labels.Should().BeEmpty();
     }
 }

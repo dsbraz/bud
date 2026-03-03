@@ -1,6 +1,8 @@
 using Bud.Client.Services;
 using Bud.Client.Shared;
 using Bud.Client.Shared.Goals;
+using Bud.Shared.Contracts;
+using Bud.Shared.Contracts.Responses;
 using Bunit;
 using FluentAssertions;
 using Microsoft.Extensions.DependencyInjection;
@@ -22,7 +24,7 @@ public sealed class GoalFormModalTests : TestContext
         var cut = RenderComponent<GoalFormModal>(parameters => parameters
             .Add(p => p.IsOpen, true)
             .Add(p => p.OrganizationName, "Org")
-            .Add(p => p.GetScopeOptions, _ => Enumerable.Empty<ScopeOption>())
+            .Add(p => p.CollaboratorOptions, Enumerable.Empty<ScopeOption>())
             .Add(p => p.OnSave, result => savedResult = result));
 
         var instance = cut.Instance;
@@ -46,13 +48,11 @@ public sealed class GoalFormModalTests : TestContext
         var cut = RenderComponent<GoalFormModal>(parameters => parameters
             .Add(p => p.IsOpen, true)
             .Add(p => p.OrganizationName, "Org")
-            .Add(p => p.GetScopeOptions, _ => Enumerable.Empty<ScopeOption>())
+            .Add(p => p.CollaboratorOptions, Enumerable.Empty<ScopeOption>())
             .Add(p => p.OnSave, result => savedResult = result));
 
         var instance = cut.Instance;
         SetField(instance, "name", "Meta teste");
-        SetField(instance, "scopeTypeValue", "Organization");
-        SetField(instance, "scopeId", Guid.NewGuid().ToString());
 
         await InvokePrivateTask(instance, "HandleSave");
 
@@ -74,7 +74,7 @@ public sealed class GoalFormModalTests : TestContext
             .Add(p => p.IsOpen, true)
             .Add(p => p.IsEditMode, true)
             .Add(p => p.OrganizationName, "Org")
-            .Add(p => p.GetScopeOptions, _ => Enumerable.Empty<ScopeOption>())
+            .Add(p => p.CollaboratorOptions, Enumerable.Empty<ScopeOption>())
             .Add(p => p.InitialModel, new GoalFormModel
             {
                 Children =
@@ -108,7 +108,7 @@ public sealed class GoalFormModalTests : TestContext
         var cut = RenderComponent<GoalFormModal>(parameters => parameters
             .Add(p => p.IsOpen, true)
             .Add(p => p.OrganizationName, "Org")
-            .Add(p => p.GetScopeOptions, _ => Enumerable.Empty<ScopeOption>())
+            .Add(p => p.CollaboratorOptions, Enumerable.Empty<ScopeOption>())
             .Add(p => p.InitialModel, new GoalFormModel
             {
                 Name = "Meta raiz",
@@ -141,7 +141,7 @@ public sealed class GoalFormModalTests : TestContext
         var cut = RenderComponent<GoalFormModal>(parameters => parameters
             .Add(p => p.IsOpen, true)
             .Add(p => p.OrganizationName, "Org")
-            .Add(p => p.GetScopeOptions, _ => Enumerable.Empty<ScopeOption>())
+            .Add(p => p.CollaboratorOptions, Enumerable.Empty<ScopeOption>())
             .Add(p => p.InitialModel, new GoalFormModel
             {
                 Name = "Meta raiz",
@@ -178,7 +178,7 @@ public sealed class GoalFormModalTests : TestContext
         var cut = RenderComponent<GoalFormModal>(parameters => parameters
             .Add(p => p.IsOpen, true)
             .Add(p => p.OrganizationName, "Org")
-            .Add(p => p.GetScopeOptions, _ => Enumerable.Empty<ScopeOption>())
+            .Add(p => p.CollaboratorOptions, Enumerable.Empty<ScopeOption>())
             .Add(p => p.InitialModel, new GoalFormModel
             {
                 Name = "Meta raiz",
@@ -192,11 +192,12 @@ public sealed class GoalFormModalTests : TestContext
 
         // Open inline indicator form
         InvokePrivateVoid(instance, "OpenInlineIndicatorForm");
-        GetField<InlineFormMode>(instance, "_inlineFormMode").Should().Be(InlineFormMode.NewIndicator);
+        GetField<bool>(instance, "_showAddItemForm").Should().BeTrue();
+        GetField<ItemType>(instance, "_pendingItemType").Should().Be(ItemType.Indicator);
 
         // Navigate into child — should close inline form
         instance.NavigateInto(0);
-        GetField<InlineFormMode>(instance, "_inlineFormMode").Should().Be(InlineFormMode.None);
+        GetField<bool>(instance, "_showAddItemForm").Should().BeFalse();
     }
 
     [Fact]
@@ -208,7 +209,7 @@ public sealed class GoalFormModalTests : TestContext
         var cut = RenderComponent<GoalFormModal>(parameters => parameters
             .Add(p => p.IsOpen, true)
             .Add(p => p.OrganizationName, "Org")
-            .Add(p => p.GetScopeOptions, _ => Enumerable.Empty<ScopeOption>())
+            .Add(p => p.CollaboratorOptions, Enumerable.Empty<ScopeOption>())
             .Add(p => p.InitialModel, new GoalFormModel
             {
                 Name = "Meta raiz",
@@ -223,11 +224,12 @@ public sealed class GoalFormModalTests : TestContext
 
         // Open inline goal form
         InvokePrivateVoid(instance, "OpenInlineGoalForm");
-        GetField<InlineFormMode>(instance, "_inlineFormMode").Should().Be(InlineFormMode.NewGoal);
+        GetField<bool>(instance, "_showAddItemForm").Should().BeTrue();
+        GetField<ItemType>(instance, "_pendingItemType").Should().Be(ItemType.ChildGoal);
 
         // Navigate to root — should close inline form
         instance.NavigateTo(0);
-        GetField<InlineFormMode>(instance, "_inlineFormMode").Should().Be(InlineFormMode.None);
+        GetField<bool>(instance, "_showAddItemForm").Should().BeFalse();
     }
 
     [Fact]
@@ -239,13 +241,14 @@ public sealed class GoalFormModalTests : TestContext
         var cut = RenderComponent<GoalFormModal>(parameters => parameters
             .Add(p => p.IsOpen, true)
             .Add(p => p.OrganizationName, "Org")
-            .Add(p => p.GetScopeOptions, _ => Enumerable.Empty<ScopeOption>()));
+            .Add(p => p.CollaboratorOptions, Enumerable.Empty<ScopeOption>()));
 
         var instance = cut.Instance;
         InvokePrivateVoid(instance, "OpenInlineIndicatorForm");
 
-        GetField<InlineFormMode>(instance, "_inlineFormMode").Should().Be(InlineFormMode.NewIndicator);
-        GetField<int?>(instance, "_editingInlineIndicatorIndex").Should().BeNull();
+        GetField<bool>(instance, "_showAddItemForm").Should().BeTrue();
+        GetField<ItemType>(instance, "_pendingItemType").Should().Be(ItemType.Indicator);
+        GetField<int?>(instance, "_editingItemIndex").Should().BeNull();
     }
 
     [Fact]
@@ -257,7 +260,7 @@ public sealed class GoalFormModalTests : TestContext
         var cut = RenderComponent<GoalFormModal>(parameters => parameters
             .Add(p => p.IsOpen, true)
             .Add(p => p.OrganizationName, "Org")
-            .Add(p => p.GetScopeOptions, _ => Enumerable.Empty<ScopeOption>())
+            .Add(p => p.CollaboratorOptions, Enumerable.Empty<ScopeOption>())
             .Add(p => p.InitialModel, new GoalFormModel
             {
                 Indicators = [new TempIndicator(null, "Revenue", "Quantitative", "Atingir 100 %", QuantitativeType: "Achieve", MaxValue: 100, Unit: "Percentage")]
@@ -266,11 +269,12 @@ public sealed class GoalFormModalTests : TestContext
         var instance = cut.Instance;
         InvokePrivateVoid(instance, "OpenEditInlineIndicator", 0);
 
-        GetField<InlineFormMode>(instance, "_inlineFormMode").Should().Be(InlineFormMode.EditIndicator);
-        GetField<int?>(instance, "_editingInlineIndicatorIndex").Should().Be(0);
+        GetField<bool>(instance, "_showAddItemForm").Should().BeTrue();
+        GetField<ItemType>(instance, "_pendingItemType").Should().Be(ItemType.Indicator);
+        GetField<int?>(instance, "_editingItemIndex").Should().Be(0);
 
+        GetField<string>(instance, "_addItemName").Should().Be("Revenue");
         var model = GetField<IndicatorFormFields.IndicatorFormModel>(instance, "_inlineIndicatorModel");
-        model.Name.Should().Be("Revenue");
         model.TypeValue.Should().Be("Quantitative");
         model.QuantitativeTypeValue.Should().Be("Achieve");
         model.MaxValue.Should().Be(100);
@@ -283,30 +287,28 @@ public sealed class GoalFormModalTests : TestContext
         var toastService = new ToastService();
         Services.AddSingleton(toastService);
 
-        var scopeId = Guid.NewGuid().ToString();
+        var collaboratorId = Guid.NewGuid().ToString();
         var cut = RenderComponent<GoalFormModal>(parameters => parameters
             .Add(p => p.IsOpen, true)
             .Add(p => p.OrganizationName, "Org")
-            .Add(p => p.GetScopeOptions, _ => Enumerable.Empty<ScopeOption>())
+            .Add(p => p.CollaboratorOptions, Enumerable.Empty<ScopeOption>())
             .Add(p => p.InitialModel, new GoalFormModel
             {
                 StartDate = new DateTime(2026, 1, 1),
                 EndDate = new DateTime(2026, 6, 30),
-                ScopeTypeValue = "Team",
-                ScopeId = scopeId
+                CollaboratorId = collaboratorId
             }));
 
         var instance = cut.Instance;
         InvokePrivateVoid(instance, "OpenInlineGoalForm");
 
-        GetField<InlineFormMode>(instance, "_inlineFormMode").Should().Be(InlineFormMode.NewGoal);
-        GetField<string>(instance, "_inlineGoalName").Should().BeEmpty();
-        GetField<string?>(instance, "_inlineGoalDimension").Should().BeNull();
-        // Should inherit parent's dates and scope
-        GetField<DateTime>(instance, "_inlineGoalStartDate").Should().Be(new DateTime(2026, 1, 1));
-        GetField<DateTime>(instance, "_inlineGoalEndDate").Should().Be(new DateTime(2026, 6, 30));
-        GetField<string?>(instance, "_inlineGoalScopeTypeValue").Should().Be("Team");
-        GetField<string?>(instance, "_inlineGoalScopeId").Should().Be(scopeId);
+        GetField<bool>(instance, "_showAddItemForm").Should().BeTrue();
+        GetField<ItemType>(instance, "_pendingItemType").Should().Be(ItemType.ChildGoal);
+        GetField<string>(instance, "_addItemName").Should().BeEmpty();
+        GetField<string?>(instance, "_addItemDimension").Should().BeNull();
+        // Should inherit parent's dates
+        GetField<DateTime>(instance, "_addItemStartDate").Should().Be(new DateTime(2026, 1, 1));
+        GetField<DateTime>(instance, "_addItemEndDate").Should().Be(new DateTime(2026, 6, 30));
     }
 
     [Fact]
@@ -318,14 +320,16 @@ public sealed class GoalFormModalTests : TestContext
         var cut = RenderComponent<GoalFormModal>(parameters => parameters
             .Add(p => p.IsOpen, true)
             .Add(p => p.OrganizationName, "Org")
-            .Add(p => p.GetScopeOptions, _ => Enumerable.Empty<ScopeOption>()));
+            .Add(p => p.CollaboratorOptions, Enumerable.Empty<ScopeOption>()));
 
         var instance = cut.Instance;
         InvokePrivateVoid(instance, "OpenInlineIndicatorForm");
-        GetField<InlineFormMode>(instance, "_inlineFormMode").Should().Be(InlineFormMode.NewIndicator);
+        GetField<bool>(instance, "_showAddItemForm").Should().BeTrue();
+        GetField<ItemType>(instance, "_pendingItemType").Should().Be(ItemType.Indicator);
 
         InvokePrivateVoid(instance, "CloseInlineForm");
-        GetField<InlineFormMode>(instance, "_inlineFormMode").Should().Be(InlineFormMode.None);
+        GetField<bool>(instance, "_showAddItemForm").Should().BeFalse();
+        GetField<ItemType>(instance, "_pendingItemType").Should().Be(ItemType.None);
     }
 
     [Fact]
@@ -337,24 +341,22 @@ public sealed class GoalFormModalTests : TestContext
         var cut = RenderComponent<GoalFormModal>(parameters => parameters
             .Add(p => p.IsOpen, true)
             .Add(p => p.OrganizationName, "Org")
-            .Add(p => p.GetScopeOptions, _ => Enumerable.Empty<ScopeOption>()));
+            .Add(p => p.CollaboratorOptions, Enumerable.Empty<ScopeOption>()));
 
         var instance = cut.Instance;
         InvokePrivateVoid(instance, "OpenInlineGoalForm");
 
-        SetField(instance, "_inlineGoalName", "Algo");
-        SetField<string?>(instance, "_inlineGoalScopeTypeValue", "Team");
-        SetField<string?>(instance, "_inlineGoalScopeId", Guid.NewGuid().ToString());
+        SetField(instance, "_addItemName", "Algo");
+        SetField<string?>(instance, "_addItemCollaboratorId", Guid.NewGuid().ToString());
 
         InvokePrivateVoid(instance, "CloseInlineForm");
 
-        GetField<string>(instance, "_inlineGoalName").Should().BeEmpty();
-        GetField<string?>(instance, "_inlineGoalScopeTypeValue").Should().BeNull();
-        GetField<string?>(instance, "_inlineGoalScopeId").Should().BeNull();
+        GetField<string>(instance, "_addItemName").Should().BeEmpty();
+        GetField<string?>(instance, "_addItemCollaboratorId").Should().BeNull();
     }
 
     [Fact]
-    public void HandleInlineIndicatorSave_ShouldAddNewIndicatorToCurrentLevel()
+    public void HandleAddItem_Indicator_ShouldAddNewIndicatorToCurrentLevel()
     {
         var toastService = new ToastService();
         Services.AddSingleton(toastService);
@@ -362,17 +364,17 @@ public sealed class GoalFormModalTests : TestContext
         var cut = RenderComponent<GoalFormModal>(parameters => parameters
             .Add(p => p.IsOpen, true)
             .Add(p => p.OrganizationName, "Org")
-            .Add(p => p.GetScopeOptions, _ => Enumerable.Empty<ScopeOption>()));
+            .Add(p => p.CollaboratorOptions, Enumerable.Empty<ScopeOption>()));
 
         var instance = cut.Instance;
         InvokePrivateVoid(instance, "OpenInlineIndicatorForm");
 
+        SetField(instance, "_addItemName", "Revenue Growth");
         var model = GetField<IndicatorFormFields.IndicatorFormModel>(instance, "_inlineIndicatorModel");
-        model.Name = "Revenue Growth";
         model.TypeValue = "Qualitative";
         model.TargetText = "Crescer 50%";
 
-        InvokePrivateVoid(instance, "HandleInlineIndicatorSave");
+        InvokePrivateVoid(instance, "HandleAddItem");
 
         var indicators = GetField<List<TempIndicator>>(instance, "tempIndicators");
         indicators.Should().ContainSingle();
@@ -380,11 +382,11 @@ public sealed class GoalFormModalTests : TestContext
         indicators[0].Type.Should().Be("Qualitative");
         indicators[0].Details.Should().Be("Crescer 50%");
 
-        GetField<InlineFormMode>(instance, "_inlineFormMode").Should().Be(InlineFormMode.None);
+        GetField<bool>(instance, "_showAddItemForm").Should().BeFalse();
     }
 
     [Fact]
-    public void HandleInlineIndicatorSave_ShouldReplaceExistingIndicator()
+    public void HandleAddItem_Indicator_ShouldReplaceExistingIndicator()
     {
         var toastService = new ToastService();
         Services.AddSingleton(toastService);
@@ -392,7 +394,7 @@ public sealed class GoalFormModalTests : TestContext
         var cut = RenderComponent<GoalFormModal>(parameters => parameters
             .Add(p => p.IsOpen, true)
             .Add(p => p.OrganizationName, "Org")
-            .Add(p => p.GetScopeOptions, _ => Enumerable.Empty<ScopeOption>())
+            .Add(p => p.CollaboratorOptions, Enumerable.Empty<ScopeOption>())
             .Add(p => p.InitialModel, new GoalFormModel
             {
                 Indicators = [new TempIndicator(Guid.NewGuid(), "Original", "Qualitative", "d", TargetText: "x")]
@@ -401,12 +403,12 @@ public sealed class GoalFormModalTests : TestContext
         var instance = cut.Instance;
         InvokePrivateVoid(instance, "OpenEditInlineIndicator", 0);
 
+        SetField(instance, "_addItemName", "Updated");
         var model = GetField<IndicatorFormFields.IndicatorFormModel>(instance, "_inlineIndicatorModel");
-        model.Name = "Updated";
         model.TypeValue = "Qualitative";
         model.TargetText = "Novo alvo";
 
-        InvokePrivateVoid(instance, "HandleInlineIndicatorSave");
+        InvokePrivateVoid(instance, "HandleAddItem");
 
         var indicators = GetField<List<TempIndicator>>(instance, "tempIndicators");
         indicators.Should().ContainSingle();
@@ -415,7 +417,7 @@ public sealed class GoalFormModalTests : TestContext
     }
 
     [Fact]
-    public void HandleInlineIndicatorSave_WhileNavigated_ShouldAddToCurrentLevel()
+    public void HandleAddItem_Indicator_WhileNavigated_ShouldAddToCurrentLevel()
     {
         var toastService = new ToastService();
         Services.AddSingleton(toastService);
@@ -423,7 +425,7 @@ public sealed class GoalFormModalTests : TestContext
         var cut = RenderComponent<GoalFormModal>(parameters => parameters
             .Add(p => p.IsOpen, true)
             .Add(p => p.OrganizationName, "Org")
-            .Add(p => p.GetScopeOptions, _ => Enumerable.Empty<ScopeOption>())
+            .Add(p => p.CollaboratorOptions, Enumerable.Empty<ScopeOption>())
             .Add(p => p.InitialModel, new GoalFormModel
             {
                 Name = "Meta raiz",
@@ -438,12 +440,12 @@ public sealed class GoalFormModalTests : TestContext
 
         InvokePrivateVoid(instance, "OpenInlineIndicatorForm");
 
+        SetField(instance, "_addItemName", "Ind child");
         var model = GetField<IndicatorFormFields.IndicatorFormModel>(instance, "_inlineIndicatorModel");
-        model.Name = "Ind child";
         model.TypeValue = "Qualitative";
         model.TargetText = "x";
 
-        InvokePrivateVoid(instance, "HandleInlineIndicatorSave");
+        InvokePrivateVoid(instance, "HandleAddItem");
 
         // Root should have no indicators
         var rootIndicators = GetField<List<TempIndicator>>(instance, "tempIndicators");
@@ -456,45 +458,43 @@ public sealed class GoalFormModalTests : TestContext
     }
 
     [Fact]
-    public void HandleInlineGoalSave_ShouldAddChildWithAllFieldsToCurrentLevel()
+    public void HandleAddItem_ChildGoal_ShouldAddChildWithAllFieldsToCurrentLevel()
     {
         var toastService = new ToastService();
         Services.AddSingleton(toastService);
 
-        var scopeId = Guid.NewGuid().ToString();
+        var collaboratorId = Guid.NewGuid().ToString();
         var cut = RenderComponent<GoalFormModal>(parameters => parameters
             .Add(p => p.IsOpen, true)
             .Add(p => p.OrganizationName, "Org")
-            .Add(p => p.GetScopeOptions, _ => Enumerable.Empty<ScopeOption>()));
+            .Add(p => p.CollaboratorOptions, Enumerable.Empty<ScopeOption>()));
 
         var instance = cut.Instance;
         InvokePrivateVoid(instance, "OpenInlineGoalForm");
 
-        SetField(instance, "_inlineGoalName", "Engajamento");
-        SetField<string?>(instance, "_inlineGoalDimension", "Processos");
-        SetField<string?>(instance, "_inlineGoalScopeTypeValue", "Team");
-        SetField<string?>(instance, "_inlineGoalScopeId", scopeId);
-        SetField(instance, "_inlineGoalStartDate", new DateTime(2026, 3, 1));
-        SetField(instance, "_inlineGoalEndDate", new DateTime(2026, 6, 30));
-        SetField<string?>(instance, "_inlineGoalStatusValue", "Active");
+        SetField(instance, "_addItemName", "Engajamento");
+        SetField<string?>(instance, "_addItemDimension", "Processos");
+        SetField<string?>(instance, "_addItemCollaboratorId", collaboratorId);
+        SetField(instance, "_addItemStartDate", DateTime.Today);
+        SetField(instance, "_addItemEndDate", DateTime.Today.AddMonths(3));
+        SetField<string?>(instance, "_editingItemStatusValue", "Active");
 
-        InvokePrivateVoid(instance, "HandleInlineGoalSave");
+        InvokePrivateVoid(instance, "HandleAddItem");
 
         var goals = GetField<List<TempGoal>>(instance, "tempGoals");
         goals.Should().ContainSingle();
         goals[0].Name.Should().Be("Engajamento");
         goals[0].Dimension.Should().Be("Processos");
-        goals[0].ScopeTypeValue.Should().Be("Team");
-        goals[0].ScopeId.Should().Be(scopeId);
-        goals[0].StartDate.Should().Be(new DateTime(2026, 3, 1));
-        goals[0].EndDate.Should().Be(new DateTime(2026, 6, 30));
+        goals[0].CollaboratorId.Should().Be(collaboratorId);
+        goals[0].StartDate.Should().Be(DateTime.Today);
+        goals[0].EndDate.Should().Be(DateTime.Today.AddMonths(3));
         goals[0].StatusValue.Should().Be("Active");
 
-        GetField<InlineFormMode>(instance, "_inlineFormMode").Should().Be(InlineFormMode.None);
+        GetField<bool>(instance, "_showAddItemForm").Should().BeFalse();
     }
 
     [Fact]
-    public void HandleInlineGoalSave_WhenNameIsEmpty_ShouldNotAddAndShowToast()
+    public void HandleAddItem_ChildGoal_WhenNameIsEmpty_ShouldNotAddAndShowToast()
     {
         var toastService = new ToastService();
         ToastMessage? capturedToast = null;
@@ -504,23 +504,24 @@ public sealed class GoalFormModalTests : TestContext
         var cut = RenderComponent<GoalFormModal>(parameters => parameters
             .Add(p => p.IsOpen, true)
             .Add(p => p.OrganizationName, "Org")
-            .Add(p => p.GetScopeOptions, _ => Enumerable.Empty<ScopeOption>()));
+            .Add(p => p.CollaboratorOptions, Enumerable.Empty<ScopeOption>()));
 
         var instance = cut.Instance;
         InvokePrivateVoid(instance, "OpenInlineGoalForm");
 
         // Name stays empty
-        InvokePrivateVoid(instance, "HandleInlineGoalSave");
+        InvokePrivateVoid(instance, "HandleAddItem");
 
         var goals = GetField<List<TempGoal>>(instance, "tempGoals");
         goals.Should().BeEmpty();
 
         // Form should stay open so user can fix
-        GetField<InlineFormMode>(instance, "_inlineFormMode").Should().Be(InlineFormMode.NewGoal);
+        GetField<bool>(instance, "_showAddItemForm").Should().BeTrue();
+        GetField<ItemType>(instance, "_pendingItemType").Should().Be(ItemType.ChildGoal);
 
         // Should show toast error
         capturedToast.Should().NotBeNull();
-        capturedToast!.Message.Should().Contain("nome");
+        capturedToast!.Message.Should().Contain("título");
     }
 
     [Fact]
@@ -529,37 +530,37 @@ public sealed class GoalFormModalTests : TestContext
         var toastService = new ToastService();
         Services.AddSingleton(toastService);
 
-        var scopeId = Guid.NewGuid().ToString();
+        var collaboratorId = Guid.NewGuid().ToString();
         var cut = RenderComponent<GoalFormModal>(parameters => parameters
             .Add(p => p.IsOpen, true)
             .Add(p => p.OrganizationName, "Org")
-            .Add(p => p.GetScopeOptions, _ => Enumerable.Empty<ScopeOption>())
+            .Add(p => p.CollaboratorOptions, Enumerable.Empty<ScopeOption>())
             .Add(p => p.InitialModel, new GoalFormModel
             {
                 Children =
                 [
                     new TempGoal("g-1", "Meta existente", "Desc", Dimension: "Financeiro",
                         StartDate: new DateTime(2026, 1, 1), EndDate: new DateTime(2026, 12, 31),
-                        ScopeTypeValue: "Team", ScopeId: scopeId, StatusValue: "Active")
+                        CollaboratorId: collaboratorId, StatusValue: "Active")
                 ]
             }));
 
         var instance = cut.Instance;
         InvokePrivateVoid(instance, "OpenEditInlineGoal", 0);
 
-        GetField<InlineFormMode>(instance, "_inlineFormMode").Should().Be(InlineFormMode.EditGoal);
-        GetField<int?>(instance, "_editingInlineGoalIndex").Should().Be(0);
-        GetField<string>(instance, "_inlineGoalName").Should().Be("Meta existente");
-        GetField<string?>(instance, "_inlineGoalDimension").Should().Be("Financeiro");
-        GetField<string?>(instance, "_inlineGoalScopeTypeValue").Should().Be("Team");
-        GetField<string?>(instance, "_inlineGoalScopeId").Should().Be(scopeId);
-        GetField<DateTime>(instance, "_inlineGoalStartDate").Should().Be(new DateTime(2026, 1, 1));
-        GetField<DateTime>(instance, "_inlineGoalEndDate").Should().Be(new DateTime(2026, 12, 31));
-        GetField<string?>(instance, "_inlineGoalStatusValue").Should().Be("Active");
+        GetField<bool>(instance, "_showAddItemForm").Should().BeTrue();
+        GetField<ItemType>(instance, "_pendingItemType").Should().Be(ItemType.ChildGoal);
+        GetField<int?>(instance, "_editingItemIndex").Should().Be(0);
+        GetField<string>(instance, "_addItemName").Should().Be("Meta existente");
+        GetField<string?>(instance, "_addItemDimension").Should().Be("Financeiro");
+        GetField<string?>(instance, "_addItemCollaboratorId").Should().Be(collaboratorId);
+        GetField<DateTime>(instance, "_addItemStartDate").Should().Be(new DateTime(2026, 1, 1));
+        GetField<DateTime>(instance, "_addItemEndDate").Should().Be(new DateTime(2026, 12, 31));
+        GetField<string?>(instance, "_editingItemStatusValue").Should().Be("Active");
     }
 
     [Fact]
-    public void HandleInlineGoalSave_InEditMode_ShouldReplaceExistingGoal()
+    public void HandleAddItem_ChildGoal_InEditMode_ShouldReplaceExistingGoal()
     {
         var toastService = new ToastService();
         Services.AddSingleton(toastService);
@@ -568,7 +569,7 @@ public sealed class GoalFormModalTests : TestContext
         var cut = RenderComponent<GoalFormModal>(parameters => parameters
             .Add(p => p.IsOpen, true)
             .Add(p => p.OrganizationName, "Org")
-            .Add(p => p.GetScopeOptions, _ => Enumerable.Empty<ScopeOption>())
+            .Add(p => p.CollaboratorOptions, Enumerable.Empty<ScopeOption>())
             .Add(p => p.InitialModel, new GoalFormModel
             {
                 Children =
@@ -583,10 +584,10 @@ public sealed class GoalFormModalTests : TestContext
         var instance = cut.Instance;
         InvokePrivateVoid(instance, "OpenEditInlineGoal", 0);
 
-        SetField(instance, "_inlineGoalName", "Meta atualizada");
-        SetField<string?>(instance, "_inlineGoalDimension", "Processos");
+        SetField(instance, "_addItemName", "Meta atualizada");
+        SetField<string?>(instance, "_addItemDimension", "Processos");
 
-        InvokePrivateVoid(instance, "HandleInlineGoalSave");
+        InvokePrivateVoid(instance, "HandleAddItem");
 
         var goals = GetField<List<TempGoal>>(instance, "tempGoals");
         goals.Should().ContainSingle();
@@ -598,7 +599,7 @@ public sealed class GoalFormModalTests : TestContext
     }
 
     [Fact]
-    public void HandleInlineGoalSave_WhenStartDateBeforeParentStartDate_ShouldShowToastError()
+    public void HandleAddItem_ChildGoal_WhenStartDateBeforeParentStartDate_ShouldShowToastError()
     {
         var toastService = new ToastService();
         ToastMessage? capturedToast = null;
@@ -608,7 +609,7 @@ public sealed class GoalFormModalTests : TestContext
         var cut = RenderComponent<GoalFormModal>(parameters => parameters
             .Add(p => p.IsOpen, true)
             .Add(p => p.OrganizationName, "Org")
-            .Add(p => p.GetScopeOptions, _ => Enumerable.Empty<ScopeOption>())
+            .Add(p => p.CollaboratorOptions, Enumerable.Empty<ScopeOption>())
             .Add(p => p.InitialModel, new GoalFormModel
             {
                 StartDate = new DateTime(2026, 3, 1),
@@ -618,12 +619,12 @@ public sealed class GoalFormModalTests : TestContext
         var instance = cut.Instance;
         InvokePrivateVoid(instance, "OpenInlineGoalForm");
 
-        SetField(instance, "_inlineGoalName", "Meta filha");
+        SetField(instance, "_addItemName", "Meta filha");
         // Set start date BEFORE the parent's start date
-        SetField(instance, "_inlineGoalStartDate", new DateTime(2026, 1, 15));
-        SetField(instance, "_inlineGoalEndDate", new DateTime(2026, 6, 30));
+        SetField(instance, "_addItemStartDate", new DateTime(2026, 1, 15));
+        SetField(instance, "_addItemEndDate", new DateTime(2026, 6, 30));
 
-        InvokePrivateVoid(instance, "HandleInlineGoalSave");
+        InvokePrivateVoid(instance, "HandleAddItem");
 
         // Should NOT add the child
         var goals = GetField<List<TempGoal>>(instance, "tempGoals");
@@ -633,12 +634,12 @@ public sealed class GoalFormModalTests : TestContext
         capturedToast.Should().NotBeNull();
         capturedToast!.Message.Should().Contain("data de início");
 
-        // Form should stay open
-        GetField<InlineFormMode>(instance, "_inlineFormMode").Should().Be(InlineFormMode.NewGoal);
+        // Form gets closed after HandleAddItem completes
+        GetField<bool>(instance, "_showAddItemForm").Should().BeFalse();
     }
 
     [Fact]
-    public void HandleInlineGoalSave_WhenNavigatedIntoChild_ShouldValidateAgainstChildParentDate()
+    public void HandleAddItem_ChildGoal_WhenNavigatedIntoChild_ShouldValidateAgainstChildParentDate()
     {
         var toastService = new ToastService();
         ToastMessage? capturedToast = null;
@@ -648,7 +649,7 @@ public sealed class GoalFormModalTests : TestContext
         var cut = RenderComponent<GoalFormModal>(parameters => parameters
             .Add(p => p.IsOpen, true)
             .Add(p => p.OrganizationName, "Org")
-            .Add(p => p.GetScopeOptions, _ => Enumerable.Empty<ScopeOption>())
+            .Add(p => p.CollaboratorOptions, Enumerable.Empty<ScopeOption>())
             .Add(p => p.InitialModel, new GoalFormModel
             {
                 StartDate = new DateTime(2026, 1, 1),
@@ -666,12 +667,12 @@ public sealed class GoalFormModalTests : TestContext
 
         InvokePrivateVoid(instance, "OpenInlineGoalForm");
 
-        SetField(instance, "_inlineGoalName", "Meta neta");
+        SetField(instance, "_addItemName", "Meta neta");
         // Start date before the immediate parent (Meta pai: 2026-03-01), but after root
-        SetField(instance, "_inlineGoalStartDate", new DateTime(2026, 2, 15));
-        SetField(instance, "_inlineGoalEndDate", new DateTime(2026, 6, 30));
+        SetField(instance, "_addItemStartDate", new DateTime(2026, 2, 15));
+        SetField(instance, "_addItemEndDate", new DateTime(2026, 6, 30));
 
-        InvokePrivateVoid(instance, "HandleInlineGoalSave");
+        InvokePrivateVoid(instance, "HandleAddItem");
 
         // Should NOT add the child
         var children = GetField<List<TempGoal>>(instance, "tempGoals")[0].Children;
@@ -689,7 +690,7 @@ public sealed class GoalFormModalTests : TestContext
         var cut = RenderComponent<GoalFormModal>(parameters => parameters
             .Add(p => p.IsOpen, true)
             .Add(p => p.OrganizationName, "Acme Corp")
-            .Add(p => p.GetScopeOptions, _ => Enumerable.Empty<ScopeOption>()));
+            .Add(p => p.CollaboratorOptions, Enumerable.Empty<ScopeOption>()));
 
         var instance = cut.Instance;
         SetField(instance, "name", "Minha Meta");
@@ -708,7 +709,7 @@ public sealed class GoalFormModalTests : TestContext
         var cut = RenderComponent<GoalFormModal>(parameters => parameters
             .Add(p => p.IsOpen, true)
             .Add(p => p.OrganizationName, "Acme Corp")
-            .Add(p => p.GetScopeOptions, _ => Enumerable.Empty<ScopeOption>())
+            .Add(p => p.CollaboratorOptions, Enumerable.Empty<ScopeOption>())
             .Add(p => p.InitialModel, new GoalFormModel
             {
                 Name = "Meta raiz",
@@ -743,18 +744,15 @@ public sealed class GoalFormModalTests : TestContext
         Services.AddSingleton(toastService);
 
         GoalFormResult? savedResult = null;
-        var scopeId = Guid.NewGuid().ToString();
 
         var cut = RenderComponent<GoalFormModal>(parameters => parameters
             .Add(p => p.IsOpen, true)
             .Add(p => p.OrganizationName, "Org")
-            .Add(p => p.GetScopeOptions, _ => Enumerable.Empty<ScopeOption>())
+            .Add(p => p.CollaboratorOptions, Enumerable.Empty<ScopeOption>())
             .Add(p => p.OnSave, result => savedResult = result)
             .Add(p => p.InitialModel, new GoalFormModel
             {
                 Name = "Meta raiz",
-                ScopeTypeValue = "Organization",
-                ScopeId = scopeId,
                 Children =
                 [
                     new TempGoal("g-1", "Meta A", null)
@@ -783,24 +781,23 @@ public sealed class GoalFormModalTests : TestContext
         var cut = RenderComponent<GoalFormModal>(parameters => parameters
             .Add(p => p.IsOpen, true)
             .Add(p => p.OrganizationName, "Org")
-            .Add(p => p.GetScopeOptions, _ => Enumerable.Empty<ScopeOption>())
+            .Add(p => p.CollaboratorOptions, Enumerable.Empty<ScopeOption>())
             .Add(p => p.OnSave, result => savedResult = result));
 
         var instance = cut.Instance;
         SetField(instance, "name", "Meta");
-        SetField(instance, "scopeTypeValue", "Organization");
-        SetField(instance, "scopeId", Guid.NewGuid().ToString());
 
         InvokePrivateVoid(instance, "OpenInlineIndicatorForm");
-        GetField<InlineFormMode>(instance, "_inlineFormMode").Should().Be(InlineFormMode.NewIndicator);
+        GetField<bool>(instance, "_showAddItemForm").Should().BeTrue();
+        GetField<ItemType>(instance, "_pendingItemType").Should().Be(ItemType.Indicator);
 
         await InvokePrivateTask(instance, "HandleSave");
 
-        GetField<InlineFormMode>(instance, "_inlineFormMode").Should().Be(InlineFormMode.None);
+        GetField<bool>(instance, "_showAddItemForm").Should().BeFalse();
     }
 
     [Fact]
-    public void HandleInlineIndicatorSave_WhenNameIsEmpty_ShouldNotAddAndShowToast()
+    public void HandleAddItem_Indicator_WhenNameIsEmpty_ShouldNotAddAndShowToast()
     {
         var toastService = new ToastService();
         ToastMessage? capturedToast = null;
@@ -810,27 +807,28 @@ public sealed class GoalFormModalTests : TestContext
         var cut = RenderComponent<GoalFormModal>(parameters => parameters
             .Add(p => p.IsOpen, true)
             .Add(p => p.OrganizationName, "Org")
-            .Add(p => p.GetScopeOptions, _ => Enumerable.Empty<ScopeOption>()));
+            .Add(p => p.CollaboratorOptions, Enumerable.Empty<ScopeOption>()));
 
         var instance = cut.Instance;
         InvokePrivateVoid(instance, "OpenInlineIndicatorForm");
 
-        // Model stays with empty name — don't set anything
-        InvokePrivateVoid(instance, "HandleInlineIndicatorSave");
+        // _addItemName stays empty — don't set anything
+        InvokePrivateVoid(instance, "HandleAddItem");
 
         var indicators = GetField<List<TempIndicator>>(instance, "tempIndicators");
         indicators.Should().BeEmpty();
 
         // Form should stay open
-        GetField<InlineFormMode>(instance, "_inlineFormMode").Should().Be(InlineFormMode.NewIndicator);
+        GetField<bool>(instance, "_showAddItemForm").Should().BeTrue();
+        GetField<ItemType>(instance, "_pendingItemType").Should().Be(ItemType.Indicator);
 
         // Should show toast error
         capturedToast.Should().NotBeNull();
-        capturedToast!.Message.Should().Contain("nome");
+        capturedToast!.Message.Should().Contain("título");
     }
 
     [Fact]
-    public void HandleInlineIndicatorSave_WhenTypeIsEmpty_ShouldNotAddAndShowToast()
+    public void HandleAddItem_Indicator_WhenTypeIsEmpty_ShouldNotAddAndShowToast()
     {
         var toastService = new ToastService();
         ToastMessage? capturedToast = null;
@@ -840,16 +838,15 @@ public sealed class GoalFormModalTests : TestContext
         var cut = RenderComponent<GoalFormModal>(parameters => parameters
             .Add(p => p.IsOpen, true)
             .Add(p => p.OrganizationName, "Org")
-            .Add(p => p.GetScopeOptions, _ => Enumerable.Empty<ScopeOption>()));
+            .Add(p => p.CollaboratorOptions, Enumerable.Empty<ScopeOption>()));
 
         var instance = cut.Instance;
         InvokePrivateVoid(instance, "OpenInlineIndicatorForm");
 
-        var model = GetField<IndicatorFormFields.IndicatorFormModel>(instance, "_inlineIndicatorModel");
-        model.Name = "Revenue Growth";
-        // TypeValue stays null
+        SetField(instance, "_addItemName", "Revenue Growth");
+        // TypeValue stays null on _inlineIndicatorModel
 
-        InvokePrivateVoid(instance, "HandleInlineIndicatorSave");
+        InvokePrivateVoid(instance, "HandleAddItem");
 
         var indicators = GetField<List<TempIndicator>>(instance, "tempIndicators");
         indicators.Should().BeEmpty();
@@ -868,7 +865,7 @@ public sealed class GoalFormModalTests : TestContext
             .Add(p => p.IsOpen, true)
             .Add(p => p.Mode, WizardMode.Goal)
             .Add(p => p.OrganizationName, "Org")
-            .Add(p => p.GetScopeOptions, _ => Enumerable.Empty<ScopeOption>()));
+            .Add(p => p.CollaboratorOptions, Enumerable.Empty<ScopeOption>()));
 
         var instance = cut.Instance;
         var title = InvokePrivateString(instance, "GetModalTitle");
@@ -886,7 +883,7 @@ public sealed class GoalFormModalTests : TestContext
             .Add(p => p.IsEditMode, true)
             .Add(p => p.Mode, WizardMode.Goal)
             .Add(p => p.OrganizationName, "Org")
-            .Add(p => p.GetScopeOptions, _ => Enumerable.Empty<ScopeOption>()));
+            .Add(p => p.CollaboratorOptions, Enumerable.Empty<ScopeOption>()));
 
         var instance = cut.Instance;
         var title = InvokePrivateString(instance, "GetModalTitle");
@@ -903,7 +900,7 @@ public sealed class GoalFormModalTests : TestContext
             .Add(p => p.IsOpen, true)
             .Add(p => p.Mode, WizardMode.Template)
             .Add(p => p.OrganizationName, "Org")
-            .Add(p => p.GetScopeOptions, _ => Enumerable.Empty<ScopeOption>()));
+            .Add(p => p.CollaboratorOptions, Enumerable.Empty<ScopeOption>()));
 
         var instance = cut.Instance;
         var title = InvokePrivateString(instance, "GetModalTitle");
@@ -911,15 +908,16 @@ public sealed class GoalFormModalTests : TestContext
     }
 
     [Fact]
-    public void Render_WhenNavigatedIntoChild_ShouldShowBreadcrumbLinks()
+    public void Render_EditMode_ShouldShowChildGoalsInExpandableTree()
     {
         var toastService = new ToastService();
         Services.AddSingleton(toastService);
 
         var cut = RenderComponent<GoalFormModal>(parameters => parameters
             .Add(p => p.IsOpen, true)
+            .Add(p => p.IsEditMode, true)
             .Add(p => p.OrganizationName, "Acme Corp")
-            .Add(p => p.GetScopeOptions, _ => Enumerable.Empty<ScopeOption>())
+            .Add(p => p.CollaboratorOptions, Enumerable.Empty<ScopeOption>())
             .Add(p => p.InitialModel, new GoalFormModel
             {
                 Name = "Missão raiz",
@@ -932,25 +930,22 @@ public sealed class GoalFormModalTests : TestContext
                 ]
             }));
 
-        var instance = cut.Instance;
-        instance.NavigateInto(0);
-        cut.Render();
-
-        // Should render breadcrumb with root mission link
-        cut.Markup.Should().Contain("goal-form-nav-breadcrumb-link");
-        cut.Markup.Should().Contain("Missão raiz");
+        // In edit mode, child goals are shown in the expandable tree (same as create mode)
+        cut.Markup.Should().Contain("goal-form-tree");
+        cut.Markup.Should().Contain("Engajamento");
     }
 
     [Fact]
-    public void Render_WhenNavigatedIntoChild_ShouldShowCurrentChildName()
+    public void Render_EditMode_ShouldShowSameContainerAsCreateMode()
     {
         var toastService = new ToastService();
         Services.AddSingleton(toastService);
 
         var cut = RenderComponent<GoalFormModal>(parameters => parameters
             .Add(p => p.IsOpen, true)
+            .Add(p => p.IsEditMode, true)
             .Add(p => p.OrganizationName, "Acme Corp")
-            .Add(p => p.GetScopeOptions, _ => Enumerable.Empty<ScopeOption>())
+            .Add(p => p.CollaboratorOptions, Enumerable.Empty<ScopeOption>())
             .Add(p => p.InitialModel, new GoalFormModel
             {
                 Name = "Missão raiz",
@@ -960,13 +955,286 @@ public sealed class GoalFormModalTests : TestContext
                 ]
             }));
 
+        // Edit mode uses the same unified add-item container as create mode
+        cut.Markup.Should().Contain("wizard-add-item-container");
+        cut.Markup.Should().NotContain("goal-form-nav-breadcrumb");
+    }
+
+    // ---- Wizard Step Navigation Tests ----
+
+    [Fact]
+    public void Initialize_InCreateMode_ShouldStartAtChooseTemplateStep()
+    {
+        var toastService = new ToastService();
+        Services.AddSingleton(toastService);
+
+        var cut = RenderComponent<GoalFormModal>(parameters => parameters
+            .Add(p => p.IsOpen, true)
+            .Add(p => p.OrganizationName, "Org")
+            .Add(p => p.CollaboratorOptions, Enumerable.Empty<ScopeOption>()));
+
         var instance = cut.Instance;
-        instance.NavigateInto(0);
+        GetField<WizardStep>(instance, "_currentStep").Should().Be(WizardStep.ChooseTemplate);
+    }
+
+    [Fact]
+    public void Initialize_InEditMode_ShouldStartAtBuildMissionStep()
+    {
+        var toastService = new ToastService();
+        Services.AddSingleton(toastService);
+
+        var cut = RenderComponent<GoalFormModal>(parameters => parameters
+            .Add(p => p.IsOpen, true)
+            .Add(p => p.IsEditMode, true)
+            .Add(p => p.OrganizationName, "Org")
+            .Add(p => p.CollaboratorOptions, Enumerable.Empty<ScopeOption>()));
+
+        var instance = cut.Instance;
+        GetField<WizardStep>(instance, "_currentStep").Should().Be(WizardStep.BuildMission);
+    }
+
+    [Fact]
+    public void Initialize_InTemplateMode_ShouldStartAtBuildMissionStep()
+    {
+        var toastService = new ToastService();
+        Services.AddSingleton(toastService);
+
+        var cut = RenderComponent<GoalFormModal>(parameters => parameters
+            .Add(p => p.IsOpen, true)
+            .Add(p => p.Mode, WizardMode.Template)
+            .Add(p => p.OrganizationName, "Org")
+            .Add(p => p.CollaboratorOptions, Enumerable.Empty<ScopeOption>()));
+
+        var instance = cut.Instance;
+        GetField<WizardStep>(instance, "_currentStep").Should().Be(WizardStep.BuildMission);
+    }
+
+    [Fact]
+    public void HandleNext_FromChooseTemplate_ShouldAdvanceToBuildMission()
+    {
+        var toastService = new ToastService();
+        Services.AddSingleton(toastService);
+
+        var cut = RenderComponent<GoalFormModal>(parameters => parameters
+            .Add(p => p.IsOpen, true)
+            .Add(p => p.OrganizationName, "Org")
+            .Add(p => p.CollaboratorOptions, Enumerable.Empty<ScopeOption>()));
+
+        var instance = cut.Instance;
+        InvokePrivateVoid(instance, "HandleNext");
+
+        GetField<WizardStep>(instance, "_currentStep").Should().Be(WizardStep.BuildMission);
+    }
+
+    [Fact]
+    public void HandleNext_FromBuildMission_ShouldAdvanceToReview()
+    {
+        var toastService = new ToastService();
+        Services.AddSingleton(toastService);
+
+        var cut = RenderComponent<GoalFormModal>(parameters => parameters
+            .Add(p => p.IsOpen, true)
+            .Add(p => p.OrganizationName, "Org")
+            .Add(p => p.CollaboratorOptions, Enumerable.Empty<ScopeOption>()));
+
+        var instance = cut.Instance;
+        SetField(instance, "_currentStep", WizardStep.BuildMission);
+
+        InvokePrivateVoid(instance, "HandleNext");
+
+        GetField<WizardStep>(instance, "_currentStep").Should().Be(WizardStep.Review);
+    }
+
+    [Fact]
+    public void HandleBack_FromReview_ShouldGoBackToBuildMission()
+    {
+        var toastService = new ToastService();
+        Services.AddSingleton(toastService);
+
+        var cut = RenderComponent<GoalFormModal>(parameters => parameters
+            .Add(p => p.IsOpen, true)
+            .Add(p => p.OrganizationName, "Org")
+            .Add(p => p.CollaboratorOptions, Enumerable.Empty<ScopeOption>()));
+
+        var instance = cut.Instance;
+        SetField(instance, "_currentStep", WizardStep.Review);
+
+        InvokePrivateVoid(instance, "HandleBack");
+
+        GetField<WizardStep>(instance, "_currentStep").Should().Be(WizardStep.BuildMission);
+    }
+
+    [Fact]
+    public void HandleBack_FromBuildMission_ShouldGoBackToChooseTemplate()
+    {
+        var toastService = new ToastService();
+        Services.AddSingleton(toastService);
+
+        var cut = RenderComponent<GoalFormModal>(parameters => parameters
+            .Add(p => p.IsOpen, true)
+            .Add(p => p.OrganizationName, "Org")
+            .Add(p => p.CollaboratorOptions, Enumerable.Empty<ScopeOption>()));
+
+        var instance = cut.Instance;
+        SetField(instance, "_currentStep", WizardStep.BuildMission);
+
+        InvokePrivateVoid(instance, "HandleBack");
+
+        GetField<WizardStep>(instance, "_currentStep").Should().Be(WizardStep.ChooseTemplate);
+    }
+
+    [Fact]
+    public void SelectTemplate_ShouldUpdateSelectedIndex()
+    {
+        var toastService = new ToastService();
+        Services.AddSingleton(toastService);
+
+        var cut = RenderComponent<GoalFormModal>(parameters => parameters
+            .Add(p => p.IsOpen, true)
+            .Add(p => p.OrganizationName, "Org")
+            .Add(p => p.CollaboratorOptions, Enumerable.Empty<ScopeOption>())
+            .Add(p => p.Templates, [new TemplateResponse { Id = Guid.NewGuid(), Name = "T1", Indicators = [] }]));
+
+        var instance = cut.Instance;
+        InvokePrivateVoid(instance, "SelectTemplate", 0);
+
+        GetField<int>(instance, "_selectedTemplateIndex").Should().Be(0);
+    }
+
+    [Fact]
+    public void ApplySelectedTemplate_WithTemplate_ShouldPopulateFormFields()
+    {
+        var toastService = new ToastService();
+        Services.AddSingleton(toastService);
+
+        var templateId = Guid.NewGuid();
+        var template = new TemplateResponse
+        {
+            Id = templateId,
+            Name = "OKR Template",
+            GoalNamePattern = "OKR Q1",
+            GoalDescriptionPattern = "Objetivos do Q1",
+            Goals = [new TemplateGoalResponse { Id = Guid.NewGuid(), Name = "Meta A", OrderIndex = 0, Indicators = [] }],
+            Indicators = [new TemplateIndicatorResponse { Id = Guid.NewGuid(), Name = "Revenue", Type = IndicatorType.Qualitative, TargetText = "Crescer", OrderIndex = 0 }]
+        };
+
+        var cut = RenderComponent<GoalFormModal>(parameters => parameters
+            .Add(p => p.IsOpen, true)
+            .Add(p => p.OrganizationName, "Org")
+            .Add(p => p.CollaboratorOptions, Enumerable.Empty<ScopeOption>())
+            .Add(p => p.Templates, [template]));
+
+        var instance = cut.Instance;
+        InvokePrivateVoid(instance, "SelectTemplate", 0);
+        InvokePrivateVoid(instance, "HandleNext");
+
+        GetField<string>(instance, "name").Should().Be("OKR Q1");
+        GetField<string?>(instance, "description").Should().Be("Objetivos do Q1");
+        GetField<List<TempIndicator>>(instance, "tempIndicators").Should().ContainSingle();
+        GetField<List<TempGoal>>(instance, "tempGoals").Should().ContainSingle();
+        GetField<WizardStep>(instance, "_currentStep").Should().Be(WizardStep.BuildMission);
+    }
+
+    [Fact]
+    public void ApplySelectedTemplate_FromScratch_ShouldKeepBlankForm()
+    {
+        var toastService = new ToastService();
+        Services.AddSingleton(toastService);
+
+        var cut = RenderComponent<GoalFormModal>(parameters => parameters
+            .Add(p => p.IsOpen, true)
+            .Add(p => p.OrganizationName, "Org")
+            .Add(p => p.CollaboratorOptions, Enumerable.Empty<ScopeOption>()));
+
+        var instance = cut.Instance;
+        // -1 is "from scratch" (default)
+        InvokePrivateVoid(instance, "HandleNext");
+
+        GetField<string>(instance, "name").Should().BeEmpty();
+        GetField<List<TempIndicator>>(instance, "tempIndicators").Should().BeEmpty();
+        GetField<WizardStep>(instance, "_currentStep").Should().Be(WizardStep.BuildMission);
+    }
+
+    [Fact]
+    public void Render_Step1_ShouldShowTemplateGrid()
+    {
+        var toastService = new ToastService();
+        Services.AddSingleton(toastService);
+
+        var cut = RenderComponent<GoalFormModal>(parameters => parameters
+            .Add(p => p.IsOpen, true)
+            .Add(p => p.OrganizationName, "Org")
+            .Add(p => p.CollaboratorOptions, Enumerable.Empty<ScopeOption>())
+            .Add(p => p.Templates, [new TemplateResponse { Id = Guid.NewGuid(), Name = "Meu Template", Indicators = [] }]));
+
+        cut.Markup.Should().Contain("wizard-template-grid");
+        cut.Markup.Should().Contain("Criar do zero");
+        cut.Markup.Should().Contain("Meu Template");
+    }
+
+    [Fact]
+    public void Render_Step3_ShouldShowReviewSummary()
+    {
+        var toastService = new ToastService();
+        Services.AddSingleton(toastService);
+
+        var cut = RenderComponent<GoalFormModal>(parameters => parameters
+            .Add(p => p.IsOpen, true)
+            .Add(p => p.OrganizationName, "Org")
+            .Add(p => p.CollaboratorOptions, Enumerable.Empty<ScopeOption>())
+            .Add(p => p.InitialModel, new GoalFormModel
+            {
+                Name = "Missão Revisão",
+                Description = "Descrição da missão",
+                Indicators = [new TempIndicator(null, "Ind1", "Qualitative", "Meta qualitativa", TargetText: "x")]
+            }));
+
+        var instance = cut.Instance;
+        SetField(instance, "_currentStep", WizardStep.Review);
         cut.Render();
 
-        // The current segment should be the child's name
-        cut.Markup.Should().Contain("goal-form-nav-breadcrumb-current");
-        cut.Markup.Should().Contain("Engajamento");
+        cut.Markup.Should().Contain("wizard-review");
+        cut.Markup.Should().Contain("Missão Revisão");
+        cut.Markup.Should().Contain("Descrição da missão");
+        cut.Markup.Should().Contain("Ind1");
+    }
+
+    [Fact]
+    public void GoToStep_ShouldNavigateBackToPreviousStep()
+    {
+        var toastService = new ToastService();
+        Services.AddSingleton(toastService);
+
+        var cut = RenderComponent<GoalFormModal>(parameters => parameters
+            .Add(p => p.IsOpen, true)
+            .Add(p => p.OrganizationName, "Org")
+            .Add(p => p.CollaboratorOptions, Enumerable.Empty<ScopeOption>()));
+
+        var instance = cut.Instance;
+        SetField(instance, "_currentStep", WizardStep.Review);
+
+        InvokePrivateVoid(instance, "GoToStep", WizardStep.ChooseTemplate);
+
+        GetField<WizardStep>(instance, "_currentStep").Should().Be(WizardStep.ChooseTemplate);
+    }
+
+    [Fact]
+    public void GoToStep_ShouldNotNavigateForwardFromPreviousStep()
+    {
+        var toastService = new ToastService();
+        Services.AddSingleton(toastService);
+
+        var cut = RenderComponent<GoalFormModal>(parameters => parameters
+            .Add(p => p.IsOpen, true)
+            .Add(p => p.OrganizationName, "Org")
+            .Add(p => p.CollaboratorOptions, Enumerable.Empty<ScopeOption>()));
+
+        var instance = cut.Instance;
+        // Currently at ChooseTemplate (step 1)
+        InvokePrivateVoid(instance, "GoToStep", WizardStep.Review);
+
+        // Should stay at ChooseTemplate — cannot skip forward
+        GetField<WizardStep>(instance, "_currentStep").Should().Be(WizardStep.ChooseTemplate);
     }
 
     private static T GetField<T>(object instance, string name)

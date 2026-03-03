@@ -1,249 +1,531 @@
 @inject ToastService ToastService
+@using Bud.Shared.Contracts.Responses
 
 @if (IsOpen)
 {
     <Modal Title="@GetModalTitle()" Size="lg" OnClose="HandleClose">
         <ChildContent>
             <div class="goal-form-layout">
-            @* ── CONTEXTO FIXO (sempre visível, sempre editável) ── *@
-            <div class="goal-form-context">
-                <div class="goal-header">
-                    <input type="text" class="goal-title-input" @bind="name" placeholder="@GetNamePlaceholder()" />
-                    <input type="text" class="goal-subtitle-input" @bind="description" placeholder="@GetDescriptionPlaceholder()" />
-                </div>
+            @* ── WIZARD STEP INDICATOR ── *@
+            <WizardStepIndicator CurrentStep="_currentStep"
+                                 Hidden="@(IsEditMode || Mode == WizardMode.Template)"
+                                 OnStepClick="GoToStep" />
 
-                @if (Mode == WizardMode.Goal)
-                {
-                    <div class="chips-container">
-                        <div class="chip" @onclick="() => { showResponsibleSelector = !showResponsibleSelector; if (showResponsibleSelector) showPeriodSelector = false; }">
-                            <span class="chip-icon">👤</span>
-                            <span>@GetResponsibleLabel()</span>
+            @* ── STEP 1: ESCOLHER TEMPLATE ── *@
+            @if (_currentStep == WizardStep.ChooseTemplate && !IsEditMode && Mode == WizardMode.Goal)
+            {
+                <div class="wizard-template-grid">
+                    <div class="template-picker-card @(_selectedTemplateIndex == -1 ? "template-picker-card--selected" : "")"
+                         @onclick="() => SelectTemplate(-1)">
+                        <div class="template-picker-icon">
+                            <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
+                                <path d="M8 4H20L26 10V28H8V4Z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>
+                                <path d="M20 4V10H26" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>
+                            </svg>
                         </div>
-                        <div class="chip" @onclick="() => { showPeriodSelector = !showPeriodSelector; if (showPeriodSelector) showResponsibleSelector = false; }">
-                            <span class="chip-icon">📅</span>
-                            <span>@GetPeriodLabel()</span>
-                        </div>
-                        @if (IsEditMode)
-                        {
-                            <div class="chip" @onclick="() => showStatusSelector = !showStatusSelector">
-                                <span class="chip-icon">📊</span>
-                                <span>@GetStatusChipLabel()</span>
+                        <div class="template-picker-name">Criar do zero</div>
+                        <div class="template-picker-description">Crie uma missão em branco e configure tudo manualmente.</div>
+                    </div>
+                    @for (var i = 0; i < Templates.Count; i++)
+                    {
+                        var index = i;
+                        var template = Templates[i];
+                        <div class="template-picker-card @(index == _selectedTemplateIndex ? "template-picker-card--selected" : "")"
+                             @onclick="() => SelectTemplate(index)">
+                            <div class="template-picker-icon">
+                                <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
+                                    <path d="M6 6H26V26H6V6Z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>
+                                    <path d="M11 12H21M11 16H21M11 20H17" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                                </svg>
                             </div>
-                        }
+                            <div class="template-picker-name">@template.Name</div>
+                            <div class="template-picker-description">@(template.Description ?? "Sem descrição")</div>
+                            <div class="template-picker-badge">@template.Indicators.Count indicador(es)</div>
+                        </div>
+                    }
+                </div>
+            }
+
+            @* ── STEP 2: CONSTRUIR MISSÃO ── *@
+            @if (_currentStep == WizardStep.BuildMission || IsEditMode || Mode == WizardMode.Template)
+            {
+                @* ── CONTEXTO FIXO (sempre visível, sempre editável) ── *@
+                <div class="goal-form-context">
+                    @if (!IsEditMode && Mode == WizardMode.Goal)
+                    {
+                        <h4 class="wizard-section-title">Construir missão</h4>
+                    }
+                    <div class="goal-header">
+                        <input type="text" class="goal-title-input" @bind="name" placeholder="@GetNamePlaceholder()" />
+                        <input type="text" class="goal-subtitle-input" @bind="description" placeholder="@GetDescriptionPlaceholder()" />
                     </div>
 
-                    @if (IsEditMode && showStatusSelector)
-                    {
-                        <div class="form-row">
-                            <label>Status</label>
-                            <select class="input" @bind="statusValue">
-                                @foreach (var status in Enum.GetValues<GoalStatus>())
-                                {
-                                    <option value="@status">@GetStatusLabel(status)</option>
-                                }
-                            </select>
-                        </div>
-                    }
-
-                    @if (showResponsibleSelector)
+                    @if (Mode == WizardMode.Goal)
                     {
                         <div class="goal-form-compact-row">
-                            <select class="input" value="@scopeTypeValue" @onchange="HandleScopeTypeChanged">
-                                <option value="">Tipo de escopo</option>
-                                @foreach (var scopeType in Enum.GetValues<GoalScopeType>())
-                                {
-                                    <option value="@scopeType">@GetScopeLabel(scopeType)</option>
-                                }
-                            </select>
-                            <select class="input" @bind="scopeId">
-                                <option value="">Referência</option>
-                                @foreach (var option in GetScopeOptions(scopeTypeValue))
-                                {
-                                    <option value="@option.Id">@option.Name</option>
-                                }
-                            </select>
+                            <div class="chip">
+                                <span class="chip-icon">👤</span>
+                                <select class="chip-select" value="@collaboratorId" @onchange="HandleCollaboratorChanged">
+                                    <option value="">Responsável</option>
+                                    @foreach (var option in CollaboratorOptions)
+                                    {
+                                        <option value="@option.Id">@option.Name</option>
+                                    }
+                                </select>
+                            </div>
+                            <DateRangePicker StartDate="startDate"
+                                             EndDate="endDate"
+                                             StartDateChanged="d => { startDate = d; StateHasChanged(); }"
+                                             EndDateChanged="d => { endDate = d; StateHasChanged(); }" />
+                            @if (IsEditMode)
+                            {
+                                <div class="chip">
+                                    <span class="chip-icon">📊</span>
+                                    <select class="chip-select" @bind="statusValue">
+                                        @foreach (var status in Enum.GetValues<GoalStatus>())
+                                        {
+                                            <option value="@status">@GetStatusLabel(status)</option>
+                                        }
+                                    </select>
+                                </div>
+                            }
                         </div>
                     }
+                </div>
 
-                    @if (showPeriodSelector)
-                    {
-                        <div class="goal-form-compact-row">
-                            <input type="date" class="input" @bind="startDate" @bind:format="yyyy-MM-dd" />
-                            <input type="date" class="input" @bind="endDate" @bind:format="yyyy-MM-dd" />
-                        </div>
-                    }
-                }
-            </div>
-
-            @* ── SEPARADOR ── *@
-            <div class="goal-form-divider"></div>
-
-            @* ── ÁREA DE CONTEÚDO ── *@
-            <div class="goal-form-navigation">
-                <div class="goal-form-nav-header">
-                    <div class="goal-form-nav-breadcrumb">
-                        <span class="goal-form-nav-breadcrumb-icon">📦</span>
-                        @if (IsAtRoot)
+                @* ── CONTAINER ADICIONAR ITEM ── *@
+                {
+                    <div class="wizard-add-item-container">
+                        @if (!_showAddItemForm)
                         {
-                            <span class="goal-form-nav-breadcrumb-current">@(string.IsNullOrWhiteSpace(name) ? OrganizationName : name)</span>
+                            <button type="button" class="wizard-add-item-header" @onclick="OpenUnifiedAddForm">
+                                <span class="wizard-add-item-label">Adicionar item</span>
+                                <span class="wizard-add-item-btn">+</span>
+                            </button>
                         }
                         else
                         {
-                            var segments = GetBreadcrumbSegments();
-                            @* Root mission link — click to go back to root *@
-                            <span class="goal-form-nav-breadcrumb-link" @onclick="() => NavigateTo(0)">@(string.IsNullOrWhiteSpace(name) ? OrganizationName : name)</span>
-                            @for (var i = 0; i < segments.Count; i++)
-                            {
-                                var segment = segments[i];
-                                var depth = segment.Depth;
-                                var isLast = i == segments.Count - 1;
-                                <span class="goal-form-nav-breadcrumb-sep">/</span>
-                                @if (isLast)
+                            <div class="wizard-add-item-header">
+                                <span class="wizard-add-item-label">@(IsEditingItem ? "Editar item" : "Adicionar item")</span>
+                                <span class="wizard-add-item-btn-static">+</span>
+                            </div>
+                        }
+
+                        @* ── FORMULÁRIO UNIFICADO DE NOVO ITEM (somente root) ── *@
+                        @if (_showAddItemForm && _addItemTargetGoalId == null)
+                        {
+                            <div class="wizard-add-item-form">
+                                <input type="text" class="goal-inline-title-input" @bind="_addItemName" @bind:event="oninput" placeholder="Título" />
+                                <input type="text" class="goal-inline-subtitle-input" @bind="_addItemDescription" @bind:event="oninput" placeholder="Adicionar breve descrição" />
+
+                                <div class="goal-form-compact-row" style="margin-top: var(--spacing-3);">
+                                    <div class="chip">
+                                        <span class="chip-icon">◇</span>
+                                        <select class="chip-select" @bind="_pendingItemTypeValue" disabled="@IsEditingItem">
+                                            <option value="None">Modo de mensuração</option>
+                                            <option value="Indicator">Indicador</option>
+                                            <option value="Task">Tarefa</option>
+                                            <option value="ChildGoal">Meta</option>
+                                        </select>
+                                    </div>
+                                    @if (_pendingItemType != ItemType.Indicator && _pendingItemType != ItemType.Task)
+                                    {
+                                        <DateRangePicker StartDate="_addItemStartDate"
+                                                         EndDate="_addItemEndDate"
+                                                         StartDateChanged="d => { _addItemStartDate = d; StateHasChanged(); }"
+                                                         EndDateChanged="d => { _addItemEndDate = d; StateHasChanged(); }" />
+                                    }
+                                </div>
+
+                                @* ── Campos específicos de Meta ── *@
+                                @if (_pendingItemType == ItemType.ChildGoal)
                                 {
-                                    <span class="goal-form-nav-breadcrumb-current">@segment.Name</span>
+                                    <div class="wizard-add-item-type-fields">
+                                        <div class="indicators-form-selectors">
+                                            <div class="indicators-selector-btn">
+                                                <svg class="indicators-selector-icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2">
+                                                    <circle cx="10" cy="7" r="3"/>
+                                                    <path d="M4 17c0-3.3 2.7-6 6-6s6 2.7 6 6" stroke-linecap="round"/>
+                                                </svg>
+                                                <select @bind="_addItemCollaboratorId">
+                                                    <option value="">Responsável</option>
+                                                    @foreach (var option in CollaboratorOptions)
+                                                    {
+                                                        <option value="@option.Id">@option.Name</option>
+                                                    }
+                                                </select>
+                                                <svg class="indicators-selector-icon" viewBox="0 0 20 20" fill="currentColor">
+                                                    <path d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"/>
+                                                </svg>
+                                            </div>
+                                            <div class="indicators-selector-btn">
+                                                <svg class="indicators-selector-icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2">
+                                                    <rect x="3" y="3" width="14" height="14" rx="2" stroke-linecap="round"/>
+                                                    <path d="M7 7h6M7 10h4" stroke-linecap="round"/>
+                                                </svg>
+                                                <select @bind="_addItemDimension">
+                                                    <option value="">Dimensão (opcional)</option>
+                                                    <option value="Financeiro">Financeiro</option>
+                                                    <option value="Clientes">Clientes</option>
+                                                    <option value="Processos">Processos</option>
+                                                    <option value="Aprendizado">Aprendizado</option>
+                                                    <option value="Pessoas">Pessoas</option>
+                                                    <option value="Produto">Produto</option>
+                                                </select>
+                                                <svg class="indicators-selector-icon" viewBox="0 0 20 20" fill="currentColor">
+                                                    <path d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"/>
+                                                </svg>
+                                            </div>
+                                        </div>
+                                    </div>
+                                }
+
+                                @* ── Campos específicos de Indicador ── *@
+                                @if (_pendingItemType == ItemType.Indicator)
+                                {
+                                    <div class="wizard-add-item-type-fields">
+                                        <div class="indicators-form-selectors">
+                                            <div class="indicators-selector-btn">
+                                                <svg class="indicators-selector-icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2">
+                                                    <path d="M4 6h12M4 10h12M4 14h12" stroke-linecap="round"/>
+                                                </svg>
+                                                <select value="@_inlineIndicatorModel.TypeValue" @onchange="HandleIndicatorTypeChanged">
+                                                    <option value="">Tipo de indicador</option>
+                                                    <option value="Quantitative">Quantitativa</option>
+                                                    <option value="Qualitative">Qualitativa</option>
+                                                </select>
+                                                <svg class="indicators-selector-icon" viewBox="0 0 20 20" fill="currentColor">
+                                                    <path d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"/>
+                                                </svg>
+                                            </div>
+
+                                            @if (_inlineIndicatorModel.TypeValue == "Quantitative")
+                                            {
+                                                <div class="indicators-selector-btn">
+                                                    <svg class="indicators-selector-icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2">
+                                                        <path d="M3 10h14M10 3v14" stroke-linecap="round"/>
+                                                    </svg>
+                                                    <select @bind="_inlineIndicatorModel.QuantitativeTypeValue">
+                                                        <option value="">Modo de mensuração</option>
+                                                        <option value="KeepAbove">Manter acima</option>
+                                                        <option value="KeepBelow">Manter abaixo</option>
+                                                        <option value="KeepBetween">Manter entre</option>
+                                                        <option value="Achieve">Atingir</option>
+                                                        <option value="Reduce">Reduzir</option>
+                                                    </select>
+                                                    <svg class="indicators-selector-icon" viewBox="0 0 20 20" fill="currentColor">
+                                                        <path d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"/>
+                                                    </svg>
+                                                </div>
+                                            }
+                                        </div>
+
+                                        @if (_inlineIndicatorModel.TypeValue == "Qualitative")
+                                        {
+                                            <div class="form-row">
+                                                <label>Alvo qualitativo</label>
+                                                <input type="text" class="input" @bind="_inlineIndicatorModel.TargetText" placeholder="Descreva o alvo qualitativo deste indicador" />
+                                            </div>
+                                        }
+
+                                        @if (_inlineIndicatorModel.TypeValue == "Quantitative" && !string.IsNullOrEmpty(_inlineIndicatorModel.QuantitativeTypeValue))
+                                        {
+                                            <div class="indicators-form-inputs">
+                                                <div class="indicators-input-field">
+                                                    <select @bind="_inlineIndicatorModel.UnitValue">
+                                                        <option value="">Unidade de medida</option>
+                                                        <option value="Integer">Inteiro</option>
+                                                        <option value="Decimal">Decimal</option>
+                                                        <option value="Percentage">Percentual</option>
+                                                        <option value="Hours">Horas</option>
+                                                        <option value="Points">Pontos</option>
+                                                    </select>
+                                                </div>
+
+                                                @if (_inlineIndicatorModel.QuantitativeTypeValue == "KeepAbove" || _inlineIndicatorModel.QuantitativeTypeValue == "KeepBetween")
+                                                {
+                                                    <div class="indicators-input-field">
+                                                        <input type="number" @bind="_inlineIndicatorModel.MinValue" placeholder="Valor mínimo" />
+                                                    </div>
+                                                }
+
+                                                @if (_inlineIndicatorModel.QuantitativeTypeValue is "KeepBelow" or "KeepBetween" or "Achieve" or "Reduce")
+                                                {
+                                                    <div class="indicators-input-field">
+                                                        <input type="number" @bind="_inlineIndicatorModel.MaxValue" placeholder="@IndicatorFormFields.GetMaxValuePlaceholder(_inlineIndicatorModel.QuantitativeTypeValue)" />
+                                                    </div>
+                                                }
+                                            </div>
+                                        }
+                                    </div>
+                                }
+
+                                <div class="wizard-add-item-actions">
+                                    <button type="button" class="button tertiary" @onclick="CloseInlineForm">Cancelar</button>
+                                    <button type="button" class="button primary" @onclick="HandleAddItem">@(IsEditingItem ? "Salvar" : "Adicionar")</button>
+                                </div>
+                            </div>
+                        }
+                        @* ── LISTA FLAT DE ITENS ── *@
+                        <GoalFormTree Indicators="CurrentIndicators"
+                                      Tasks="CurrentTasks"
+                                      Children="CurrentChildren"
+                                      Expandable="true"
+                                      OnEditIndicator="OpenEditInlineIndicator"
+                                      OnDeleteIndicator="DeleteIndicatorByIndex"
+                                      OnEditTask="OpenEditInlineTask"
+                                      OnDeleteTask="DeleteTaskByIndex"
+                                      OnNavigateInto="HandleNavigateInto"
+                                      OnEditGoal="OpenEditInlineGoal"
+                                      OnDeleteGoal="DeleteSubgoalByIndex"
+                                      OnAddItemToChild="OpenAddItemForChild"
+                                      OnEditChildIndicator="EditChildIndicator"
+                                      OnDeleteChildIndicator="DeleteChildIndicator"
+                                      OnEditChildTask="EditChildTask"
+                                      OnDeleteChildTask="DeleteChildTask"
+                                      OnEditChildGoal="EditChildGoal"
+                                      OnDeleteChildGoal="DeleteChildGoal">
+                            <AddItemFormTemplate Context="goalTempId">
+                                @if (_showAddItemForm && _addItemTargetGoalId == goalTempId)
+                                {
+                                    <div class="wizard-add-item-form">
+                                        <input type="text" class="goal-inline-title-input" @bind="_addItemName" @bind:event="oninput" placeholder="Título" />
+                                        <input type="text" class="goal-inline-subtitle-input" @bind="_addItemDescription" @bind:event="oninput" placeholder="Adicionar breve descrição" />
+
+                                        <div class="goal-form-compact-row" style="margin-top: var(--spacing-3);">
+                                            <div class="chip">
+                                                <span class="chip-icon">◇</span>
+                                                <select class="chip-select" @bind="_pendingItemTypeValue" disabled="@IsEditingItem">
+                                                    <option value="None">Modo de mensuração</option>
+                                                    <option value="Indicator">Indicador</option>
+                                                    <option value="Task">Tarefa</option>
+                                                    <option value="ChildGoal">Meta</option>
+                                                </select>
+                                            </div>
+                                            <DateRangePicker StartDate="_addItemStartDate"
+                                                             EndDate="_addItemEndDate"
+                                                             StartDateChanged="d => { _addItemStartDate = d; StateHasChanged(); }"
+                                                             EndDateChanged="d => { _addItemEndDate = d; StateHasChanged(); }" />
+                                        </div>
+
+                                        @* ── Campos específicos de Meta ── *@
+                                        @if (_pendingItemType == ItemType.ChildGoal)
+                                        {
+                                            <div class="wizard-add-item-type-fields">
+                                                <div class="indicators-form-selectors">
+                                                    <div class="indicators-selector-btn">
+                                                        <svg class="indicators-selector-icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2">
+                                                            <circle cx="10" cy="7" r="3"/>
+                                                            <path d="M4 17c0-3.3 2.7-6 6-6s6 2.7 6 6" stroke-linecap="round"/>
+                                                        </svg>
+                                                        <select @bind="_addItemCollaboratorId">
+                                                            <option value="">Responsável</option>
+                                                            @foreach (var option in CollaboratorOptions)
+                                                            {
+                                                                <option value="@option.Id">@option.Name</option>
+                                                            }
+                                                        </select>
+                                                        <svg class="indicators-selector-icon" viewBox="0 0 20 20" fill="currentColor">
+                                                            <path d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"/>
+                                                        </svg>
+                                                    </div>
+                                                    <div class="indicators-selector-btn">
+                                                        <svg class="indicators-selector-icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2">
+                                                            <rect x="3" y="3" width="14" height="14" rx="2" stroke-linecap="round"/>
+                                                            <path d="M7 7h6M7 10h4" stroke-linecap="round"/>
+                                                        </svg>
+                                                        <select @bind="_addItemDimension">
+                                                            <option value="">Dimensão (opcional)</option>
+                                                            <option value="Financeiro">Financeiro</option>
+                                                            <option value="Clientes">Clientes</option>
+                                                            <option value="Processos">Processos</option>
+                                                            <option value="Aprendizado">Aprendizado</option>
+                                                            <option value="Pessoas">Pessoas</option>
+                                                            <option value="Produto">Produto</option>
+                                                        </select>
+                                                        <svg class="indicators-selector-icon" viewBox="0 0 20 20" fill="currentColor">
+                                                            <path d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"/>
+                                                        </svg>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        }
+
+                                        @* ── Campos específicos de Indicador ── *@
+                                        @if (_pendingItemType == ItemType.Indicator)
+                                        {
+                                            <div class="wizard-add-item-type-fields">
+                                                <div class="indicators-form-selectors">
+                                                    <div class="indicators-selector-btn">
+                                                        <svg class="indicators-selector-icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2">
+                                                            <path d="M4 6h12M4 10h12M4 14h12" stroke-linecap="round"/>
+                                                        </svg>
+                                                        <select value="@_inlineIndicatorModel.TypeValue" @onchange="HandleIndicatorTypeChanged">
+                                                            <option value="">Tipo de indicador</option>
+                                                            <option value="Quantitative">Quantitativa</option>
+                                                            <option value="Qualitative">Qualitativa</option>
+                                                        </select>
+                                                        <svg class="indicators-selector-icon" viewBox="0 0 20 20" fill="currentColor">
+                                                            <path d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"/>
+                                                        </svg>
+                                                    </div>
+
+                                                    @if (_inlineIndicatorModel.TypeValue == "Quantitative")
+                                                    {
+                                                        <div class="indicators-selector-btn">
+                                                            <svg class="indicators-selector-icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2">
+                                                                <path d="M3 10h14M10 3v14" stroke-linecap="round"/>
+                                                            </svg>
+                                                            <select @bind="_inlineIndicatorModel.QuantitativeTypeValue">
+                                                                <option value="">Modo de mensuração</option>
+                                                                <option value="KeepAbove">Manter acima</option>
+                                                                <option value="KeepBelow">Manter abaixo</option>
+                                                                <option value="KeepBetween">Manter entre</option>
+                                                                <option value="Achieve">Atingir</option>
+                                                                <option value="Reduce">Reduzir</option>
+                                                            </select>
+                                                            <svg class="indicators-selector-icon" viewBox="0 0 20 20" fill="currentColor">
+                                                                <path d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"/>
+                                                            </svg>
+                                                        </div>
+                                                    }
+                                                </div>
+
+                                                @if (_inlineIndicatorModel.TypeValue == "Qualitative")
+                                                {
+                                                    <div class="form-row">
+                                                        <label>Alvo qualitativo</label>
+                                                        <input type="text" class="input" @bind="_inlineIndicatorModel.TargetText" placeholder="Descreva o alvo qualitativo deste indicador" />
+                                                    </div>
+                                                }
+
+                                                @if (_inlineIndicatorModel.TypeValue == "Quantitative" && !string.IsNullOrEmpty(_inlineIndicatorModel.QuantitativeTypeValue))
+                                                {
+                                                    <div class="indicators-form-inputs">
+                                                        <div class="indicators-input-field">
+                                                            <select @bind="_inlineIndicatorModel.UnitValue">
+                                                                <option value="">Unidade de medida</option>
+                                                                <option value="Integer">Inteiro</option>
+                                                                <option value="Decimal">Decimal</option>
+                                                                <option value="Percentage">Percentual</option>
+                                                                <option value="Hours">Horas</option>
+                                                                <option value="Points">Pontos</option>
+                                                            </select>
+                                                        </div>
+
+                                                        @if (_inlineIndicatorModel.QuantitativeTypeValue == "KeepAbove" || _inlineIndicatorModel.QuantitativeTypeValue == "KeepBetween")
+                                                        {
+                                                            <div class="indicators-input-field">
+                                                                <input type="number" @bind="_inlineIndicatorModel.MinValue" placeholder="Valor mínimo" />
+                                                            </div>
+                                                        }
+
+                                                        @if (_inlineIndicatorModel.QuantitativeTypeValue is "KeepBelow" or "KeepBetween" or "Achieve" or "Reduce")
+                                                        {
+                                                            <div class="indicators-input-field">
+                                                                <input type="number" @bind="_inlineIndicatorModel.MaxValue" placeholder="@IndicatorFormFields.GetMaxValuePlaceholder(_inlineIndicatorModel.QuantitativeTypeValue)" />
+                                                            </div>
+                                                        }
+                                                    </div>
+                                                }
+                                            </div>
+                                        }
+
+                                        <div class="wizard-add-item-actions">
+                                            <button type="button" class="button tertiary" @onclick="CloseInlineForm">Cancelar</button>
+                                            <button type="button" class="button primary" @onclick="HandleAddItem">@(IsEditingItem ? "Salvar" : "Adicionar")</button>
+                                        </div>
+                                    </div>
                                 }
                                 else
                                 {
-                                    <span class="goal-form-nav-breadcrumb-link" @onclick="() => NavigateTo(depth)">@segment.Name</span>
+                                    <button type="button" class="goal-form-tree-add-btn" @onclick="() => OpenAddItemForChild(goalTempId)" @onclick:stopPropagation="true">
+                                        <span>+ Adicionar item</span>
+                                    </button>
+                                }
+                            </AddItemFormTemplate>
+                        </GoalFormTree>
+                    </div>
+                }
+
+
+            }
+
+            @* ── STEP 3: REVISÃO ── *@
+            @if (_currentStep == WizardStep.Review && !IsEditMode && Mode == WizardMode.Goal)
+            {
+                <div class="wizard-review">
+                    <div class="wizard-review-header">
+                        <h3 class="wizard-review-title">@name</h3>
+                        @if (!string.IsNullOrWhiteSpace(description))
+                        {
+                            <p class="wizard-review-description">@description</p>
+                        }
+                    </div>
+
+                    <div class="wizard-review-details">
+                        @if (!string.IsNullOrEmpty(collaboratorId))
+                        {
+                            var collab = CollaboratorOptions.FirstOrDefault(c => c.Id == collaboratorId);
+                            @if (collab is not null)
+                            {
+                                <span class="wizard-review-chip">👤 @collab.Name</span>
+                            }
+                        }
+                        <span class="wizard-review-chip">📅 @startDate.ToString("dd/MM/yyyy") — @endDate.ToString("dd/MM/yyyy")</span>
+                    </div>
+
+                    @if (tempIndicators.Count > 0 || tempTasks.Count > 0 || tempGoals.Count > 0)
+                    {
+                        <div class="wizard-review-items">
+                            <h4 class="wizard-review-section-title">Itens</h4>
+                            @foreach (var indicator in tempIndicators)
+                            {
+                                <div class="wizard-review-item">
+                                    <span class="wizard-review-item-icon wizard-review-item-icon--indicator">◆</span>
+                                    <span class="wizard-review-item-name">@indicator.Name</span>
+                                    @if (!string.IsNullOrEmpty(indicator.Details))
+                                    {
+                                        <span class="wizard-review-item-detail">@indicator.Details</span>
+                                    }
+                                </div>
+                            }
+                            @foreach (var task in tempTasks)
+                            {
+                                <div class="wizard-review-item">
+                                    <span class="wizard-review-item-icon wizard-review-item-icon--task">✓</span>
+                                    <span class="wizard-review-item-name">@task.Name</span>
+                                </div>
+                            }
+                            @foreach (var goal in tempGoals)
+                            {
+                                @foreach (var item in FlattenGoalForReview(goal, 0))
+                                {
+                                    <div class="wizard-review-item" style="--review-depth: @item.Depth;">
+                                        <span class="wizard-review-item-icon wizard-review-item-icon--@item.IconClass">@item.Icon</span>
+                                        <span class="wizard-review-item-name">@item.Name</span>
+                                        @if (item.Detail is not null)
+                                        {
+                                            <span class="wizard-review-item-detail">@item.Detail</span>
+                                        }
+                                    </div>
                                 }
                             }
-                        }
-                    </div>
-
-                    @if (_inlineFormMode == InlineFormMode.None)
-                    {
-                        <div class="goal-form-actions">
-                            <button type="button" class="button secondary" @onclick="OpenInlineIndicatorForm">
-                                <span>+ Indicador</span>
-                            </button>
-                            <button type="button" class="button secondary goal-form-action-task" @onclick="OpenInlineTaskForm">
-                                <span>+ Tarefa</span>
-                            </button>
-                            <button type="button" class="button secondary" @onclick="OpenInlineGoalForm">
-                                <span>+ Meta</span>
-                            </button>
                         </div>
                     }
+                    else
+                    {
+                        <p class="muted" style="margin-top: var(--spacing-4);">Nenhum item adicionado.</p>
+                    }
                 </div>
+            }
 
-                @* ── INLINE FORMS (topo, antes do conteúdo existente) ── *@
-                @if (_inlineFormMode == InlineFormMode.NewIndicator || _inlineFormMode == InlineFormMode.EditIndicator)
-                {
-                    <div class="goal-form-inline">
-                        <IndicatorFormFields Model="_inlineIndicatorModel"
-                                             OnSave="HandleInlineIndicatorSave"
-                                             OnCancel="CloseInlineForm"
-                                             SaveLabel="@(_inlineFormMode == InlineFormMode.EditIndicator ? "Salvar alterações" : "Salvar indicador")"
-                                             CancelLabel="Cancelar" />
-                    </div>
-                }
-
-                @if (_inlineFormMode == InlineFormMode.NewTask || _inlineFormMode == InlineFormMode.EditTask)
-                {
-                    <div class="goal-form-inline goal-form-inline-task">
-                        <input type="text" class="goal-inline-title-input" @bind="_inlineTaskName" @bind:event="oninput" placeholder="Nome da tarefa" maxlength="200" />
-                        <input type="text" class="goal-inline-subtitle-input" @bind="_inlineTaskDescription" @bind:event="oninput" placeholder="Descrição (opcional)" />
-                        <div class="goal-form-compact-row" style="margin-top: var(--spacing-2);">
-                            <select class="input" @bind="_inlineTaskState">
-                                <option value="@TaskState.ToDo">A fazer</option>
-                                <option value="@TaskState.Doing">Fazendo</option>
-                                <option value="@TaskState.Done">Feito</option>
-                                <option value="@TaskState.Archived">Arquivado</option>
-                            </select>
-                            <input type="date" class="goal-inline-date-input"
-                                   value="@(_inlineTaskDueDate?.ToString("yyyy-MM-dd") ?? "")"
-                                   @onchange="e => _inlineTaskDueDate = string.IsNullOrEmpty(e.Value?.ToString()) ? null : DateTime.Parse(e.Value!.ToString()!)"
-                                   title="Prazo (opcional)" />
-                        </div>
-                        <div class="form-actions" style="margin-top: var(--spacing-3);">
-                            <button type="button" class="button tertiary" @onclick="CloseInlineForm">Cancelar</button>
-                            <button type="button" class="button primary" @onclick="HandleInlineTaskSave">
-                                @(_inlineFormMode == InlineFormMode.EditTask ? "Salvar tarefa" : "Criar tarefa")
-                            </button>
-                        </div>
-                    </div>
-                }
-
-                @if (_inlineFormMode == InlineFormMode.NewGoal || _inlineFormMode == InlineFormMode.EditGoal)
-                {
-                    <div class="goal-form-inline">
-                        <input type="text" class="goal-inline-title-input" @bind="_inlineGoalName" @bind:event="oninput" placeholder="Nome da meta" />
-                        <input type="text" class="goal-inline-subtitle-input" @bind="_inlineGoalDescription" @bind:event="oninput" placeholder="Breve descrição (opcional)" />
-                        <input type="text" class="goal-inline-subtitle-input" @bind="_inlineGoalDimension" @bind:event="oninput" placeholder="Dimensão: ex. Financeiro, Processos (opcional)" maxlength="100" />
-
-                        @if (Mode == WizardMode.Goal)
-                        {
-                            <div class="chips-container" style="margin-top: var(--spacing-3);">
-                                <div class="chip" @onclick="() => { _showInlineGoalResponsible = !_showInlineGoalResponsible; if (_showInlineGoalResponsible) _showInlineGoalPeriod = false; }">
-                                    <span class="chip-icon">👤</span>
-                                    <span>@GetInlineGoalResponsibleLabel()</span>
-                                </div>
-                                <div class="chip" @onclick="() => { _showInlineGoalPeriod = !_showInlineGoalPeriod; if (_showInlineGoalPeriod) _showInlineGoalResponsible = false; }">
-                                    <span class="chip-icon">📅</span>
-                                    <span>@GetInlineGoalPeriodLabel()</span>
-                                </div>
-                            </div>
-
-                            @if (_showInlineGoalResponsible)
-                            {
-                                <div class="goal-form-compact-row">
-                                    <select class="input" value="@_inlineGoalScopeTypeValue" @onchange="HandleInlineGoalScopeTypeChanged">
-                                        <option value="">Tipo de escopo</option>
-                                        @foreach (var scopeType in Enum.GetValues<GoalScopeType>())
-                                        {
-                                            <option value="@scopeType">@GetScopeLabel(scopeType)</option>
-                                        }
-                                    </select>
-                                    <select class="input" @bind="_inlineGoalScopeId">
-                                        <option value="">Referência</option>
-                                        @foreach (var option in GetScopeOptions(_inlineGoalScopeTypeValue))
-                                        {
-                                            <option value="@option.Id">@option.Name</option>
-                                        }
-                                    </select>
-                                </div>
-                            }
-
-                            @if (_showInlineGoalPeriod)
-                            {
-                                <div class="goal-form-compact-row">
-                                    <input type="date" class="input" @bind="_inlineGoalStartDate" @bind:format="yyyy-MM-dd" />
-                                    <input type="date" class="input" @bind="_inlineGoalEndDate" @bind:format="yyyy-MM-dd" />
-                                </div>
-                            }
-                        }
-
-                        <div class="form-actions" style="margin-top: var(--spacing-3);">
-                            <button type="button" class="button tertiary" @onclick="CloseInlineForm">Cancelar</button>
-                            @if (_inlineFormMode == InlineFormMode.EditGoal)
-                            {
-                                <button type="button" class="button primary" @onclick="HandleInlineGoalSave">Salvar meta</button>
-                            }
-                            else
-                            {
-                                <button type="button" class="button primary" @onclick="HandleInlineGoalSave">Criar meta</button>
-                            }
-                        </div>
-                    </div>
-                }
-
-                <GoalFormTree Indicators="CurrentIndicators"
-                              Tasks="CurrentTasks"
-                              Children="CurrentChildren"
-                              OnEditIndicator="OpenEditInlineIndicator"
-                              OnDeleteIndicator="DeleteIndicatorByIndex"
-                              OnEditTask="OpenEditInlineTask"
-                              OnDeleteTask="DeleteTaskByIndex"
-                              OnNavigateInto="NavigateInto"
-                              OnEditGoal="OpenEditInlineGoal"
-                              OnDeleteGoal="DeleteSubgoalByIndex" />
-            </div>
             </div>
         </ChildContent>
         <Footer>
             <div class="modal-footer-actions">
                 <div class="modal-footer-secondary">
-                    <button class="button tertiary" type="button" @onclick="HandleClose">Cancelar</button>
+                    <button class="button ghost" type="button" @onclick="HandleClose">Cancelar</button>
                 </div>
                 <div class="modal-footer-primary">
                     @if (IsEditMode)
@@ -254,10 +536,21 @@
                     {
                         <button class="button primary" type="button" @onclick="HandleSave">Criar</button>
                     }
-                    else
+                    else if (_currentStep == WizardStep.ChooseTemplate)
                     {
                         <button class="button secondary" type="button" @onclick="HandleSaveDraft">Salvar rascunho</button>
-                        <button class="button primary" type="button" @onclick="HandleSave">Criar missão</button>
+                        <button class="button primary" type="button" @onclick="HandleNext">Próximo</button>
+                    }
+                    else if (_currentStep == WizardStep.BuildMission)
+                    {
+                        <button class="button secondary" type="button" @onclick="HandleSaveDraft">Salvar rascunho</button>
+                        <button class="button primary" type="button" @onclick="HandleNext">Próximo</button>
+                    }
+                    else if (_currentStep == WizardStep.Review)
+                    {
+                        <button class="button secondary" type="button" @onclick="HandleSaveDraft">Salvar rascunho</button>
+                        <button class="button tertiary" type="button" @onclick="HandleBack">Voltar</button>
+                        <button class="button primary" type="button" @onclick="HandleSave">Criar</button>
                     }
                 </div>
             </div>

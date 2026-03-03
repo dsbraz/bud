@@ -8,8 +8,8 @@ namespace Bud.Server.Application.UseCases.Goals;
 public sealed class ListGoals(IGoalRepository goalRepository)
 {
     public async Task<Result<PagedResult<Goal>>> ExecuteAsync(
-        GoalScopeType? scopeType,
-        Guid? scopeId,
+        GoalFilter? filter,
+        Guid? collaboratorId,
         string? search,
         int page,
         int pageSize,
@@ -18,9 +18,8 @@ public sealed class ListGoals(IGoalRepository goalRepository)
         (page, pageSize) = PaginationNormalizer.Normalize(page, pageSize);
 
         var result = await goalRepository.GetAllAsync(
-            parentId: null,
-            scopeType,
-            scopeId,
+            filter,
+            collaboratorId,
             search,
             page,
             pageSize,

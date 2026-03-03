@@ -13,11 +13,7 @@ public sealed class GoalResponse
     public GoalStatus Status { get; set; }
     public Guid OrganizationId { get; set; }
     public Guid? ParentId { get; set; }
-    public Guid? WorkspaceId { get; set; }
-    public Guid? TeamId { get; set; }
     public Guid? CollaboratorId { get; set; }
-    public WorkspaceResponse? Workspace { get; set; }
-    public TeamResponse? Team { get; set; }
     public CollaboratorResponse? Collaborator { get; set; }
     public List<GoalResponse> Children { get; set; } = [];
     public List<IndicatorResponse> Indicators { get; set; } = [];

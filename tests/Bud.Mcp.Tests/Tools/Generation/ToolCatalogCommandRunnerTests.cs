@@ -177,14 +177,12 @@ public sealed class ToolCatalogCommandRunnerTests
         "schemas": {
           "CreateGoalRequest": {
             "type": "object",
-            "required": ["name", "startDate", "endDate", "status", "scopeType", "scopeId"],
+            "required": ["name", "startDate", "endDate", "status"],
             "properties": {
               "name": { "type": "string" },
               "startDate": { "type": "string", "format": "date-time" },
               "endDate": { "type": "string", "format": "date-time" },
-              "status": { "type": "integer", "format": "int32" },
-              "scopeType": { "type": "integer", "format": "int32" },
-              "scopeId": { "type": "string", "format": "uuid" }
+              "status": { "type": "integer", "format": "int32" }
             }
           },
           "PatchGoalRequest": {

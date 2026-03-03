@@ -4,15 +4,13 @@ using Bud.Server.Application.Policies;
 using Bud.Server.Authorization;
 using Bud.Server.Domain.Model;
 using Bud.Server.Domain.Repositories;
-using Bud.Server.Application.Ports;
-using Bud.Shared.Contracts;
 using Microsoft.Extensions.Logging;
 
 namespace Bud.Server.Application.UseCases.Goals;
 
 public sealed partial class PatchGoal(
     IGoalRepository goalRepository,
-    IGoalScopeResolver goalScopeResolver,
+    ICollaboratorRepository collaboratorRepository,
     IApplicationAuthorizationGateway authorizationGateway,
     ILogger<PatchGoal> logger,
     IUnitOfWork? unitOfWork = null)
@@ -57,15 +55,6 @@ public sealed partial class PatchGoal(
         try
         {
             var status = request.Status.HasValue ? request.Status.Value : goal.Status;
-            var scopeType = request.ScopeType.HasValue
-                ? request.ScopeType.Value
-                : goal.WorkspaceId.HasValue
-                    ? GoalScopeType.Workspace
-                    : goal.TeamId.HasValue
-                        ? GoalScopeType.Team
-                        : goal.CollaboratorId.HasValue
-                            ? GoalScopeType.Collaborator
-                            : GoalScopeType.Organization;
             var name = request.Name.HasValue ? (request.Name.Value ?? goal.Name) : goal.Name;
             var description = request.Description.HasValue ? request.Description.Value : goal.Description;
             var dimension = request.Dimension.HasValue ? request.Dimension.Value : goal.Dimension;
@@ -80,23 +69,26 @@ public sealed partial class PatchGoal(
                 UtcDateTimeNormalizer.Normalize(endDate),
                 status);
 
-            var shouldUpdateScope = request.ScopeId.HasValue && request.ScopeId.Value != Guid.Empty;
-            if (shouldUpdateScope)
+            if (request.CollaboratorId.HasValue)
             {
-                var scopeId = request.ScopeId.Value;
-
-                var scopeResolution = await goalScopeResolver.ResolveScopeOrganizationIdAsync(
-                    scopeType,
-                    scopeId,
-                    ct: cancellationToken);
-                if (!scopeResolution.IsSuccess)
+                var newCollaboratorId = request.CollaboratorId.Value;
+                if (newCollaboratorId.HasValue)
                 {
-                    LogGoalPatchFailed(logger, id, scopeResolution.Error ?? UserErrorMessages.ScopeNotFound);
-                    return Result<Goal>.NotFound(scopeResolution.Error ?? UserErrorMessages.ScopeNotFound);
+                    var collaborator = await collaboratorRepository.GetByIdAsync(newCollaboratorId.Value, cancellationToken);
+                    if (collaborator is null)
+                    {
+                        LogGoalPatchFailed(logger, id, UserErrorMessages.CollaboratorNotFound);
+                        return Result<Goal>.NotFound(UserErrorMessages.CollaboratorNotFound);
+                    }
+
+                    if (collaborator.OrganizationId != goal.OrganizationId)
+                    {
+                        LogGoalPatchFailed(logger, id, "Collaborator belongs to different organization");
+                        return Result<Goal>.Forbidden(UserErrorMessages.GoalUpdateForbidden);
+                    }
                 }
 
-                goal.OrganizationId = scopeResolution.Value;
-                goal.SetScope(scopeType, scopeId);
+                goal.CollaboratorId = newCollaboratorId;
             }
 
             goal.MarkAsUpdated();

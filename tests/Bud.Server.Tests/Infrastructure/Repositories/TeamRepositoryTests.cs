@@ -598,9 +598,9 @@ public sealed class TeamRepositoryTests
     #region HasMissionsAsync Tests
 
     [Fact]
-    public async Task HasMissionsAsync_WhenHasMissions_ReturnsTrue()
+    public async Task HasMissionsAsync_AlwaysReturnsFalse_BecauseGoalsNoLongerHaveTeamId()
     {
-        // Arrange
+        // Arrange — Goals no longer have TeamId, so HasGoalsAsync always returns false.
         using var context = CreateInMemoryContext();
         var repository = new TeamRepository(context);
         var org = await CreateTestOrganization(context);
@@ -608,23 +608,11 @@ public sealed class TeamRepositoryTests
         var leader = await CreateTestCollaborator(context, org.Id);
         var team = await CreateTestTeam(context, org.Id, workspace.Id, leader.Id);
 
-        context.Goals.Add(new Goal
-        {
-            Id = Guid.NewGuid(),
-            Name = "Team Mission",
-            StartDate = DateTime.UtcNow,
-            EndDate = DateTime.UtcNow.AddDays(7),
-            Status = GoalStatus.Planned,
-            OrganizationId = org.Id,
-            TeamId = team.Id
-        });
-        await context.SaveChangesAsync();
-
         // Act
         var result = await repository.HasGoalsAsync(team.Id);
 
         // Assert
-        result.Should().BeTrue();
+        result.Should().BeFalse();
     }
 
     [Fact]

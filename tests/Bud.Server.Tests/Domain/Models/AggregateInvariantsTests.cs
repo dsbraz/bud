@@ -136,24 +136,6 @@ public sealed class AggregateInvariantsTests
     }
 
     [Fact]
-    public void Goal_SetScope_WithEmptyTeamId_ShouldThrow()
-    {
-        var goal = Goal.Create(
-            Guid.NewGuid(),
-            Guid.NewGuid(),
-            "Meta",
-            null,
-            null,
-            new DateTime(2026, 2, 12, 0, 0, 0, DateTimeKind.Utc),
-            new DateTime(2026, 2, 13, 0, 0, 0, DateTimeKind.Utc),
-            GoalStatus.Active);
-
-        var act = () => goal.SetScope(GoalScopeType.Team, Guid.Empty);
-
-        act.Should().Throw<DomainInvariantException>();
-    }
-
-    [Fact]
     public void GoalIndicator_ApplyTarget_WithInvalidRange_ShouldThrow()
     {
         var indicator = Indicator.Create(Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid(), "Indicador", IndicatorType.Quantitative);

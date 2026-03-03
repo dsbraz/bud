@@ -17,11 +17,9 @@ public partial class Goals
     private List<CollaboratorResponse> _collaborators = new();
 
     // Filter state
-    private string? _filterScopeTypeValue;
-    private string? _filterScopeId;
     private string? _search;
     private string _viewMode = "list";
-    private bool _showMyGoals = true;
+    private GoalFilter _filter = GoalFilter.Mine;
     private bool _filterActiveOnly = true;
     private DateTime? _filterStartDate;
     private DateTime? _filterEndDate;
@@ -42,8 +40,7 @@ public partial class Goals
     private Guid? _editingGoalId;
     private GoalFormModel? _wizardInitialModel;
 
-    // Template picker state
-    private bool _isTemplatePickerOpen;
+    // Template state
     private List<TemplateResponse> _availableTemplates = new();
 
     // Checkin modal state
@@ -91,8 +88,6 @@ public partial class Goals
         {
             await InvokeAsync(async () =>
             {
-                _filterScopeTypeValue = null;
-                _filterScopeId = null;
                 await LoadReferenceData();
                 await LoadGoals();
                 StateHasChanged();
@@ -131,50 +126,20 @@ public partial class Goals
 
     }
 
-    private async Task SetGoalViewMode(bool myMissions)
+    private async Task SetGoalFilter(GoalFilter filter)
     {
-        if (_showMyGoals == myMissions)
+        if (_filter == filter)
         {
             return;
         }
 
-        _showMyGoals = myMissions;
-
-        if (_showMyGoals)
-        {
-            _filterScopeTypeValue = null;
-            _filterScopeId = null;
-        }
-
+        _filter = filter;
         await LoadGoals();
     }
 
     private async Task LoadGoals()
     {
-        PagedResult<GoalResponse> result;
-
-        if (_showMyGoals)
-        {
-            var collaboratorId = AuthState.SessionResponse?.CollaboratorId;
-            if (collaboratorId.HasValue)
-            {
-                result = await Api.GetMyGoalsAsync(_search, 1, 100) ?? new PagedResult<GoalResponse>();
-            }
-            else
-            {
-                // Global admin without CollaboratorId — fallback to all goals
-                result = await Api.GetGoalsAsync(null, null, _search, 1, 100) ?? new PagedResult<GoalResponse>();
-            }
-        }
-        else
-        {
-            var scopeType = ParseScopeType(_filterScopeTypeValue);
-            var scopeId = Guid.TryParse(_filterScopeId, out var parsedScopeId)
-                ? parsedScopeId
-                : (Guid?)null;
-
-            result = await Api.GetGoalsAsync(scopeType, scopeId, _search, 1, 100) ?? new PagedResult<GoalResponse>();
-        }
+        var result = await Api.GetGoalsAsync(_filter, _search, 1, 100) ?? new PagedResult<GoalResponse>();
 
         // Apply client-side filters — only show root goals (children appear via expand/drilldown)
         var filteredItems = result.Items.Where(g => g.ParentId == null);
@@ -271,19 +236,6 @@ public partial class Goals
         await LoadGoals();
     }
 
-    private async Task HandleFilterScopeTypeChanged(string? value)
-    {
-        _filterScopeTypeValue = value;
-        _filterScopeId = null;
-        await LoadGoals();
-    }
-
-    private async Task HandleFilterScopeIdChanged(string? value)
-    {
-        _filterScopeId = value;
-        await LoadGoals();
-    }
-
     private async Task HandleSearchSubmit(string? value)
     {
         _search = value;
@@ -292,8 +244,6 @@ public partial class Goals
 
     private async Task HandleClearFilters()
     {
-        _filterScopeTypeValue = null;
-        _filterScopeId = null;
         _search = null;
         _filterActiveOnly = true;
         _filterStartDate = null;
@@ -303,7 +253,6 @@ public partial class Goals
 
     private async Task OpenCreateModal()
     {
-        // Load available templates and open the picker
         try
         {
             var result = await Api.GetTemplatesAsync(null, 1, 50);
@@ -314,91 +263,15 @@ public partial class Goals
             _availableTemplates = new();
         }
 
-        _isTemplatePickerOpen = true;
-    }
-
-    private void OpenCreateModalFromScratch()
-    {
-        _isTemplatePickerOpen = false;
         _wizardInitialModel = new GoalFormModel
         {
             StartDate = DateTime.Today,
-            EndDate = DateTime.Today.AddDays(7)
+            EndDate = DateTime.Today.AddDays(7),
+            CollaboratorId = AuthState.SessionResponse?.CollaboratorId?.ToString()
         };
         _isEditMode = false;
         _editingGoalId = null;
         _isWizardOpen = true;
-    }
-
-    private void OpenCreateModalFromTemplate(TemplateResponse template)
-    {
-        _isTemplatePickerOpen = false;
-
-        // Build hierarchical model: indicators belong to their goals
-        var directIndicators = template.Indicators
-            .Where(m => !m.TemplateGoalId.HasValue)
-            .OrderBy(m => m.OrderIndex)
-            .Select(m => BuildTempIndicatorFromTemplate(m))
-            .ToList();
-
-        var children = template.Goals
-            .OrderBy(o => o.OrderIndex)
-            .Select(o =>
-            {
-                var goalIndicators = template.Indicators
-                    .Where(m => m.TemplateGoalId == o.Id)
-                    .OrderBy(m => m.OrderIndex)
-                    .Select(m => BuildTempIndicatorFromTemplate(m))
-                    .ToList();
-
-                return new TempGoal(
-                    Guid.NewGuid().ToString(),
-                    o.Name,
-                    o.Description,
-                    null,
-                    o.Dimension)
-                {
-                    Indicators = goalIndicators
-                };
-            })
-            .ToList();
-
-        _wizardInitialModel = new GoalFormModel
-        {
-            Name = template.GoalNamePattern,
-            Description = template.GoalDescriptionPattern,
-            StartDate = DateTime.Today,
-            EndDate = DateTime.Today.AddDays(90),
-            Children = children,
-            Indicators = directIndicators
-        };
-        _isEditMode = false;
-        _editingGoalId = null;
-        _isWizardOpen = true;
-    }
-
-    private static TempIndicator BuildTempIndicatorFromTemplate(TemplateIndicatorResponse m)
-    {
-        return new TempIndicator(
-            null, m.Name, m.Type.ToString(), GetTemplateIndicatorDetails(m),
-            m.QuantitativeType?.ToString(), m.MinValue, m.MaxValue, m.TargetText, m.Unit?.ToString());
-    }
-
-    private static string GetTemplateIndicatorDetails(TemplateIndicatorResponse indicator)
-    {
-        if (indicator.Type == IndicatorType.Qualitative)
-            return $"Qualitativa — {indicator.TargetText}";
-
-        var parts = new List<string> { "Quantitativa" };
-        if (indicator.QuantitativeType.HasValue)
-            parts.Add(indicator.QuantitativeType.Value.ToString());
-        if (indicator.Unit.HasValue)
-            parts.Add(indicator.Unit.Value.ToString());
-        if (indicator.MinValue.HasValue)
-            parts.Add($"Min: {indicator.MinValue}");
-        if (indicator.MaxValue.HasValue)
-            parts.Add($"Max: {indicator.MaxValue}");
-        return string.Join(" — ", parts);
     }
 
     private void CloseWizard()
@@ -408,6 +281,14 @@ public partial class Goals
         _editingGoalId = null;
         _wizardInitialModel = null;
     }
+
+    private string GetFilterTitle() => _filter switch
+    {
+        GoalFilter.Mine => "Minhas missões",
+        GoalFilter.MyTeam => "Missões do time",
+        GoalFilter.All => "Todas as missões",
+        _ => "Missões"
+    };
 
     private string GetSelectedOrganizationName()
     {
@@ -458,9 +339,6 @@ public partial class Goals
         string errorTitle,
         string errorMessage)
     {
-        if (!Enum.TryParse<GoalScopeType>(result.ScopeTypeValue, out var scopeType)) return;
-        if (!Guid.TryParse(result.ScopeId, out var scopeId)) return;
-
         await UiOps.RunAsync(
             async () =>
             {
@@ -470,8 +348,7 @@ public partial class Goals
                     Description = result.Description,
                     StartDate = result.StartDate,
                     EndDate = result.EndDate,
-                    ScopeType = scopeType,
-                    ScopeId = scopeId,
+                    CollaboratorId = Guid.TryParse(result.CollaboratorId, out var cid) ? cid : null,
                     Status = status
                 };
 
@@ -496,14 +373,11 @@ public partial class Goals
     private async Task<int> CreateChildrenRecursiveAsync(GoalResponse parentGoal, List<TempGoal> children)
     {
         var failedCount = 0;
-        var (parentScopeType, parentScopeId) = GetGoalScope(parentGoal);
 
         foreach (var child in children)
         {
             try
             {
-                var childScopeType = Enum.TryParse<GoalScopeType>(child.ScopeTypeValue, out var cst) ? cst : parentScopeType;
-                var childScopeId = Guid.TryParse(child.ScopeId, out var csi) ? csi : parentScopeId;
                 var childStatus = Enum.TryParse<GoalStatus>(child.StatusValue, out var cs) ? cs : parentGoal.Status;
 
                 var created = await Api.CreateChildGoalAsync(new CreateGoalRequest
@@ -515,8 +389,7 @@ public partial class Goals
                     StartDate = child.StartDate ?? parentGoal.StartDate,
                     EndDate = child.EndDate ?? parentGoal.EndDate,
                     Status = childStatus,
-                    ScopeType = childScopeType,
-                    ScopeId = childScopeId
+                    CollaboratorId = Guid.TryParse(child.CollaboratorId, out var cid) ? cid : parentGoal.CollaboratorId
                 });
                 if (created is not null)
                 {
@@ -594,26 +467,9 @@ public partial class Goals
         }
     }
 
-    private IEnumerable<ScopeOption> GetScopeOptions(string? scopeTypeValue)
+    private IEnumerable<ScopeOption> GetCollaboratorOptions()
     {
-        if (!Enum.TryParse<GoalScopeType>(scopeTypeValue, out var scopeType))
-        {
-            return Enumerable.Empty<ScopeOption>();
-        }
-
-        return scopeType switch
-        {
-            GoalScopeType.Organization => _organizations.Select(o => new ScopeOption(o.Id.ToString(), o.Name)),
-            GoalScopeType.Workspace => _workspaces.Select(w => new ScopeOption(w.Id.ToString(), w.Name)),
-            GoalScopeType.Team => _teams.Select(t => new ScopeOption(t.Id.ToString(), t.Name)),
-            GoalScopeType.Collaborator => _collaborators.Select(c => new ScopeOption(c.Id.ToString(), c.FullName)),
-            _ => Enumerable.Empty<ScopeOption>()
-        };
-    }
-
-    private GoalScopeType? ParseScopeType(string? scopeTypeValue)
-    {
-        return Enum.TryParse<GoalScopeType>(scopeTypeValue, out var scopeType) ? scopeType : null;
+        return _collaborators.Select(c => new ScopeOption(c.Id.ToString(), c.FullName));
     }
 
 
@@ -879,23 +735,10 @@ public partial class Goals
 
     // ---- Goal Edit/Delete Methods ----
 
-    private (GoalScopeType scopeType, Guid scopeId) GetGoalScope(GoalResponse goal)
-    {
-        if (goal.CollaboratorId.HasValue)
-            return (GoalScopeType.Collaborator, goal.CollaboratorId.Value);
-        if (goal.TeamId.HasValue)
-            return (GoalScopeType.Team, goal.TeamId.Value);
-        if (goal.WorkspaceId.HasValue)
-            return (GoalScopeType.Workspace, goal.WorkspaceId.Value);
-        return (GoalScopeType.Organization, goal.OrganizationId);
-    }
-
     private async Task OpenEditWizard(GoalResponse goal)
     {
         _isEditMode = true;
         _editingGoalId = goal.Id;
-
-        var (scopeType, scopeId) = GetGoalScope(goal);
 
         var (directIndicators, directTasks, tempGoals) = await LoadGoalChildrenForEditAsync(goal.Id);
 
@@ -905,8 +748,7 @@ public partial class Goals
             Description = goal.Description,
             StartDate = goal.StartDate,
             EndDate = goal.EndDate,
-            ScopeTypeValue = scopeType.ToString(),
-            ScopeId = scopeId.ToString(),
+            CollaboratorId = goal.CollaboratorId?.ToString(),
             StatusValue = goal.Status.ToString(),
             Indicators = directIndicators,
             Tasks = directTasks,
@@ -943,8 +785,6 @@ public partial class Goals
         var tempGoals = new List<TempGoal>();
         foreach (var childGoal in apiChildGoals)
         {
-            var (childScopeType, childScopeId) = GetGoalScope(childGoal);
-
             // Recursively load child's own indicators, tasks and grandchildren
             var (childIndicators, childTasks, grandChildren) = await LoadGoalChildrenForEditAsync(childGoal.Id);
 
@@ -956,8 +796,7 @@ public partial class Goals
                 Dimension: childGoal.Dimension,
                 StartDate: childGoal.StartDate,
                 EndDate: childGoal.EndDate,
-                ScopeTypeValue: childScopeType.ToString(),
-                ScopeId: childScopeId.ToString(),
+                CollaboratorId: childGoal.CollaboratorId?.ToString(),
                 StatusValue: childGoal.Status.ToString())
             {
                 Indicators = childIndicators,
@@ -985,13 +824,10 @@ public partial class Goals
 
     private async Task UpdateGoalFromResult(Guid goalId, GoalFormResult result)
     {
-        if (!Enum.TryParse<GoalScopeType>(result.ScopeTypeValue, out var scopeType)) return;
-        if (!Guid.TryParse(result.ScopeId, out var scopeId)) return;
-
         await UiOps.RunAsync(
             async () =>
             {
-                await Api.UpdateGoalAsync(goalId, BuildUpdateGoalRequest(result, scopeType, scopeId));
+                await Api.UpdateGoalAsync(goalId, BuildUpdateGoalRequest(result));
 
                 // Delete removed items first
                 var failureCount = 0;
@@ -1016,7 +852,7 @@ public partial class Goals
             "Não foi possível atualizar a missão. Verifique os dados e tente novamente.");
     }
 
-    private static PatchGoalRequest BuildUpdateGoalRequest(GoalFormResult result, GoalScopeType scopeType, Guid scopeId)
+    private static PatchGoalRequest BuildUpdateGoalRequest(GoalFormResult result)
     {
         var request = new PatchGoalRequest
         {
@@ -1024,8 +860,7 @@ public partial class Goals
             Description = result.Description,
             StartDate = result.StartDate,
             EndDate = result.EndDate,
-            ScopeType = scopeType,
-            ScopeId = scopeId
+            CollaboratorId = Guid.TryParse(result.CollaboratorId, out var cid) ? cid : null
         };
 
         if (Enum.TryParse<GoalStatus>(result.StatusValue, out var status))
@@ -1190,8 +1025,7 @@ public partial class Goals
 
                 if (child.StartDate.HasValue) patchRequest.StartDate = child.StartDate.Value;
                 if (child.EndDate.HasValue) patchRequest.EndDate = child.EndDate.Value;
-                if (Enum.TryParse<GoalScopeType>(child.ScopeTypeValue, out var st)) patchRequest.ScopeType = st;
-                if (Guid.TryParse(child.ScopeId, out var si)) patchRequest.ScopeId = si;
+                if (Guid.TryParse(child.CollaboratorId, out var ci)) patchRequest.CollaboratorId = ci;
                 if (Enum.TryParse<GoalStatus>(child.StatusValue, out var sv)) patchRequest.Status = sv;
 
                 await Api.UpdateGoalAsync(child.OriginalId!.Value, patchRequest);
@@ -1209,8 +1043,7 @@ public partial class Goals
                     Description = child.Description,
                     StartDate = child.StartDate ?? result.StartDate,
                     EndDate = child.EndDate ?? result.EndDate,
-                    ScopeTypeValue = child.ScopeTypeValue ?? result.ScopeTypeValue,
-                    ScopeId = child.ScopeId ?? result.ScopeId,
+                    CollaboratorId = child.CollaboratorId ?? result.CollaboratorId,
                     StatusValue = child.StatusValue ?? result.StatusValue,
                     Indicators = child.Indicators,
                     Tasks = child.Tasks,
@@ -1233,28 +1066,12 @@ public partial class Goals
         {
             try
             {
-                // Resolve scope: child's own or fallback to parent's
-                if (!Enum.TryParse<GoalScopeType>(child.ScopeTypeValue, out var childScopeType))
-                {
-                    if (!Enum.TryParse(result.ScopeTypeValue, out childScopeType))
-                    {
-                        failureCount++;
-                        continue;
-                    }
-                }
-
-                var childScopeId = Guid.TryParse(child.ScopeId, out var csi) ? csi : Guid.Empty;
-                if (childScopeId == Guid.Empty)
-                {
-                    if (!Guid.TryParse(result.ScopeId, out childScopeId))
-                    {
-                        failureCount++;
-                        continue;
-                    }
-                }
-
                 if (!Enum.TryParse<GoalStatus>(child.StatusValue, out var childGoalStatus))
                     _ = Enum.TryParse(result.StatusValue, out childGoalStatus);
+
+                var childCollaboratorId = Guid.TryParse(child.CollaboratorId, out var cci) ? cci
+                    : Guid.TryParse(result.CollaboratorId, out var rci) ? rci
+                    : (Guid?)null;
 
                 var created = await Api.CreateChildGoalAsync(new CreateGoalRequest
                 {
@@ -1265,8 +1082,7 @@ public partial class Goals
                     StartDate = child.StartDate ?? result.StartDate,
                     EndDate = child.EndDate ?? result.EndDate,
                     Status = childGoalStatus,
-                    ScopeType = childScopeType,
-                    ScopeId = childScopeId
+                    CollaboratorId = childCollaboratorId
                 });
 
                 if (created is not null)

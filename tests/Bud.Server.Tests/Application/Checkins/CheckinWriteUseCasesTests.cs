@@ -1,5 +1,4 @@
 using Bud.Server.Domain.Repositories;
-using Bud.Server.Application.Ports;
 using System.Security.Claims;
 using Bud.Server.Application.Common;
 using Bud.Server.Application.Mapping;
@@ -53,9 +52,6 @@ public sealed class CheckinWriteUseCasesTests
         var authorizationGateway = new Mock<IApplicationAuthorizationGateway>();
         authorizationGateway
             .Setup(g => g.CanAccessTenantOrganizationAsync(User, orgId, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(true);
-        authorizationGateway
-            .Setup(g => g.CanAccessGoalScopeAsync(User, mission.WorkspaceId, mission.TeamId, mission.CollaboratorId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(true);
 
         var tenantProvider = new Mock<ITenantProvider>();
@@ -121,9 +117,6 @@ public sealed class CheckinWriteUseCasesTests
         var authorizationGateway = new Mock<IApplicationAuthorizationGateway>(MockBehavior.Strict);
         authorizationGateway
             .Setup(g => g.CanAccessTenantOrganizationAsync(User, orgId, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(true);
-        authorizationGateway
-            .Setup(g => g.CanAccessGoalScopeAsync(User, goal.WorkspaceId, goal.TeamId, goal.CollaboratorId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(true);
 
         var tenantProvider = new Mock<ITenantProvider>(MockBehavior.Strict);
@@ -197,9 +190,6 @@ public sealed class CheckinWriteUseCasesTests
         authorizationGateway
             .Setup(g => g.CanAccessTenantOrganizationAsync(User, orgId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(true);
-        authorizationGateway
-            .Setup(g => g.CanAccessGoalScopeAsync(User, mission.WorkspaceId, mission.TeamId, mission.CollaboratorId, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(true);
 
         var tenantProvider = new Mock<ITenantProvider>();
         tenantProvider.SetupGet(t => t.IsGlobalAdmin).Returns(false);
@@ -269,9 +259,6 @@ public sealed class CheckinWriteUseCasesTests
         var authorizationGateway = new Mock<IApplicationAuthorizationGateway>();
         authorizationGateway
             .Setup(g => g.CanAccessTenantOrganizationAsync(User, orgId, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(true);
-        authorizationGateway
-            .Setup(g => g.CanAccessGoalScopeAsync(User, mission.WorkspaceId, mission.TeamId, mission.CollaboratorId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(true);
 
         var tenantProvider = new Mock<ITenantProvider>();

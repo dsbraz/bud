@@ -111,8 +111,8 @@ public sealed class TeamRepository(ApplicationDbContext dbContext) : ITeamReposi
     public async Task<bool> HasSubTeamsAsync(Guid teamId, CancellationToken ct = default)
         => await dbContext.Teams.AnyAsync(t => t.ParentTeamId == teamId, ct);
 
-    public async Task<bool> HasGoalsAsync(Guid teamId, CancellationToken ct = default)
-        => await dbContext.Goals.AnyAsync(m => m.TeamId == teamId, ct);
+    public Task<bool> HasGoalsAsync(Guid teamId, CancellationToken ct = default)
+        => Task.FromResult(false);
 
     public async Task AddAsync(Team entity, CancellationToken ct = default)
         => await dbContext.Teams.AddAsync(entity, ct);

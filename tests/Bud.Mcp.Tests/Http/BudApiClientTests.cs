@@ -21,9 +21,7 @@ public sealed class BudApiClientTests
             Name = "Missão Teste",
             StartDate = DateTime.UtcNow,
             EndDate = DateTime.UtcNow.AddDays(30),
-            Status = GoalStatus.Active,
-            ScopeType = GoalScopeType.Organization,
-            ScopeId = Guid.NewGuid()
+            Status = GoalStatus.Active
         });
 
         await act.Should().ThrowAsync<InvalidOperationException>()
@@ -69,8 +67,6 @@ public sealed class BudApiClientTests
                 payload.TryGetProperty("request", out _).Should().BeFalse();
                 payload.GetProperty("status").ValueKind.Should().Be(JsonValueKind.Number);
                 payload.GetProperty("status").GetInt32().Should().Be((int)GoalStatus.Active);
-                payload.GetProperty("scopeType").ValueKind.Should().Be(JsonValueKind.Number);
-                payload.GetProperty("scopeType").GetInt32().Should().Be((int)GoalScopeType.Organization);
 
                 return JsonResponse(new GoalResponse
                 {
@@ -98,9 +94,7 @@ public sealed class BudApiClientTests
             Name = "Missão Teste",
             StartDate = DateTime.UtcNow,
             EndDate = DateTime.UtcNow.AddDays(30),
-            Status = GoalStatus.Active,
-            ScopeType = GoalScopeType.Organization,
-            ScopeId = tenantId
+            Status = GoalStatus.Active
         });
 
         mission.Id.Should().Be(responseMissionId);
@@ -135,9 +129,7 @@ public sealed class BudApiClientTests
             Name = "Missão Teste",
             StartDate = DateTime.UtcNow,
             EndDate = DateTime.UtcNow.AddDays(30),
-            Status = GoalStatus.Active,
-            ScopeType = GoalScopeType.Organization,
-            ScopeId = Guid.NewGuid()
+            Status = GoalStatus.Active
         });
 
         await act.Should().ThrowAsync<InvalidOperationException>()

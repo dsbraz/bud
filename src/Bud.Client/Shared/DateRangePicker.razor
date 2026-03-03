@@ -1,0 +1,46 @@
+@* DateRangePicker — calendar-based range selection component *@
+
+<div class="date-range-picker">
+    <div class="date-range-trigger chip" @onclick="ToggleCalendar">
+        <span class="chip-icon">📅</span>
+        <span>@FormatRange()</span>
+    </div>
+
+    @if (_isOpen)
+    {
+        <div class="date-range-backdrop" @onclick="() => _isOpen = false" @onclick:stopPropagation></div>
+        <div class="date-range-dropdown" @onclick:stopPropagation>
+            <div class="date-range-nav">
+                <button type="button" class="date-range-nav-btn" @onclick="PreviousMonth">&lt;</button>
+                <span class="date-range-nav-title">@_viewDate.ToString("MMMM yyyy", System.Globalization.CultureInfo.GetCultureInfo("pt-BR"))</span>
+                <button type="button" class="date-range-nav-btn" @onclick="NextMonth">&gt;</button>
+            </div>
+            <div class="date-range-grid">
+                <span class="date-range-weekday">D</span>
+                <span class="date-range-weekday">S</span>
+                <span class="date-range-weekday">T</span>
+                <span class="date-range-weekday">Q</span>
+                <span class="date-range-weekday">Q</span>
+                <span class="date-range-weekday">S</span>
+                <span class="date-range-weekday">S</span>
+
+                @foreach (var day in GetCalendarDays())
+                {
+                    if (day == null)
+                    {
+                        <span class="date-range-day empty"></span>
+                    }
+                    else
+                    {
+                        var d = day.Value;
+                        var css = GetDayCss(d);
+                        <button type="button"
+                                class="date-range-day @css"
+                                @onclick="() => SelectDay(d)"
+                                @onmouseover="() => HoverDay(d)">@d.Day</button>
+                    }
+                }
+            </div>
+        </div>
+    }
+</div>

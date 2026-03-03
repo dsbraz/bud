@@ -318,13 +318,7 @@ public sealed class DashboardReadStore(ApplicationDbContext dbContext) : IMyDash
             .AsNoTracking()
             .Where(g => g.Status == GoalStatus.Active
                 && (memberIds.Contains(g.CollaboratorId ?? Guid.Empty)
-                    || (g.TeamId != null && dbContext.CollaboratorTeams
-                        .Any(ct2 => ct2.TeamId == g.TeamId && memberIds.Contains(ct2.CollaboratorId)))
-                    || (g.WorkspaceId != null && dbContext.Teams
-                        .Any(t => t.WorkspaceId == g.WorkspaceId && dbContext.CollaboratorTeams
-                            .Any(ct2 => ct2.TeamId == t.Id && memberIds.Contains(ct2.CollaboratorId))))
-                    || (g.OrganizationId == organizationId
-                        && g.WorkspaceId == null && g.TeamId == null && g.CollaboratorId == null)));
+                    || (g.OrganizationId == organizationId && g.CollaboratorId == null)));
     }
 
     private async Task<List<PendingTaskSnapshot>> BuildPendingTasksAsync(

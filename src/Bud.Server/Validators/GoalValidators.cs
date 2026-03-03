@@ -1,4 +1,3 @@
-using Bud.Shared.Contracts;
 using Bud.Shared.Contracts.Requests;
 using FluentValidation;
 
@@ -29,12 +28,6 @@ public sealed class CreateGoalValidator : AbstractValidator<CreateGoalRequest>
 
         RuleFor(x => x.Status)
             .IsInEnum().WithMessage("Status inválido.");
-
-        RuleFor(x => x.ScopeType)
-            .IsInEnum().WithMessage("Tipo de escopo inválido.");
-
-        RuleFor(x => x.ScopeId)
-            .NotEmpty().WithMessage("Escopo é obrigatório.");
     }
 }
 

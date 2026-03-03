@@ -1,11 +1,8 @@
 using Bud.Server.Application.Ports;
 using Bud.Server.Domain.Repositories;
 using Bud.Server.Application.Common;
-using Bud.Server.Application.Mapping;
 using Bud.Server.Application.UseCases.Goals;
-using Bud.Server.Application.UseCases.Me;
 using Bud.Server.Application.ReadModels;
-
 using Bud.Shared.Contracts;
 using Bud.Server.Domain.Model;
 using FluentAssertions;
@@ -25,7 +22,7 @@ public sealed class GoalReadUseCasesTests
     private ListGoalProgress CreateListMissionProgress()
         => new(_progressService.Object);
 
-    private ListMyGoals CreateListMyGoals()
+    private ListGoals CreateListGoals()
         => new(_repo.Object);
 
     private ListGoalIndicators CreateListMissionMetrics()
@@ -77,17 +74,18 @@ public sealed class GoalReadUseCasesTests
     }
 
     [Fact]
-    public async Task GetMyMissionsAsync_WithNonExistingCollaborator_ReturnsNotFound()
+    public async Task ListGoalsAsync_DelegatesToRepository()
     {
-        _repo.Setup(r => r.FindCollaboratorForMyGoalsAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync((Collaborator?)null);
+        _repo.Setup(r => r.GetAllAsync(
+                GoalFilter.All, null, null, 1, 10, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new Bud.Shared.Contracts.Common.PagedResult<Goal> { Items = [], Total = 0, Page = 1, PageSize = 10 });
 
-        var useCase = CreateListMyGoals();
+        var useCase = CreateListGoals();
 
-        var result = await useCase.ExecuteAsync(Guid.NewGuid(), null, 1, 10);
+        var result = await useCase.ExecuteAsync(GoalFilter.All, null, null, 1, 10);
 
-        result.IsSuccess.Should().BeFalse();
-        result.ErrorType.Should().Be(ErrorType.NotFound);
+        result.IsSuccess.Should().BeTrue();
+        _repo.Verify(r => r.GetAllAsync(GoalFilter.All, null, null, 1, 10, It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact]

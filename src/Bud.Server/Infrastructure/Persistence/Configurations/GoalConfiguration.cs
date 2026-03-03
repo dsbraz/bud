@@ -32,23 +32,11 @@ public sealed class GoalConfiguration : IEntityTypeConfiguration<Goal>
 
         builder.HasIndex(g => g.ParentId);
 
-        builder.HasOne(g => g.Workspace)
-            .WithMany()
-            .HasForeignKey(g => g.WorkspaceId)
-            .OnDelete(DeleteBehavior.Restrict);
-
-        builder.HasOne(g => g.Team)
-            .WithMany()
-            .HasForeignKey(g => g.TeamId)
-            .OnDelete(DeleteBehavior.Restrict);
-
         builder.HasOne(g => g.Collaborator)
             .WithMany()
             .HasForeignKey(g => g.CollaboratorId)
             .OnDelete(DeleteBehavior.Restrict);
 
-        builder.HasIndex(g => g.WorkspaceId);
-        builder.HasIndex(g => g.TeamId);
         builder.HasIndex(g => g.CollaboratorId);
 
         builder.HasMany(g => g.Indicators)

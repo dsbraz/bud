@@ -35,19 +35,4 @@ public sealed class ApplicationAuthorizationGateway(IAuthorizationService author
 
         return result.Succeeded;
     }
-
-    public async Task<bool> CanAccessGoalScopeAsync(
-        ClaimsPrincipal user,
-        Guid? workspaceId,
-        Guid? teamId,
-        Guid? collaboratorId,
-        CancellationToken cancellationToken = default)
-    {
-        var result = await authorizationService.AuthorizeAsync(
-            user,
-            new GoalScopeResource(workspaceId, teamId, collaboratorId),
-            AuthorizationPolicies.GoalScopeAccess);
-
-        return result.Succeeded;
-    }
 }

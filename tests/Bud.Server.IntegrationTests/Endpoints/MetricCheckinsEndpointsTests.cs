@@ -20,6 +20,12 @@ public class MetricCheckinsEndpointsTests : IClassFixture<CustomWebApplicationFa
         _adminClient = factory.CreateGlobalAdminClient();
     }
 
+    private void SetTenantHeader(Guid orgId)
+    {
+        _adminClient.DefaultRequestHeaders.Remove("X-Tenant-Id");
+        _adminClient.DefaultRequestHeaders.Add("X-Tenant-Id", orgId.ToString());
+    }
+
     private async Task<Guid> GetOrCreateAdminLeader()
     {
         using var scope = _factory.Services.CreateScope();
@@ -31,6 +37,7 @@ public class MetricCheckinsEndpointsTests : IClassFixture<CustomWebApplicationFa
 
         if (existingLeader != null)
         {
+            SetTenantHeader(existingLeader.OrganizationId);
             return existingLeader.Id;
         }
 
@@ -59,6 +66,7 @@ public class MetricCheckinsEndpointsTests : IClassFixture<CustomWebApplicationFa
         org.OwnerId = adminLeader.Id;
         await dbContext.SaveChangesAsync();
 
+        SetTenantHeader(org.Id);
         return adminLeader.Id;
     }
 
@@ -77,6 +85,7 @@ public class MetricCheckinsEndpointsTests : IClassFixture<CustomWebApplicationFa
                 OwnerId = leaderId,
             });
         var org = (await orgResponse.Content.ReadFromJsonAsync<Organization>())!;
+        SetTenantHeader(org.Id);
 
         var missionResponse = await _adminClient.PostAsJsonAsync("/api/goals",
             new CreateGoalRequest
@@ -85,8 +94,6 @@ public class MetricCheckinsEndpointsTests : IClassFixture<CustomWebApplicationFa
                 StartDate = DateTime.UtcNow,
                 EndDate = DateTime.UtcNow.AddDays(30),
                 Status = Bud.Shared.Contracts.GoalStatus.Active,
-                ScopeType = Bud.Shared.Contracts.GoalScopeType.Organization,
-                ScopeId = org.Id
             });
         var mission = (await missionResponse.Content.ReadFromJsonAsync<Goal>())!;
 
@@ -610,6 +617,7 @@ public class MetricCheckinsEndpointsTests : IClassFixture<CustomWebApplicationFa
         var org2Response = await _adminClient.PostAsJsonAsync("/api/organizations",
             new CreateOrganizationRequest { Name = $"checkin-org2-{Guid.NewGuid():N}.com", OwnerId = leaderId });
         var org2 = (await org2Response.Content.ReadFromJsonAsync<Organization>())!;
+        SetTenantHeader(org2.Id);
 
         // Create mission and metric in org2
         var missionResponse = await _adminClient.PostAsJsonAsync("/api/goals",
@@ -619,8 +627,6 @@ public class MetricCheckinsEndpointsTests : IClassFixture<CustomWebApplicationFa
                 StartDate = DateTime.UtcNow,
                 EndDate = DateTime.UtcNow.AddDays(30),
                 Status = Bud.Shared.Contracts.GoalStatus.Active,
-                ScopeType = Bud.Shared.Contracts.GoalScopeType.Organization,
-                ScopeId = org2.Id
             });
         var mission = (await missionResponse.Content.ReadFromJsonAsync<Goal>())!;
 
@@ -656,7 +662,7 @@ public class MetricCheckinsEndpointsTests : IClassFixture<CustomWebApplicationFa
     }
 
     [Fact]
-    public async Task Create_WithCollaboratorScopedMission_OnlyAuthorCanCheckin()
+    public async Task Create_WithCollaboratorScopedMission_AnyOrgMemberCanCheckin()
     {
         // Arrange: Create collaborator-scoped mission
         var leaderId = await GetOrCreateAdminLeader();
@@ -664,6 +670,7 @@ public class MetricCheckinsEndpointsTests : IClassFixture<CustomWebApplicationFa
         var orgResponse = await _adminClient.PostAsJsonAsync("/api/organizations",
             new CreateOrganizationRequest { Name = $"scope-collab-{Guid.NewGuid():N}.com", OwnerId = leaderId });
         var org = (await orgResponse.Content.ReadFromJsonAsync<Organization>())!;
+        SetTenantHeader(org.Id);
 
         var owner = await CreateCollaboratorInOrg(org.Id);
         var other = await CreateCollaboratorInOrg(org.Id);
@@ -676,8 +683,7 @@ public class MetricCheckinsEndpointsTests : IClassFixture<CustomWebApplicationFa
                 StartDate = DateTime.UtcNow,
                 EndDate = DateTime.UtcNow.AddDays(30),
                 Status = Bud.Shared.Contracts.GoalStatus.Active,
-                ScopeType = Bud.Shared.Contracts.GoalScopeType.Collaborator,
-                ScopeId = owner.Id
+                CollaboratorId = owner.Id
             });
         var mission = (await missionResponse.Content.ReadFromJsonAsync<Goal>())!;
 
@@ -706,10 +712,10 @@ public class MetricCheckinsEndpointsTests : IClassFixture<CustomWebApplicationFa
         var ownerResponse = await ownerClient.PostAsJsonAsync($"/api/indicators/{indicatorId}/checkins", request);
         ownerResponse.StatusCode.Should().Be(HttpStatusCode.Created);
 
-        // Act: Other collaborator should fail
+        // Act: Other collaborator from same org should also succeed (scope-based restriction removed)
         var otherClient = _factory.CreateTenantClient(org.Id, other.Email, other.Id);
         var otherResponse = await otherClient.PostAsJsonAsync($"/api/indicators/{indicatorId}/checkins", request);
-        otherResponse.StatusCode.Should().Be(HttpStatusCode.Forbidden);
+        otherResponse.StatusCode.Should().Be(HttpStatusCode.Created);
     }
 
     [Fact]
@@ -721,6 +727,7 @@ public class MetricCheckinsEndpointsTests : IClassFixture<CustomWebApplicationFa
         var orgResponse = await _adminClient.PostAsJsonAsync("/api/organizations",
             new CreateOrganizationRequest { Name = $"scope-team-{Guid.NewGuid():N}.com", OwnerId = adminLeaderId });
         var org = (await orgResponse.Content.ReadFromJsonAsync<Organization>())!;
+        SetTenantHeader(org.Id);
 
         var wsResponse = await _adminClient.PostAsJsonAsync("/api/workspaces",
             new CreateWorkspaceRequest { Name = "Test WS", OrganizationId = org.Id });
@@ -749,7 +756,7 @@ public class MetricCheckinsEndpointsTests : IClassFixture<CustomWebApplicationFa
             await dbContext.SaveChangesAsync();
         }
 
-        // Create team-scoped mission with metric
+        // Create mission with metric (team scope is no longer modeled via ScopeType)
         var missionResponse = await _adminClient.PostAsJsonAsync("/api/goals",
             new CreateGoalRequest
             {
@@ -757,8 +764,6 @@ public class MetricCheckinsEndpointsTests : IClassFixture<CustomWebApplicationFa
                 StartDate = DateTime.UtcNow,
                 EndDate = DateTime.UtcNow.AddDays(30),
                 Status = Bud.Shared.Contracts.GoalStatus.Active,
-                ScopeType = Bud.Shared.Contracts.GoalScopeType.Team,
-                ScopeId = team.Id
             });
         var mission = (await missionResponse.Content.ReadFromJsonAsync<Goal>())!;
 
@@ -787,10 +792,10 @@ public class MetricCheckinsEndpointsTests : IClassFixture<CustomWebApplicationFa
         var memberResponse = await memberClient.PostAsJsonAsync($"/api/indicators/{indicatorId}/checkins", request);
         memberResponse.StatusCode.Should().Be(HttpStatusCode.Created);
 
-        // Act: Outsider should fail
+        // Act: Outsider (same org, different team) should also succeed (scope-based restriction removed)
         var outsiderClient = _factory.CreateTenantClient(org.Id, outsider.Email, outsider.Id);
         var outsiderResponse = await outsiderClient.PostAsJsonAsync($"/api/indicators/{indicatorId}/checkins", request);
-        outsiderResponse.StatusCode.Should().Be(HttpStatusCode.Forbidden);
+        outsiderResponse.StatusCode.Should().Be(HttpStatusCode.Created);
     }
 
     #endregion

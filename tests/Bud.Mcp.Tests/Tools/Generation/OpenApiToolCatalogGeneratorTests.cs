@@ -5,7 +5,7 @@ namespace Bud.Mcp.Tests.Tools.Generation;
 
 public sealed class OpenApiToolCatalogGeneratorTests
 {
-    private static readonly string[] MissionCreateRequiredFields = ["name", "startDate", "endDate", "status", "scopeType", "scopeId"];
+    private static readonly string[] MissionCreateRequiredFields = ["name", "startDate", "endDate", "status"];
     private static readonly string[] MissionUpdateRequiredFields = ["id", "payload"];
     private static readonly string[] IndicatorCreateRequiredFields = ["goalId", "name", "type"];
 
@@ -84,8 +84,7 @@ public sealed class OpenApiToolCatalogGeneratorTests
           },
           "get": {
             "parameters": [
-              { "name": "scopeType", "in": "query", "schema": { "type": "string" } },
-              { "name": "scopeId", "in": "query", "schema": { "type": "string", "format": "uuid" } },
+              { "name": "filter", "in": "query", "schema": { "type": "string" } },
               { "name": "page", "in": "query", "schema": { "type": "integer", "default": 1 } },
               { "name": "pageSize", "in": "query", "schema": { "type": "integer", "default": 10 } }
             ]
@@ -140,26 +139,22 @@ public sealed class OpenApiToolCatalogGeneratorTests
         "schemas": {
           "CreateGoalRequest": {
             "type": "object",
-            "required": ["name", "startDate", "endDate", "status", "scopeType", "scopeId"],
+            "required": ["name", "startDate", "endDate", "status"],
             "properties": {
               "name": { "type": "string" },
               "startDate": { "type": "string", "format": "date-time" },
               "endDate": { "type": "string", "format": "date-time" },
-              "status": { "type": "integer", "format": "int32" },
-              "scopeType": { "type": "integer", "format": "int32" },
-              "scopeId": { "type": "string", "format": "uuid" }
+              "status": { "type": "integer", "format": "int32" }
             }
           },
           "PatchGoalRequest": {
             "type": "object",
-            "required": ["name", "startDate", "endDate", "status", "scopeType", "scopeId"],
+            "required": ["name", "startDate", "endDate", "status"],
             "properties": {
               "name": { "type": "string" },
               "startDate": { "type": "string", "format": "date-time" },
               "endDate": { "type": "string", "format": "date-time" },
-              "status": { "type": "integer", "format": "int32" },
-              "scopeType": { "type": "integer", "format": "int32" },
-              "scopeId": { "type": "string", "format": "uuid" }
+              "status": { "type": "integer", "format": "int32" }
             }
           },
           "CreateIndicatorRequest": {
@@ -251,9 +246,7 @@ public sealed class OpenApiToolCatalogGeneratorTests
               "description": { "type": ["null", "string"] },
               "startDate": { "type": "string", "format": "date-time" },
               "endDate": { "type": "string", "format": "date-time" },
-              "status": { "type": "integer", "format": "int32" },
-              "scopeType": { "type": "integer", "format": "int32" },
-              "scopeId": { "type": "string", "format": "uuid" }
+              "status": { "type": "integer", "format": "int32" }
             }
           },
           "PatchGoalRequest": {
@@ -262,9 +255,7 @@ public sealed class OpenApiToolCatalogGeneratorTests
               "name": { "type": "string" },
               "startDate": { "type": "string", "format": "date-time" },
               "endDate": { "type": "string", "format": "date-time" },
-              "status": { "type": "integer", "format": "int32" },
-              "scopeType": { "type": "integer", "format": "int32" },
-              "scopeId": { "type": "string", "format": "uuid" }
+              "status": { "type": "integer", "format": "int32" }
             }
           },
           "CreateIndicatorRequest": {

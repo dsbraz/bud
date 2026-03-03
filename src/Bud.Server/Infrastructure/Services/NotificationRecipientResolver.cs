@@ -26,7 +26,7 @@ public sealed class NotificationRecipientResolver(ApplicationDbContext dbContext
 
         if (goal.CollaboratorId.HasValue)
         {
-            // Collaborator scope: the assigned collaborator + their leader
+            // Responsible collaborator + their leader
             recipientIds = [goal.CollaboratorId.Value];
 
             var leader = await dbContext.Collaborators
@@ -41,37 +41,9 @@ public sealed class NotificationRecipientResolver(ApplicationDbContext dbContext
                 recipientIds.Add(leader.Value);
             }
         }
-        else if (goal.TeamId.HasValue)
-        {
-            // Team scope: all collaborators in the team
-            recipientIds = await dbContext.CollaboratorTeams
-                .IgnoreQueryFilters()
-                .AsNoTracking()
-                .Where(ct => ct.TeamId == goal.TeamId.Value)
-                .Select(ct => ct.CollaboratorId)
-                .ToListAsync(cancellationToken);
-        }
-        else if (goal.WorkspaceId.HasValue)
-        {
-            // Workspace scope: all collaborators in teams of the workspace
-            var teamIds = await dbContext.Teams
-                .IgnoreQueryFilters()
-                .AsNoTracking()
-                .Where(t => t.WorkspaceId == goal.WorkspaceId.Value && t.OrganizationId == organizationId)
-                .Select(t => t.Id)
-                .ToListAsync(cancellationToken);
-
-            recipientIds = await dbContext.CollaboratorTeams
-                .IgnoreQueryFilters()
-                .AsNoTracking()
-                .Where(ct => teamIds.Contains(ct.TeamId))
-                .Select(ct => ct.CollaboratorId)
-                .Distinct()
-                .ToListAsync(cancellationToken);
-        }
         else
         {
-            // Organization scope: all collaborators in the org
+            // No responsible: notify all collaborators in the org
             recipientIds = await dbContext.Collaborators
                 .IgnoreQueryFilters()
                 .AsNoTracking()

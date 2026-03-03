@@ -9,11 +9,4 @@ public interface IApplicationAuthorizationGateway
     Task<bool> CanWriteOrganizationAsync(ClaimsPrincipal user, Guid organizationId, CancellationToken cancellationToken = default);
 
     Task<bool> CanAccessTenantOrganizationAsync(ClaimsPrincipal user, Guid organizationId, CancellationToken cancellationToken = default);
-
-    Task<bool> CanAccessGoalScopeAsync(
-        ClaimsPrincipal user,
-        Guid? workspaceId,
-        Guid? teamId,
-        Guid? collaboratorId,
-        CancellationToken cancellationToken = default);
 }

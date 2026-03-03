@@ -135,7 +135,7 @@ public sealed class ObjectiveRepositoryTests
     #region GetAllAsync Tests
 
     [Fact]
-    public async Task GetAllAsync_FiltersByMissionId()
+    public async Task GetChildrenAsync_FiltersByParentId()
     {
         // Arrange
         using var context = CreateInMemoryContext();
@@ -161,7 +161,7 @@ public sealed class ObjectiveRepositoryTests
         await context.SaveChangesAsync();
 
         // Act
-        var result = await repository.GetAllAsync(mission1.Id, null, null, null, 1, 10);
+        var result = await repository.GetChildrenAsync(mission1.Id, 1, 10);
 
         // Assert
         result.Items.Should().HaveCount(1);
@@ -195,7 +195,7 @@ public sealed class ObjectiveRepositoryTests
         await context.SaveChangesAsync();
 
         // Act
-        var result = await repository.GetAllAsync(null, null, null, null, 1, 10);
+        var result = await repository.GetAllAsync(null, null, null, 1, 10);
 
         // Assert
         result.Items.Should().HaveCount(2);
@@ -222,7 +222,7 @@ public sealed class ObjectiveRepositoryTests
         await context.SaveChangesAsync();
 
         // Act
-        var result = await repository.GetAllAsync(mission.Id, null, null, null, 1, 2);
+        var result = await repository.GetChildrenAsync(mission.Id, 1, 2);
 
         // Assert
         result.Items.Should().HaveCount(2);
@@ -264,7 +264,7 @@ public sealed class ObjectiveRepositoryTests
         await context.SaveChangesAsync();
 
         // Act
-        var result = await repository.GetAllAsync(mission.Id, null, null, null, 1, 10);
+        var result = await repository.GetChildrenAsync(mission.Id, 1, 10);
 
         // Assert
         result.Items.Should().HaveCount(3);
