@@ -65,34 +65,6 @@ public class NotificationRecipientResolverTests
     }
 
     [Fact]
-    public async Task ResolveMissionRecipients_TeamScope_ReturnsTeamCollaborators()
-    {
-        // Arrange
-        using var context = CreateInMemoryContext();
-        var resolver = new NotificationRecipientResolver(context);
-        var (org, _, team, c1, c2, _) = await CreateTestHierarchy(context);
-
-        var mission = new Goal
-        {
-            Id = Guid.NewGuid(),
-            Name = "Team Mission",
-            OrganizationId = org.Id,
-            TeamId = team.Id,
-            StartDate = DateTime.UtcNow,
-            EndDate = DateTime.UtcNow.AddDays(30)
-        };
-        context.Goals.Add(mission);
-        await context.SaveChangesAsync();
-
-        // Act
-        var recipients = await resolver.ResolveGoalRecipientsAsync(mission.Id, org.Id);
-
-        // Assert
-        recipients.Should().Contain(c1.Id);
-        recipients.Should().Contain(c2.Id);
-    }
-
-    [Fact]
     public async Task ResolveMissionRecipients_CollaboratorScope_ReturnsCollaboratorAndLeader()
     {
         // Arrange
@@ -149,47 +121,18 @@ public class NotificationRecipientResolverTests
     }
 
     [Fact]
-    public async Task ResolveMissionRecipients_WorkspaceScope_ReturnsWorkspaceCollaborators()
-    {
-        // Arrange
-        using var context = CreateInMemoryContext();
-        var resolver = new NotificationRecipientResolver(context);
-        var (org, workspace, _, c1, c2, _) = await CreateTestHierarchy(context);
-
-        var mission = new Goal
-        {
-            Id = Guid.NewGuid(),
-            Name = "Workspace Mission",
-            OrganizationId = org.Id,
-            WorkspaceId = workspace.Id,
-            StartDate = DateTime.UtcNow,
-            EndDate = DateTime.UtcNow.AddDays(30)
-        };
-        context.Goals.Add(mission);
-        await context.SaveChangesAsync();
-
-        // Act
-        var recipients = await resolver.ResolveGoalRecipientsAsync(mission.Id, org.Id);
-
-        // Assert
-        recipients.Should().Contain(c1.Id);
-        recipients.Should().Contain(c2.Id);
-    }
-
-    [Fact]
     public async Task ResolveMissionRecipients_ExcludesSpecifiedCollaborator()
     {
         // Arrange
         using var context = CreateInMemoryContext();
         var resolver = new NotificationRecipientResolver(context);
-        var (org, _, team, c1, c2, _) = await CreateTestHierarchy(context);
+        var (org, _, _, c1, c2, leader) = await CreateTestHierarchy(context);
 
         var mission = new Goal
         {
             Id = Guid.NewGuid(),
-            Name = "Team Mission",
+            Name = "Org Mission",
             OrganizationId = org.Id,
-            TeamId = team.Id,
             StartDate = DateTime.UtcNow,
             EndDate = DateTime.UtcNow.AddDays(30)
         };
@@ -202,6 +145,7 @@ public class NotificationRecipientResolverTests
         // Assert
         recipients.Should().NotContain(c1.Id);
         recipients.Should().Contain(c2.Id);
+        recipients.Should().Contain(leader.Id);
     }
 
     [Fact]

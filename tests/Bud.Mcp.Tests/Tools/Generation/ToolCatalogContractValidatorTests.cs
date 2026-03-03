@@ -30,7 +30,7 @@ public sealed class ToolCatalogContractValidatorTests
     {
         return
         [
-            CreateTool("goal_create", ["name", "startDate", "endDate", "status", "scopeType", "scopeId"]),
+            CreateTool("goal_create", ["name", "startDate", "endDate", "status"]),
             CreateTool("goal_get", ["id"]),
             CreateTool("goal_list", []),
             CreateTool("goal_update", ["id", "payload"]),

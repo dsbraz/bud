@@ -21,6 +21,12 @@ public class MissionMetricsEndpointsTests : IClassFixture<CustomWebApplicationFa
         _client = factory.CreateGlobalAdminClient();
     }
 
+    private void SetTenantHeader(Guid orgId)
+    {
+        _client.DefaultRequestHeaders.Remove("X-Tenant-Id");
+        _client.DefaultRequestHeaders.Add("X-Tenant-Id", orgId.ToString());
+    }
+
     private async Task<Guid> GetOrCreateAdminLeader()
     {
         using var scope = _factory.Services.CreateScope();
@@ -32,6 +38,7 @@ public class MissionMetricsEndpointsTests : IClassFixture<CustomWebApplicationFa
 
         if (existingLeader != null)
         {
+            SetTenantHeader(existingLeader.OrganizationId);
             return existingLeader.Id;
         }
 
@@ -60,20 +67,13 @@ public class MissionMetricsEndpointsTests : IClassFixture<CustomWebApplicationFa
         org.OwnerId = adminLeader.Id;
         await dbContext.SaveChangesAsync();
 
+        SetTenantHeader(org.Id);
         return adminLeader.Id;
     }
 
     private async Task<Goal> CreateTestMission()
     {
-        var leaderId = await GetOrCreateAdminLeader();
-        var orgResponse = await _client.PostAsJsonAsync("/api/organizations",
-            new CreateOrganizationRequest
-            {
-                Name = "test-org.com",
-                OwnerId = leaderId,
-            });
-        var org = await orgResponse.Content.ReadFromJsonAsync<Organization>();
-
+        await GetOrCreateAdminLeader();
         var missionResponse = await _client.PostAsJsonAsync("/api/goals",
             new CreateGoalRequest
             {
@@ -81,8 +81,6 @@ public class MissionMetricsEndpointsTests : IClassFixture<CustomWebApplicationFa
                 StartDate = DateTime.UtcNow,
                 EndDate = DateTime.UtcNow.AddDays(7),
                 Status = Bud.Shared.Contracts.GoalStatus.Planned,
-                ScopeType = Bud.Shared.Contracts.GoalScopeType.Organization,
-                ScopeId = org!.Id
             });
 
         return (await missionResponse.Content.ReadFromJsonAsync<Goal>())!;
@@ -441,14 +439,6 @@ public class MissionMetricsEndpointsTests : IClassFixture<CustomWebApplicationFa
             });
         var org1 = await org1Response.Content.ReadFromJsonAsync<Organization>();
 
-        var org2Response = await _client.PostAsJsonAsync("/api/organizations",
-            new CreateOrganizationRequest
-            {
-                Name = "metric-org-2.com",
-                OwnerId = leaderId
-            });
-        var org2 = await org2Response.Content.ReadFromJsonAsync<Organization>();
-
         var missionResponse = await _client.PostAsJsonAsync("/api/goals",
             new CreateGoalRequest
             {
@@ -456,8 +446,6 @@ public class MissionMetricsEndpointsTests : IClassFixture<CustomWebApplicationFa
                 StartDate = DateTime.UtcNow,
                 EndDate = DateTime.UtcNow.AddDays(7),
                 Status = Bud.Shared.Contracts.GoalStatus.Planned,
-                ScopeType = Bud.Shared.Contracts.GoalScopeType.Organization,
-                ScopeId = org2!.Id
             });
         var mission = await missionResponse.Content.ReadFromJsonAsync<Goal>();
 

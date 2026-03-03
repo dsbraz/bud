@@ -14,8 +14,6 @@ public sealed class CreateObjectiveValidatorTests
         ParentId = Guid.NewGuid(),
         Name = name,
         Description = "Descrição",
-        ScopeType = GoalScopeType.Organization,
-        ScopeId = Guid.NewGuid(),
         StartDate = DateTime.UtcNow,
         EndDate = DateTime.UtcNow.AddDays(30),
         Status = GoalStatus.Planned
@@ -30,29 +28,6 @@ public sealed class CreateObjectiveValidatorTests
 
         result.IsValid.Should().BeTrue();
         result.Errors.Should().BeEmpty();
-    }
-
-    [Fact]
-    public async Task Validate_WithEmptyScopeId_Fails()
-    {
-        var request = new CreateGoalRequest
-        {
-            ParentId = Guid.NewGuid(),
-            Name = "Objetivo 1",
-            Description = "Descrição",
-            ScopeType = GoalScopeType.Organization,
-            ScopeId = Guid.Empty,
-            StartDate = DateTime.UtcNow,
-            EndDate = DateTime.UtcNow.AddDays(30),
-            Status = GoalStatus.Planned
-        };
-
-        var result = await _validator.ValidateAsync(request);
-
-        result.IsValid.Should().BeFalse();
-        result.Errors.Should().ContainSingle(e =>
-            e.PropertyName.Contains("ScopeId") &&
-            e.ErrorMessage.Contains("obrigatório"));
     }
 
     [Theory]
@@ -90,8 +65,6 @@ public sealed class CreateObjectiveValidatorTests
             ParentId = Guid.NewGuid(),
             Name = "Objetivo 1",
             Description = new string('A', 1001),
-            ScopeType = GoalScopeType.Organization,
-            ScopeId = Guid.NewGuid(),
             StartDate = DateTime.UtcNow,
             EndDate = DateTime.UtcNow.AddDays(30),
             Status = GoalStatus.Planned
@@ -113,8 +86,6 @@ public sealed class CreateObjectiveValidatorTests
             ParentId = Guid.NewGuid(),
             Name = "Objetivo 1",
             Description = null,
-            ScopeType = GoalScopeType.Organization,
-            ScopeId = Guid.NewGuid(),
             StartDate = DateTime.UtcNow,
             EndDate = DateTime.UtcNow.AddDays(30),
             Status = GoalStatus.Planned

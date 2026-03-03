@@ -2,7 +2,6 @@ using System.Net;
 using System.Text;
 using Bud.Client.Pages;
 using Bud.Client.Services;
-using Bud.Shared.Contracts;
 using Bunit;
 using FluentAssertions;
 using Microsoft.Extensions.DependencyInjection;
@@ -20,15 +19,11 @@ public sealed class GoalsPageTests : TestContext
         var instance = cut.Instance;
 
         SetField(instance, "_filterActiveOnly", false);
-        SetField(instance, "_filterScopeTypeValue", "Team");
-        SetField(instance, "_filterScopeId", Guid.NewGuid().ToString());
         SetField(instance, "_search", "abc");
 
         await InvokePrivateTask(instance, "HandleClearFilters");
 
         GetField<bool>(instance, "_filterActiveOnly").Should().BeTrue();
-        GetField<string?>(instance, "_filterScopeTypeValue").Should().BeNull();
-        GetField<string?>(instance, "_filterScopeId").Should().BeNull();
         GetField<string?>(instance, "_search").Should().BeNull();
     }
 
@@ -57,8 +52,8 @@ public sealed class GoalsPageTests : TestContext
             """);
 
         var instance = cut.Instance;
-        // Use "all goals" mode to avoid me/goals path and disable active-only filter
-        SetField(instance, "_showMyGoals", false);
+        // Use "all goals" mode and disable active-only filter
+        SetField(instance, "_filter", GoalFilter.All);
         SetField(instance, "_filterActiveOnly", false);
         await InvokePrivateTask(instance, "LoadGoals");
 
@@ -117,8 +112,7 @@ public sealed class GoalsPageTests : TestContext
                 return Json("""{"items":[],"total":0,"page":1,"pageSize":100}""");
             }
 
-            if (path.StartsWith("/api/goals", StringComparison.Ordinal) ||
-                path.StartsWith("/api/me/goals", StringComparison.Ordinal))
+            if (path.StartsWith("/api/goals", StringComparison.Ordinal))
             {
                 return Json(goalsResponse);
             }

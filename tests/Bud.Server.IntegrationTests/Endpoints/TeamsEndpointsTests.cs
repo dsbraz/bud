@@ -379,36 +379,20 @@ public class TeamsEndpointsTests : IClassFixture<CustomWebApplicationFactory>
     #region Delete Tests
 
     [Fact]
-    public async Task Delete_WithAssociatedMissions_ReturnsConflict()
+    public async Task Delete_Team_WithNoGoals_ReturnsNoContent()
     {
-        // Arrange
-        var (org, workspace, leaderId) = await CreateTestHierarchy();
+        // Arrange — Goals no longer have TeamId, so HasGoalsAsync always returns false.
+        var (_, workspace, leaderId) = await CreateTestHierarchy();
 
         var teamResponse = await _client.PostAsJsonAsync("/api/teams",
-            new CreateTeamRequest { Name = "Team with Mission", WorkspaceId = workspace.Id, LeaderId = leaderId });
+            new CreateTeamRequest { Name = "Team deletable", WorkspaceId = workspace.Id, LeaderId = leaderId });
         var team = (await teamResponse.Content.ReadFromJsonAsync<Team>())!;
-
-        // Create mission scoped to team via DbContext
-        using var scope = _factory.Services.CreateScope();
-        var dbContext = scope.ServiceProvider.GetRequiredService<Bud.Server.Infrastructure.Persistence.ApplicationDbContext>();
-        var mission = new Goal
-        {
-            Id = Guid.NewGuid(),
-            Name = "Missão Team",
-            OrganizationId = org.Id,
-            TeamId = team.Id,
-            StartDate = DateTime.UtcNow,
-            EndDate = DateTime.UtcNow.AddDays(30),
-            Status = GoalStatus.Active
-        };
-        dbContext.Goals.Add(mission);
-        await dbContext.SaveChangesAsync();
 
         // Act
         var response = await _client.DeleteAsync($"/api/teams/{team.Id}");
 
         // Assert
-        response.StatusCode.Should().Be(HttpStatusCode.Conflict);
+        response.StatusCode.Should().Be(HttpStatusCode.NoContent);
     }
 
     [Fact]

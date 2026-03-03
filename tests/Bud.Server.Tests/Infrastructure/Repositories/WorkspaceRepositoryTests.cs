@@ -414,32 +414,19 @@ public sealed class WorkspaceRepositoryTests
     #region HasMissionsAsync Tests
 
     [Fact]
-    public async Task HasMissionsAsync_WhenWorkspaceHasMissions_ReturnsTrue()
+    public async Task HasMissionsAsync_AlwaysReturnsFalse_BecauseGoalsNoLongerHaveWorkspaceId()
     {
-        // Arrange
+        // Arrange — Goals no longer have WorkspaceId, so HasGoalsAsync always returns false.
         using var context = CreateInMemoryContext();
         var repository = new WorkspaceRepository(context);
         var org = await CreateTestOrganization(context);
         var workspace = await CreateTestWorkspace(context, org.Id);
 
-        var mission = new Goal
-        {
-            Id = Guid.NewGuid(),
-            Name = "Mission",
-            StartDate = DateTime.UtcNow,
-            EndDate = DateTime.UtcNow.AddDays(7),
-            Status = GoalStatus.Planned,
-            OrganizationId = org.Id,
-            WorkspaceId = workspace.Id
-        };
-        context.Goals.Add(mission);
-        await context.SaveChangesAsync();
-
         // Act
         var result = await repository.HasGoalsAsync(workspace.Id);
 
         // Assert
-        result.Should().BeTrue();
+        result.Should().BeFalse();
     }
 
     [Fact]

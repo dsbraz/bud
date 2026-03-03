@@ -25,8 +25,7 @@ public sealed class McpToolServiceTests
         tool.InputSchema["additionalProperties"]!.GetValue<bool>().Should().BeFalse();
 
         var properties = tool.InputSchema["properties"]!.AsObject();
-        properties.Should().ContainKeys("name", "startDate", "endDate", "status", "scopeType", "scopeId");
-        properties["scopeId"]!["format"]!.GetValue<string>().Should().Be("uuid");
+        properties.Should().ContainKeys("name", "startDate", "endDate", "status");
         properties["startDate"]!["format"]!.GetValue<string>().Should().Be("date-time");
         properties["status"]!["type"]!.GetValue<string>().Should().NotBeNullOrWhiteSpace();
     }
@@ -105,7 +104,7 @@ public sealed class McpToolServiceTests
         result["name"]!.GetValue<string>().Should().Be("goal_create");
         result["required"]!.AsArray().Select(i => i!.GetValue<string>())
             .Should().Contain("name");
-        result["example"]!["scopeType"].Should().NotBeNull();
+        result["example"]!["name"].Should().NotBeNull();
     }
 
     [Fact]
@@ -161,9 +160,7 @@ public sealed class McpToolServiceTests
             "dimension": "Clientes",
             "startDate": "2026-02-08T00:00:00Z",
             "endDate": "2026-02-20T00:00:00Z",
-            "status": "Active",
-            "scopeType": "Organization",
-            "scopeId": "00000000-0000-0000-0000-000000000001"
+            "status": "Active"
           }
         }
         """);

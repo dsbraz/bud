@@ -20,9 +20,7 @@ public class CreateMissionValidatorTests
             Name = "Test Mission",
             StartDate = DateTime.UtcNow,
             EndDate = DateTime.UtcNow.AddDays(7),
-            Status = Bud.Shared.Contracts.GoalStatus.Planned,
-            ScopeType = Bud.Shared.Contracts.GoalScopeType.Organization,
-            ScopeId = Guid.NewGuid()
+            Status = Bud.Shared.Contracts.GoalStatus.Planned
         };
 
         // Act
@@ -45,9 +43,7 @@ public class CreateMissionValidatorTests
             Name = name!,
             StartDate = DateTime.UtcNow,
             EndDate = DateTime.UtcNow.AddDays(7),
-            Status = Bud.Shared.Contracts.GoalStatus.Planned,
-            ScopeType = Bud.Shared.Contracts.GoalScopeType.Organization,
-            ScopeId = Guid.NewGuid()
+            Status = Bud.Shared.Contracts.GoalStatus.Planned
         };
 
         // Act
@@ -67,9 +63,7 @@ public class CreateMissionValidatorTests
             Name = new string('A', 201), // 201 characters
             StartDate = DateTime.UtcNow,
             EndDate = DateTime.UtcNow.AddDays(7),
-            Status = Bud.Shared.Contracts.GoalStatus.Planned,
-            ScopeType = Bud.Shared.Contracts.GoalScopeType.Organization,
-            ScopeId = Guid.NewGuid()
+            Status = Bud.Shared.Contracts.GoalStatus.Planned
         };
 
         // Act
@@ -95,9 +89,7 @@ public class CreateMissionValidatorTests
             Name = "Test Mission",
             StartDate = DateTime.UtcNow.AddDays(7),
             EndDate = DateTime.UtcNow, // Before start date
-            Status = Bud.Shared.Contracts.GoalStatus.Planned,
-            ScopeType = Bud.Shared.Contracts.GoalScopeType.Organization,
-            ScopeId = Guid.NewGuid()
+            Status = Bud.Shared.Contracts.GoalStatus.Planned
         };
 
         // Act
@@ -120,9 +112,7 @@ public class CreateMissionValidatorTests
             Name = "Test Mission",
             StartDate = startDate,
             EndDate = startDate, // Same as start date
-            Status = Bud.Shared.Contracts.GoalStatus.Planned,
-            ScopeType = Bud.Shared.Contracts.GoalScopeType.Organization,
-            ScopeId = Guid.NewGuid()
+            Status = Bud.Shared.Contracts.GoalStatus.Planned
         };
 
         // Act
@@ -142,9 +132,7 @@ public class CreateMissionValidatorTests
             Name = "Test Mission",
             StartDate = DateTime.UtcNow,
             EndDate = DateTime.UtcNow.AddDays(7), // After start date
-            Status = Bud.Shared.Contracts.GoalStatus.Planned,
-            ScopeType = Bud.Shared.Contracts.GoalScopeType.Organization,
-            ScopeId = Guid.NewGuid()
+            Status = Bud.Shared.Contracts.GoalStatus.Planned
         };
 
         // Act
@@ -164,9 +152,7 @@ public class CreateMissionValidatorTests
             Name = "Test Mission",
             StartDate = default(DateTime), // Empty date
             EndDate = DateTime.UtcNow.AddDays(7),
-            Status = Bud.Shared.Contracts.GoalStatus.Planned,
-            ScopeType = Bud.Shared.Contracts.GoalScopeType.Organization,
-            ScopeId = Guid.NewGuid()
+            Status = Bud.Shared.Contracts.GoalStatus.Planned
         };
 
         // Act
@@ -186,9 +172,7 @@ public class CreateMissionValidatorTests
             Name = "Test Mission",
             StartDate = DateTime.UtcNow,
             EndDate = default(DateTime), // Empty date
-            Status = Bud.Shared.Contracts.GoalStatus.Planned,
-            ScopeType = Bud.Shared.Contracts.GoalScopeType.Organization,
-            ScopeId = Guid.NewGuid()
+            Status = Bud.Shared.Contracts.GoalStatus.Planned
         };
 
         // Act
@@ -197,54 +181,6 @@ public class CreateMissionValidatorTests
         // Assert
         result.IsValid.Should().BeFalse();
         result.Errors.Should().Contain(e => e.PropertyName.Contains("EndDate"));
-    }
-
-    #endregion
-
-    #region Scope Validation Tests
-
-    [Fact]
-    public async Task Validate_WithValidScopeType_Passes()
-    {
-        // Arrange
-        var request = new CreateGoalRequest
-        {
-            Name = "Test Mission",
-            StartDate = DateTime.UtcNow,
-            EndDate = DateTime.UtcNow.AddDays(7),
-            Status = Bud.Shared.Contracts.GoalStatus.Planned,
-            ScopeType = Bud.Shared.Contracts.GoalScopeType.Team,
-            ScopeId = Guid.NewGuid()
-        };
-
-        // Act
-        var result = await _validator.ValidateAsync(request);
-
-        // Assert
-        result.IsValid.Should().BeTrue();
-        result.Errors.Should().BeEmpty();
-    }
-
-    [Fact]
-    public async Task Validate_WithEmptyScopeId_Fails()
-    {
-        // Arrange
-        var request = new CreateGoalRequest
-        {
-            Name = "Test Mission",
-            StartDate = DateTime.UtcNow,
-            EndDate = DateTime.UtcNow.AddDays(7),
-            Status = Bud.Shared.Contracts.GoalStatus.Planned,
-            ScopeType = Bud.Shared.Contracts.GoalScopeType.Organization,
-            ScopeId = Guid.Empty // Empty GUID
-        };
-
-        // Act
-        var result = await _validator.ValidateAsync(request);
-
-        // Assert
-        result.IsValid.Should().BeFalse();
-        result.Errors.Should().ContainSingle(e => e.PropertyName.Contains("ScopeId"));
     }
 
     #endregion

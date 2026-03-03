@@ -1,10 +1,9 @@
-using Bud.Server.Application.Ports;
 using Bud.Server.Domain.Repositories;
 using System.Security.Claims;
 using Bud.Server.Application.Common;
-using Bud.Server.Application.Mapping;
 using Bud.Server.Application.UseCases.Goals;
 using Bud.Server.Authorization;
+using Bud.Server.MultiTenancy;
 using Bud.Shared.Contracts;
 using Bud.Server.Domain.Events;
 using Bud.Server.Domain.Model;
@@ -19,24 +18,23 @@ public sealed class GoalWriteUseCasesTests
 {
     private static readonly ClaimsPrincipal User = new(new ClaimsIdentity([new Claim(ClaimTypes.Name, "test")]));
     private readonly Mock<IGoalRepository> _repo = new();
-    private readonly Mock<IGoalScopeResolver> _scopeResolver = new();
+    private readonly Mock<ICollaboratorRepository> _collaboratorRepo = new();
+    private readonly Mock<ITenantProvider> _tenantProvider = new();
     private readonly Mock<IApplicationAuthorizationGateway> _authGateway = new();
 
     private CreateGoal CreatePlanningUseCase()
-        => new(_repo.Object, _scopeResolver.Object, _authGateway.Object, NullLogger<CreateGoal>.Instance);
+        => new(_repo.Object, _collaboratorRepo.Object, _tenantProvider.Object, _authGateway.Object, NullLogger<CreateGoal>.Instance);
 
     private PatchGoal CreateReplanningUseCase()
-        => new(_repo.Object, _scopeResolver.Object, _authGateway.Object, NullLogger<PatchGoal>.Instance);
+        => new(_repo.Object, _collaboratorRepo.Object, _authGateway.Object, NullLogger<PatchGoal>.Instance);
 
     private DeleteGoal CreateRemoveUseCase()
         => new(_repo.Object, _authGateway.Object, NullLogger<DeleteGoal>.Instance);
 
     [Fact]
-    public async Task CreateAsync_WhenScopeResolutionFails_ReturnsNotFound()
+    public async Task CreateAsync_WhenTenantNotSelected_ReturnsForbidden()
     {
-        _scopeResolver.Setup(s => s.ResolveScopeOrganizationIdAsync(
-                GoalScopeType.Organization, It.IsAny<Guid>(), true, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(Result<Guid>.NotFound("Organização não encontrada."));
+        _tenantProvider.SetupGet(t => t.TenantId).Returns((Guid?)null);
 
         var useCase = CreatePlanningUseCase();
         var request = new CreateGoalRequest
@@ -44,15 +42,13 @@ public sealed class GoalWriteUseCasesTests
             Name = "Missão",
             StartDate = DateTime.UtcNow,
             EndDate = DateTime.UtcNow.AddDays(1),
-            Status = Bud.Shared.Contracts.GoalStatus.Planned,
-            ScopeType = Bud.Shared.Contracts.GoalScopeType.Organization,
-            ScopeId = Guid.NewGuid()
+            Status = Bud.Shared.Contracts.GoalStatus.Planned
         };
 
         var result = await useCase.ExecuteAsync(User, request);
 
         result.IsSuccess.Should().BeFalse();
-        result.ErrorType.Should().Be(ErrorType.NotFound);
+        result.ErrorType.Should().Be(ErrorType.Forbidden);
         _repo.Verify(r => r.AddAsync(It.IsAny<Goal>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
@@ -60,9 +56,7 @@ public sealed class GoalWriteUseCasesTests
     public async Task CreateAsync_WhenUnauthorized_ReturnsForbidden()
     {
         var orgId = Guid.NewGuid();
-        _scopeResolver.Setup(s => s.ResolveScopeOrganizationIdAsync(
-                GoalScopeType.Organization, It.IsAny<Guid>(), true, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(Result<Guid>.Success(orgId));
+        _tenantProvider.SetupGet(t => t.TenantId).Returns(orgId);
         _authGateway
             .Setup(g => g.CanAccessTenantOrganizationAsync(User, orgId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(false);
@@ -73,9 +67,7 @@ public sealed class GoalWriteUseCasesTests
             Name = "Missão",
             StartDate = DateTime.UtcNow,
             EndDate = DateTime.UtcNow.AddDays(1),
-            Status = Bud.Shared.Contracts.GoalStatus.Planned,
-            ScopeType = Bud.Shared.Contracts.GoalScopeType.Organization,
-            ScopeId = orgId
+            Status = Bud.Shared.Contracts.GoalStatus.Planned
         };
 
         var result = await useCase.ExecuteAsync(User, request);
@@ -89,9 +81,7 @@ public sealed class GoalWriteUseCasesTests
     public async Task CreateAsync_WhenSuccess_RegistersMissionCreatedDomainEvent()
     {
         var orgId = Guid.NewGuid();
-        _scopeResolver.Setup(s => s.ResolveScopeOrganizationIdAsync(
-                GoalScopeType.Organization, It.IsAny<Guid>(), true, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(Result<Guid>.Success(orgId));
+        _tenantProvider.SetupGet(t => t.TenantId).Returns(orgId);
         _authGateway
             .Setup(g => g.CanAccessTenantOrganizationAsync(User, orgId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(true);
@@ -102,9 +92,7 @@ public sealed class GoalWriteUseCasesTests
             Name = "Missão",
             StartDate = DateTime.UtcNow,
             EndDate = DateTime.UtcNow.AddDays(1),
-            Status = Bud.Shared.Contracts.GoalStatus.Planned,
-            ScopeType = Bud.Shared.Contracts.GoalScopeType.Organization,
-            ScopeId = orgId
+            Status = Bud.Shared.Contracts.GoalStatus.Planned
         };
 
         var result = await useCase.ExecuteAsync(User, request);
@@ -133,9 +121,7 @@ public sealed class GoalWriteUseCasesTests
             OrganizationId = orgId
         };
 
-        _scopeResolver.Setup(s => s.ResolveScopeOrganizationIdAsync(
-                GoalScopeType.Organization, It.IsAny<Guid>(), true, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(Result<Guid>.Success(orgId));
+        _tenantProvider.SetupGet(t => t.TenantId).Returns(orgId);
         _authGateway
             .Setup(g => g.CanAccessTenantOrganizationAsync(User, orgId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(true);
@@ -149,8 +135,6 @@ public sealed class GoalWriteUseCasesTests
             StartDate = new DateTime(2026, 1, 15, 0, 0, 0, DateTimeKind.Utc), // Before parent's start
             EndDate = new DateTime(2026, 6, 30, 0, 0, 0, DateTimeKind.Utc),
             Status = GoalStatus.Planned,
-            ScopeType = GoalScopeType.Organization,
-            ScopeId = orgId,
             ParentId = parentId
         };
 
@@ -178,9 +162,7 @@ public sealed class GoalWriteUseCasesTests
             OrganizationId = orgId
         };
 
-        _scopeResolver.Setup(s => s.ResolveScopeOrganizationIdAsync(
-                GoalScopeType.Organization, It.IsAny<Guid>(), true, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(Result<Guid>.Success(orgId));
+        _tenantProvider.SetupGet(t => t.TenantId).Returns(orgId);
         _authGateway
             .Setup(g => g.CanAccessTenantOrganizationAsync(User, orgId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(true);
@@ -194,8 +176,6 @@ public sealed class GoalWriteUseCasesTests
             StartDate = parentStartDate, // Same as parent — should be allowed
             EndDate = new DateTime(2026, 6, 30, 0, 0, 0, DateTimeKind.Utc),
             Status = GoalStatus.Planned,
-            ScopeType = GoalScopeType.Organization,
-            ScopeId = orgId,
             ParentId = parentId
         };
 

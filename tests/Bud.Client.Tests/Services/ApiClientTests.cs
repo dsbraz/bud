@@ -1,7 +1,6 @@
 using System.Net;
 using System.Text;
 using Bud.Client.Services;
-using Bud.Shared.Contracts;
 using FluentAssertions;
 using Xunit;
 
@@ -63,7 +62,7 @@ public sealed class ApiClientTests
         var handler = CreateSuccessHandler();
         var client = CreateClient(handler);
 
-        _ = await client.GetGoalsAsync(GoalScopeType.Organization, Guid.NewGuid(), null, 1, 200);
+        _ = await client.GetGoalsAsync(GoalFilter.Mine, null, 1, 200);
 
         handler.LastRequest.Should().NotBeNull();
         handler.LastRequest!.RequestUri!.Query.Should().Contain("pageSize=100");
@@ -172,9 +171,7 @@ public sealed class ApiClientTests
             Name = "Missão teste",
             StartDate = DateTime.UtcNow,
             EndDate = DateTime.UtcNow.AddDays(1),
-            Status = GoalStatus.Planned,
-            ScopeType = GoalScopeType.Organization,
-            ScopeId = Guid.NewGuid()
+            Status = GoalStatus.Planned
         };
 
         Func<Task> act = async () => await client.CreateGoalAsync(request);
@@ -235,7 +232,7 @@ public sealed class ApiClientTests
             toastService);
 
         _ = await client.GetOrganizationsAsync(search: null);
-        _ = await client.GetGoalsAsync(null, null, null);
+        _ = await client.GetGoalsAsync(null, null);
         _ = await client.GetMyDashboardAsync();
 
         toastCount.Should().Be(1);

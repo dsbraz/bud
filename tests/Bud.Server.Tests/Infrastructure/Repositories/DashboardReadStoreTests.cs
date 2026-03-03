@@ -929,8 +929,6 @@ public class DashboardReadStoreTests
             Name = "Org Mission",
             OrganizationId = org.Id,
             CollaboratorId = null,
-            WorkspaceId = null,
-            TeamId = null,
             Status = GoalStatus.Active,
             StartDate = DateTime.UtcNow.AddDays(-30),
             EndDate = DateTime.UtcNow.AddDays(30)
@@ -1025,8 +1023,6 @@ public class DashboardReadStoreTests
             Name = "Org Mission",
             OrganizationId = org.Id,
             CollaboratorId = null,
-            WorkspaceId = null,
-            TeamId = null,
             Status = GoalStatus.Active,
             StartDate = DateTime.UtcNow.AddDays(-30),
             EndDate = DateTime.UtcNow.AddDays(30)

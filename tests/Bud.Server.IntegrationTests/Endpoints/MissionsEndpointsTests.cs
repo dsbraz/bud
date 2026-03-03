@@ -24,6 +24,12 @@ public class MissionsEndpointsTests : IClassFixture<CustomWebApplicationFactory>
         _client = factory.CreateGlobalAdminClient();
     }
 
+    private void SetTenantHeader(Guid orgId)
+    {
+        _client.DefaultRequestHeaders.Remove("X-Tenant-Id");
+        _client.DefaultRequestHeaders.Add("X-Tenant-Id", orgId.ToString());
+    }
+
     private async Task<Guid> GetOrCreateAdminLeader()
     {
         using var scope = _factory.Services.CreateScope();
@@ -35,6 +41,7 @@ public class MissionsEndpointsTests : IClassFixture<CustomWebApplicationFactory>
 
         if (existingLeader != null)
         {
+            SetTenantHeader(existingLeader.OrganizationId);
             return existingLeader.Id;
         }
 
@@ -64,6 +71,7 @@ public class MissionsEndpointsTests : IClassFixture<CustomWebApplicationFactory>
         org.OwnerId = adminLeader.Id;
         await dbContext.SaveChangesAsync();
 
+        SetTenantHeader(org.Id);
         return adminLeader.Id;
     }
 
@@ -93,6 +101,7 @@ public class MissionsEndpointsTests : IClassFixture<CustomWebApplicationFactory>
                 OwnerId = leaderId,
             });
         var org = await orgResponse.Content.ReadFromJsonAsync<Organization>();
+        SetTenantHeader(org!.Id);
 
         var request = new CreateGoalRequest
         {
@@ -100,8 +109,6 @@ public class MissionsEndpointsTests : IClassFixture<CustomWebApplicationFactory>
             StartDate = DateTime.UtcNow,
             EndDate = DateTime.UtcNow.AddDays(7),
             Status = Bud.Shared.Contracts.GoalStatus.Planned,
-            ScopeType = Bud.Shared.Contracts.GoalScopeType.Organization,
-            ScopeId = org!.Id
         };
 
         // Act
@@ -113,8 +120,6 @@ public class MissionsEndpointsTests : IClassFixture<CustomWebApplicationFactory>
         mission.Should().NotBeNull();
         mission!.Name.Should().Be("Test Mission");
         mission.OrganizationId.Should().Be(org.Id);
-        mission.WorkspaceId.Should().BeNull();
-        mission.TeamId.Should().BeNull();
         mission.CollaboratorId.Should().BeNull();
     }
 
@@ -142,35 +147,36 @@ public class MissionsEndpointsTests : IClassFixture<CustomWebApplicationFactory>
         var collaborator = await CreateNonOwnerCollaborator(org1!.Id);
         var tenantClient = _factory.CreateTenantClient(org1.Id, collaborator.Email, collaborator.Id);
 
+        // Tenant client is scoped to org1, but tries to create goal referencing org2 collaborator
+        var org2Collaborator = await CreateNonOwnerCollaborator(org2!.Id);
         var request = new CreateGoalRequest
         {
             Name = "Mission Forbidden",
             StartDate = DateTime.UtcNow,
             EndDate = DateTime.UtcNow.AddDays(7),
             Status = Bud.Shared.Contracts.GoalStatus.Planned,
-            ScopeType = Bud.Shared.Contracts.GoalScopeType.Organization,
-            ScopeId = org2!.Id
+            CollaboratorId = org2Collaborator.Id
         };
 
         // Act
         var response = await tenantClient.PostAsJsonAsync("/api/goals", request);
 
-        // Assert
-        response.StatusCode.Should().Be(HttpStatusCode.Forbidden);
+        // Assert: NotFound instead of Forbidden — tenant isolation hides cross-org collaborators
+        response.StatusCode.Should().Be(HttpStatusCode.NotFound);
     }
 
     [Fact]
-    public async Task Create_WithInvalidScopeId_ReturnsNotFound()
+    public async Task Create_WithInvalidCollaboratorId_ReturnsNotFound()
     {
         // Arrange
+        await GetOrCreateAdminLeader();
         var request = new CreateGoalRequest
         {
             Name = "Test Mission",
             StartDate = DateTime.UtcNow,
             EndDate = DateTime.UtcNow.AddDays(7),
             Status = Bud.Shared.Contracts.GoalStatus.Planned,
-            ScopeType = Bud.Shared.Contracts.GoalScopeType.Organization,
-            ScopeId = Guid.NewGuid() // Non-existent ID
+            CollaboratorId = Guid.NewGuid() // Non-existent ID
         };
 
         // Act
@@ -183,24 +189,14 @@ public class MissionsEndpointsTests : IClassFixture<CustomWebApplicationFactory>
     [Fact]
     public async Task Create_WithEndDateBeforeStartDate_ReturnsBadRequest()
     {
-        // Arrange: Create organization first
-        var leaderId = await GetOrCreateAdminLeader();
-        var orgResponse = await _client.PostAsJsonAsync("/api/organizations",
-            new CreateOrganizationRequest
-            {
-                Name = "test-org.com",
-                OwnerId = leaderId,
-            });
-        var org = await orgResponse.Content.ReadFromJsonAsync<Organization>();
-
+        // Arrange
+        await GetOrCreateAdminLeader();
         var request = new CreateGoalRequest
         {
             Name = "Test Mission",
             StartDate = DateTime.UtcNow.AddDays(7),
             EndDate = DateTime.UtcNow, // Before start date
             Status = Bud.Shared.Contracts.GoalStatus.Planned,
-            ScopeType = Bud.Shared.Contracts.GoalScopeType.Organization,
-            ScopeId = org!.Id
         };
 
         // Act
@@ -213,24 +209,14 @@ public class MissionsEndpointsTests : IClassFixture<CustomWebApplicationFactory>
     [Fact]
     public async Task Create_WithStringEnums_ReturnsCreated()
     {
-        var leaderId = await GetOrCreateAdminLeader();
-        var orgResponse = await _client.PostAsJsonAsync("/api/organizations",
-            new CreateOrganizationRequest
-            {
-                Name = "test-string-enum.com",
-                OwnerId = leaderId
-            });
-        var org = await orgResponse.Content.ReadFromJsonAsync<Organization>();
-
+        await GetOrCreateAdminLeader();
         var payload = new
         {
             name = "Mission String Enum",
             description = "String enum parsing",
             startDate = DateTime.UtcNow,
             endDate = DateTime.UtcNow.AddDays(5),
-            status = "Planned",
-            scopeType = "Organization",
-            scopeId = org!.Id
+            status = "Planned"
         };
 
         var content = new StringContent(JsonSerializer.Serialize(payload), Encoding.UTF8, "application/json");
@@ -243,24 +229,14 @@ public class MissionsEndpointsTests : IClassFixture<CustomWebApplicationFactory>
     [Fact]
     public async Task Create_WithNumericEnums_ReturnsCreated()
     {
-        var leaderId = await GetOrCreateAdminLeader();
-        var orgResponse = await _client.PostAsJsonAsync("/api/organizations",
-            new CreateOrganizationRequest
-            {
-                Name = "test-numeric-enum.com",
-                OwnerId = leaderId
-            });
-        var org = await orgResponse.Content.ReadFromJsonAsync<Organization>();
-
+        await GetOrCreateAdminLeader();
         var payload = new
         {
             name = "Mission Numeric Enum",
             description = "Numeric enum parsing",
             startDate = DateTime.UtcNow,
             endDate = DateTime.UtcNow.AddDays(5),
-            status = 0,
-            scopeType = 0,
-            scopeId = org!.Id
+            status = 0
         };
 
         var content = new StringContent(JsonSerializer.Serialize(payload), Encoding.UTF8, "application/json");
@@ -297,20 +273,14 @@ public class MissionsEndpointsTests : IClassFixture<CustomWebApplicationFactory>
     [Fact]
     public async Task GetById_WithExistingId_ReturnsOk()
     {
-        // Arrange: Create organization and mission
-        var leaderId = await GetOrCreateAdminLeader();
-        var orgResponse = await _client.PostAsJsonAsync("/api/organizations",
-            new CreateOrganizationRequest { Name = "test-missions.com", OwnerId = leaderId });
-        var org = await orgResponse.Content.ReadFromJsonAsync<Organization>();
-
+        await GetOrCreateAdminLeader();
+        // Arrange: Create mission
         var createRequest = new CreateGoalRequest
         {
             Name = "Test Mission for GetById",
             StartDate = DateTime.UtcNow,
             EndDate = DateTime.UtcNow.AddDays(7),
             Status = Bud.Shared.Contracts.GoalStatus.Planned,
-            ScopeType = Bud.Shared.Contracts.GoalScopeType.Organization,
-            ScopeId = org!.Id
         };
         var createResponse = await _client.PostAsJsonAsync("/api/goals", createRequest);
         var created = await createResponse.Content.ReadFromJsonAsync<Goal>();
@@ -344,66 +314,33 @@ public class MissionsEndpointsTests : IClassFixture<CustomWebApplicationFactory>
     #region GetAll Tests
 
     [Fact]
-    public async Task GetAll_WithScopeFilter_ReturnsFilteredResults()
+    public async Task GetAll_WithFilter_ReturnsFilteredResults()
     {
-        // Arrange: Create two organizations
-        var leaderId = await GetOrCreateAdminLeader();
-        var org1Response = await _client.PostAsJsonAsync("/api/organizations",
-            new CreateOrganizationRequest
-            {
-                Name = "org1.com",
-                OwnerId = leaderId
-            });
-        var org1 = await org1Response.Content.ReadFromJsonAsync<Organization>();
-
-        var org2Response = await _client.PostAsJsonAsync("/api/organizations",
-            new CreateOrganizationRequest
-            {
-                Name = "org2.com",
-                OwnerId = leaderId
-            });
-        var org2 = await org2Response.Content.ReadFromJsonAsync<Organization>();
-
-        // Create missions for each org
+        await GetOrCreateAdminLeader();
+        // Arrange: Create goals
         await _client.PostAsJsonAsync("/api/goals", new CreateGoalRequest
         {
-            Name = "Mission Org 1",
+            Name = "Mission Filter Test",
             StartDate = DateTime.UtcNow,
             EndDate = DateTime.UtcNow.AddDays(7),
             Status = Bud.Shared.Contracts.GoalStatus.Planned,
-            ScopeType = Bud.Shared.Contracts.GoalScopeType.Organization,
-            ScopeId = org1!.Id
         });
 
-        await _client.PostAsJsonAsync("/api/goals", new CreateGoalRequest
-        {
-            Name = "Mission Org 2",
-            StartDate = DateTime.UtcNow,
-            EndDate = DateTime.UtcNow.AddDays(7),
-            Status = Bud.Shared.Contracts.GoalStatus.Planned,
-            ScopeType = Bud.Shared.Contracts.GoalScopeType.Organization,
-            ScopeId = org2!.Id
-        });
-
-        // Act - Filter by org1
-        var response = await _client.GetAsync($"/api/goals?scopeType={GoalScopeType.Organization}&scopeId={org1.Id}");
+        // Act - Filter with All
+        var response = await _client.GetAsync($"/api/goals?filter={GoalFilter.All}");
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         var result = await response.Content.ReadFromJsonAsync<PagedResult<Goal>>();
         result.Should().NotBeNull();
-        result!.Items.Should().OnlyContain(m => m.OrganizationId == org1.Id);
+        result!.Items.Should().NotBeEmpty();
     }
 
     [Fact]
     public async Task GetAll_WithPagination_ReturnsPagedResults()
     {
-        // Arrange: Create organization and multiple missions
-        var leaderId = await GetOrCreateAdminLeader();
-        var orgResponse = await _client.PostAsJsonAsync("/api/organizations",
-            new CreateOrganizationRequest { Name = "test-org.com", OwnerId = leaderId });
-        var org = await orgResponse.Content.ReadFromJsonAsync<Organization>();
-
+        await GetOrCreateAdminLeader();
+        // Arrange: Create multiple missions
         for (int i = 1; i <= 15; i++)
         {
             await _client.PostAsJsonAsync("/api/goals", new CreateGoalRequest
@@ -412,8 +349,6 @@ public class MissionsEndpointsTests : IClassFixture<CustomWebApplicationFactory>
                 StartDate = DateTime.UtcNow,
                 EndDate = DateTime.UtcNow.AddDays(7),
                 Status = Bud.Shared.Contracts.GoalStatus.Planned,
-                ScopeType = Bud.Shared.Contracts.GoalScopeType.Organization,
-                ScopeId = org!.Id
             });
         }
 
@@ -483,6 +418,7 @@ public class MissionsEndpointsTests : IClassFixture<CustomWebApplicationFactory>
         var orgResponse = await _client.PostAsJsonAsync("/api/organizations",
             new CreateOrganizationRequest { Name = "test-org.com", OwnerId = adminLeaderId });
         var org = await orgResponse.Content.ReadFromJsonAsync<Organization>();
+        SetTenantHeader(org!.Id);
 
         var workspaceResponse = await _client.PostAsJsonAsync("/api/workspaces",
             new CreateWorkspaceRequest { Name = "Test Workspace", OrganizationId = org!.Id });
@@ -521,15 +457,13 @@ public class MissionsEndpointsTests : IClassFixture<CustomWebApplicationFactory>
         dbContext.Collaborators.Add(collaborator);
         await dbContext.SaveChangesAsync();
 
-        // Create missions at each level
+        // Create missions: one org-level, one collaborator-level
         await _client.PostAsJsonAsync("/api/goals", new CreateGoalRequest
         {
             Name = "Org Mission",
             StartDate = DateTime.UtcNow,
             EndDate = DateTime.UtcNow.AddDays(7),
             Status = Bud.Shared.Contracts.GoalStatus.Planned,
-            ScopeType = Bud.Shared.Contracts.GoalScopeType.Organization,
-            ScopeId = org.Id
         });
 
         await _client.PostAsJsonAsync("/api/goals", new CreateGoalRequest
@@ -538,20 +472,18 @@ public class MissionsEndpointsTests : IClassFixture<CustomWebApplicationFactory>
             StartDate = DateTime.UtcNow,
             EndDate = DateTime.UtcNow.AddDays(7),
             Status = Bud.Shared.Contracts.GoalStatus.Planned,
-            ScopeType = Bud.Shared.Contracts.GoalScopeType.Collaborator,
-            ScopeId = collaborator!.Id
+            CollaboratorId = collaborator!.Id
         });
 
         // Act
         var collaboratorClient = _factory.CreateTenantClient(org.Id, collaborator.Email, collaborator.Id);
-        var response = await collaboratorClient.GetAsync("/api/me/goals");
+        var response = await collaboratorClient.GetAsync("/api/goals?filter=Mine");
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         var result = await response.Content.ReadFromJsonAsync<PagedResult<Goal>>();
         result.Should().NotBeNull();
-        result!.Items.Should().HaveCountGreaterOrEqualTo(2);
-        result.Items.Should().Contain(m => m.Name == "Org Mission");
+        result!.Items.Should().HaveCountGreaterOrEqualTo(1);
         result.Items.Should().Contain(m => m.Name == "Collaborator Mission");
     }
 
@@ -562,20 +494,14 @@ public class MissionsEndpointsTests : IClassFixture<CustomWebApplicationFactory>
     [Fact]
     public async Task Update_WithValidRequest_ReturnsOk()
     {
-        // Arrange: Create organization and mission
-        var leaderId = await GetOrCreateAdminLeader();
-        var orgResponse = await _client.PostAsJsonAsync("/api/organizations",
-            new CreateOrganizationRequest { Name = "test-missions.com", OwnerId = leaderId });
-        var org = await orgResponse.Content.ReadFromJsonAsync<Organization>();
-
+        await GetOrCreateAdminLeader();
+        // Arrange: Create mission
         var createRequest = new CreateGoalRequest
         {
             Name = "Original Name",
             StartDate = DateTime.UtcNow,
             EndDate = DateTime.UtcNow.AddDays(7),
             Status = Bud.Shared.Contracts.GoalStatus.Planned,
-            ScopeType = Bud.Shared.Contracts.GoalScopeType.Organization,
-            ScopeId = org!.Id
         };
         var createResponse = await _client.PostAsJsonAsync("/api/goals", createRequest);
         var created = await createResponse.Content.ReadFromJsonAsync<Goal>();
@@ -606,20 +532,14 @@ public class MissionsEndpointsTests : IClassFixture<CustomWebApplicationFactory>
     [Fact]
     public async Task Delete_WithExistingId_ReturnsNoContent()
     {
-        // Arrange: Create organization and mission
-        var leaderId = await GetOrCreateAdminLeader();
-        var orgResponse = await _client.PostAsJsonAsync("/api/organizations",
-            new CreateOrganizationRequest { Name = "test-missions.com", OwnerId = leaderId });
-        var org = await orgResponse.Content.ReadFromJsonAsync<Organization>();
-
+        await GetOrCreateAdminLeader();
+        // Arrange: Create mission
         var createRequest = new CreateGoalRequest
         {
             Name = "Mission to Delete",
             StartDate = DateTime.UtcNow,
             EndDate = DateTime.UtcNow.AddDays(7),
             Status = Bud.Shared.Contracts.GoalStatus.Planned,
-            ScopeType = Bud.Shared.Contracts.GoalScopeType.Organization,
-            ScopeId = org!.Id
         };
         var createResponse = await _client.PostAsJsonAsync("/api/goals", createRequest);
         var created = await createResponse.Content.ReadFromJsonAsync<Goal>();
