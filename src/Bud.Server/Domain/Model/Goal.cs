@@ -43,7 +43,8 @@ public sealed class Goal : ITenantEntity, IAggregateRoot, IHasDomainEvents
         DateTime startDate,
         DateTime endDate,
         GoalStatus status,
-        Guid? parentId = null)
+        Guid? parentId = null,
+        Guid? actorCollaboratorId = null)
     {
         if (organizationId == Guid.Empty)
         {
@@ -58,7 +59,7 @@ public sealed class Goal : ITenantEntity, IAggregateRoot, IHasDomainEvents
         };
 
         goal.ApplyDetails(name, description, dimension, startDate, endDate, status);
-        goal.AddDomainEvent(new GoalCreatedDomainEvent(goal.Id, goal.OrganizationId));
+        goal.AddDomainEvent(new GoalCreatedDomainEvent(goal.Id, goal.OrganizationId, goal.Name, actorCollaboratorId));
         return goal;
     }
 
@@ -73,14 +74,14 @@ public sealed class Goal : ITenantEntity, IAggregateRoot, IHasDomainEvents
         ApplyDetails(name, description, dimension, startDate, endDate, status);
     }
 
-    public void MarkAsUpdated()
+    public void MarkAsUpdated(Guid? actorCollaboratorId = null)
     {
-        AddDomainEvent(new GoalUpdatedDomainEvent(Id, OrganizationId));
+        AddDomainEvent(new GoalUpdatedDomainEvent(Id, OrganizationId, Name, actorCollaboratorId));
     }
 
-    public void MarkAsDeleted()
+    public void MarkAsDeleted(Guid? actorCollaboratorId = null)
     {
-        AddDomainEvent(new GoalDeletedDomainEvent(Id, OrganizationId));
+        AddDomainEvent(new GoalDeletedDomainEvent(Id, OrganizationId, Name, actorCollaboratorId));
     }
 
     public void ClearDomainEvents()

@@ -125,7 +125,8 @@ public sealed class Indicator : ITenantEntity, IAggregateRoot, IHasDomainEvents
             checkin.Id,
             Id,
             OrganizationId,
-            collaboratorId));
+            collaboratorId,
+            Name));
 
         return checkin;
     }
