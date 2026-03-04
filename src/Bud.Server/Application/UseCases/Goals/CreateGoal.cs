@@ -71,7 +71,8 @@ public sealed partial class CreateGoal(
                 UtcDateTimeNormalizer.Normalize(request.StartDate),
                 UtcDateTimeNormalizer.Normalize(request.EndDate),
                 request.Status,
-                parentGoal?.Id);
+                parentGoal?.Id,
+                tenantProvider.CollaboratorId);
 
             if (request.CollaboratorId.HasValue)
             {

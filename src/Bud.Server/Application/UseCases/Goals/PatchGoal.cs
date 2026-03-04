@@ -4,6 +4,7 @@ using Bud.Server.Application.Policies;
 using Bud.Server.Authorization;
 using Bud.Server.Domain.Model;
 using Bud.Server.Domain.Repositories;
+using Bud.Server.MultiTenancy;
 using Microsoft.Extensions.Logging;
 
 namespace Bud.Server.Application.UseCases.Goals;
@@ -11,6 +12,7 @@ namespace Bud.Server.Application.UseCases.Goals;
 public sealed partial class PatchGoal(
     IGoalRepository goalRepository,
     ICollaboratorRepository collaboratorRepository,
+    ITenantProvider tenantProvider,
     IApplicationAuthorizationGateway authorizationGateway,
     ILogger<PatchGoal> logger,
     IUnitOfWork? unitOfWork = null)
@@ -91,7 +93,7 @@ public sealed partial class PatchGoal(
                 goal.CollaboratorId = newCollaboratorId;
             }
 
-            goal.MarkAsUpdated();
+            goal.MarkAsUpdated(tenantProvider.CollaboratorId);
             await unitOfWork.CommitAsync(goalRepository.SaveChangesAsync, cancellationToken);
 
             LogGoalPatched(logger, id, goal.Name);

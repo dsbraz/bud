@@ -3,12 +3,14 @@ using Bud.Server.Application.Common;
 using Bud.Server.Application.Mapping;
 using Bud.Server.Authorization;
 using Bud.Server.Domain.Repositories;
+using Bud.Server.MultiTenancy;
 using Microsoft.Extensions.Logging;
 
 namespace Bud.Server.Application.UseCases.Goals;
 
 public sealed partial class DeleteGoal(
     IGoalRepository goalRepository,
+    ITenantProvider tenantProvider,
     IApplicationAuthorizationGateway authorizationGateway,
     ILogger<DeleteGoal> logger,
     IUnitOfWork? unitOfWork = null)
@@ -34,7 +36,7 @@ public sealed partial class DeleteGoal(
             return Result.Forbidden(UserErrorMessages.GoalDeleteForbidden);
         }
 
-        goal.MarkAsDeleted();
+        goal.MarkAsDeleted(tenantProvider.CollaboratorId);
         await goalRepository.RemoveAsync(goal, cancellationToken);
         await unitOfWork.CommitAsync(goalRepository.SaveChangesAsync, cancellationToken);
 
