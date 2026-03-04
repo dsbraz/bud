@@ -211,4 +211,33 @@ public class NotificationRecipientResolverTests
         // Assert
         result.Should().BeNull();
     }
+
+    [Fact]
+    public async Task ResolveCollaboratorName_ExistingCollaborator_ReturnsFullName()
+    {
+        // Arrange
+        using var context = CreateInMemoryContext();
+        var resolver = new NotificationRecipientResolver(context);
+        var (_, _, _, c1, _, _) = await CreateTestHierarchy(context);
+
+        // Act
+        var name = await resolver.ResolveCollaboratorNameAsync(c1.Id);
+
+        // Assert
+        name.Should().Be("Collab 1");
+    }
+
+    [Fact]
+    public async Task ResolveCollaboratorName_NonExistentCollaborator_ReturnsNull()
+    {
+        // Arrange
+        using var context = CreateInMemoryContext();
+        var resolver = new NotificationRecipientResolver(context);
+
+        // Act
+        var name = await resolver.ResolveCollaboratorNameAsync(Guid.NewGuid());
+
+        // Assert
+        name.Should().BeNull();
+    }
 }
