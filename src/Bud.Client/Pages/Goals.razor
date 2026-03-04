@@ -18,12 +18,14 @@
                 FilterStartDate="_filterStartDate"
                 FilterEndDate="_filterEndDate"
                 Search="@_search"
+                KanbanShowArchived="_kanbanShowArchived"
                 OnSetFilter="SetGoalFilter"
                 OnToggleViewMode="HandleToggleViewMode"
                 OnToggleActiveFilter="HandleToggleActiveFilter"
                 OnDateFilterApplied="HandleDateFilterApplied"
                 OnSearchSubmit="HandleSearchSubmit"
-                OnClearFilters="HandleClearFilters" />
+                OnClearFilters="HandleClearFilters"
+                OnToggleKanbanArchived="HandleToggleKanbanArchived" />
 
 @* Cards de Resumo *@
 <SummaryCards CssClass="goals-summary">
@@ -58,6 +60,13 @@ else
                       OnDeleteClick="(id) => HandleDeleteClick(id)"
                       OnCheckinClick="t => OpenCheckinModalForIndicator(t.goal, t.indicator)"
                       OnHistoryClick="t => OpenCheckinHistoryModal(t.goal, t.indicator)" />
+    }
+    else if (_viewMode == "kanban")
+    {
+        <GoalKanbanView Tasks="_kanbanAllTasks"
+                        Goals="_kanbanAllGoals"
+                        ShowArchived="_kanbanShowArchived"
+                        OnTaskStateChange="HandleKanbanTaskStateChange" />
     }
     else
     {

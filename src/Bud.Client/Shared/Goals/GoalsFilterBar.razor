@@ -55,7 +55,16 @@
             </button>
         }
     </div>
-    <button class="filter-chip" @onclick="() => OnToggleViewMode.InvokeAsync()">
+    <div class="filter-view-group">
+        @if (ViewMode == "kanban")
+        {
+            <button class="filter-chip @(KanbanShowArchived ? "active" : "")" title="Mostrar arquivados" @onclick="() => OnToggleKanbanArchived.InvokeAsync()">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="21 8 21 21 3 21 3 8"/><rect x="1" y="3" width="22" height="5"/><line x1="10" y1="12" x2="14" y2="12"/>
+                </svg>
+            </button>
+        }
+        <button class="filter-chip" @onclick="() => OnToggleViewMode.InvokeAsync()">
         @if (ViewMode == "list")
         {
             <svg width="16" height="16" viewBox="0 0 32 32" fill="none">
@@ -63,7 +72,7 @@
             </svg>
             <span>Lista</span>
         }
-        else
+        else if (ViewMode == "grid")
         {
             <svg width="16" height="16" viewBox="0 0 32 32" fill="none">
                 <rect x="4" y="6" width="8" height="8" rx="1" stroke="currentColor" stroke-width="2"/>
@@ -73,7 +82,17 @@
             </svg>
             <span>Grade</span>
         }
-    </button>
+        else
+        {
+            <svg width="16" height="16" viewBox="0 0 32 32" fill="none">
+                <rect x="4" y="4" width="7" height="24" rx="1" stroke="currentColor" stroke-width="2"/>
+                <rect x="13" y="4" width="7" height="24" rx="1" stroke="currentColor" stroke-width="2"/>
+                <rect x="22" y="4" width="7" height="24" rx="1" stroke="currentColor" stroke-width="2"/>
+            </svg>
+            <span>Kanban</span>
+        }
+        </button>
+    </div>
 </div>
 
 @code {
@@ -84,12 +103,15 @@
     [Parameter] public DateTime? FilterEndDate { get; set; }
     [Parameter] public string? Search { get; set; }
 
+    [Parameter] public bool KanbanShowArchived { get; set; }
+
     [Parameter] public EventCallback<GoalFilter> OnSetFilter { get; set; }
     [Parameter] public EventCallback OnToggleViewMode { get; set; }
     [Parameter] public EventCallback OnToggleActiveFilter { get; set; }
     [Parameter] public EventCallback<(DateTime?, DateTime?)> OnDateFilterApplied { get; set; }
     [Parameter] public EventCallback<string?> OnSearchSubmit { get; set; }
     [Parameter] public EventCallback OnClearFilters { get; set; }
+    [Parameter] public EventCallback OnToggleKanbanArchived { get; set; }
 
     private bool showDatePicker;
     private string? localSearch;

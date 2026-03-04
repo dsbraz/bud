@@ -1,0 +1,118 @@
+@using Bud.Shared.Contracts
+
+<div class="kanban-board @(_draggingTask != null ? "kanban-dragging" : "")">
+    @foreach (var column in _columns)
+    {
+        @if (!ShowArchived && column.State == TaskState.Archived)
+        {
+            continue;
+        }
+
+        var columnTasks = Tasks.Where(t => t.State == column.State).ToList();
+
+        <div class="kanban-column @column.CssClass">
+            <div class="kanban-column-header @column.CssClass">
+                <span class="kanban-column-title">@column.Label</span>
+                <span class="kanban-column-count">@columnTasks.Count</span>
+            </div>
+            <div class="kanban-column-body @(_dropTargetColumn == column.State ? "kanban-drop-target" : "")"
+                 @ondragover:preventDefault="true"
+                 @ondragenter="@(() => HandleDragEnter(column.State))"
+                 @ondrop="@(() => HandleDrop(column.State))">
+                @foreach (var task in columnTasks)
+                {
+                    var goalName = Goals.FirstOrDefault(g => g.Id == task.GoalId)?.Name;
+                    <div class="kanban-card @(_draggingTask?.Id == task.Id ? "kanban-card-dragging" : "")"
+                         draggable="true"
+                         @ondragstart="@(() => HandleDragStart(task))"
+                         @ondragend="HandleDragEnd">
+                        @if (goalName is not null)
+                        {
+                            <span class="kanban-card-goal">@goalName</span>
+                        }
+                        <div class="kanban-card-name @(task.State == TaskState.Done || task.State == TaskState.Archived ? "task-done" : "")">
+                            @task.Name
+                        </div>
+                        @if (!string.IsNullOrWhiteSpace(task.Description))
+                        {
+                            <div class="kanban-card-description">@task.Description</div>
+                        }
+                        @if (task.DueDate.HasValue && task.State != TaskState.Done && task.State != TaskState.Archived)
+                        {
+                            <span class="kanban-card-due @GetDueDateClass(task)">@FormatDueDate(task)</span>
+                        }
+                    </div>
+                }
+                @if (columnTasks.Count == 0)
+                {
+                    <div class="kanban-column-empty">Nenhuma tarefa</div>
+                }
+            </div>
+        </div>
+    }
+</div>
+
+@code {
+    [Parameter, EditorRequired] public List<TaskResponse> Tasks { get; set; } = new();
+    [Parameter, EditorRequired] public List<GoalResponse> Goals { get; set; } = new();
+    [Parameter] public bool ShowArchived { get; set; }
+    [Parameter] public EventCallback<(TaskResponse task, TaskState newState)> OnTaskStateChange { get; set; }
+
+    private TaskResponse? _draggingTask;
+    private TaskState? _dropTargetColumn;
+
+    private record ColumnDef(TaskState State, string Label, string CssClass);
+
+    private static readonly ColumnDef[] _columns =
+    [
+        new(TaskState.ToDo,     "A fazer",   "kanban-col-todo"),
+        new(TaskState.Doing,    "Fazendo",   "kanban-col-doing"),
+        new(TaskState.Done,     "Feito",     "kanban-col-done"),
+        new(TaskState.Archived, "Arquivado", "kanban-col-archived"),
+    ];
+
+    private void HandleDragStart(TaskResponse task)
+    {
+        _draggingTask = task;
+        _dropTargetColumn = null;
+    }
+
+    private void HandleDragEnd()
+    {
+        _draggingTask = null;
+        _dropTargetColumn = null;
+    }
+
+    private void HandleDragEnter(TaskState state)
+    {
+        _dropTargetColumn = state;
+    }
+
+    private async Task HandleDrop(TaskState targetState)
+    {
+        var task = _draggingTask;
+        _draggingTask = null;
+        _dropTargetColumn = null;
+
+        if (task is null || task.State == targetState)
+            return;
+
+        await OnTaskStateChange.InvokeAsync((task, targetState));
+    }
+
+    private static string GetDueDateClass(TaskResponse task)
+    {
+        var days = (task.DueDate!.Value.Date - DateTime.Today).TotalDays;
+        if (days < 0) return "task-due-overdue";
+        if (days <= 7) return "task-due-warning";
+        return "";
+    }
+
+    private static string FormatDueDate(TaskResponse task)
+    {
+        var days = (task.DueDate!.Value.Date - DateTime.Today).TotalDays;
+        if (days < 0) return $"Venceu em {task.DueDate.Value:dd/MM}";
+        if (days == 0) return "Vence hoje";
+        return $"Vence em {task.DueDate.Value:dd/MM}";
+    }
+}

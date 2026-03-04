@@ -20,6 +20,11 @@ public partial class Goals
     private string? _search;
     private string _viewMode = "list";
     private GoalFilter _filter = GoalFilter.Mine;
+
+    // Kanban state
+    private List<TaskResponse> _kanbanAllTasks = new();
+    private List<GoalResponse> _kanbanAllGoals = new();
+    private bool _kanbanShowArchived;
     private bool _filterActiveOnly = true;
     private DateTime? _filterStartDate;
     private DateTime? _filterEndDate;
@@ -170,6 +175,9 @@ public partial class Goals
         };
 
         await LoadProgress();
+
+        if (_viewMode == "kanban")
+            await LoadKanbanTasksAsync();
     }
 
     private async Task LoadProgress()
@@ -218,9 +226,98 @@ public partial class Goals
 
 
 
-    private void HandleToggleViewMode()
+    private async Task HandleToggleViewMode()
     {
-        _viewMode = _viewMode == "list" ? "grid" : "list";
+        _viewMode = _viewMode switch
+        {
+            "list" => "grid",
+            "grid" => "kanban",
+            _ => "list"
+        };
+
+        if (_viewMode == "kanban")
+            await LoadKanbanTasksAsync();
+    }
+
+    private async Task LoadKanbanTasksAsync()
+    {
+        var rootResult = await Api.GetGoalsAsync(_filter, _search, 1, 500);
+        var roots = rootResult?.Items.ToList() ?? [];
+
+        if (_filterActiveOnly)
+            roots = roots.Where(g => g.Status == GoalStatus.Active).ToList();
+
+        var allGoals = new List<GoalResponse>(roots);
+        await CollectChildGoalsRecursiveAsync(roots, allGoals);
+
+        _kanbanAllGoals = allGoals;
+
+        if (allGoals.Count == 0)
+        {
+            _kanbanAllTasks = [];
+            return;
+        }
+
+        var results = await Task.WhenAll(allGoals.Select(g => Api.GetTasksAsync(g.Id)));
+        _kanbanAllTasks = [];
+
+        for (var i = 0; i < allGoals.Count; i++)
+        {
+            var tasks = results[i]?.Items.ToList() ?? [];
+            _goalTasksCache[allGoals[i].Id] = tasks;
+            _kanbanAllTasks.AddRange(tasks);
+        }
+    }
+
+    private async Task CollectChildGoalsRecursiveAsync(List<GoalResponse> parents, List<GoalResponse> allGoals)
+    {
+        if (parents.Count == 0) return;
+
+        var childResults = await Task.WhenAll(parents.Select(p => Api.GetGoalChildrenAsync(p.Id)));
+        var children = childResults
+            .Where(r => r?.Items != null)
+            .SelectMany(r => r!.Items)
+            .ToList();
+
+        if (children.Count == 0) return;
+
+        allGoals.AddRange(children);
+        await CollectChildGoalsRecursiveAsync(children, allGoals);
+    }
+
+    private void HandleToggleKanbanArchived()
+    {
+        _kanbanShowArchived = !_kanbanShowArchived;
+    }
+
+    private async Task HandleKanbanTaskStateChange((TaskResponse task, TaskState newState) args)
+    {
+        var (task, newState) = args;
+        try
+        {
+            await Api.UpdateTaskAsync(task.Id, new PatchTaskRequest { State = newState });
+
+            var idx = _kanbanAllTasks.FindIndex(t => t.Id == task.Id);
+            if (idx >= 0)
+            {
+                _kanbanAllTasks[idx] = new TaskResponse
+                {
+                    Id = task.Id,
+                    OrganizationId = task.OrganizationId,
+                    GoalId = task.GoalId,
+                    Name = task.Name,
+                    Description = task.Description,
+                    State = newState,
+                    DueDate = task.DueDate
+                };
+                _kanbanAllTasks = [.._kanbanAllTasks];
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"Erro ao atualizar tarefa {task.Id}: {ex.Message}");
+            ToastService.ShowError("Erro ao atualizar tarefa", "Não foi possível atualizar o estado da tarefa.");
+        }
     }
 
     private async Task HandleToggleActiveFilter()
