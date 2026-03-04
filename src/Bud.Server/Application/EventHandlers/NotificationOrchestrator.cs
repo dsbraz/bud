@@ -34,43 +34,55 @@ public class NotificationOrchestrator
     public virtual async Task NotifyGoalCreatedAsync(
         Guid goalId,
         Guid organizationId,
+        string goalName,
+        Guid? actorCollaboratorId,
         CancellationToken cancellationToken = default)
     {
-        await NotifyGoalEventAsync(
-            goalId,
-            organizationId,
-            "Nova meta criada",
-            "Uma nova meta foi criada na sua organização.",
-            NotificationType.GoalCreated,
-            cancellationToken);
+        var actorName = actorCollaboratorId.HasValue
+            ? await _notificationRecipientResolver.ResolveCollaboratorNameAsync(actorCollaboratorId.Value, cancellationToken)
+            : null;
+
+        var message = actorName is not null
+            ? $"{actorName} criou a meta '{goalName}'"
+            : $"Uma nova meta foi criada: '{goalName}'";
+
+        await NotifyGoalEventAsync(goalId, organizationId, "Nova meta criada", message, NotificationType.GoalCreated, cancellationToken);
     }
 
     public virtual async Task NotifyGoalUpdatedAsync(
         Guid goalId,
         Guid organizationId,
+        string goalName,
+        Guid? actorCollaboratorId,
         CancellationToken cancellationToken = default)
     {
-        await NotifyGoalEventAsync(
-            goalId,
-            organizationId,
-            "Meta atualizada",
-            "Uma meta foi atualizada na sua organização.",
-            NotificationType.GoalUpdated,
-            cancellationToken);
+        var actorName = actorCollaboratorId.HasValue
+            ? await _notificationRecipientResolver.ResolveCollaboratorNameAsync(actorCollaboratorId.Value, cancellationToken)
+            : null;
+
+        var message = actorName is not null
+            ? $"{actorName} atualizou a meta '{goalName}'"
+            : $"A meta '{goalName}' foi atualizada";
+
+        await NotifyGoalEventAsync(goalId, organizationId, "Meta atualizada", message, NotificationType.GoalUpdated, cancellationToken);
     }
 
     public virtual async Task NotifyGoalDeletedAsync(
         Guid goalId,
         Guid organizationId,
+        string goalName,
+        Guid? actorCollaboratorId,
         CancellationToken cancellationToken = default)
     {
-        await NotifyGoalEventAsync(
-            goalId,
-            organizationId,
-            "Meta removida",
-            "Uma meta foi removida da sua organização.",
-            NotificationType.GoalDeleted,
-            cancellationToken);
+        var actorName = actorCollaboratorId.HasValue
+            ? await _notificationRecipientResolver.ResolveCollaboratorNameAsync(actorCollaboratorId.Value, cancellationToken)
+            : null;
+
+        var message = actorName is not null
+            ? $"{actorName} removeu a meta '{goalName}'"
+            : $"A meta '{goalName}' foi removida";
+
+        await NotifyGoalEventAsync(goalId, organizationId, "Meta removida", message, NotificationType.GoalDeleted, cancellationToken);
     }
 
     public virtual async Task NotifyCheckinCreatedAsync(
@@ -78,6 +90,7 @@ public class NotificationOrchestrator
         Guid indicatorId,
         Guid organizationId,
         Guid? excludeCollaboratorId,
+        string indicatorName,
         CancellationToken cancellationToken = default)
     {
         var goalId = await _notificationRecipientResolver.ResolveGoalIdFromIndicatorAsync(indicatorId, cancellationToken);
@@ -97,11 +110,19 @@ public class NotificationOrchestrator
             return;
         }
 
+        var actorName = excludeCollaboratorId.HasValue
+            ? await _notificationRecipientResolver.ResolveCollaboratorNameAsync(excludeCollaboratorId.Value, cancellationToken)
+            : null;
+
+        var message = actorName is not null
+            ? $"{actorName} registrou um check-in no indicador '{indicatorName}'"
+            : $"Um novo check-in foi registrado no indicador '{indicatorName}'";
+
         await CreateNotificationsAsync(
             recipients,
             organizationId,
             "Novo check-in registrado",
-            "Um novo check-in de indicador foi registrado.",
+            message,
             NotificationType.CheckinCreated,
             checkinId,
             "Checkin",

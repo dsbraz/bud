@@ -12,6 +12,8 @@ public sealed class GoalCreatedDomainEventNotifier(
         await notificationOrchestrator.NotifyGoalCreatedAsync(
             domainEvent.GoalId,
             domainEvent.OrganizationId,
+            domainEvent.GoalName,
+            domainEvent.ActorCollaboratorId,
             cancellationToken);
     }
 }
@@ -26,6 +28,8 @@ public sealed class GoalUpdatedDomainEventNotifier(
         await notificationOrchestrator.NotifyGoalUpdatedAsync(
             domainEvent.GoalId,
             domainEvent.OrganizationId,
+            domainEvent.GoalName,
+            domainEvent.ActorCollaboratorId,
             cancellationToken);
     }
 }
@@ -40,6 +44,8 @@ public sealed class GoalDeletedDomainEventNotifier(
         await notificationOrchestrator.NotifyGoalDeletedAsync(
             domainEvent.GoalId,
             domainEvent.OrganizationId,
+            domainEvent.GoalName,
+            domainEvent.ActorCollaboratorId,
             cancellationToken);
     }
 }
@@ -56,6 +62,7 @@ public sealed class CheckinCreatedDomainEventNotifier(
             domainEvent.IndicatorId,
             domainEvent.OrganizationId,
             domainEvent.CollaboratorId,
+            domainEvent.IndicatorName,
             cancellationToken);
     }
 }

@@ -73,4 +73,16 @@ public sealed class NotificationRecipientResolver(ApplicationDbContext dbContext
 
         return goalId == Guid.Empty ? null : goalId;
     }
+
+    public async Task<string?> ResolveCollaboratorNameAsync(
+        Guid collaboratorId,
+        CancellationToken cancellationToken = default)
+    {
+        return await dbContext.Collaborators
+            .IgnoreQueryFilters()
+            .AsNoTracking()
+            .Where(c => c.Id == collaboratorId)
+            .Select(c => c.FullName)
+            .FirstOrDefaultAsync(cancellationToken);
+    }
 }

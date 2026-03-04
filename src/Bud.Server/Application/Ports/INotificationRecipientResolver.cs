@@ -11,4 +11,8 @@ public interface INotificationRecipientResolver
     Task<Guid?> ResolveGoalIdFromIndicatorAsync(
         Guid indicatorId,
         CancellationToken cancellationToken = default);
+
+    Task<string?> ResolveCollaboratorNameAsync(
+        Guid collaboratorId,
+        CancellationToken cancellationToken = default);
 }
