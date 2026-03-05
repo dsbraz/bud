@@ -14,6 +14,8 @@ Este documento é voltado para devs que precisam:
 
 - [Arquitetura da aplicação](#arquitetura-da-aplicação)
 - [Padrões arquiteturais adotados](#padrões-arquiteturais-adotados)
+- [Convenções de nomenclatura](#convenções-de-nomenclatura)
+- [Modelo de domínio (DDD)](#modelo-de-domínio-ddd)
 - [Como contribuir](#como-contribuir)
 - [Como rodar](#como-rodar-com-docker)
 - [Como rodar sem Docker](#como-rodar-sem-docker)
@@ -36,7 +38,7 @@ O Bud segue uma arquitetura em camadas com separação explícita de responsabil
 - **Application**: casos de uso (`Application/UseCases/`), portas de aplicação e orquestração de eventos de domínio.
   - `Application/Common`: resultados e utilitários transversais.
   - `Application/Mapping`: mapeamento entre read models/domínio e contratos de borda.
-- **Domain**: conceitos de domínio, value objects e interfaces de repositório.
+- **Domain**: entidades e aggregate roots (`Domain/Model/`), value objects (`Domain/ValueObjects/`), eventos de domínio (`Domain/Events/`), primitivos (`Domain/Primitives/`) e interfaces de repositório (`Domain/Repositories/`).
 - **Infrastructure**: EF Core (`ApplicationDbContext`), repositórios (`Repositories/`), serviços de infraestrutura (`Services/`) e specifications de consulta (`Querying/`).
 - **Client (`Bud.Client`)**: SPA Blazor WASM com consumo da API.
 - **Shared (`Bud.Shared`)**: contratos de borda compartilhados entre cliente, servidor e MCP.
@@ -82,6 +84,149 @@ O Bud segue uma arquitetura em camadas com separação explícita de responsabil
 - **Domain Events + Unit of Work**
   Eventos de domínio (`IDomainEvent`, `IHasDomainEvents`) são disparados por agregados e despachados via `IUnitOfWork`/`EfUnitOfWork` no commit. Handlers tipados (`IDomainEventNotifier<T>`) em `Application/EventHandlers/` reagem a eventos como `GoalCreatedDomainEvent`, `GoalUpdatedDomainEvent`, `GoalDeletedDomainEvent` e `CheckinCreatedDomainEvent`.
   Referências: `docs/adr/ADR-0009-eventos-de-dominio-e-notificacoes.md`.
+
+### Convenções de nomenclatura
+
+Nomes são derivados sistematicamente do recurso REST. A tabela abaixo mostra a cadeia completa usando **Goal** como exemplo:
+
+| Camada | Convenção | Exemplo |
+|---|---|---|
+| Endpoint REST | `api/{recurso-plural}` | `api/goals` |
+| Controller | `{RecursoPlural}Controller` | `GoalsController` |
+| Método CRUD | `Create`, `Update`, `Delete`, `GetById`, `GetAll` | `GoalsController.Create` |
+| Método sub-recurso | `Get{SubRecurso}` | `GoalsController.GetIndicators` |
+| Use case (criação) | `Create{Recurso}` | `CreateGoal` |
+| Use case (atualização) | `Patch{Recurso}` | `PatchGoal` |
+| Use case (exclusão) | `Delete{Recurso}` | `DeleteGoal` |
+| Use case (leitura) | `Get{Recurso}ById` | `GetGoalById` |
+| Use case (listagem) | `List{RecursoPlural}` | `ListGoals` |
+| Use case (sub-recurso) | `List{Pai}{SubRecurso}` | `ListGoalIndicators` |
+| Método do use case | Sempre `ExecuteAsync` | `CreateGoal.ExecuteAsync(...)` |
+| Diretório do use case | `Application/UseCases/{Domínio}/` | `Application/UseCases/Goals/` |
+| Request DTO (criação) | `Create{Recurso}Request` | `CreateGoalRequest` |
+| Request DTO (atualização) | `Patch{Recurso}Request` | `PatchGoalRequest` |
+| Response DTO | `{Recurso}Response` | `GoalResponse` |
+| Response DTO especializado | `{Recurso}{Qualificador}Response` | `GoalProgressResponse` |
+| Interface de repositório | `I{AgregadoRaiz}Repository` | `IGoalRepository` |
+| Implementação de repositório | `{AgregadoRaiz}Repository` | `GoalRepository` |
+| Entidade de domínio | Singular, em `Domain/Model/` | `Goal` |
+
+**Discrepâncias intencionais entre camadas:**
+
+- **Controller `Update` vs Use Case `Patch`**: o controller usa `Update` por legibilidade REST; o use case e o DTO usam `Patch` para refletir o verbo HTTP (PATCH = atualização parcial).
+- **Controller `GetAll` vs Use Case `List`**: o controller segue a convenção REST (`GET` = "get"); o use case descreve a operação de negócio ("list").
+- **Entidade `GoalTask` vs DTO `Task`**: a entidade de domínio é `GoalTask` para evitar conflito com `System.Threading.Tasks.Task`; no controller, DTOs e repositório usa-se `Task` (ex: `TasksController`, `TaskResponse`, `ITaskRepository`).
+- **Checkins dentro de `IndicatorsController`**: operações CRUD de checkin ficam no `IndicatorsController` (sub-recurso `/api/indicators/{id}/checkins`), com sufixo `Action` nos métodos (`CreateCheckinAction`, `PatchCheckinAction`, `DeleteCheckinAction`) para evitar colisão de nomes. Os use cases ficam em diretório próprio (`UseCases/Checkins/`).
+
+#### Rastreabilidade ponta a ponta (exemplo: criar meta)
+
+```
+POST /api/goals
+  → GoalsController.Create
+    → CreateGoal.ExecuteAsync (Application/UseCases/Goals/)
+      → IGoalRepository.AddAsync (Domain/Repositories/)
+        → GoalRepository (Infrastructure/Repositories/)
+    Payload: CreateGoalRequest (Bud.Shared/Contracts/Requests/)
+    Retorno: GoalResponse (Bud.Shared/Contracts/Responses/)
+```
+
+#### Rastreabilidade ponta a ponta (exemplo: listar indicadores de uma meta)
+
+```
+GET /api/goals/{id}/indicators
+  → GoalsController.GetIndicators
+    → ListGoalIndicators.ExecuteAsync (Application/UseCases/Goals/)
+      → IIndicatorRepository.GetByGoalIdAsync (Domain/Repositories/)
+    Retorno: PagedResult<IndicatorResponse>
+```
+
+### Modelo de domínio (DDD)
+
+O Bud usa DDD com aggregate roots explícitos. Entidades de domínio ficam em `Domain/Model/`, interfaces de repositório em `Domain/Repositories/`, value objects em `Domain/ValueObjects/` e eventos de domínio em `Domain/Events/`.
+
+#### Aggregate roots e boundaries
+
+Cada aggregate root é marcado com `IAggregateRoot` e possui um repositório dedicado (`I{AggregateRoot}Repository`). Child entities são gerenciadas exclusivamente pelo repositório do parent — não possuem repositório próprio.
+
+| Aggregate Root | Child Entities | Repositório |
+|---|---|---|
+| `Goal` | `Indicator`, `GoalTask` (via goal) | `IGoalRepository` |
+| `Organization` | `Workspace` (via organization) | `IOrganizationRepository` |
+| `Workspace` | `Team` (via workspace) | `IWorkspaceRepository` |
+| `Team` | `CollaboratorTeam` (join entity) | `ITeamRepository` |
+| `Collaborator` | `CollaboratorTeam`, `CollaboratorAccessLog` | `ICollaboratorRepository` |
+| `Indicator` | `Checkin` | `IIndicatorRepository` |
+| `Template` | `TemplateGoal`, `TemplateIndicator` | `ITemplateRepository` |
+| `Notification` | — | `INotificationRepository` |
+
+**Exceções notáveis:**
+- `GoalTask` não é aggregate root (`ITenantEntity` apenas), mas possui repositório próprio (`ITaskRepository`) porque é gerenciado como recurso REST independente (`PATCH /api/tasks/{id}`, `DELETE /api/tasks/{id}`).
+- `Checkin` não possui repositório próprio — persistência é via `IIndicatorRepository` (métodos `AddCheckinAsync`, `RemoveCheckinAsync`, etc.), respeitando o boundary do agregado `Indicator`.
+- `DashboardReadStore` implementa um Application Port (`IMyDashboardReadStore`), não uma interface de Domain Repository. Trata-se de um read model, não de um repositório de agregado.
+
+#### Value Objects (`Domain/ValueObjects/`)
+
+| Value Object | Uso |
+|---|---|
+| `EntityName` | Nomes de entidades organizacionais (validação de tamanho e formato) |
+| `PersonName` | Nome de colaborador (first/last name semântico) |
+| `EmailAddress` | E-mail validado |
+| `IndicatorRange` | Faixa de valores (baseline, target) |
+| `ConfidenceLevel` | Nível de confiança em checkins (1–5) |
+| `EngagementScore` | Score de engajamento calculado |
+| `PerformanceIndicator` | Indicador de performance calculado |
+| `NotificationTitle` | Título de notificação (tamanho máximo) |
+| `NotificationMessage` | Mensagem de notificação (tamanho máximo) |
+
+#### Diagrama de agregados e boundaries
+
+```mermaid
+flowchart TD
+    subgraph AggGoal["Goal (aggregate)"]
+        Goal["Goal"]
+        GoalTask["GoalTask"]
+    end
+
+    subgraph AggIndicator["Indicator (aggregate)"]
+        Indicator["Indicator"]
+        Checkin["Checkin"]
+    end
+
+    subgraph AggOrg["Organization (aggregate)"]
+        Organization["Organization"]
+    end
+
+    subgraph AggWorkspace["Workspace (aggregate)"]
+        Workspace["Workspace"]
+    end
+
+    subgraph AggTeam["Team (aggregate)"]
+        Team["Team"]
+        CollaboratorTeam["CollaboratorTeam"]
+    end
+
+    subgraph AggCollab["Collaborator (aggregate)"]
+        Collaborator["Collaborator"]
+    end
+
+    subgraph AggTemplate["Template (aggregate)"]
+        Template["Template"]
+        TemplateGoal["TemplateGoal"]
+        TemplateIndicator["TemplateIndicator"]
+    end
+
+    subgraph AggNotification["Notification (aggregate)"]
+        Notification["Notification"]
+    end
+
+    Organization --> Workspace
+    Workspace --> Team
+    Team --> CollaboratorTeam
+    Collaborator --> CollaboratorTeam
+    Goal --> Indicator
+    Indicator --> Checkin
+    Goal --> GoalTask
+```
 
 ### Multi-tenancy
 
