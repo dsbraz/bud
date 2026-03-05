@@ -10,89 +10,99 @@ namespace Bud.Client.Tests.Shared.Goals;
 public sealed class GoalsFilterBarTests : TestContext
 {
     [Fact]
-    public void Render_ShouldShowThreeFilterChips()
+    public void Render_ShouldShowMainFilterChips()
     {
         var cut = RenderComponent<GoalsFilterBar>(parameters => parameters
-            .Add(p => p.Filter, GoalFilter.Mine)
-            .Add(p => p.ViewMode, "list"));
+            .Add(p => p.Filter, GoalFilter.Mine));
 
+        cut.Markup.Should().Contain("Mais filtros");
         cut.Markup.Should().Contain("Minhas missões");
-        cut.Markup.Should().Contain("Missões do time");
-        cut.Markup.Should().Contain("Todas as missões");
+        cut.Markup.Should().Contain("Selecionar período");
     }
 
     [Fact]
-    public void Click_AllMissions_ShouldInvokeOnSetFilterWithAll()
+    public void SelectScope_All_ShouldInvokeOnSetFilterWithAll()
     {
         GoalFilter? receivedValue = null;
 
         var cut = RenderComponent<GoalsFilterBar>(parameters => parameters
             .Add(p => p.Filter, GoalFilter.Mine)
-            .Add(p => p.ViewMode, "list")
             .Add(p => p.OnSetFilter, EventCallback.Factory.Create<GoalFilter>(this, v => receivedValue = v)));
 
         var chips = cut.FindAll("button.filter-chip");
-        var allChip = chips.First(c => c.TextContent.Contains("Todas"));
-        allChip.Click();
+        var scopeChip = chips.First(c => c.TextContent.Contains("missões", StringComparison.OrdinalIgnoreCase));
+        scopeChip.Click();
+
+        var allOption = cut.FindAll("button.filter-dropdown-option")
+            .First(c => c.TextContent.Contains("Todas as missões", StringComparison.OrdinalIgnoreCase));
+        allOption.Click();
 
         receivedValue.Should().Be(GoalFilter.All);
     }
 
     [Fact]
-    public void Click_MyTeamMissions_ShouldInvokeOnSetFilterWithMyTeam()
+    public void SelectScope_MyTeam_ShouldInvokeOnSetFilterWithMyTeam()
     {
         GoalFilter? receivedValue = null;
 
         var cut = RenderComponent<GoalsFilterBar>(parameters => parameters
             .Add(p => p.Filter, GoalFilter.Mine)
-            .Add(p => p.ViewMode, "list")
             .Add(p => p.OnSetFilter, EventCallback.Factory.Create<GoalFilter>(this, v => receivedValue = v)));
 
         var chips = cut.FindAll("button.filter-chip");
-        var teamChip = chips.First(c => c.TextContent.Contains("time"));
-        teamChip.Click();
+        var scopeChip = chips.First(c => c.TextContent.Contains("missões", StringComparison.OrdinalIgnoreCase));
+        scopeChip.Click();
+
+        var teamOption = cut.FindAll("button.filter-dropdown-option")
+            .First(c => c.TextContent.Contains("Missões do time", StringComparison.OrdinalIgnoreCase));
+        teamOption.Click();
 
         receivedValue.Should().Be(GoalFilter.MyTeam);
     }
 
     [Fact]
-    public void Click_ViewModeToggle_ShouldInvokeOnToggleViewMode()
+    public void ToggleActiveFilter_ShouldInvokeOnToggleActiveFilter()
     {
         var called = false;
 
         var cut = RenderComponent<GoalsFilterBar>(parameters => parameters
             .Add(p => p.Filter, GoalFilter.Mine)
-            .Add(p => p.ViewMode, "list")
-            .Add(p => p.OnToggleViewMode, EventCallback.Factory.Create(this, () => called = true)));
+            .Add(p => p.FilterActiveOnly, true)
+            .Add(p => p.OnToggleActiveFilter, EventCallback.Factory.Create(this, () => called = true)));
 
         var chips = cut.FindAll("button.filter-chip");
-        var viewModeChip = chips.First(c => c.TextContent.Contains("Lista") || c.TextContent.Contains("Grade"));
-        viewModeChip.Click();
+        var statusChip = chips.First(c => c.TextContent.Contains("Mais filtros", StringComparison.OrdinalIgnoreCase));
+        statusChip.Click();
+
+        var statusOption = cut.Find("button.filter-dropdown-option");
+        statusOption.Click();
 
         called.Should().BeTrue();
     }
 
     [Fact]
-    public void Render_WhenViewModeList_ShouldShowListLabel()
+    public void Render_WithActiveFilters_ShouldShowClearFilterChip()
     {
         var cut = RenderComponent<GoalsFilterBar>(parameters => parameters
-            .Add(p => p.Filter, GoalFilter.All)
-            .Add(p => p.ViewMode, "list"));
+            .Add(p => p.Filter, GoalFilter.Mine)
+            .Add(p => p.Search, "okrs"));
 
-        var chips = cut.FindAll("button.filter-chip");
-        var viewModeChip = chips.First(c => c.TextContent.Contains("Lista") || c.TextContent.Contains("Grade"));
-        viewModeChip.TextContent.Should().Contain("Lista");
+        cut.Markup.Should().Contain("Limpar filtro");
     }
 
     [Fact]
-    public void Render_WhenViewModeGrid_ShouldShowGridLabel()
+    public void Click_ClearFilterChip_ShouldInvokeOnClearFilters()
     {
-        var cut = RenderComponent<GoalsFilterBar>(parameters => parameters
-            .Add(p => p.Filter, GoalFilter.All)
-            .Add(p => p.ViewMode, "grid"));
+        var called = false;
 
-        var chips = cut.FindAll("button.filter-chip");
-        var viewModeChip = chips.First(c => c.TextContent.Contains("Lista") || c.TextContent.Contains("Grade"));
-        viewModeChip.TextContent.Should().Contain("Grade");
+        var cut = RenderComponent<GoalsFilterBar>(parameters => parameters
+            .Add(p => p.Filter, GoalFilter.Mine)
+            .Add(p => p.Search, "okrs")
+            .Add(p => p.OnClearFilters, EventCallback.Factory.Create(this, () => called = true)));
+
+        var clearButton = cut.Find("button.filter-chip-clear");
+        clearButton.Click();
+
+        called.Should().BeTrue();
     }
 }

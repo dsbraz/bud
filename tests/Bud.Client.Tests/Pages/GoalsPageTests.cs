@@ -79,6 +79,19 @@ public sealed class GoalsPageTests : TestContext
         cut.Markup.Should().NotContain("Limpar filtro");
     }
 
+    [Fact]
+    public void ResolveGoalCollaboratorId_WhenFilterMineAndNoCollaborator_ShouldUseCurrentUserCollaboratorId()
+    {
+        var cut = RenderGoalsPage();
+        var instance = cut.Instance;
+
+        SetField(instance, "_filter", GoalFilter.Mine);
+
+        var result = InvokePrivate(instance, "ResolveGoalCollaboratorId", (object?)null);
+        result.Should().NotBeNull();
+        result.Should().Be(Guid.Parse("11111111-1111-1111-1111-111111111111"));
+    }
+
     private IRenderedComponent<Goals> RenderGoalsPage(string? goalsJson = null)
     {
         var authSessionJson = """
@@ -140,14 +153,20 @@ public sealed class GoalsPageTests : TestContext
     private static void SetField<T>(object instance, string name, T value)
         => instance.GetType().GetField(name, System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)!.SetValue(instance, value);
 
-    private static async Task InvokePrivateTask(object instance, string methodName)
+    private static async Task InvokePrivateTask(object instance, string methodName, params object[] args)
     {
         var method = instance.GetType().GetMethod(methodName, System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)!;
-        var result = method.Invoke(instance, Array.Empty<object>());
+        var result = method.Invoke(instance, args);
         if (result is Task task)
         {
             await task;
         }
+    }
+
+    private static object? InvokePrivate(object instance, string methodName, params object?[] args)
+    {
+        var method = instance.GetType().GetMethod(methodName, System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)!;
+        return method.Invoke(instance, args);
     }
 
     private static HttpResponseMessage Json(string json)

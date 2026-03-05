@@ -183,11 +183,11 @@ public sealed class GoalChildSectionTests : TestContext
 
         cut.WaitForState(() => !cut.Markup.Contains("Carregando..."), TimeSpan.FromSeconds(2));
 
-        cut.Markup.Should().Contain("Nenhum indicador ou meta nesta missão.");
+        cut.Markup.Should().Contain("Nenhum indicador, tarefa ou meta nesta missão.");
     }
 
     [Fact]
-    public void Render_WhenExpanded_ShouldShowGoalDimension()
+    public void Render_ShouldNotShowGoalDimensionInHeader()
     {
         var goal = CreateGoal("Submeta Dimensão");
         goal.Dimension = "Financeiro";
@@ -198,7 +198,8 @@ public sealed class GoalChildSectionTests : TestContext
             .Add(p => p.ChildGoal, goal)
             .Add(p => p.IsExpanded, false));
 
-        cut.Markup.Should().Contain("Financeiro");
+        cut.Markup.Should().Contain("Submeta Dimensão");
+        cut.Markup.Should().NotContain("Financeiro");
     }
 
     private sealed class RouteHandler(Func<HttpRequestMessage, HttpResponseMessage> responder) : HttpMessageHandler

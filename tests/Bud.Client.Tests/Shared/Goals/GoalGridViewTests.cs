@@ -355,7 +355,7 @@ public sealed class GoalGridViewTests : TestContext
 
         cut.Find(".goal-grid-node-goal").Click();
 
-        cut.WaitForState(() => cut.Markup.Contains("Nenhum indicador ou meta"), TimeSpan.FromSeconds(2));
+        cut.WaitForState(() => cut.Markup.Contains("Nenhum indicador, tarefa ou meta nesta missão."), TimeSpan.FromSeconds(2));
     }
 
     [Fact]
@@ -806,21 +806,20 @@ public sealed class GoalGridViewTests : TestContext
 
         // Container should not be expanded initially
         cut.FindAll(".goal-grid-container-expanded").Should().BeEmpty();
+        cut.FindAll(".goal-grid-modal-backdrop").Should().HaveCount(1);
 
         // Click expand button
         cut.Find(".goal-grid-expand-btn").Click();
 
         // Container should now have expanded class
         cut.FindAll(".goal-grid-container-expanded").Should().HaveCount(1);
-        // Overlay should be present
-        cut.FindAll(".goal-grid-overlay").Should().HaveCount(1);
 
         // Click again to collapse
         cut.Find(".goal-grid-expand-btn").Click();
 
         // Should be collapsed again
         cut.FindAll(".goal-grid-container-expanded").Should().BeEmpty();
-        cut.FindAll(".goal-grid-overlay").Should().BeEmpty();
+        cut.FindAll(".goal-grid-modal-backdrop").Should().HaveCount(1);
     }
 
     [Fact]
@@ -873,7 +872,7 @@ public sealed class GoalGridViewTests : TestContext
         // Should return to root with no expanded state
         cut.WaitForState(() => cut.FindAll(".goal-grid-container").Count == 0, TimeSpan.FromSeconds(2));
         cut.FindAll(".goal-grid-container-expanded").Should().BeEmpty();
-        cut.FindAll(".goal-grid-overlay").Should().BeEmpty();
+        cut.FindAll(".goal-grid-modal-backdrop").Should().BeEmpty();
     }
 
     private sealed class RouteHandler(Func<HttpRequestMessage, HttpResponseMessage> responder) : HttpMessageHandler

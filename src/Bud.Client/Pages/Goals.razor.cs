@@ -488,7 +488,7 @@ public partial class Goals
                     Description = result.Description,
                     StartDate = result.StartDate,
                     EndDate = result.EndDate,
-                    CollaboratorId = Guid.TryParse(result.CollaboratorId, out var cid) ? cid : null,
+                    CollaboratorId = ResolveGoalCollaboratorId(result.CollaboratorId),
                     Status = status
                 };
 
@@ -508,6 +508,21 @@ public partial class Goals
             },
             errorTitle,
             errorMessage);
+    }
+
+    private Guid? ResolveGoalCollaboratorId(string? collaboratorId)
+    {
+        if (Guid.TryParse(collaboratorId, out var selectedCollaboratorId))
+        {
+            return selectedCollaboratorId;
+        }
+
+        if (_filter == GoalFilter.Mine)
+        {
+            return AuthState.SessionResponse?.CollaboratorId;
+        }
+
+        return null;
     }
 
     private async Task<int> CreateChildrenRecursiveAsync(GoalResponse parentGoal, List<TempGoal> children)

@@ -60,7 +60,7 @@ public sealed class IndicatorRowTests : TestContext
             .Add(p => p.Indicator, indicator)
             .Add(p => p.OnCheckinClick, EventCallback.Factory.Create<IndicatorResponse>(this, m => received = m)));
 
-        var checkinBtn = cut.Find("button.indicator-checkin-btn");
+        var checkinBtn = cut.Find("button.indicator-row-caret");
         checkinBtn.Click();
 
         received.Should().NotBeNull();
