@@ -4,6 +4,13 @@ namespace Bud.Client.Services;
 
 public static class GoalProgressDisplayHelper
 {
+    public static string GetRawProgressColorClass(decimal progress) => progress switch
+    {
+        > 65m => "on-track",
+        > 25m => "at-risk",
+        _ => "off-track"
+    };
+
     public static string GetGoalProgressStatusClass(GoalProgressResponse? progress)
     {
         if (progress is null || progress.IndicatorsWithCheckins == 0)

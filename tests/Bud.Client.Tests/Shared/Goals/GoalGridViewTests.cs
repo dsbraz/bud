@@ -116,7 +116,7 @@ public sealed class GoalGridViewTests : TestContext
 
         cut.Markup.Should().Contain("Missão Alpha");
         cut.Markup.Should().Contain("Missão Beta");
-        cut.FindAll(".goal-grid-node-goal").Should().HaveCount(2);
+        cut.FindAll(".mission-card").Should().HaveCount(2);
     }
 
     [Fact]
@@ -135,7 +135,7 @@ public sealed class GoalGridViewTests : TestContext
     }
 
     [Fact]
-    public void Render_GoalCard_ShouldShowDimension()
+    public void Render_GoalCard_ShouldShowDimensionInModal()
     {
         SetupServices(_ => EmptyPagedResponse());
 
@@ -146,7 +146,10 @@ public sealed class GoalGridViewTests : TestContext
             .Add(p => p.RootGoals, CreatePagedGoals(goal))
             .Add(p => p.RootGoalProgress, new Dictionary<Guid, GoalProgressResponse> { [goal.Id] = progress }));
 
-        cut.Markup.Should().Contain("Financeiro");
+        // Dimension is shown in the modal header after expanding
+        cut.Find(".mission-card-expand-btn").Click();
+        cut.WaitForState(() => cut.FindAll(".goal-grid-container").Count > 0, TimeSpan.FromSeconds(2));
+        cut.Find(".goal-grid-container .goal-grid-details").TextContent.Should().Be("Financeiro");
     }
 
     [Fact]
@@ -211,8 +214,8 @@ public sealed class GoalGridViewTests : TestContext
                 [parentGoal.Id] = CreateGoalProgress(parentGoal.Id)
             }));
 
-        // Click the goal card to open its container
-        cut.Find(".goal-grid-node-goal").Click();
+        // Click the expand button to open the mission modal
+        cut.Find(".mission-card-expand-btn").Click();
 
         // Container should appear with the goal name in header
         cut.WaitForState(() => cut.FindAll(".goal-grid-container").Count > 0, TimeSpan.FromSeconds(2));
@@ -262,15 +265,15 @@ public sealed class GoalGridViewTests : TestContext
             }));
 
         // Open goal container
-        cut.Find(".goal-grid-node-goal").Click();
+        cut.Find(".mission-card-expand-btn").Click();
         cut.WaitForState(() => cut.FindAll(".goal-grid-container").Count > 0, TimeSpan.FromSeconds(2));
 
         // Click close button
         cut.Find(".goal-grid-close-btn").Click();
 
-        // Should return to root (no container, goal card visible)
+        // Should return to root (no container, mission card visible)
         cut.WaitForState(() => cut.FindAll(".goal-grid-container").Count == 0, TimeSpan.FromSeconds(2));
-        cut.FindAll(".goal-grid-node-goal").Should().HaveCount(1);
+        cut.FindAll(".mission-card").Should().HaveCount(1);
         cut.Markup.Should().Contain("Missão Raiz");
     }
 
@@ -314,7 +317,7 @@ public sealed class GoalGridViewTests : TestContext
             .Add(p => p.RootGoalProgress, new Dictionary<Guid, GoalProgressResponse>()));
 
         // Open root goal
-        cut.Find(".goal-grid-node-goal").Click();
+        cut.Find(".mission-card-expand-btn").Click();
         cut.WaitForState(() => cut.FindAll(".goal-grid-container").Count > 0, TimeSpan.FromSeconds(2));
 
         // Navigate into child
@@ -353,7 +356,7 @@ public sealed class GoalGridViewTests : TestContext
             .Add(p => p.RootGoals, CreatePagedGoals(goal))
             .Add(p => p.RootGoalProgress, new Dictionary<Guid, GoalProgressResponse>()));
 
-        cut.Find(".goal-grid-node-goal").Click();
+        cut.Find(".mission-card-expand-btn").Click();
 
         cut.WaitForState(() => cut.Markup.Contains("Nenhum indicador, tarefa ou meta nesta missão."), TimeSpan.FromSeconds(2));
     }
@@ -394,7 +397,7 @@ public sealed class GoalGridViewTests : TestContext
             .Add(p => p.RootGoalProgress, new Dictionary<Guid, GoalProgressResponse>()));
 
         // Navigate into goal to see its indicators
-        cut.Find(".goal-grid-node-goal").Click();
+        cut.Find(".mission-card-expand-btn").Click();
 
         cut.WaitForState(() => cut.Markup.Contains("NPS Score"), TimeSpan.FromSeconds(2));
         cut.Markup.Should().Contain("65%");
@@ -414,7 +417,11 @@ public sealed class GoalGridViewTests : TestContext
             .Add(p => p.RootGoalProgress, new Dictionary<Guid, GoalProgressResponse>())
             .Add(p => p.OnEdit, g => { editedGoal = g; }));
 
-        var editBtn = cut.Find(".goal-grid-node-goal .goal-grid-action-btn[title='Editar']");
+        // Open modal then click edit in modal header
+        cut.Find(".mission-card-expand-btn").Click();
+        cut.WaitForState(() => cut.FindAll(".goal-grid-container").Count > 0, TimeSpan.FromSeconds(2));
+
+        var editBtn = cut.Find(".goal-grid-container .goal-grid-action-btn[title='Editar']");
         editBtn.Click();
 
         editedGoal.Should().NotBeNull();
@@ -434,7 +441,11 @@ public sealed class GoalGridViewTests : TestContext
             .Add(p => p.RootGoalProgress, new Dictionary<Guid, GoalProgressResponse>())
             .Add(p => p.OnDeleteClick, id => { deletedId = id; }));
 
-        var deleteBtn = cut.Find(".goal-grid-node-goal .goal-grid-action-btn[title='Excluir']");
+        // Open modal then click delete in modal header
+        cut.Find(".mission-card-expand-btn").Click();
+        cut.WaitForState(() => cut.FindAll(".goal-grid-container").Count > 0, TimeSpan.FromSeconds(2));
+
+        var deleteBtn = cut.Find(".goal-grid-container .goal-grid-action-btn[title='Excluir']");
         deleteBtn.Click();
 
         deletedId.Should().Be(goal.Id);
@@ -451,6 +462,10 @@ public sealed class GoalGridViewTests : TestContext
             .Add(p => p.RootGoals, CreatePagedGoals(goal))
             .Add(p => p.RootGoalProgress, new Dictionary<Guid, GoalProgressResponse>())
             .Add(p => p.DeletingGoalId, goal.Id));
+
+        // Open modal — confirmation state is set via DeletingGoalId parameter
+        cut.Find(".mission-card-expand-btn").Click();
+        cut.WaitForState(() => cut.FindAll(".goal-grid-container").Count > 0, TimeSpan.FromSeconds(2));
 
         // Should show "OK?" confirmation text instead of trash icon
         cut.Find(".goal-grid-confirm-text").TextContent.Should().Be("OK?");
@@ -498,7 +513,7 @@ public sealed class GoalGridViewTests : TestContext
             .Add(p => p.RootGoalProgress, new Dictionary<Guid, GoalProgressResponse>())
             .Add(p => p.OnCheckinClick, args => { checkinArgs = args; }));
 
-        cut.Find(".goal-grid-node-goal").Click();
+        cut.Find(".mission-card-expand-btn").Click();
         cut.WaitForState(() => cut.Markup.Contains("KPI Checkin"), TimeSpan.FromSeconds(2));
 
         var checkinBtn = cut.Find(".goal-grid-node-indicator .goal-grid-action-btn[title='Novo check-in']");
@@ -546,7 +561,7 @@ public sealed class GoalGridViewTests : TestContext
             .Add(p => p.RootGoalProgress, new Dictionary<Guid, GoalProgressResponse>())
             .Add(p => p.OnHistoryClick, args => { historyArgs = args; }));
 
-        cut.Find(".goal-grid-node-goal").Click();
+        cut.Find(".mission-card-expand-btn").Click();
         cut.WaitForState(() => cut.Markup.Contains("KPI Histórico"), TimeSpan.FromSeconds(2));
 
         // Click the indicator card itself to open history
@@ -577,7 +592,7 @@ public sealed class GoalGridViewTests : TestContext
             .Add(p => p.RootGoals, CreatePagedGoals())
             .Add(p => p.RootGoalProgress, new Dictionary<Guid, GoalProgressResponse>()));
 
-        cut.FindAll(".goal-grid-node").Should().BeEmpty();
+        cut.FindAll(".mission-card").Should().BeEmpty();
     }
 
     [Fact]
@@ -592,12 +607,12 @@ public sealed class GoalGridViewTests : TestContext
             .Add(p => p.RootGoals, CreatePagedGoals(goal))
             .Add(p => p.RootGoalProgress, new Dictionary<Guid, GoalProgressResponse> { [goal.Id] = progress }));
 
-        cut.FindAll(".goal-grid-progress-bar").Should().HaveCount(1);
-        cut.FindAll(".goal-grid-progress-fill").Should().HaveCount(1);
+        cut.FindAll(".mission-card-progress-bar").Should().HaveCount(1);
+        cut.FindAll(".mission-card-progress-fill").Should().HaveCount(1);
     }
 
     [Fact]
-    public void Render_GoalCard_ShouldShowMetaTypeLabel()
+    public void Render_GoalCard_ShouldShowTitleInCard()
     {
         SetupServices(_ => EmptyPagedResponse());
 
@@ -607,11 +622,11 @@ public sealed class GoalGridViewTests : TestContext
             .Add(p => p.RootGoals, CreatePagedGoals(goal))
             .Add(p => p.RootGoalProgress, new Dictionary<Guid, GoalProgressResponse>()));
 
-        cut.Find(".goal-grid-type-label").TextContent.Should().Be("Meta");
+        cut.Find(".mission-card-title").TextContent.Should().Be("Meta Label");
     }
 
     [Fact]
-    public void Render_GoalCard_ShouldShowBadgeWithItemCount()
+    public void Render_GoalCard_ShouldShowIndicatorCount()
     {
         SetupServices(_ => EmptyPagedResponse());
 
@@ -622,7 +637,8 @@ public sealed class GoalGridViewTests : TestContext
             .Add(p => p.RootGoals, CreatePagedGoals(goal))
             .Add(p => p.RootGoalProgress, new Dictionary<Guid, GoalProgressResponse> { [goal.Id] = progress }));
 
-        cut.Find(".goal-grid-badge").TextContent.Should().Be("2");
+        // TotalIndicators = 2 from CreateGoalProgress
+        cut.Find(".mission-card-info").TextContent.Should().Contain("2");
     }
 
     [Fact]
@@ -655,7 +671,7 @@ public sealed class GoalGridViewTests : TestContext
             .Add(p => p.RootGoals, CreatePagedGoals(goal))
             .Add(p => p.RootGoalProgress, new Dictionary<Guid, GoalProgressResponse>()));
 
-        cut.Find(".goal-grid-node-goal").Click();
+        cut.Find(".mission-card-expand-btn").Click();
         cut.WaitForState(() => cut.Markup.Contains("KPI Tipo"), TimeSpan.FromSeconds(2));
 
         var labels = cut.FindAll(".goal-grid-type-label");
@@ -697,7 +713,7 @@ public sealed class GoalGridViewTests : TestContext
             .Add(p => p.RootGoals, CreatePagedGoals(goal))
             .Add(p => p.RootGoalProgress, new Dictionary<Guid, GoalProgressResponse>()));
 
-        cut.Find(".goal-grid-node-goal").Click();
+        cut.Find(".mission-card-expand-btn").Click();
         cut.WaitForState(() => cut.Markup.Contains("KPI Editável"), TimeSpan.FromSeconds(2));
 
         // Verify the indicator card has an edit button
@@ -735,14 +751,14 @@ public sealed class GoalGridViewTests : TestContext
             .Add(p => p.RootGoals, CreatePagedGoals(goal))
             .Add(p => p.RootGoalProgress, new Dictionary<Guid, GoalProgressResponse>()));
 
-        cut.Find(".goal-grid-node-goal").Click();
+        cut.Find(".mission-card-expand-btn").Click();
         cut.WaitForState(() => cut.Markup.Contains("KPI Quanti"), TimeSpan.FromSeconds(2));
 
         cut.Find(".goal-grid-indicator-type").TextContent.Should().Be("Quantitativo");
     }
 
     [Fact]
-    public void Render_GoalCard_ShouldShowDifferentiatedMiniIcons()
+    public void Render_GoalCard_ShouldShowIndicatorCountFromProgress()
     {
         SetupServices(_ => EmptyPagedResponse());
 
@@ -753,13 +769,10 @@ public sealed class GoalGridViewTests : TestContext
             .Add(p => p.RootGoals, CreatePagedGoals(goal))
             .Add(p => p.RootGoalProgress, new Dictionary<Guid, GoalProgressResponse> { [goal.Id] = progress }));
 
-        var goalMiniIcons = cut.FindAll(".goal-grid-mini-icon-goal");
-        goalMiniIcons.Should().HaveCount(2);
-
-        var allMiniIcons = cut.FindAll(".goal-grid-mini-icon");
-        allMiniIcons.Should().HaveCount(5);
-
-        cut.Find(".goal-grid-badge").TextContent.Should().Be("5");
+        // TotalIndicators = 2 from CreateGoalProgress; shown as "2 indicadores" in card info
+        cut.Find(".mission-card-info").TextContent.Should().Contain("2");
+        // Progress bar should be present
+        cut.FindAll(".mission-card-progress-bar").Should().HaveCount(1);
     }
 
     [Fact]
@@ -801,7 +814,7 @@ public sealed class GoalGridViewTests : TestContext
             }));
 
         // Open goal container
-        cut.Find(".goal-grid-node-goal").Click();
+        cut.Find(".mission-card-expand-btn").Click();
         cut.WaitForState(() => cut.FindAll(".goal-grid-container").Count > 0, TimeSpan.FromSeconds(2));
 
         // Container should not be expanded initially
@@ -861,7 +874,7 @@ public sealed class GoalGridViewTests : TestContext
             }));
 
         // Open and expand
-        cut.Find(".goal-grid-node-goal").Click();
+        cut.Find(".mission-card-expand-btn").Click();
         cut.WaitForState(() => cut.FindAll(".goal-grid-container").Count > 0, TimeSpan.FromSeconds(2));
         cut.Find(".goal-grid-expand-btn").Click();
         cut.FindAll(".goal-grid-container-expanded").Should().HaveCount(1);

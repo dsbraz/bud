@@ -219,5 +219,6 @@
     private bool HasActiveFilters() =>
         !string.IsNullOrEmpty(Search)
         || FilterStartDate.HasValue
-        || FilterEndDate.HasValue;
+        || FilterEndDate.HasValue
+        || !FilterActiveOnly;
 }

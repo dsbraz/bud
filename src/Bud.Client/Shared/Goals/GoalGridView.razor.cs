@@ -15,6 +15,7 @@ public partial class GoalGridView
 
     [Parameter] public PagedResult<GoalResponse>? RootGoals { get; set; }
     [Parameter] public Dictionary<Guid, GoalProgressResponse> RootGoalProgress { get; set; } = new();
+    [Parameter] public List<CollaboratorResponse> Collaborators { get; set; } = [];
     [Parameter] public EventCallback<GoalResponse> OnEdit { get; set; }
     [Parameter] public EventCallback<Guid> OnDeleteClick { get; set; }
     [Parameter] public Guid? DeletingGoalId { get; set; }
@@ -143,6 +144,29 @@ public partial class GoalGridView
             _isLoading = false;
             StateHasChanged();
         }
+    }
+
+    private CollaboratorResponse? GetCollaborator(Guid id) =>
+        Collaborators.FirstOrDefault(c => c.Id == id);
+
+    private static string GetInitials(string? fullName)
+    {
+        if (string.IsNullOrWhiteSpace(fullName)) return "?";
+        var parts = fullName.Trim().Split(' ', StringSplitOptions.RemoveEmptyEntries);
+        if (parts.Length == 1) return parts[0][0].ToString().ToUpperInvariant();
+        return $"{parts[0][0]}{parts[^1][0]}".ToUpperInvariant();
+    }
+
+    private static string FormatLastUpdated(DateTime? lastCheckinDate)
+    {
+        if (lastCheckinDate is null) return "Sem check-ins";
+        var days = (int)(DateTime.UtcNow - lastCheckinDate.Value).TotalDays;
+        return days switch
+        {
+            0 => "Atualizado hoje",
+            1 => "Atualizado há 1 dia",
+            _ => $"Atualizado há {days} dias"
+        };
     }
 
     public async Task ReloadCurrentLevel()

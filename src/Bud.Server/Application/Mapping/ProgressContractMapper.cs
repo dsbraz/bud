@@ -18,7 +18,9 @@ internal static class ProgressContractMapper
             DirectChildren = source.DirectChildren,
             DirectIndicators = source.DirectIndicators,
             TodoTasks = source.TodoTasks,
-            DoingTasks = source.DoingTasks
+            DoingTasks = source.DoingTasks,
+            LastCheckinDate = source.LastCheckinDate,
+            DistinctCollaboratorIds = source.DistinctCollaboratorIds
         };
     }
 

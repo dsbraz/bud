@@ -3746,6 +3746,144 @@ a {
     user-select: none;
 }
 
+/* =============================================
+   Mission Card Grid (modo cartões / grid redesign)
+   ============================================= */
+
+.mission-card-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: var(--spacing-5);
+    margin-top: var(--spacing-4);
+}
+
+.mission-card {
+    background: white;
+    border: 1px solid var(--caramel-200);
+    border-radius: var(--radius-base);
+    padding: var(--spacing-4);
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-3);
+}
+
+.mission-card-progress-row {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-2);
+}
+
+.mission-card-progress-bar {
+    flex: 1;
+    height: 12px;
+    background: var(--caramel-100);
+    border-radius: var(--radius-base);
+    overflow: hidden;
+}
+
+.mission-card-progress-fill {
+    height: 100%;
+    border-radius: var(--radius-base);
+    transition: width var(--transition-slow);
+}
+
+.mission-card-progress-fill.on-track {
+    background: var(--green-500);
+}
+
+.mission-card-progress-fill.at-risk {
+    background: var(--yellow-400);
+}
+
+.mission-card-progress-fill.off-track {
+    background: var(--red-500);
+}
+
+.mission-card-progress-value {
+    font-size: 12px;
+    font-weight: var(--font-weight-bold);
+    color: var(--neutral-950);
+    min-width: 32px;
+    text-align: right;
+    white-space: nowrap;
+}
+
+.mission-card-expand-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: var(--neutral-500);
+    padding: 2px;
+    display: flex;
+    align-items: center;
+    border-radius: var(--radius-sm);
+    flex-shrink: 0;
+}
+
+.mission-card-expand-btn:hover {
+    color: var(--neutral-950);
+    background: var(--neutral-100);
+}
+
+.mission-card-title {
+    font-size: 14px;
+    font-weight: var(--font-weight-bold);
+    color: var(--neutral-950);
+    line-height: 1.15;
+}
+
+.mission-card-info {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 12px;
+    font-weight: var(--font-weight-medium);
+    color: var(--neutral-500);
+}
+
+.mission-card-avatars {
+    display: flex;
+    align-items: center;
+    padding-right: 4px;
+    margin-top: auto;
+}
+
+.mission-card-avatar {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    font-weight: var(--font-weight-bold);
+    color: white;
+    background: var(--orange-400);
+    border: 2px solid white;
+    margin-left: -4px;
+    flex-shrink: 0;
+}
+
+.mission-card-avatar:first-child {
+    margin-left: 0;
+}
+
+.mission-card-avatar-overflow {
+    background: var(--neutral-400);
+}
+
+@media (max-width: 900px) {
+    .mission-card-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (max-width: 540px) {
+    .mission-card-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
 /* Grid layout — 3 fixed columns */
 .goal-grid-tree {
     display: grid;

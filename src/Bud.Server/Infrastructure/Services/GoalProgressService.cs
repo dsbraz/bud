@@ -138,6 +138,21 @@ public sealed class GoalProgressService(ApplicationDbContext dbContext) : IGoalP
             var directChildren = goals.Count(g => g.ParentId == goalId);
             var directIndicators = goal.Indicators.Count;
 
+            var lastCheckinDate = subtreeIndicators
+                .Select(i => latestCheckinByIndicator.GetValueOrDefault(i.Id))
+                .Where(c => c is not null)
+                .Select(c => c!.CheckinDate)
+                .DefaultIfEmpty()
+                .Max();
+
+            var collaboratorIds = subtreeGoalIds
+                .Where(goalsById.ContainsKey)
+                .Select(id => goalsById[id].CollaboratorId)
+                .Where(cid => cid.HasValue)
+                .Select(cid => cid!.Value)
+                .Distinct()
+                .ToList();
+
             results.Add(new GoalProgressSnapshot
             {
                 GoalId = goal.Id,
@@ -150,7 +165,9 @@ public sealed class GoalProgressService(ApplicationDbContext dbContext) : IGoalP
                 DirectChildren = directChildren,
                 DirectIndicators = directIndicators,
                 TodoTasks = todoTasksByGoal.GetValueOrDefault(goalId, 0),
-                DoingTasks = doingTasksByGoal.GetValueOrDefault(goalId, 0)
+                DoingTasks = doingTasksByGoal.GetValueOrDefault(goalId, 0),
+                LastCheckinDate = lastCheckinDate == default ? null : lastCheckinDate,
+                DistinctCollaboratorIds = collaboratorIds
             });
         }
 

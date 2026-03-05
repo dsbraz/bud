@@ -33,4 +33,6 @@ public sealed class GoalProgressResponse
     public int DirectIndicators { get; set; }
     public int TodoTasks { get; set; }
     public int DoingTasks { get; set; }
+    public DateTime? LastCheckinDate { get; set; }
+    public List<Guid> DistinctCollaboratorIds { get; set; } = [];
 }
