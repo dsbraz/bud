@@ -3249,25 +3249,10 @@ a {
     padding-left: 84px;
 }
 
-.goals-list .goal-card-content::before {
-    left: 62px;
-}
-
 .goal-card.expanded .goal-card-content {
     display: flex;
     flex-direction: column;
     gap: var(--spacing-2);
-}
-
-/* Vertical tree line on container */
-.goal-card-content::before {
-    content: '';
-    position: absolute;
-    left: 18px;
-    top: 0;
-    bottom: 0;
-    width: 1px;
-    background: var(--caramel-200);
 }
 
 /* All direct children need position:relative for L-connectors */
@@ -3278,13 +3263,19 @@ a {
     position: relative;
 }
 
+/* In tree layout, gap already controls spacing between siblings */
+.goal-card-content > .goal-tasks-section,
+.subgoal-indicators > .goal-tasks-section {
+    margin-top: 0;
+}
+
 /* L-connector for indicator rows */
 .goal-card-content > .indicator-row::before {
     content: '';
     position: absolute;
     left: -22px;
-    top: 0;
-    height: 50%;
+    top: calc(-1 * var(--spacing-2));
+    height: calc(50% + var(--spacing-2));
     width: 22px;
     border-left: 1px solid var(--caramel-200);
     border-bottom: 1px solid var(--caramel-200);
@@ -3296,8 +3287,8 @@ a {
     content: '';
     position: absolute;
     left: -22px;
-    top: 0;
-    height: 24px;
+    top: calc(-1 * var(--spacing-2));
+    height: calc(24px + var(--spacing-2));
     width: 22px;
     border-left: 1px solid var(--caramel-200);
     border-bottom: 1px solid var(--caramel-200);
@@ -3305,34 +3296,53 @@ a {
     z-index: 1;
 }
 
-/* Mask: last visible child hides the vertical line below its connector.
-   Uses :has(~ .subgoal-section, ~ .indicator-row) to detect if there are
-   subsequent tree-relevant siblings (more reliable than :last-child with Blazor). */
-.goal-card-content > .subgoal-section:not(:has(~ .subgoal-section, ~ .indicator-row, ~ .goal-tasks-section))::after {
+/* L-connector for goal-tasks-section */
+.goal-card-content > .goal-tasks-section::before {
     content: '';
     position: absolute;
-    left: -23px;
-    top: 24px;
-    bottom: 0;
-    width: 4px;
-    background: var(--color-surface);
-    z-index: 2;
+    left: -22px;
+    top: calc(-1 * var(--spacing-2));
+    height: calc(24px + var(--spacing-2));
+    width: 22px;
+    border-left: 1px solid var(--caramel-200);
+    border-bottom: 1px solid var(--caramel-200);
+    border-radius: 0 0 0 8px;
+    z-index: 1;
 }
 
-.goal-card-content > .indicator-row:not(:has(~ .subgoal-section, ~ .indicator-row, ~ .goal-tasks-section))::after {
+/* Vertical continuation for non-last children */
+.goal-card-content > .subgoal-section:has(~ .subgoal-section, ~ .indicator-row, ~ .goal-tasks-section)::after {
     content: '';
     position: absolute;
-    left: -23px;
+    left: -22px;
+    top: 24px;
+    bottom: 0;
+    border-left: 1px solid var(--caramel-200);
+}
+
+.goal-card-content > .indicator-row:has(~ .subgoal-section, ~ .indicator-row, ~ .goal-tasks-section)::after {
+    content: '';
+    position: absolute;
+    left: -22px;
     top: 50%;
     bottom: 0;
-    width: 4px;
-    background: var(--color-surface);
-    z-index: 2;
+    border-left: 1px solid var(--caramel-200);
+}
+
+/* Keep vertical continuation while there are next tree siblings */
+.goal-card-content > .goal-tasks-section:has(~ .subgoal-section, ~ .indicator-row, ~ .goal-tasks-section)::after {
+    content: '';
+    position: absolute;
+    left: -22px;
+    top: 24px;
+    bottom: 0;
+    border-left: 1px solid var(--caramel-200);
 }
 
 /* ── Nested level: inside subgoal-indicators ── */
 .subgoal-indicators > .indicator-row,
-.subgoal-indicators > .subgoal-section {
+.subgoal-indicators > .subgoal-section,
+.subgoal-indicators > .goal-tasks-section {
     position: relative;
 }
 
@@ -3340,8 +3350,8 @@ a {
     content: '';
     position: absolute;
     left: -22px;
-    top: 0;
-    height: 50%;
+    top: calc(-1 * var(--spacing-2));
+    height: calc(50% + var(--spacing-2));
     width: 22px;
     border-left: 1px solid var(--caramel-200);
     border-bottom: 1px solid var(--caramel-200);
@@ -3352,8 +3362,8 @@ a {
     content: '';
     position: absolute;
     left: -22px;
-    top: 0;
-    height: 24px;
+    top: calc(-1 * var(--spacing-2));
+    height: calc(24px + var(--spacing-2));
     width: 22px;
     border-left: 1px solid var(--caramel-200);
     border-bottom: 1px solid var(--caramel-200);
@@ -3361,27 +3371,47 @@ a {
     z-index: 1;
 }
 
-/* Mask for last tree child in nested level */
-.subgoal-indicators > .subgoal-section:not(:has(~ .subgoal-section, ~ .indicator-row))::after {
+/* L-connector for nested goal-tasks-section */
+.subgoal-indicators > .goal-tasks-section::before {
     content: '';
     position: absolute;
-    left: -23px;
-    top: 24px;
-    bottom: 0;
-    width: 4px;
-    background: var(--color-surface);
-    z-index: 2;
+    left: -22px;
+    top: calc(-1 * var(--spacing-2));
+    height: calc(24px + var(--spacing-2));
+    width: 22px;
+    border-left: 1px solid var(--caramel-200);
+    border-bottom: 1px solid var(--caramel-200);
+    border-radius: 0 0 0 8px;
+    z-index: 1;
 }
 
-.subgoal-indicators > .indicator-row:not(:has(~ .subgoal-section, ~ .indicator-row))::after {
+/* Vertical continuation for non-last nested children */
+.subgoal-indicators > .subgoal-section:has(~ .subgoal-section, ~ .indicator-row, ~ .goal-tasks-section)::after {
     content: '';
     position: absolute;
-    left: -23px;
+    left: -22px;
+    top: 24px;
+    bottom: 0;
+    border-left: 1px solid var(--caramel-200);
+}
+
+.subgoal-indicators > .indicator-row:has(~ .subgoal-section, ~ .indicator-row, ~ .goal-tasks-section)::after {
+    content: '';
+    position: absolute;
+    left: -22px;
     top: 50%;
     bottom: 0;
-    width: 4px;
-    background: var(--color-surface);
-    z-index: 2;
+    border-left: 1px solid var(--caramel-200);
+}
+
+/* Keep vertical continuation while there are next nested tree siblings */
+.subgoal-indicators > .goal-tasks-section:has(~ .subgoal-section, ~ .indicator-row, ~ .goal-tasks-section)::after {
+    content: '';
+    position: absolute;
+    left: -22px;
+    top: 24px;
+    bottom: 0;
+    border-left: 1px solid var(--caramel-200);
 }
 
 /* Metric Items in Expanded Card */
@@ -4264,18 +4294,9 @@ a {
     display: flex;
     flex-direction: column;
     gap: var(--spacing-2);
-    padding: var(--spacing-4) 0 var(--spacing-2) 40px;
+    padding: var(--spacing-2) 0 var(--spacing-2) 40px;
+    margin-top: var(--spacing-2);
     position: relative;
-}
-
-.subgoal-indicators::before {
-    content: '';
-    position: absolute;
-    left: 18px;
-    top: 0;
-    bottom: 0;
-    width: 1px;
-    background: var(--caramel-200);
 }
 
 .direct-indicators-label {
