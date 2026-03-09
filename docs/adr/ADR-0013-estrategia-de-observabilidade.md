@@ -53,7 +53,7 @@ O sistema Bud roda em produção no Google Cloud Run. A observabilidade inicial 
 - Primeiro item chamado em `AddBudPlatform`, garantindo que logging e tracing estejam disponíveis para todos os outros módulos.
 
 ### 7. Duplicação do Formatter no Bud.Mcp
-- `Bud.Mcp` não referencia `Bud.Api`, portanto `CloudLoggingJsonFormatter` é duplicado em `src/Bud.Mcp/Observability/`.
+- `Bud.Mcp` não referencia `Bud.Api`, portanto `CloudLoggingJsonFormatter` é duplicado em `src/Client/Bud.Mcp/Observability/`.
 - Aceito como trade-off de isolamento; consolidar em pacote compartilhado é deferido.
 
 ## Consequências

@@ -127,10 +127,11 @@ Main projects:
 - `src/Server/Bud.Domain`: domínio puro, value objects, eventos e interfaces de repositório.
 - `src/Server/Bud.Infrastructure`: EF Core, repositórios, serviços concretos e migrations.
 - `src/Client/Bud.BlazorWasm`: Blazor WebAssembly UI.
-- `src/Bud.Shared`: shared contracts.
-- `src/Bud.Mcp`: MCP server over HTTP.
+- `src/Shared/Bud.Shared.Kernel`: tipos compartilhados estáveis.
+- `src/Shared/Bud.Shared.Contracts`: contratos compartilhados de borda.
+- `src/Client/Bud.Mcp`: MCP server over HTTP tratado como client conversacional do `Bud.Api`.
 - `tests/Server/*`: testes unitários, integração e arquitetura do backend.
-- `tests/Client/Bud.BlazorWasm.Tests` e `tests/Bud.Mcp.Tests`: testes do client e MCP.
+- `tests/Client/Bud.BlazorWasm.Tests` e `tests/Client/Bud.Mcp.Tests`: testes do client e MCP.
 
 ## Layering and Dependencies (MUST)
 
@@ -225,8 +226,8 @@ dotnet ef migrations add <Name> --project src/Server/Bud.Infrastructure --startu
 When contracts used by MCP tools change (`/api/goals`, `/api/indicators`, `/api/indicators/{id}/checkins`), run:
 
 ```bash
-dotnet run --project src/Bud.Mcp/Bud.Mcp.csproj -- generate-tool-catalog
-dotnet run --project src/Bud.Mcp/Bud.Mcp.csproj -- check-tool-catalog --fail-on-diff
+dotnet run --project src/Client/Bud.Mcp/Bud.Mcp.csproj -- generate-tool-catalog
+dotnet run --project src/Client/Bud.Mcp/Bud.Mcp.csproj -- check-tool-catalog --fail-on-diff
 ```
 
 ## Operational References

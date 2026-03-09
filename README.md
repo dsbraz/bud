@@ -535,7 +535,7 @@ dotnet run --project src/Server/Bud.Api
 
 ## Servidor MCP (Metas e Indicadores)
 
-O repositório inclui um servidor MCP HTTP em `src/Bud.Mcp`, que consome a API do `Bud.Api`.
+O repositório inclui um servidor MCP HTTP em `src/Client/Bud.Mcp`, que consome a API do `Bud.Api`.
 
 No transporte HTTP do MCP, o endpoint raiz delega o processamento para `IMcpRequestProcessor`/`McpRequestProcessor`,
 mantendo `Program.cs` focado em composição e roteamento.
@@ -567,7 +567,7 @@ docker compose up --build
 O serviço `mcp` é criado no compose usando:
 - `Dockerfile` (target `dev-mcp-web`)
 - `dotnet watch` para recarregar alterações locais automaticamente
-- `DOTNET_ENVIRONMENT=Development` (usa `src/Bud.Mcp/appsettings.Development.json`)
+- `DOTNET_ENVIRONMENT=Development` (usa `src/Client/Bud.Mcp/appsettings.Development.json`)
 - `BUD_API_BASE_URL=http://web:8080` para chamadas internas ao `Bud.Api`
 - mapeamento de porta `8081:8080` para evitar conflito com o `web`
 
@@ -591,12 +591,12 @@ A resposta inclui o header `MCP-Session-Id`, que deve ser enviado nas chamadas s
 Fluxo obrigatório para atualizar catálogo MCP:
 
 ```bash
-dotnet run --project src/Bud.Mcp/Bud.Mcp.csproj -- generate-tool-catalog
-dotnet run --project src/Bud.Mcp/Bud.Mcp.csproj -- check-tool-catalog --fail-on-diff
+dotnet run --project src/Client/Bud.Mcp/Bud.Mcp.csproj -- generate-tool-catalog
+dotnet run --project src/Client/Bud.Mcp/Bud.Mcp.csproj -- check-tool-catalog --fail-on-diff
 ```
 
 Regras importantes do catálogo:
-- As ferramentas de domínio (`goal_*`, `goal_indicator_*`, `indicator_checkin_*`) são carregadas exclusivamente do arquivo `src/Bud.Mcp/Tools/Generated/mcp-tool-catalog.json`.
+- As ferramentas de domínio (`goal_*`, `goal_indicator_*`, `indicator_checkin_*`) são carregadas exclusivamente do arquivo `src/Client/Bud.Mcp/Tools/Generated/mcp-tool-catalog.json`.
 - O `Bud.Mcp` falha na inicialização se o catálogo estiver ausente, inválido, vazio ou sem ferramentas de domínio obrigatórias.
 - O comando `check-tool-catalog --fail-on-diff` também valida o contrato mínimo de campos `required` por ferramenta e retorna erro quando houver quebra de contrato.
 
@@ -806,7 +806,7 @@ flowchart TD
 dotnet test
 
 # testes MCP
-dotnet test tests/Bud.Mcp.Tests
+dotnet test tests/Client/Bud.Mcp.Tests
 
 # apenas unitários
 dotnet test tests/Server/Bud.Api.UnitTests
@@ -821,7 +821,7 @@ dotnet test tests/Server/Bud.Api.IntegrationTests
 
 Observação:
 
-- `dotnet test` usa `Bud.slnx` e executa também `tests/Bud.Mcp.Tests`.
+- `dotnet test` usa `Bud.slnx` e executa também `tests/Client/Bud.Mcp.Tests`.
 - Testes de integração usam PostgreSQL via Testcontainers.
 - Use `dotnet test --nologo` para saída mais limpa no terminal.
 - A solução usa `TreatWarningsAsErrors=true`; avisos quebram build/test.

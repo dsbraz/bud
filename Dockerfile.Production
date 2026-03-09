@@ -12,7 +12,7 @@ FROM source AS publish-web
 RUN dotnet publish src/Server/Bud.Api/Bud.Api.csproj -c Release -o /app/publish
 
 FROM source AS publish-mcp
-RUN dotnet publish src/Bud.Mcp/Bud.Mcp.csproj -c Release -o /app/publish
+RUN dotnet publish src/Client/Bud.Mcp/Bud.Mcp.csproj -c Release -o /app/publish
 
 FROM source AS build-migrate
 RUN dotnet restore src/Server/Bud.Api/Bud.Api.csproj
