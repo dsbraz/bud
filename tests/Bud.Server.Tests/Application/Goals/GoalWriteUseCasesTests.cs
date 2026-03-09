@@ -26,10 +26,10 @@ public sealed class GoalWriteUseCasesTests
         => new(_repo.Object, _collaboratorRepo.Object, _tenantProvider.Object, _authGateway.Object, NullLogger<CreateGoal>.Instance);
 
     private PatchGoal CreateReplanningUseCase()
-        => new(_repo.Object, _collaboratorRepo.Object, _authGateway.Object, NullLogger<PatchGoal>.Instance);
+        => new(_repo.Object, _collaboratorRepo.Object, _tenantProvider.Object, _authGateway.Object, NullLogger<PatchGoal>.Instance);
 
     private DeleteGoal CreateRemoveUseCase()
-        => new(_repo.Object, _authGateway.Object, NullLogger<DeleteGoal>.Instance);
+        => new(_repo.Object, _tenantProvider.Object, _authGateway.Object, NullLogger<DeleteGoal>.Instance);
 
     [Fact]
     public async Task CreateAsync_WhenTenantNotSelected_ReturnsForbidden()
