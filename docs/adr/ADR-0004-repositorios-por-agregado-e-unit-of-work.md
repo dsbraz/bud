@@ -8,7 +8,7 @@ Operações de escrita precisam de consistência transacional e fronteira clara 
 
 ## Decisão
 - Definir repositório por agregado com contratos orientados a intenção de negócio.
-- Publicar contratos de repositório em `Bud.Server/Domain/Repositories` e implementações em `Bud.Server/Infrastructure/Repositories`.
+- Publicar contratos de repositório em `src/Server/Bud.Domain/Repositories` e implementações em `src/Server/Bud.Infrastructure/Repositories`.
 - Evitar retorno de payload HTTP em repositórios.
 - Introduzir `IUnitOfWork` para commit explícito e coordenação transacional.
 

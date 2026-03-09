@@ -8,7 +8,8 @@ O sistema precisa de mapeamento estável entre modelo de domínio e banco relaci
 
 ## Decisão
 - Usar EF Core com configurações explícitas por entidade.
-- Manter mapeamentos na infraestrutura.
+- Manter `ApplicationDbContext`, design-time factory, interceptors, repositórios e migrations em `src/Server/Bud.Infrastructure`.
+- Manter mapeamentos na infraestrutura (`Persistence/Configurations/`).
 - Garantir que regras de banco (índices, chaves, relacionamentos) não vazem para a borda.
 
 ## Consequências

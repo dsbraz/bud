@@ -1,14 +1,33 @@
 <Solution>
-  <Folder Name="/src/">
-    <Project Path="src/Bud.Client/Bud.Client.csproj" />
-    <Project Path="src/Bud.Mcp/Bud.Mcp.csproj" />
-    <Project Path="src/Bud.Server/Bud.Server.csproj" />
-    <Project Path="src/Bud.Shared/Bud.Shared.csproj" />
+  <Configurations>
+    <Platform Name="Any CPU" />
+    <Platform Name="x64" />
+    <Platform Name="x86" />
+  </Configurations>
+  <Folder Name="/src/Client/">
+    <Project Path="src/Client/Bud.BlazorWasm/Bud.BlazorWasm.csproj" />
+    <Project Path="src/Client/Bud.Mcp/Bud.Mcp.csproj" />
   </Folder>
-  <Folder Name="/tests/">
-    <Project Path="tests/Bud.Client.Tests/Bud.Client.Tests.csproj" />
-    <Project Path="tests/Bud.Mcp.Tests/Bud.Mcp.Tests.csproj" />
-    <Project Path="tests/Bud.Server.Tests/Bud.Server.Tests.csproj" />
-    <Project Path="tests/Bud.Server.IntegrationTests/Bud.Server.IntegrationTests.csproj" />
+  <Folder Name="/src/Server/">
+    <Project Path="src/Server/Bud.Api/Bud.Api.csproj" />
+    <Project Path="src/Server/Bud.Application/Bud.Application.csproj" />
+    <Project Path="src/Server/Bud.Domain/Bud.Domain.csproj" />
+    <Project Path="src/Server/Bud.Infrastructure/Bud.Infrastructure.csproj" />
+  </Folder>
+  <Folder Name="/src/Shared/">
+    <Project Path="src/Shared/Bud.Shared.Contracts/Bud.Shared.Contracts.csproj" />
+    <Project Path="src/Shared/Bud.Shared.Kernel/Bud.Shared.Kernel.csproj" />
+  </Folder>
+  <Folder Name="/tests/Client/">
+    <Project Path="tests/Client/Bud.BlazorWasm.Tests/Bud.BlazorWasm.Tests.csproj" />
+    <Project Path="tests/Client/Bud.Mcp.Tests/Bud.Mcp.Tests.csproj" />
+  </Folder>
+  <Folder Name="/tests/Server/">
+    <Project Path="tests/Server/Bud.Api.IntegrationTests/Bud.Api.IntegrationTests.csproj" />
+    <Project Path="tests/Server/Bud.Api.UnitTests/Bud.Api.UnitTests.csproj" />
+    <Project Path="tests/Server/Bud.Application.UnitTests/Bud.Application.UnitTests.csproj" />
+    <Project Path="tests/Server/Bud.ArchitectureTests/Bud.ArchitectureTests.csproj" />
+    <Project Path="tests/Server/Bud.Domain.UnitTests/Bud.Domain.UnitTests.csproj" />
+    <Project Path="tests/Server/Bud.Infrastructure.UnitTests/Bud.Infrastructure.UnitTests.csproj" />
   </Folder>
 </Solution>

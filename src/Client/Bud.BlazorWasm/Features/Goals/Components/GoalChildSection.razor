@@ -1,0 +1,213 @@
+@using Bud.BlazorWasm.Services
+@using Bud.Shared.Contracts.Requests
+
+@{
+    var circumference = 2 * Math.PI * 19;
+    var dashOffset = circumference - (circumference * ProgressPercent / 100);
+}
+
+<div class="subgoal-section @(IsExpanded ? "expanded" : "")">
+    <div class="subgoal-header" @onclick="() => OnToggleExpand.InvokeAsync()" @onclick:stopPropagation="true">
+        @* Progress Circle *@
+        <div class="goal-progress-circle" style="width: 40px; height: 40px; flex-shrink: 0;">
+            <svg width="44" height="44" viewBox="0 0 44 44">
+                <circle class="progress-bg" cx="22" cy="22" r="19" />
+                <circle class="progress-value @GetProgressStatusClass()"
+                        cx="22" cy="22" r="19"
+                        stroke-dasharray="@circumference.ToString("F2", System.Globalization.CultureInfo.InvariantCulture)"
+                        stroke-dashoffset="@dashOffset.ToString("F2", System.Globalization.CultureInfo.InvariantCulture)" />
+            </svg>
+            <div class="goal-progress-text">
+                <span class="goal-progress-number">@(ProgressPercent == 0 ? "00" : ProgressPercent.ToString())</span>
+                <span class="goal-progress-percent">%</span>
+            </div>
+        </div>
+        <div class="subgoal-header-info">
+            <div class="subgoal-name">@ChildGoal.Name</div>
+        </div>
+        @* ArrowsOutSimple - abre modal *@
+        <button class="goal-action-btn" style="flex-shrink: 0;" @onclick="() => OnExpandModal.InvokeAsync(ChildGoal)" @onclick:stopPropagation="true" title="Expandir em modal">
+            <svg width="20" height="20" viewBox="0 0 32 32" fill="none">
+                <path d="M20 4H28V12" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                <path d="M12 28H4V20" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                <path d="M28 4L19 13" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                <path d="M4 28L13 19" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+        </button>
+        @* Caret toggle *@
+        <svg class="goal-caret-icon @(IsExpanded ? "expanded" : "")" width="20" height="20" viewBox="0 0 32 32" fill="none">
+            <path d="M8 12L16 20L24 12" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+    </div>
+    @if (IsExpanded)
+    {
+        <div class="subgoal-indicators">
+            @if (_isLoading)
+            {
+                <p class="muted" style="padding: var(--spacing-2) var(--spacing-4); font-size: var(--font-size-xs);">Carregando...</p>
+            }
+            else if (_dataLoaded)
+            {
+                @foreach (var indicator in _indicators!)
+                {
+                    <IndicatorRow Goal="ChildGoal"
+                                  Indicator="indicator"
+                                  GoalProgressResponse="GoalProgressResponse"
+                                  IndicatorProgressResponse="@(_indicatorProgressCache.GetValueOrDefault(indicator.Id))"
+                                  OnCheckinClick="OnCheckinClick"
+                                  OnHistoryClick="OnHistoryClick" />
+                }
+
+                @foreach (var child in _children!)
+                {
+                    <GoalChildSection ChildGoal="child"
+                                      GoalProgressResponse="@(_childProgressCache.GetValueOrDefault(child.Id))"
+                                      IsExpanded="@(_expandedChildren.Contains(child.Id))"
+                                      OnToggleExpand="() => ToggleChild(child.Id)"
+                                      Depth="@(Depth + 1)"
+                                      OnCheckinClick="OnCheckinClick"
+                                      OnHistoryClick="OnHistoryClick"
+                                      OnExpandModal="OnExpandModal" />
+                }
+
+                @if (_tasks != null && _tasks.Count > 0)
+                {
+                    <div class="goal-tasks-section" style="padding: 0 var(--spacing-4);">
+                        @foreach (var task in _tasks)
+                        {
+                            <TaskRow Task="task" ShowDeleteButton="false"
+                                     OnStateChange="async s => await HandleTaskStateChange(task, s)" />
+                        }
+                    </div>
+                }
+
+                @if (_children.Count == 0 && _indicators.Count == 0 && (_tasks == null || _tasks.Count == 0))
+                {
+                    <p class="muted" style="padding: var(--spacing-2) var(--spacing-4); font-size: var(--font-size-xs);">Nenhum indicador, tarefa ou meta nesta missão.</p>
+                }
+            }
+        </div>
+    }
+</div>
+
+@code {
+    [Inject] private ApiClient Api { get; set; } = default!;
+
+    [Parameter, EditorRequired] public GoalResponse ChildGoal { get; set; } = default!;
+    [Parameter] public GoalProgressResponse? GoalProgressResponse { get; set; }
+    [Parameter] public bool IsExpanded { get; set; }
+    [Parameter] public EventCallback OnToggleExpand { get; set; }
+    [Parameter] public EventCallback<IndicatorResponse> OnCheckinClick { get; set; }
+    [Parameter] public EventCallback<IndicatorResponse> OnHistoryClick { get; set; }
+    [Parameter] public EventCallback<GoalResponse> OnExpandModal { get; set; }
+    [Parameter] public int Depth { get; set; }
+
+    private List<GoalResponse>? _children;
+    private List<IndicatorResponse>? _indicators;
+    private List<TaskResponse>? _tasks;
+    private Dictionary<Guid, GoalProgressResponse> _childProgressCache = new();
+    private Dictionary<Guid, IndicatorProgressResponse> _indicatorProgressCache = new();
+    private HashSet<Guid> _expandedChildren = new();
+    private bool _isLoading;
+    private bool _dataLoaded;
+
+    private int ProgressPercent => (int)(GoalProgressResponse?.OverallProgress ?? 0);
+    private decimal ExpectedProgress => GoalProgressResponse?.ExpectedProgress ?? 0m;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (IsExpanded && !_dataLoaded && !_isLoading)
+        {
+            await LoadDataAsync();
+        }
+    }
+
+    private async Task LoadDataAsync()
+    {
+        _isLoading = true;
+        StateHasChanged();
+        try
+        {
+            var childrenTask = Api.GetGoalChildrenAsync(ChildGoal.Id);
+            var indicatorsTask = Api.GetGoalIndicatorsByGoalIdAsync(ChildGoal.Id);
+            var tasksTask = Api.GetTasksAsync(ChildGoal.Id);
+            await Task.WhenAll(childrenTask, indicatorsTask, tasksTask);
+
+            _children = childrenTask.Result?.Items.ToList() ?? [];
+            _indicators = indicatorsTask.Result?.Items.ToList() ?? [];
+            _tasks = tasksTask.Result?.Items.ToList() ?? [];
+
+            if (_children.Count > 0)
+            {
+                var progressList = await Api.GetGoalProgressAsync(_children.Select(c => c.Id).ToList());
+                _childProgressCache = progressList?.ToDictionary(p => p.GoalId) ?? new();
+            }
+
+            if (_indicators.Count > 0)
+            {
+                var indicatorProgress = await Api.GetIndicatorProgressAsync(_indicators.Select(i => i.Id).ToList());
+                _indicatorProgressCache = indicatorProgress?.ToDictionary(p => p.IndicatorId) ?? new();
+            }
+
+            _dataLoaded = true;
+        }
+        finally
+        {
+            _isLoading = false;
+            StateHasChanged();
+        }
+    }
+
+    private void ToggleChild(Guid childId)
+    {
+        if (!_expandedChildren.Remove(childId))
+        {
+            _expandedChildren.Add(childId);
+        }
+    }
+
+    private async Task HandleTaskStateChange(TaskResponse task, TaskState newState)
+    {
+        try
+        {
+            await Api.UpdateTaskAsync(task.Id, new PatchTaskRequest { State = newState });
+            if (_tasks is not null)
+            {
+                var idx = _tasks.FindIndex(t => t.Id == task.Id);
+                if (idx >= 0)
+                {
+                    _tasks[idx] = new TaskResponse
+                    {
+                        Id = task.Id,
+                        OrganizationId = task.OrganizationId,
+                        GoalId = task.GoalId,
+                        Name = task.Name,
+                        Description = task.Description,
+                        State = newState,
+                        DueDate = task.DueDate
+                    };
+                    _tasks = [.._tasks];
+                }
+            }
+        }
+        catch (Exception)
+        {
+            // silent failure; task will show stale state until next expand
+        }
+    }
+
+    private string GetProgressStatusClass()
+    {
+        if (ProgressPercent >= (int)ExpectedProgress)
+        {
+            return "on-track";
+        }
+
+        if (ProgressPercent >= (int)(ExpectedProgress * 0.7m))
+        {
+            return "at-risk";
+        }
+
+        return "off-track";
+    }
+}

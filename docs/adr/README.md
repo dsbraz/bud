@@ -25,6 +25,7 @@ Cada ADR é autocontida e descreve contexto, decisão, consequências e alternat
 12. `ADR-0012` Estratégia de Testes e Governança Arquitetural
 13. `ADR-0013` Estratégia de Observabilidade
 14. `ADR-0014` Unificação de Mission+Objective em Goal e renomeação Metric→Indicator
+15. `ADR-0015` Separação do Host do Frontend em Produção
 
 ## Status possíveis
 
@@ -36,3 +37,4 @@ Cada ADR é autocontida e descreve contexto, decisão, consequências e alternat
 ## Governança
 
 Mudanças arquiteturais devem atualizar ADRs no mesmo conjunto de alterações.
+O baseline atual do backend é `src/Server/Bud.Api`, `Bud.Application`, `Bud.Domain` e `Bud.Infrastructure`, com testes em `tests/Server/*`.

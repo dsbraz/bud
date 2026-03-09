@@ -1,6 +1,6 @@
 # Bud
 
-Aplicação unificada em ASP.NET Core + Blazor WebAssembly (SPA),
+A aplicação combina API ASP.NET Core, frontend Blazor WebAssembly (SPA)
 utilizando PostgreSQL.
 
 ## Para quem é este README
@@ -19,7 +19,7 @@ Este documento é voltado para devs que precisam:
 - [Como contribuir](#como-contribuir)
 - [Como rodar](#como-rodar-com-docker)
 - [Como rodar sem Docker](#como-rodar-sem-docker)
-- [Servidor MCP (Missões e Métricas)](#servidor-mcp-missões-e-métricas)
+- [Servidor MCP (Metas e Indicadores)](#servidor-mcp-metas-e-indicadores)
 - [Deploy no Google Cloud](#deploy-no-google-cloud)
 - [Onboarding rápido (30 min)](#onboarding-rápido-30-min)
 - [Testes](#testes)
@@ -34,27 +34,26 @@ Este documento é voltado para devs que precisam:
 
 O Bud segue uma arquitetura em camadas com separação explícita de responsabilidades:
 
-- **API/Host (`Bud.Server`)**: exposição HTTP, autenticação/autorização, middleware e composição de dependências.
-- **Application**: casos de uso (`Application/UseCases/`), portas de aplicação e orquestração de eventos de domínio.
-  - `Application/Common`: resultados e utilitários transversais.
-  - `Application/Mapping`: mapeamento entre read models/domínio e contratos de borda.
-- **Domain**: entidades e aggregate roots (`Domain/Model/`), value objects (`Domain/ValueObjects/`), eventos de domínio (`Domain/Events/`), primitivos (`Domain/Primitives/`) e interfaces de repositório (`Domain/Repositories/`).
-- **Infrastructure**: EF Core (`ApplicationDbContext`), repositórios (`Repositories/`), serviços de infraestrutura (`Services/`) e specifications de consulta (`Querying/`).
-- **Client (`Bud.Client`)**: SPA Blazor WASM com consumo da API.
+- **API (`Bud.Api`)**: exposição HTTP, autenticação/autorização, middleware e composição de dependências.
+- **Application (`src/Server/Bud.Application`)**: casos de uso, portas de aplicação, mapeamentos, read models e orquestração de eventos de domínio.
+  - `Common`: resultados e utilitários transversais.
+  - `Mapping`: mapeamento entre read models/domínio e contratos de borda.
+- **Domain (`src/Server/Bud.Domain`)**: entidades, aggregate roots, value objects, eventos de domínio, primitivos e interfaces de repositório.
+- **Infrastructure (`src/Server/Bud.Infrastructure`)**: EF Core (`ApplicationDbContext`), repositórios, serviços de infraestrutura, migrations e specifications de consulta.
+- **Client (`Bud.BlazorWasm`)**: SPA Blazor WASM com consumo da API.
 - **Shared (`Bud.Shared`)**: contratos de borda compartilhados entre cliente, servidor e MCP.
 
-### Organização do backend (Bud.Server)
+### Organização do backend (`src/Server/*`)
 
 - **Controllers** recebem requests, validam payloads (FluentValidation) e delegam para Use Cases.
   Validações dependentes de dados devem passar por abstrações/repositórios, não por acesso direto de validator ao `DbContext`.
-- **Use Cases** (`Application/UseCases/{Domain}/`) centralizam o fluxo completo da aplicação (orquestração, autorização, notificações) e retornam `Result`/`Result<T>` (em `Application/Common/`). Cada use case é uma classe com método `ExecuteAsync`, injetada diretamente nos controllers (sem mediator).
-- **Infrastructure** (`Infrastructure/`) contém implementações concretas:
-  - `Repositories/`: implementações dos repositórios (`I*Repository` ficam em `Domain/Repositories/`).
-  - `Services/`: implementações de adapters (`AuthService`, `GoalScopeResolver`, `GoalProgressService`, `NotificationRecipientResolver`), com interfaces em `Application/Ports/`.
+- **Use Cases** (`src/Server/Bud.Application/UseCases/{Domain}/`) centralizam o fluxo completo da aplicação (orquestração, autorização, notificações) e retornam `Result`/`Result<T>` (`src/Server/Bud.Application/Common/`). Cada use case é uma classe com método `ExecuteAsync`, injetada diretamente nos controllers.
+- **Infrastructure** (`src/Server/Bud.Infrastructure/`) contém implementações concretas:
+  - `Repositories/`: implementações dos repositórios (`I*Repository` ficam em `src/Server/Bud.Domain/Repositories/`).
+  - `Services/` e `Authorization/`: adapters concretos (`AuthService`, `GoalProgressService`, `NotificationRecipientResolver`, `TenantAuthorizationService`, `OrganizationAuthorizationService`), com interfaces em `src/Server/Bud.Application/Ports/`.
   - `Querying/`: specifications de consulta para filtros reutilizáveis.
-  - `ApplicationDbContext`, `Configurations/` e `DbSeeder`.
-- **Authorization** (`Authorization/`) contém serviços de autorização (`TenantAuthorizationService`, `OrganizationAuthorizationService`), policies, requirements e handlers.
-- **DependencyInjection** modulariza bootstrap (`BudApi`, `BudSecurity`, `BudInfrastructure`, `BudApplication`).
+  - `Persistence/`: `ApplicationDbContext`, factory de design-time, configurations, migrations e `DbSeeder`.
+- **Authorization e DI da API** vivem em `src/Server/Bud.Api/Authorization/` e `src/Server/Bud.Api/DependencyInjection/`.
 
 ### Padrões arquiteturais adotados
 
@@ -67,12 +66,12 @@ O Bud segue uma arquitetura em camadas com separação explícita de responsabil
   Referências: `docs/adr/ADR-0007-autenticacao-e-autorizacao-por-politicas.md`.
 - **Specification Pattern (consultas reutilizáveis)**
   Filtros de domínio encapsulados em specifications para evitar duplicação de predicados.
-  Referências: `src/Bud.Server/Infrastructure/Querying/`.
+  Referências: `src/Server/Bud.Infrastructure/Querying/`.
 - **Structured Logging (source-generated)**
   Logs com `[LoggerMessage]` definidos localmente por componente (`partial`), com `EventId` estável e sem catálogo central global.
 - **Governança arquitetural por testes + ADRs**  
   Decisões versionadas (ADR) e proteção contra regressão de fronteiras via testes de arquitetura.
-  Referências: `docs/adr/README.md` e `tests/Bud.Server.Tests/Architecture/ArchitectureTests.cs`.
+  Referências: `docs/adr/README.md` e `tests/Server/Bud.ArchitectureTests/Architecture/ArchitectureTests.cs`.
 - **Aggregate Roots explícitas**
   Entidades raiz de agregado são marcadas com `IAggregateRoot` para tornar boundaries verificáveis por testes.
   Referências: `docs/adr/ADR-0003-agregados-entidades-value-objects-e-invariantes.md`.
@@ -273,7 +272,7 @@ Para lista atualizada de ADRs e ordem recomendada de leitura, consulte:
 
 ```mermaid
 flowchart LR
-    A[Bud.Client<br/>Blazor WASM] -->|HTTP + JWT + X-Tenant-Id| B[Bud.Server Controllers]
+    A[Bud.BlazorWasm<br/>Blazor WASM] -->|HTTP + JWT + X-Tenant-Id| B[Bud.Api Controllers]
     B --> C[Application<br/>Use Cases]
     C --> R[Infrastructure<br/>I*Repository + Repositories]
     R --> E[(PostgreSQL<br/>ApplicationDbContext)]
@@ -339,8 +338,8 @@ flowchart TD
 
 ```mermaid
 sequenceDiagram
-    participant UI as Bud.Client
-    participant API as Bud.Server
+    participant UI as Bud.BlazorWasm
+    participant API as Bud.Api
     participant SESS as SessionsController/CreateSession
     participant ME as MeController/ListMyOrganizations
     participant TENANT as TenantRequiredMiddleware
@@ -365,7 +364,7 @@ sequenceDiagram
 
 ```mermaid
 sequenceDiagram
-    participant UI as Bud.Client / Caller
+    participant UI as Bud.BlazorWasm / Caller
     participant API as ASP.NET Core Pipeline
     participant AUTH as AuthN/AuthZ
     participant TENANT as TenantRequiredMiddleware
@@ -414,7 +413,7 @@ flowchart TD
 
 ```mermaid
 flowchart TB
-    subgraph Host["Bud.Server Host"]
+    subgraph Host["Bud.Api Host"]
       Controllers
       Middleware
       DependencyInjection
@@ -450,12 +449,12 @@ flowchart TB
 
 ```mermaid
 flowchart LR
-    subgraph Client["Bud.Client (Blazor WASM)"]
+    subgraph Client["Bud.BlazorWasm (Blazor WASM)"]
       UI["Pages + Layout"]
       ApiClient["ApiClient + TenantDelegatingHandler"]
     end
 
-    subgraph Api["Bud.Server (API/Aplicação)"]
+    subgraph Api["Bud.Api + Bud.Application"]
       Controllers["Controllers"]
       UseCases["Use Cases"]
       Authz["AuthN/AuthZ + Policies"]
@@ -502,14 +501,15 @@ Fluxo recomendado de contribuição para manter qualidade arquitetural e consist
 docker compose up --build
 ```
 
-- App (UI + API): `http://localhost:8080`
-- Swagger (ambiente Development): `http://localhost:8080/swagger`
+- App (UI): `http://localhost:8080`
+- MCP: `http://localhost:8081`
+- API: `http://localhost:8082`
+- Swagger (ambiente Development): `http://localhost:8082/swagger`
 
 ### Padrão de desenvolvimento (com hot reload no Docker Compose)
 
-- Os serviços `web` e `mcp` usam `dotnet watch` no ambiente local via Docker Compose.
+- Os serviços `web`, `api` e `mcp` usam `dotnet watch` no ambiente local via Docker Compose.
 - Para Docker Desktop (macOS/Windows), o compose habilita `DOTNET_USE_POLLING_FILE_WATCHER=1` para detecção estável de mudanças em volumes montados.
-- No `web`, o run usa `WasmEnableHotReload=true` para habilitar hot reload do Blazor WASM nesse fluxo local.
 - O build continua usando caches de NuGet e compilação via volumes nomeados para acelerar o ciclo.
 
 Se você encontrar assets antigos no browser, faça hard refresh. Se persistir, limpe volumes e recompile:
@@ -531,19 +531,21 @@ Comandos:
 ```bash
 dotnet restore
 dotnet build
-dotnet run --project src/Bud.Server
+dotnet run --project src/Server/Bud.Api
+dotnet run --project src/Client/Bud.BlazorWasm
 ```
 
-## Servidor MCP (Missões e Métricas)
+## Servidor MCP (Metas e Indicadores)
 
-O repositório inclui um servidor MCP HTTP em `src/Bud.Mcp`, que consome a API do `Bud.Server`.
+O repositório inclui um servidor MCP HTTP em `src/Client/Bud.Mcp`, que consome a API do `Bud.Api`.
 
 No transporte HTTP do MCP, o endpoint raiz delega o processamento para `IMcpRequestProcessor`/`McpRequestProcessor`,
 mantendo `Program.cs` focado em composição e roteamento.
 
 No ambiente local via Docker Compose:
-- API + frontend: `http://localhost:8080`
+- Frontend: `http://localhost:8080`
 - MCP: `http://localhost:8081`
+- API: `http://localhost:8082`
 
 ### Configuração (`appsettings` + override por ambiente)
 
@@ -568,8 +570,8 @@ docker compose up --build
 O serviço `mcp` é criado no compose usando:
 - `Dockerfile` (target `dev-mcp-web`)
 - `dotnet watch` para recarregar alterações locais automaticamente
-- `DOTNET_ENVIRONMENT=Development` (usa `src/Bud.Mcp/appsettings.Development.json`)
-- `BUD_API_BASE_URL=http://web:8080` para chamadas internas ao `Bud.Server`
+- `DOTNET_ENVIRONMENT=Development` (usa `src/Client/Bud.Mcp/appsettings.Development.json`)
+- `BUD_API_BASE_URL=http://api:8080` para chamadas internas ao `Bud.Api`
 - mapeamento de porta `8081:8080` para evitar conflito com o `web`
 
 Health checks do MCP local:
@@ -592,17 +594,17 @@ A resposta inclui o header `MCP-Session-Id`, que deve ser enviado nas chamadas s
 Fluxo obrigatório para atualizar catálogo MCP:
 
 ```bash
-dotnet run --project src/Bud.Mcp/Bud.Mcp.csproj -- generate-tool-catalog
-dotnet run --project src/Bud.Mcp/Bud.Mcp.csproj -- check-tool-catalog --fail-on-diff
+dotnet run --project src/Client/Bud.Mcp/Bud.Mcp.csproj -- generate-tool-catalog
+dotnet run --project src/Client/Bud.Mcp/Bud.Mcp.csproj -- check-tool-catalog --fail-on-diff
 ```
 
 Regras importantes do catálogo:
-- As ferramentas de domínio (`goal_*`, `goal_indicator_*`, `indicator_checkin_*`) são carregadas exclusivamente do arquivo `src/Bud.Mcp/Tools/Generated/mcp-tool-catalog.json`.
+- As ferramentas de domínio (`goal_*`, `goal_indicator_*`, `indicator_checkin_*`) são carregadas exclusivamente do arquivo `src/Client/Bud.Mcp/Tools/Generated/mcp-tool-catalog.json`.
 - O `Bud.Mcp` falha na inicialização se o catálogo estiver ausente, inválido, vazio ou sem ferramentas de domínio obrigatórias.
 - O comando `check-tool-catalog --fail-on-diff` também valida o contrato mínimo de campos `required` por ferramenta e retorna erro quando houver quebra de contrato.
 
 Se estiver rodando local com `DOTNET_ENVIRONMENT=Development`, defina:
-`BUD_API_BASE_URL=http://localhost:8080`.
+`BUD_API_BASE_URL=http://localhost:8082`.
 
 ### Ferramentas MCP disponíveis
 
@@ -630,9 +632,11 @@ Se estiver rodando local com `DOTNET_ENVIRONMENT=Development`, defina:
 Scripts disponíveis:
 
 - `scripts/gcp-bootstrap.sh`: prepara infraestrutura base (APIs, Artifact Registry, Cloud SQL, service account, secrets, permissões do Cloud Build).
-- `scripts/gcp-deploy-web.sh`: deploy do `Bud.Server` (com migração EF Core via Cloud Run Job).
+- `scripts/gcp-deploy-api.sh`: deploy do `Bud.Api` (com migração EF Core via Cloud Run Job).
+- `scripts/gcp-deploy-frontend.sh`: deploy do frontend Blazor WASM separado.
+- `scripts/gcp-deploy-web.sh`: wrapper legado que delega para `gcp-deploy-api.sh`.
 - `scripts/gcp-deploy-mcp.sh`: deploy do `Bud.Mcp` HTTP.
-- `scripts/gcp-deploy-all.sh`: executa deploy completo (`Bud.Server` + `Bud.Mcp`).
+- `scripts/gcp-deploy-all.sh`: executa deploy completo (`Bud.Api` + `Bud.Mcp` + frontend).
 
 Observação: os scripts de deploy remoto usam **Cloud Build** para gerar imagens no GCP (não dependem de `docker build` local).
 
@@ -655,8 +659,10 @@ Deploy sem migração (quando o schema não mudou):
 Deploy por serviço:
 
 ```bash
+./scripts/gcp-deploy-api.sh
+./scripts/gcp-deploy-api.sh --skip-migration
+./scripts/gcp-deploy-frontend.sh
 ./scripts/gcp-deploy-web.sh
-./scripts/gcp-deploy-web.sh --skip-migration
 ./scripts/gcp-deploy-mcp.sh
 ```
 
@@ -679,7 +685,8 @@ Opção B (sem Docker):
 ```bash
 dotnet restore
 dotnet build
-dotnet run --project src/Bud.Server
+dotnet run --project src/Server/Bud.Api
+dotnet run --project src/Client/Bud.BlazorWasm
 ```
 
 Defina a URL base conforme o modo de execução:
@@ -688,8 +695,8 @@ Defina a URL base conforme o modo de execução:
 # Com Docker Compose
 export BUD_BASE_URL="http://localhost:8080"
 
-# Sem Docker (dotnet run, profile padrão)
-export BUD_BASE_URL="http://localhost:5096"
+# Sem Docker
+export BUD_BASE_URL="http://localhost:8080"
 ```
 
 ### 2) Login e captura do token
@@ -748,7 +755,7 @@ curl -s -X POST "$BUD_BASE_URL/api/goals" \
 ```mermaid
 sequenceDiagram
     participant Dev as Dev
-    participant API as Bud.Server
+    participant API as Bud.Api
 
     Dev->>API: POST /api/sessions (email)
     API-->>Dev: token JWT
@@ -763,7 +770,8 @@ sequenceDiagram
 
 ### 7) Debug rápido no backend
 
-- Acesse `$BUD_BASE_URL/swagger` para executar os mesmos fluxos pela UI.
+- Acesse `http://localhost:8082/swagger` para executar os mesmos fluxos pela UI.
+- No Docker Compose, use `http://localhost:8082/swagger`.
 - Consulte `GET /health/ready` para validar PostgreSQL.
 - Em caso de erro 403, valide se o header `X-Tenant-Id` foi enviado (exceto cenário global admin em "TODOS").
 
@@ -807,26 +815,30 @@ flowchart TD
 dotnet test
 
 # testes MCP
-dotnet test tests/Bud.Mcp.Tests
+dotnet test tests/Client/Bud.Mcp.Tests
 
 # apenas unitários
-dotnet test tests/Bud.Server.Tests
+dotnet test tests/Server/Bud.Api.UnitTests
+dotnet test tests/Server/Bud.Application.UnitTests
+dotnet test tests/Server/Bud.Domain.UnitTests
+dotnet test tests/Server/Bud.Infrastructure.UnitTests
+dotnet test tests/Server/Bud.ArchitectureTests
 
 # apenas integração
-dotnet test tests/Bud.Server.IntegrationTests
+dotnet test tests/Server/Bud.Api.IntegrationTests
 ```
 
 Observação:
 
-- `dotnet test` usa `Bud.slnx` e executa também `tests/Bud.Mcp.Tests`.
+- `dotnet test` usa `Bud.slnx` e executa também `tests/Client/Bud.Mcp.Tests`.
 - Testes de integração usam PostgreSQL via Testcontainers.
 - Use `dotnet test --nologo` para saída mais limpa no terminal.
 - A solução usa `TreatWarningsAsErrors=true`; avisos quebram build/test.
 
 ## Documentação da API (OpenAPI/Swagger)
 
-- UI interativa (Development): `http://localhost:8080/swagger`
-- Documento OpenAPI bruto: `http://localhost:8080/openapi/v1.json`
+- UI interativa (Development): `http://localhost:8082/swagger`
+- Documento OpenAPI bruto: `http://localhost:8082/openapi/v1.json`
 - A documentação é enriquecida com:
   - `ProducesResponseType` por endpoint
   - comentários XML (`summary`, `response`, `remarks`)
@@ -849,7 +861,7 @@ O Bud 2.0 usa um sistema de tokens de design baseado no [Figma Style Guide](http
 
 ### Tokens de design
 
-Todos os valores de design (cores, tipografia, espaçamento e sombras) são definidos como propriedades CSS em [`src/Bud.Client/wwwroot/css/tokens.css`](src/Bud.Client/wwwroot/css/tokens.css).
+Todos os valores de design (cores, tipografia, espaçamento e sombras) são definidos como propriedades CSS em [`src/Client/Bud.BlazorWasm/wwwroot/css/tokens.css`](src/Client/Bud.BlazorWasm/wwwroot/css/tokens.css).
 
 **Exemplo de uso:**
 ```css
@@ -896,7 +908,7 @@ A instrumentação OTel cobre ASP.NET Core, HttpClient e EF Core. Toda configura
 
 | Variável | Descrição | Exemplo (produção) |
 |----------|-----------|-------------------|
-| `OTEL_SERVICE_NAME` | Nome do serviço | `Bud.Server` ou `Bud.Mcp` |
+| `OTEL_SERVICE_NAME` | Nome do serviço | `Bud.Api` ou `Bud.Mcp` |
 | `OTEL_RESOURCE_ATTRIBUTES` | Atributos de recurso | `cloud.provider=gcp,cloud.platform=gcp_cloud_run` |
 | `OTEL_EXPORTER_OTLP_ENDPOINT` | Endpoint OTLP | `https://telemetry.googleapis.com` |
 | `OTEL_EXPORTER_OTLP_PROTOCOL` | Protocolo | `grpc` |
@@ -905,7 +917,7 @@ Em dev local sem `OTEL_EXPORTER_OTLP_ENDPOINT`, o exporter tenta `localhost:4317
 
 ### Log Enrichment e Correlation ID
 
-- `LogEnrichmentMiddleware` (Bud.Server): injeta `TraceId`, `SpanId` e `CorrelationId` no scope de todos os logs da request.
+- `LogEnrichmentMiddleware` (Bud.Api): injeta `TraceId`, `SpanId` e `CorrelationId` no scope de todos os logs da request.
 - `McpRequestLoggingMiddleware` (Bud.Mcp): registra cada request com método, path, status code, elapsed e correlation ID.
 - Header `X-Correlation-Id` adicionado a todas as respostas.
 

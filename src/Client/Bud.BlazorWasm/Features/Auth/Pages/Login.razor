@@ -1,0 +1,87 @@
+@page "/login"
+@layout AuthLayout
+@inject ApiClient Api
+@inject AuthState AuthState
+@inject NavigationManager Nav
+@inject ToastService ToastService
+@using Microsoft.AspNetCore.WebUtilities
+
+<div class="auth-card">
+    <h2>Entrar</h2>
+    <p class="muted">Não é necessário senha.</p>
+
+    <EditForm Model="@login" OnValidSubmit="HandleLogin">
+        <DataAnnotationsValidator />
+        <div class="form-row">
+            <label>E-mail</label>
+            <InputText class="input" @bind-Value="login.Email" placeholder="admin ou colaborador@empresa.com" />
+        </div>
+        <div class="form-actions">
+            <button class="button primary" type="submit" disabled="@isSubmitting">Entrar</button>
+        </div>
+    </EditForm>
+</div>
+
+@code {
+    private CreateSessionRequest login = new();
+    private bool isSubmitting;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await AuthState.EnsureInitializedAsync();
+        if (AuthState.IsAuthenticated)
+        {
+            Nav.NavigateTo("/");
+        }
+    }
+
+    private async Task HandleLogin()
+    {
+        if (string.IsNullOrWhiteSpace(login.Email))
+        {
+            ToastService.ShowError("Erro ao fazer login", "Informe o e-mail para continuar.");
+            return;
+        }
+
+        isSubmitting = true;
+        try
+        {
+            var response = await Api.LoginAsync(login);
+            if (response is null)
+            {
+                ToastService.ShowError("Erro ao fazer login", "Usuário não encontrado. Verifique o e-mail.");
+                return;
+            }
+
+            await AuthState.SetSessionAsync(response);
+
+            var returnUrl = GetReturnUrl();
+            Nav.NavigateTo(returnUrl ?? "/");
+        }
+        finally
+        {
+            isSubmitting = false;
+        }
+    }
+
+    private string? GetReturnUrl()
+    {
+        var uri = Nav.ToAbsoluteUri(Nav.Uri);
+        if (string.IsNullOrWhiteSpace(uri.Query))
+        {
+            return null;
+        }
+
+        var query = QueryHelpers.ParseQuery(uri.Query);
+        if (query.TryGetValue("returnUrl", out var returnUrl))
+        {
+            var value = returnUrl.ToString();
+            if (!string.IsNullOrWhiteSpace(value))
+            {
+                return value;
+            }
+        }
+
+        return null;
+    }
+}

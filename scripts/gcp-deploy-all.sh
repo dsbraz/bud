@@ -10,7 +10,8 @@ Opcoes:
   --env-file <path>             Arquivo de variaveis (default: .env.gcp, se existir)
   --project-id <id>             PROJECT_ID
   --region <region>             REGION
-  --web-api-url <url>           WEB_API_URL (opcional; usado no deploy do MCP)
+  --api-url <url>               API_URL (opcional; usado no deploy do MCP e frontend)
+  --web-api-url <url>           Alias legado para API_URL
   --skip-migration              Pular etapa de migracao (EF migrations)
 USAGE
 }
@@ -55,7 +56,8 @@ while [[ $# -gt 0 ]]; do
     --env-file) ENV_FILE="$2"; shift 2 ;;
     --project-id) PROJECT_ID="$2"; shift 2 ;;
     --region) REGION="$2"; shift 2 ;;
-    --web-api-url) WEB_API_URL="$2"; shift 2 ;;
+    --api-url) API_URL="$2"; shift 2 ;;
+    --web-api-url) API_URL="$2"; shift 2 ;;
     --skip-migration) SKIP_MIGRATION="true"; shift ;;
     -h|--help) usage; exit 0 ;;
     *) echo "Parametro invalido: $1" >&2; usage; exit 1 ;;
@@ -68,17 +70,20 @@ if [[ -z "${PROJECT_ID:-}" || -z "${REGION:-}" ]]; then
 fi
 
 export PROJECT_ID REGION
-if [[ -n "${WEB_API_URL:-}" ]]; then
-  export WEB_API_URL
+if [[ -n "${API_URL:-}" ]]; then
+  export API_URL
 fi
 if [[ -n "${SKIP_MIGRATION:-}" ]]; then
   export SKIP_MIGRATION
 fi
 
-echo "==> Etapa 1/2: deploy do Bud.Server (web)"
-"${SCRIPT_DIR}/gcp-deploy-web.sh"
+echo "==> Etapa 1/3: deploy do Bud.Api"
+"${SCRIPT_DIR}/gcp-deploy-api.sh"
 
-echo "==> Etapa 2/2: deploy do Bud.Mcp"
+echo "==> Etapa 2/3: deploy do Bud.Mcp"
 "${SCRIPT_DIR}/gcp-deploy-mcp.sh"
+
+echo "==> Etapa 3/3: deploy do frontend"
+"${SCRIPT_DIR}/gcp-deploy-frontend.sh"
 
 echo "==> Deploy completo finalizado com sucesso"

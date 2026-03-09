@@ -1,0 +1,14 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <AssemblyName>Bud.Domain</AssemblyName>
+    <RootNamespace>Bud.Domain</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\Shared\Bud.Shared.Contracts\Bud.Shared.Contracts.csproj" />
+    <ProjectReference Include="..\..\Shared\Bud.Shared.Kernel\Bud.Shared.Kernel.csproj" />
+  </ItemGroup>
+
+</Project>

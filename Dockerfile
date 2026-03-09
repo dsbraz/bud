@@ -9,18 +9,25 @@ COPY Directory.Build.props ./
 COPY src/ ./src/
 
 FROM source AS dev-web
-RUN dotnet restore src/Bud.Server/Bud.Server.csproj
+RUN dotnet restore src/Server/Bud.Api/Bud.Api.csproj
 ENV ASPNETCORE_URLS=http://+:8080
 ENV DOTNET_USE_POLLING_FILE_WATCHER=1
 ENV DOTNET_WATCH_SUPPRESS_LAUNCH_BROWSER=1
-ENTRYPOINT ["sh", "-c", "dotnet restore src/Bud.Server/Bud.Server.csproj && dotnet watch --non-interactive --project src/Bud.Server/Bud.Server.csproj run --urls http://0.0.0.0:8080 -p:WasmEnableHotReload=true"]
+ENTRYPOINT ["sh", "-c", "dotnet restore src/Server/Bud.Api/Bud.Api.csproj && dotnet watch --non-interactive --project src/Server/Bud.Api/Bud.Api.csproj run --urls http://0.0.0.0:8080 -p:WasmEnableHotReload=true"]
+
+FROM source AS dev-frontend
+RUN dotnet restore src/Client/Bud.BlazorWasm/Bud.BlazorWasm.csproj
+ENV ASPNETCORE_URLS=http://+:8080
+ENV DOTNET_USE_POLLING_FILE_WATCHER=1
+ENV DOTNET_WATCH_SUPPRESS_LAUNCH_BROWSER=1
+ENTRYPOINT ["sh", "-c", "dotnet restore src/Client/Bud.BlazorWasm/Bud.BlazorWasm.csproj && dotnet watch --non-interactive --project src/Client/Bud.BlazorWasm/Bud.BlazorWasm.csproj run --no-launch-profile --urls http://0.0.0.0:8080"]
 
 FROM source AS dev-mcp
-RUN dotnet restore src/Bud.Mcp/Bud.Mcp.csproj
+RUN dotnet restore src/Client/Bud.Mcp/Bud.Mcp.csproj
 
 FROM source AS dev-mcp-web
-RUN dotnet restore src/Bud.Mcp/Bud.Mcp.csproj
+RUN dotnet restore src/Client/Bud.Mcp/Bud.Mcp.csproj
 ENV ASPNETCORE_URLS=http://+:8080
 ENV DOTNET_USE_POLLING_FILE_WATCHER=1
 ENV DOTNET_WATCH_SUPPRESS_LAUNCH_BROWSER=1
-ENTRYPOINT ["sh", "-c", "dotnet restore src/Bud.Mcp/Bud.Mcp.csproj && dotnet watch --non-interactive --project src/Bud.Mcp/Bud.Mcp.csproj run --urls http://0.0.0.0:8080"]
+ENTRYPOINT ["sh", "-c", "dotnet restore src/Client/Bud.Mcp/Bud.Mcp.csproj && dotnet watch --non-interactive --project src/Client/Bud.Mcp/Bud.Mcp.csproj run --urls http://0.0.0.0:8080"]

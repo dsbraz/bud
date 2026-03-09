@@ -8,11 +8,15 @@ A evolução do sistema exige fronteiras arquiteturais rígidas para preservar o
 
 ## Decisão
 Estabelecer dependências unidirecionais:
+- `Bud.Api` -> `Bud.Application` + `Bud.Infrastructure` + `Bud.Shared`.
 - `Controllers` -> casos de uso de aplicação.
 - Casos de uso -> portas de repositório/serviço.
-- `Domain` sem dependência de infraestrutura.
+- `Bud.Application` -> `Bud.Domain` + `Bud.Shared`.
+- `Bud.Domain` sem dependência de infraestrutura ou ASP.NET.
+- `Bud.Infrastructure` -> `Bud.Application` + `Bud.Domain` + `Bud.Shared`.
 - Infraestrutura implementa portas do domínio/aplicação.
-- `Bud.Shared` restrito à camada de borda (contratos).
+- `Bud.Api` não referencia `Bud.Domain` diretamente.
+- `Bud.Shared` permanece como projeto compartilhado nesta etapa, sem desmontar contratos existentes.
 
 ## Consequências
 - Maior isolamento do núcleo de domínio.

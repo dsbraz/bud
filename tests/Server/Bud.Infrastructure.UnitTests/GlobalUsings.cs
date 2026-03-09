@@ -1,0 +1,15 @@
+global using Bud.Application.Configuration;
+global using Bud.Application.Ports;
+global using Bud.Domain.Model;
+global using Bud.Domain.Primitives;
+global using Bud.Domain.ValueObjects;
+global using Bud.Infrastructure.Persistence;
+global using Bud.Infrastructure.Repositories;
+global using Bud.Infrastructure.Services;
+global using Bud.Shared.Contracts;
+global using Bud.Shared.Contracts.Common;
+global using Bud.Shared.Contracts.Requests;
+global using Bud.Shared.Contracts.Responses;
+global using Bud.Shared.Kernel;
+global using Notification = Bud.Domain.Model.Notification;
+global using CollaboratorTeam = Bud.Domain.Model.CollaboratorTeam;

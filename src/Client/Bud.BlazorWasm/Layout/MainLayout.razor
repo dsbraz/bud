@@ -1,0 +1,273 @@
+﻿@inherits LayoutComponentBase
+@implements IDisposable
+@inject AuthState AuthState
+@inject OrganizationContext OrgContext
+@inject ApiClient Api
+@inject NavigationManager Nav
+@inject ToastService ToastService
+@if (_navOpen)
+{
+    <div class="nav-backdrop" @onclick="CloseNav"></div>
+}
+<div class="app-shell">
+    <aside class="app-sidebar @(_navOpen ? "is-open" : "")">
+        <div class="sidebar-header">
+            <div class="brand">bud</div>
+            <button class="sidebar-close-btn" @onclick="CloseNav" aria-label="Fechar menu">
+                <svg width="20" height="20" fill="currentColor" viewBox="0 0 256 256">
+                    <path d="M205.66,194.34a8,8,0,0,1-11.32,11.32L128,139.31,61.66,205.66a8,8,0,0,1-11.32-11.32L116.69,128,50.34,61.66A8,8,0,0,1,61.66,50.34L128,116.69l66.34-66.35a8,8,0,0,1,11.32,11.32L139.31,128Z"/>
+                </svg>
+            </button>
+        </div>
+
+        @* Organization Selector *@
+        <div class="workspace-selector @(isDropdownOpen ? "open" : "")" @onclick="ToggleDropdown">
+            <div class="workspace-icon">@GetOrganizationInitials()</div>
+            <div class="workspace-name">@GetOrganizationDisplayName()</div>
+            <svg class="workspace-chevron" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+            </svg>
+            @if (isDropdownOpen)
+            {
+                <div class="workspace-dropdown" @onclick:stopPropagation="true">
+                    @if (CanShowAllOrganizations)
+                    {
+                        <div class="workspace-dropdown-item @(OrgContext.ShowAllOrganizations ? "selected" : "")"
+                             @onclick="() => SelectOrganization(null)">
+                            <div class="workspace-icon">TD</div>
+                            <div class="workspace-item-name">TODOS</div>
+                        </div>
+                    }
+                    @foreach (var org in OrgContext.AvailableOrganizations)
+                    {
+                        var isSelected = OrgContext.SelectedOrganizationId == org.Id;
+                        <div class="workspace-dropdown-item @(isSelected ? "selected" : "")"
+                             @onclick="() => SelectOrganization(org.Id)">
+                            <div class="workspace-icon">@GetInitials(org.Name)</div>
+                            <div class="workspace-item-name">@org.Name</div>
+                        </div>
+                    }
+                </div>
+            }
+        </div>
+
+        <NavMenu />
+
+        @* User Profile *@
+        <div class="sidebar-user">
+            <div class="sidebar-user-avatar">@GetUserInitials()</div>
+            <div class="sidebar-user-info">
+                <div class="sidebar-user-name">@GetUserName()</div>
+                <div class="sidebar-user-role">@GetUserRole()</div>
+            </div>
+            <div class="sidebar-user-menu" @onclick="HandleLogout" title="Sair">
+                <svg width="16" height="16" fill="currentColor" viewBox="0 0 256 256">
+                    <path d="M112,216a8,8,0,0,1-8,8H48a16,16,0,0,1-16-16V48A16,16,0,0,1,48,32h56a8,8,0,0,1,0,16H48V208h56A8,8,0,0,1,112,216Zm109.66-93.66-40-40a8,8,0,0,0-11.32,11.32L196.69,120H104a8,8,0,0,0,0,16h92.69l-26.35,26.34a8,8,0,0,0,11.32,11.32l40-40A8,8,0,0,0,221.66,122.34Z"/>
+                </svg>
+            </div>
+        </div>
+    </aside>
+
+    <main class="app-main">
+        <header class="app-topbar">
+            <button class="topbar-nav-toggle" @onclick="ToggleNav" aria-label="Menu">
+                <svg width="20" height="20" fill="currentColor" viewBox="0 0 256 256">
+                    <path d="M224,128a8,8,0,0,1-8,8H40a8,8,0,0,1,0-16H216A8,8,0,0,1,224,128ZM40,72H216a8,8,0,0,0,0-16H40a8,8,0,0,0,0,16ZM216,184H40a8,8,0,0,0,0,16H216a8,8,0,0,0,0-16Z"/>
+                </svg>
+            </button>
+            <div class="topbar-greeting">@GetGreeting()</div>
+            <div class="topbar-actions">
+                <button class="topbar-icon-btn" title="Buscar">
+                    <svg width="20" height="20" fill="currentColor" viewBox="0 0 256 256">
+                        <path d="M229.66,218.34l-50.07-50.06a88.11,88.11,0,1,0-11.31,11.31l50.06,50.07a8,8,0,0,0,11.32-11.32ZM40,112a72,72,0,1,1,72,72A72.08,72.08,0,0,1,40,112Z"/>
+                    </svg>
+                </button>
+                <NotificationDropdown UnreadCount="@unreadNotificationCount" OnCountChanged="OnUnreadCountChanged" />
+                <button class="button ghost button-sm">
+                    <svg width="16" height="16" fill="currentColor" viewBox="0 0 256 256">
+                        <path d="M176,232a8,8,0,0,1-8,8H88a8,8,0,0,1,0-16h80A8,8,0,0,1,176,232Zm40-128a87.55,87.55,0,0,1-33.64,69.21A16.24,16.24,0,0,0,176,186v6a16,16,0,0,1-16,16H96a16,16,0,0,1-16-16v-6a16,16,0,0,0-6.23-12.66A87.59,87.59,0,0,1,40,104.49C39.74,56.83,78.26,17.14,125.88,16A88,88,0,0,1,216,104Zm-16,0a72,72,0,0,0-73.74-72c-39,.92-70.47,33.39-70.26,72.39a71.65,71.65,0,0,0,27.64,56.3h0A32,32,0,0,1,96,186v6h64v-6a32.15,32.15,0,0,1,12.47-25.35A71.65,71.65,0,0,0,200,104Z"/>
+                    </svg>
+                    Assistente
+                </button>
+            </div>
+        </header>
+        <section class="app-content">
+            @Body
+        </section>
+    </main>
+</div>
+
+<ToastContainer />
+
+@code {
+    private bool _navOpen;
+    private bool isDropdownOpen = false;
+    private int unreadNotificationCount;
+    private bool CanShowAllOrganizations => AuthState.SessionResponse?.IsGlobalAdmin == true;
+
+    private string UserLabel => AuthState.SessionResponse is null
+        ? "Sistema interno"
+        : $"{AuthState.SessionResponse.DisplayName} · {AuthState.SessionResponse.Email}";
+
+    private void ToggleNav() => _navOpen = !_navOpen;
+    private void CloseNav() { _navOpen = false; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        Nav.LocationChanged += OnLocationChanged;
+        await AuthState.EnsureInitializedAsync();
+
+        try
+        {
+            var organizations = await Api.GetMyOrganizationsAsync();
+            if (organizations != null)
+            {
+                await OrgContext.InitializeAsync(organizations);
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"Erro ao carregar organizações do usuário: {ex.Message}");
+            ToastService.ShowWarning("Aviso", "Não foi possível carregar as organizações agora. Tente novamente em instantes.");
+        }
+
+        try
+        {
+            var unreadResult = await Api.GetNotificationsAsync(isRead: false, page: 1, pageSize: 1);
+            if (unreadResult != null)
+            {
+                unreadNotificationCount = unreadResult.Total;
+            }
+        }
+        catch
+        {
+            // Silently handle — notification count is non-critical
+        }
+    }
+
+    private void OnUnreadCountChanged(int newCount)
+    {
+        unreadNotificationCount = newCount;
+        StateHasChanged();
+    }
+
+    private void ToggleDropdown()
+    {
+        isDropdownOpen = !isDropdownOpen;
+    }
+
+    private async Task SelectOrganization(Guid? orgId)
+    {
+        await OrgContext.SelectOrganizationAsync(orgId);
+        isDropdownOpen = false;
+    }
+
+    private string GetOrganizationInitials()
+    {
+        if (OrgContext.ShowAllOrganizations && CanShowAllOrganizations)
+        {
+            return "TD";
+        }
+
+        return GetInitials(OrgContext.GetSelectedOrganizationName());
+    }
+
+    private string GetOrganizationDisplayName()
+    {
+        if (OrgContext.ShowAllOrganizations && !CanShowAllOrganizations)
+        {
+            return "Desconhecida";
+        }
+
+        return OrgContext.GetSelectedOrganizationName();
+    }
+
+    private string GetInitials(string name)
+    {
+        if (string.IsNullOrWhiteSpace(name))
+            return "??";
+
+        var words = name.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+        if (words.Length == 1)
+            return words[0].Substring(0, Math.Min(2, words[0].Length)).ToUpper();
+
+        return $"{words[0][0]}{words[^1][0]}".ToUpper();
+    }
+
+    private async Task HandleLogout()
+    {
+        await Api.LogoutAsync();
+        await AuthState.ClearAsync();
+        await OrgContext.ClearAsync();
+        Nav.NavigateTo("login");
+    }
+
+    private string GetGreeting()
+    {
+        var hour = DateTime.Now.Hour;
+        var userName = GetUserName();
+
+        if (hour < 12)
+            return $"Bom dia, {userName}!";
+        else if (hour < 18)
+            return $"Boa tarde, {userName}!";
+        else
+            return $"Boa noite, {userName}!";
+    }
+
+    private string GetUserName()
+    {
+        if (AuthState.SessionResponse is null)
+            return "Usuário";
+
+        var displayName = AuthState.SessionResponse.DisplayName;
+        if (string.IsNullOrWhiteSpace(displayName))
+            return "Usuário";
+
+        var firstName = displayName.Split(' ').FirstOrDefault();
+        return firstName ?? "Usuário";
+    }
+
+    private string GetUserInitials()
+    {
+        if (AuthState.SessionResponse is null)
+            return "U";
+
+        var displayName = AuthState.SessionResponse.DisplayName;
+        if (string.IsNullOrWhiteSpace(displayName))
+            return "U";
+
+        var names = displayName.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+        if (names.Length == 1)
+            return names[0].Substring(0, Math.Min(2, names[0].Length)).ToUpper();
+
+        return $"{names[0][0]}{names[^1][0]}".ToUpper();
+    }
+
+    private string GetUserRole()
+    {
+        if (AuthState.SessionResponse is null)
+            return "Sem perfil";
+
+        if (AuthState.SessionResponse.IsGlobalAdmin)
+            return "Administrador Global";
+
+        return AuthState.SessionResponse.Role switch
+        {
+            Bud.Shared.Kernel.CollaboratorRole.Leader => "Líder",
+            Bud.Shared.Kernel.CollaboratorRole.IndividualContributor => "Colaborador",
+            _ => "Sem perfil"
+        };
+    }
+
+    private void OnLocationChanged(object? sender, Microsoft.AspNetCore.Components.Routing.LocationChangedEventArgs e)
+    {
+        _navOpen = false;
+        InvokeAsync(StateHasChanged);
+    }
+
+    public void Dispose()
+    {
+        Nav.LocationChanged -= OnLocationChanged;
+    }
+}

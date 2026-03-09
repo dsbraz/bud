@@ -12,9 +12,10 @@ Opcoes:
   --region <region>             REGION
   --repo-name <nome>            REPO_NAME
   --mcp-service-name <nome>     MCP_SERVICE_NAME
-  --web-service-name <nome>     WEB_SERVICE_NAME
+  --api-service-name <nome>     API_SERVICE_NAME
   --image-tag <tag>             IMAGE_TAG
-  --web-api-url <url>           WEB_API_URL (opcional)
+  --api-url <url>               API_URL (opcional)
+  --web-api-url <url>           Alias legado para API_URL
 USAGE
 }
 
@@ -66,9 +67,10 @@ while [[ $# -gt 0 ]]; do
     --region) REGION="$2"; shift 2 ;;
     --repo-name) REPO_NAME="$2"; shift 2 ;;
     --mcp-service-name) MCP_SERVICE_NAME="$2"; shift 2 ;;
-    --web-service-name) WEB_SERVICE_NAME="$2"; shift 2 ;;
+    --api-service-name) API_SERVICE_NAME="$2"; shift 2 ;;
     --image-tag) IMAGE_TAG="$2"; shift 2 ;;
-    --web-api-url) WEB_API_URL="$2"; shift 2 ;;
+    --api-url) API_URL="$2"; shift 2 ;;
+    --web-api-url) API_URL="$2"; shift 2 ;;
     -h|--help) usage; exit 0 ;;
     *) echo "Parametro invalido: $1" >&2; usage; exit 1 ;;
   esac
@@ -79,22 +81,22 @@ require_env REGION
 
 REPO_NAME="${REPO_NAME:-bud}"
 MCP_SERVICE_NAME="${MCP_SERVICE_NAME:-bud-mcp}"
-WEB_SERVICE_NAME="${WEB_SERVICE_NAME:-bud-web}"
+API_SERVICE_NAME="${API_SERVICE_NAME:-bud-api}"
 IMAGE_TAG="${IMAGE_TAG:-$(date +%Y%m%d-%H%M%S)}"
-WEB_API_URL="${WEB_API_URL:-}"
+API_URL="${API_URL:-}"
 
 IMAGE_URI="${REGION}-docker.pkg.dev/${PROJECT_ID}/${REPO_NAME}/${MCP_SERVICE_NAME}:${IMAGE_TAG}"
 
 echo "==> Configurando projeto"
 gcloud config set project "$PROJECT_ID" >/dev/null
 
-if [[ -z "$WEB_API_URL" ]]; then
-  echo "==> Obtendo URL da API web ($WEB_SERVICE_NAME)"
-  WEB_API_URL="$(gcloud run services describe "$WEB_SERVICE_NAME" --region "$REGION" --project "$PROJECT_ID" --format='value(status.url)')"
+if [[ -z "$API_URL" ]]; then
+  echo "==> Obtendo URL da API ($API_SERVICE_NAME)"
+  API_URL="$(gcloud run services describe "$API_SERVICE_NAME" --region "$REGION" --project "$PROJECT_ID" --format='value(status.url)')"
 fi
 
-if [[ -z "$WEB_API_URL" ]]; then
-  echo "Erro: nao foi possivel resolver WEB_API_URL. Defina WEB_API_URL manualmente." >&2
+if [[ -z "$API_URL" ]]; then
+  echo "Erro: nao foi possivel resolver API_URL. Defina --api-url manualmente." >&2
   exit 1
 fi
 
@@ -113,7 +115,7 @@ gcloud run deploy "$MCP_SERVICE_NAME" \
   --image "$IMAGE_URI" \
   --allow-unauthenticated \
   --port 8080 \
-  --set-env-vars "DOTNET_ENVIRONMENT=Production,ASPNETCORE_ENVIRONMENT=Production,ASPNETCORE_URLS=http://0.0.0.0:8080,BUD_API_BASE_URL=${WEB_API_URL},OTEL_SERVICE_NAME=Bud.Mcp,OTEL_RESOURCE_ATTRIBUTES=cloud.provider=gcp\,cloud.platform=gcp_cloud_run,OTEL_EXPORTER_OTLP_ENDPOINT=https://telemetry.googleapis.com,GCP_PROJECT_ID=${PROJECT_ID}"
+  --set-env-vars "DOTNET_ENVIRONMENT=Production,ASPNETCORE_ENVIRONMENT=Production,ASPNETCORE_URLS=http://0.0.0.0:8080,BUD_API_BASE_URL=${API_URL},OTEL_SERVICE_NAME=Bud.Mcp,OTEL_RESOURCE_ATTRIBUTES=cloud.provider=gcp\,cloud.platform=gcp_cloud_run,OTEL_EXPORTER_OTLP_ENDPOINT=https://telemetry.googleapis.com,GCP_PROJECT_ID=${PROJECT_ID}"
 
 echo "==> Validando MCP"
 MCP_URL="$(gcloud run services describe "$MCP_SERVICE_NAME" --region "$REGION" --project "$PROJECT_ID" --format='value(status.url)')"
@@ -123,4 +125,4 @@ curl --fail --silent --show-error "${MCP_URL}/health/ready" >/dev/null
 
 echo "==> Deploy MCP concluido com sucesso"
 echo "MCP_URL=${MCP_URL}"
-echo "WEB_API_URL=${WEB_API_URL}"
+echo "API_URL=${API_URL}"

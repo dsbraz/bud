@@ -9,15 +9,18 @@ COPY Directory.Build.props ./
 COPY src/ ./src/
 
 FROM source AS publish-web
-RUN dotnet publish src/Bud.Server/Bud.Server.csproj -c Release -o /app/publish
+RUN dotnet publish src/Server/Bud.Api/Bud.Api.csproj -c Release -o /app/publish
+
+FROM source AS publish-frontend
+RUN dotnet publish src/Client/Bud.BlazorWasm/Bud.BlazorWasm.csproj -c Release -o /app/publish
 
 FROM source AS publish-mcp
-RUN dotnet publish src/Bud.Mcp/Bud.Mcp.csproj -c Release -o /app/publish
+RUN dotnet publish src/Client/Bud.Mcp/Bud.Mcp.csproj -c Release -o /app/publish
 
 FROM source AS build-migrate
-RUN dotnet restore src/Bud.Server/Bud.Server.csproj
+RUN dotnet restore src/Server/Bud.Api/Bud.Api.csproj
 RUN dotnet tool install --tool-path /tools dotnet-ef --version 10.0.2
-RUN /tools/dotnet-ef migrations bundle --project src/Bud.Server -o /app/efbundle --self-contained
+RUN /tools/dotnet-ef migrations bundle --project src/Server/Bud.Infrastructure --startup-project src/Server/Bud.Api -o /app/efbundle --self-contained
 
 FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS prod-migrate
 WORKDIR /app
@@ -29,7 +32,13 @@ WORKDIR /app
 COPY --from=publish-web /app/publish .
 ENV ASPNETCORE_URLS=http://+:8080
 EXPOSE 8080
-ENTRYPOINT ["dotnet", "Bud.Server.dll"]
+ENTRYPOINT ["dotnet", "Bud.Api.dll"]
+
+FROM nginx:1.27-alpine AS prod-frontend
+COPY src/Client/Bud.BlazorWasm/Hosting/nginx.conf.template /etc/nginx/templates/default.conf.template
+COPY --from=publish-frontend /app/publish/wwwroot /usr/share/nginx/html
+ENV BUD_API_BASE_URL=http://bud-api:8080
+EXPOSE 8080
 
 FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS prod-mcp
 WORKDIR /app

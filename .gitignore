@@ -63,3 +63,4 @@ nunit-*.xml
 .vscode/
 .claude/
 .opencode/
+.idea/

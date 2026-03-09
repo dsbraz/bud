@@ -1,0 +1,9 @@
+global using Organization = Bud.Domain.Model.Organization;
+global using Workspace = Bud.Domain.Model.Workspace;
+global using Team = Bud.Domain.Model.Team;
+global using Collaborator = Bud.Domain.Model.Collaborator;
+global using Goal = Bud.Domain.Model.Goal;
+global using Indicator = Bud.Domain.Model.Indicator;
+global using Checkin = Bud.Domain.Model.Checkin;
+global using Template = Bud.Domain.Model.Template;
+global using CollaboratorTeam = Bud.Domain.Model.CollaboratorTeam;
