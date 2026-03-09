@@ -11,6 +11,9 @@ COPY src/ ./src/
 FROM source AS publish-web
 RUN dotnet publish src/Server/Bud.Api/Bud.Api.csproj -c Release -o /app/publish
 
+FROM source AS publish-frontend
+RUN dotnet publish src/Client/Bud.BlazorWasm/Bud.BlazorWasm.csproj -c Release -o /app/publish
+
 FROM source AS publish-mcp
 RUN dotnet publish src/Client/Bud.Mcp/Bud.Mcp.csproj -c Release -o /app/publish
 
@@ -30,6 +33,12 @@ COPY --from=publish-web /app/publish .
 ENV ASPNETCORE_URLS=http://+:8080
 EXPOSE 8080
 ENTRYPOINT ["dotnet", "Bud.Api.dll"]
+
+FROM nginx:1.27-alpine AS prod-frontend
+COPY src/Client/Bud.BlazorWasm/Hosting/nginx.conf.template /etc/nginx/templates/default.conf.template
+COPY --from=publish-frontend /app/publish/wwwroot /usr/share/nginx/html
+ENV BUD_API_BASE_URL=http://bud-api:8080
+EXPOSE 8080
 
 FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS prod-mcp
 WORKDIR /app

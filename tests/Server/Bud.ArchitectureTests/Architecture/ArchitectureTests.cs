@@ -64,7 +64,7 @@ public sealed class ArchitectureTests
         references.Should().Contain("Bud.Infrastructure");
         references.Should().Contain("Bud.Shared.Contracts");
         references.Should().Contain("Bud.Shared.Kernel");
-        references.Should().Contain("Bud.BlazorWasm");
+        references.Should().NotContain("Bud.BlazorWasm");
         references.Should().NotContain("Bud.Domain");
     }
 

@@ -31,11 +31,14 @@ app.UseExceptionHandler();
 app.UseMiddleware<LogEnrichmentMiddleware>();
 app.UseMiddleware<Bud.Api.Middleware.SecurityHeadersMiddleware>();
 app.UseHttpsRedirection();
-app.UseBlazorFrameworkFiles();
-app.UseStaticFiles();
 app.UseMiddleware<Bud.Api.Middleware.RequestTelemetryMiddleware>();
 
 app.UseRouting();
+if (app.Environment.IsDevelopment())
+{
+    app.UseCors(BudApiCompositionExtensions.LocalDevelopmentCorsPolicy);
+}
+
 app.UseAuthentication();
 app.UseAuthorization();
 app.UseRateLimiter();
@@ -50,7 +53,6 @@ app.MapHealthChecks("/health/ready", new Microsoft.AspNetCore.Diagnostics.Health
 {
     Predicate = check => check.Tags.Contains("ready")
 });
-app.MapFallbackToFile("index.html");
 
 app.Run();
 

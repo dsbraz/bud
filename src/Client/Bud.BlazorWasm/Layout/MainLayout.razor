@@ -198,7 +198,8 @@
     {
         await Api.LogoutAsync();
         await AuthState.ClearAsync();
-        Nav.NavigateTo("login", true);
+        await OrgContext.ClearAsync();
+        Nav.NavigateTo("login");
     }
 
     private string GetGreeting()

@@ -31,7 +31,7 @@
         await AuthState.EnsureInitializedAsync();
         if (AuthState.IsAuthenticated)
         {
-            Nav.NavigateTo("/", true);
+            Nav.NavigateTo("/");
         }
     }
 
@@ -56,7 +56,7 @@
             await AuthState.SetSessionAsync(response);
 
             var returnUrl = GetReturnUrl();
-            Nav.NavigateTo(returnUrl ?? "/", true);
+            Nav.NavigateTo(returnUrl ?? "/");
         }
         finally
         {

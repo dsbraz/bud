@@ -11,12 +11,12 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
 
-  web:
+  api:
     build:
       context: .
       dockerfile: Dockerfile
       target: dev-web
-    container_name: bud-web
+    container_name: bud-api
     environment:
       ASPNETCORE_ENVIRONMENT: Development
       ConnectionStrings__DefaultConnection: Host=db;Port=5432;Database=bud;Username=postgres;Password=postgres
@@ -25,7 +25,7 @@ services:
       DOTNET_WATCH_SUPPRESS_LAUNCH_BROWSER: "1"
       OTEL_SERVICE_NAME: Bud.Api
     ports:
-      - "8080:8080"
+      - "8082:8080"
     volumes:
       - ./src:/src/src
       - ./Directory.Build.props:/src/Directory.Build.props
@@ -35,6 +35,29 @@ services:
     depends_on:
       - db
 
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: dev-frontend
+    container_name: bud-web
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      Api__BaseUrl: http://localhost:8082
+      DOTNET_USE_POLLING_FILE_WATCHER: "1"
+      DOTNET_WATCH_RESTART_ON_RUDE_EDIT: "1"
+      DOTNET_WATCH_SUPPRESS_LAUNCH_BROWSER: "1"
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./src:/src/src
+      - ./Directory.Build.props:/src/Directory.Build.props
+      - nuget_cache:/root/.nuget/packages
+      - dotnet_obj:/tmp/obj
+      - dotnet_bin:/tmp/bin
+    depends_on:
+      - api
+
   mcp:
     build:
       context: .
@@ -43,7 +66,7 @@ services:
     container_name: bud-mcp
     environment:
       DOTNET_ENVIRONMENT: Development
-      BUD_API_BASE_URL: http://web:8080
+      BUD_API_BASE_URL: http://api:8080
       ASPNETCORE_URLS: http://0.0.0.0:8080
       DOTNET_USE_POLLING_FILE_WATCHER: "1"
       DOTNET_WATCH_RESTART_ON_RUDE_EDIT: "1"
@@ -58,7 +81,7 @@ services:
       - dotnet_obj:/tmp/obj
       - dotnet_bin:/tmp/bin
     depends_on:
-      - web
+      - api
 
 volumes:
   postgres_data:

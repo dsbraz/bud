@@ -17,6 +17,9 @@ Opcoes:
   --db-name <nome>             DB_NAME
   --db-user <nome>             DB_USER
   --service-account <nome>     SERVICE_ACCOUNT
+  --api-service-name <nome>    API_SERVICE_NAME
+  --frontend-service-name <n>  FRONTEND_SERVICE_NAME
+  --mcp-service-name <nome>    MCP_SERVICE_NAME
   --secret-db-connection <n>   SECRET_DB_CONNECTION
   --secret-jwt-key <n>         SECRET_JWT_KEY
   --db-tier <tier>             DB_TIER
@@ -159,9 +162,10 @@ persist_effective_env() {
   upsert_env_var "$file" "DB_PASS" "$DB_PASS"
   upsert_env_var "$file" "JWT_KEY" "$JWT_KEY"
   upsert_env_var "$file" "REPO_NAME" "$REPO_NAME"
-  upsert_env_var "$file" "SERVICE_NAME" "${SERVICE_NAME:-bud-web}"
+  upsert_env_var "$file" "SERVICE_NAME" "${FRONTEND_SERVICE_NAME:-bud-web}"
+  upsert_env_var "$file" "FRONTEND_SERVICE_NAME" "${FRONTEND_SERVICE_NAME:-bud-web}"
+  upsert_env_var "$file" "API_SERVICE_NAME" "${API_SERVICE_NAME:-bud-api}"
   upsert_env_var "$file" "MCP_SERVICE_NAME" "${MCP_SERVICE_NAME:-bud-mcp}"
-  upsert_env_var "$file" "WEB_SERVICE_NAME" "${WEB_SERVICE_NAME:-bud-web}"
   upsert_env_var "$file" "SQL_INSTANCE" "$SQL_INSTANCE"
   upsert_env_var "$file" "DB_NAME" "$DB_NAME"
   upsert_env_var "$file" "DB_USER" "$DB_USER"
@@ -251,6 +255,9 @@ while [[ $# -gt 0 ]]; do
     --db-name) DB_NAME="$2"; shift 2 ;;
     --db-user) DB_USER="$2"; shift 2 ;;
     --service-account) SERVICE_ACCOUNT="$2"; shift 2 ;;
+    --api-service-name) API_SERVICE_NAME="$2"; shift 2 ;;
+    --frontend-service-name) FRONTEND_SERVICE_NAME="$2"; shift 2 ;;
+    --mcp-service-name) MCP_SERVICE_NAME="$2"; shift 2 ;;
     --secret-db-connection) SECRET_DB_CONNECTION="$2"; shift 2 ;;
     --secret-jwt-key) SECRET_JWT_KEY="$2"; shift 2 ;;
     --db-tier) DB_TIER="$2"; shift 2 ;;
@@ -269,6 +276,9 @@ SQL_INSTANCE="${SQL_INSTANCE:-bud-pg}"
 DB_NAME="${DB_NAME:-bud}"
 DB_USER="${DB_USER:-bud_app}"
 SERVICE_ACCOUNT="${SERVICE_ACCOUNT:-bud-runner}"
+FRONTEND_SERVICE_NAME="${FRONTEND_SERVICE_NAME:-${SERVICE_NAME:-bud-web}}"
+API_SERVICE_NAME="${API_SERVICE_NAME:-bud-api}"
+MCP_SERVICE_NAME="${MCP_SERVICE_NAME:-bud-mcp}"
 DB_TIER="${DB_TIER:-db-custom-1-3840}"
 DB_EDITION="${DB_EDITION:-ENTERPRISE}"
 
@@ -410,6 +420,9 @@ echo "==> Bootstrap concluido"
 echo "PROJECT_ID=$PROJECT_ID"
 echo "REGION=$REGION"
 echo "REPO_NAME=$REPO_NAME"
+echo "FRONTEND_SERVICE_NAME=$FRONTEND_SERVICE_NAME"
+echo "API_SERVICE_NAME=$API_SERVICE_NAME"
+echo "MCP_SERVICE_NAME=$MCP_SERVICE_NAME"
 echo "SQL_INSTANCE=$SQL_INSTANCE"
 echo "INSTANCE_CONNECTION_NAME=$INSTANCE_CONNECTION_NAME"
 echo "SERVICE_ACCOUNT_EMAIL=$SERVICE_ACCOUNT_EMAIL"

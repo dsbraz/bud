@@ -25,13 +25,13 @@
         if (!AuthState.IsAuthenticated && !isLogin)
         {
             var returnUrl = Uri.EscapeDataString(GetCurrentRelativeUrl());
-            Nav.NavigateTo($"login?returnUrl={returnUrl}", true);
+            Nav.NavigateTo($"login?returnUrl={returnUrl}");
             return;
         }
 
         if (AuthState.IsAuthenticated && isLogin)
         {
-            Nav.NavigateTo("/", true);
+            Nav.NavigateTo("/");
         }
     }
 

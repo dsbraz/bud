@@ -11,7 +11,9 @@ namespace Bud.Api.DependencyInjection;
 
 public static class BudApiCompositionExtensions
 {
-    public static IServiceCollection AddBudApi(this IServiceCollection services)
+    internal const string LocalDevelopmentCorsPolicy = "LocalDevelopmentClient";
+
+    public static IServiceCollection AddBudApi(this IServiceCollection services, IConfiguration configuration)
     {
         services.AddControllers()
             .AddJsonOptions(options =>
@@ -35,6 +37,30 @@ public static class BudApiCompositionExtensions
         services.AddProblemDetails();
         services.AddExceptionHandler<GlobalExceptionHandler>();
         services.AddValidatorsFromAssemblyContaining<CreateOrganizationValidator>();
+        services.AddCors(options =>
+        {
+            options.AddPolicy(LocalDevelopmentCorsPolicy, policy =>
+            {
+                var allowedOrigins = configuration
+                    .GetSection("Cors:AllowedOrigins")
+                    .Get<string[]>()?
+                    .Where(origin => !string.IsNullOrWhiteSpace(origin))
+                    .ToArray()
+                    ?? [];
+
+                if (allowedOrigins.Length == 0)
+                {
+                    allowedOrigins =
+                    [
+                        "http://localhost:8080"
+                    ];
+                }
+
+                policy.WithOrigins(allowedOrigins)
+                    .AllowAnyHeader()
+                    .AllowAnyMethod();
+            });
+        });
 
         services.Configure<ForwardedHeadersOptions>(options =>
         {

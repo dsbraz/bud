@@ -1,6 +1,6 @@
 # Bud
 
-Aplicação unificada em ASP.NET Core + Blazor WebAssembly (SPA),
+A aplicação combina API ASP.NET Core, frontend Blazor WebAssembly (SPA)
 utilizando PostgreSQL.
 
 ## Para quem é este README
@@ -34,7 +34,7 @@ Este documento é voltado para devs que precisam:
 
 O Bud segue uma arquitetura em camadas com separação explícita de responsabilidades:
 
-- **API/Host (`Bud.Api`)**: exposição HTTP, autenticação/autorização, middleware, composição de dependências e hosting híbrido temporário do Blazor WASM.
+- **API (`Bud.Api`)**: exposição HTTP, autenticação/autorização, middleware e composição de dependências.
 - **Application (`src/Server/Bud.Application`)**: casos de uso, portas de aplicação, mapeamentos, read models e orquestração de eventos de domínio.
   - `Common`: resultados e utilitários transversais.
   - `Mapping`: mapeamento entre read models/domínio e contratos de borda.
@@ -501,14 +501,15 @@ Fluxo recomendado de contribuição para manter qualidade arquitetural e consist
 docker compose up --build
 ```
 
-- App (UI + API): `http://localhost:8080`
-- Swagger (ambiente Development): `http://localhost:8080/swagger`
+- App (UI): `http://localhost:8080`
+- MCP: `http://localhost:8081`
+- API: `http://localhost:8082`
+- Swagger (ambiente Development): `http://localhost:8082/swagger`
 
 ### Padrão de desenvolvimento (com hot reload no Docker Compose)
 
-- Os serviços `web` e `mcp` usam `dotnet watch` no ambiente local via Docker Compose.
+- Os serviços `web`, `api` e `mcp` usam `dotnet watch` no ambiente local via Docker Compose.
 - Para Docker Desktop (macOS/Windows), o compose habilita `DOTNET_USE_POLLING_FILE_WATCHER=1` para detecção estável de mudanças em volumes montados.
-- No `web`, o run usa `WasmEnableHotReload=true` para habilitar hot reload do Blazor WASM nesse fluxo local.
 - O build continua usando caches de NuGet e compilação via volumes nomeados para acelerar o ciclo.
 
 Se você encontrar assets antigos no browser, faça hard refresh. Se persistir, limpe volumes e recompile:
@@ -531,6 +532,7 @@ Comandos:
 dotnet restore
 dotnet build
 dotnet run --project src/Server/Bud.Api
+dotnet run --project src/Client/Bud.BlazorWasm
 ```
 
 ## Servidor MCP (Metas e Indicadores)
@@ -541,8 +543,9 @@ No transporte HTTP do MCP, o endpoint raiz delega o processamento para `IMcpRequ
 mantendo `Program.cs` focado em composição e roteamento.
 
 No ambiente local via Docker Compose:
-- API + frontend: `http://localhost:8080`
+- Frontend: `http://localhost:8080`
 - MCP: `http://localhost:8081`
+- API: `http://localhost:8082`
 
 ### Configuração (`appsettings` + override por ambiente)
 
@@ -568,7 +571,7 @@ O serviço `mcp` é criado no compose usando:
 - `Dockerfile` (target `dev-mcp-web`)
 - `dotnet watch` para recarregar alterações locais automaticamente
 - `DOTNET_ENVIRONMENT=Development` (usa `src/Client/Bud.Mcp/appsettings.Development.json`)
-- `BUD_API_BASE_URL=http://web:8080` para chamadas internas ao `Bud.Api`
+- `BUD_API_BASE_URL=http://api:8080` para chamadas internas ao `Bud.Api`
 - mapeamento de porta `8081:8080` para evitar conflito com o `web`
 
 Health checks do MCP local:
@@ -601,7 +604,7 @@ Regras importantes do catálogo:
 - O comando `check-tool-catalog --fail-on-diff` também valida o contrato mínimo de campos `required` por ferramenta e retorna erro quando houver quebra de contrato.
 
 Se estiver rodando local com `DOTNET_ENVIRONMENT=Development`, defina:
-`BUD_API_BASE_URL=http://localhost:8080`.
+`BUD_API_BASE_URL=http://localhost:8082`.
 
 ### Ferramentas MCP disponíveis
 
@@ -629,9 +632,11 @@ Se estiver rodando local com `DOTNET_ENVIRONMENT=Development`, defina:
 Scripts disponíveis:
 
 - `scripts/gcp-bootstrap.sh`: prepara infraestrutura base (APIs, Artifact Registry, Cloud SQL, service account, secrets, permissões do Cloud Build).
-- `scripts/gcp-deploy-web.sh`: deploy do `Bud.Api` (com migração EF Core via Cloud Run Job).
+- `scripts/gcp-deploy-api.sh`: deploy do `Bud.Api` (com migração EF Core via Cloud Run Job).
+- `scripts/gcp-deploy-frontend.sh`: deploy do frontend Blazor WASM separado.
+- `scripts/gcp-deploy-web.sh`: wrapper legado que delega para `gcp-deploy-api.sh`.
 - `scripts/gcp-deploy-mcp.sh`: deploy do `Bud.Mcp` HTTP.
-- `scripts/gcp-deploy-all.sh`: executa deploy completo (`Bud.Api` + `Bud.Mcp`).
+- `scripts/gcp-deploy-all.sh`: executa deploy completo (`Bud.Api` + `Bud.Mcp` + frontend).
 
 Observação: os scripts de deploy remoto usam **Cloud Build** para gerar imagens no GCP (não dependem de `docker build` local).
 
@@ -654,8 +659,10 @@ Deploy sem migração (quando o schema não mudou):
 Deploy por serviço:
 
 ```bash
+./scripts/gcp-deploy-api.sh
+./scripts/gcp-deploy-api.sh --skip-migration
+./scripts/gcp-deploy-frontend.sh
 ./scripts/gcp-deploy-web.sh
-./scripts/gcp-deploy-web.sh --skip-migration
 ./scripts/gcp-deploy-mcp.sh
 ```
 
@@ -679,6 +686,7 @@ Opção B (sem Docker):
 dotnet restore
 dotnet build
 dotnet run --project src/Server/Bud.Api
+dotnet run --project src/Client/Bud.BlazorWasm
 ```
 
 Defina a URL base conforme o modo de execução:
@@ -687,8 +695,8 @@ Defina a URL base conforme o modo de execução:
 # Com Docker Compose
 export BUD_BASE_URL="http://localhost:8080"
 
-# Sem Docker (dotnet run, profile padrão)
-export BUD_BASE_URL="http://localhost:5096"
+# Sem Docker
+export BUD_BASE_URL="http://localhost:8080"
 ```
 
 ### 2) Login e captura do token
@@ -762,7 +770,8 @@ sequenceDiagram
 
 ### 7) Debug rápido no backend
 
-- Acesse `$BUD_BASE_URL/swagger` para executar os mesmos fluxos pela UI.
+- Acesse `http://localhost:8082/swagger` para executar os mesmos fluxos pela UI.
+- No Docker Compose, use `http://localhost:8082/swagger`.
 - Consulte `GET /health/ready` para validar PostgreSQL.
 - Em caso de erro 403, valide se o header `X-Tenant-Id` foi enviado (exceto cenário global admin em "TODOS").
 
@@ -828,8 +837,8 @@ Observação:
 
 ## Documentação da API (OpenAPI/Swagger)
 
-- UI interativa (Development): `http://localhost:8080/swagger`
-- Documento OpenAPI bruto: `http://localhost:8080/openapi/v1.json`
+- UI interativa (Development): `http://localhost:8082/swagger`
+- Documento OpenAPI bruto: `http://localhost:8082/openapi/v1.json`
 - A documentação é enriquecida com:
   - `ProducesResponseType` por endpoint
   - comentários XML (`summary`, `response`, `remarks`)

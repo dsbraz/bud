@@ -4,18 +4,18 @@ set -euo pipefail
 usage() {
   cat <<USAGE
 Uso:
-  ./scripts/gcp-deploy-mcp.sh [opcoes]
+  ./scripts/gcp-deploy-frontend.sh [opcoes]
 
 Opcoes:
-  --env-file <path>             Arquivo de variaveis (default: .env.gcp, se existir)
-  --project-id <id>             PROJECT_ID
-  --region <region>             REGION
-  --repo-name <nome>            REPO_NAME
-  --mcp-service-name <nome>     MCP_SERVICE_NAME
-  --api-service-name <nome>     API_SERVICE_NAME
-  --image-tag <tag>             IMAGE_TAG
-  --api-url <url>               API_URL (opcional)
-  --web-api-url <url>           Alias legado para API_URL
+  --env-file <path>                  Arquivo de variaveis (default: .env.gcp, se existir)
+  --project-id <id>                  PROJECT_ID
+  --region <region>                  REGION
+  --repo-name <nome>                 REPO_NAME
+  --frontend-service-name <nome>     FRONTEND_SERVICE_NAME
+  --api-service-name <nome>          API_SERVICE_NAME
+  --api-url <url>                    API_URL (opcional)
+  --web-api-url <url>                Alias legado para API_URL
+  --image-tag <tag>                  IMAGE_TAG
 USAGE
 }
 
@@ -66,11 +66,11 @@ while [[ $# -gt 0 ]]; do
     --project-id) PROJECT_ID="$2"; shift 2 ;;
     --region) REGION="$2"; shift 2 ;;
     --repo-name) REPO_NAME="$2"; shift 2 ;;
-    --mcp-service-name) MCP_SERVICE_NAME="$2"; shift 2 ;;
+    --frontend-service-name) FRONTEND_SERVICE_NAME="$2"; shift 2 ;;
     --api-service-name) API_SERVICE_NAME="$2"; shift 2 ;;
-    --image-tag) IMAGE_TAG="$2"; shift 2 ;;
     --api-url) API_URL="$2"; shift 2 ;;
     --web-api-url) API_URL="$2"; shift 2 ;;
+    --image-tag) IMAGE_TAG="$2"; shift 2 ;;
     -h|--help) usage; exit 0 ;;
     *) echo "Parametro invalido: $1" >&2; usage; exit 1 ;;
   esac
@@ -80,12 +80,12 @@ require_env PROJECT_ID
 require_env REGION
 
 REPO_NAME="${REPO_NAME:-bud}"
-MCP_SERVICE_NAME="${MCP_SERVICE_NAME:-bud-mcp}"
+FRONTEND_SERVICE_NAME="${FRONTEND_SERVICE_NAME:-bud-web}"
 API_SERVICE_NAME="${API_SERVICE_NAME:-bud-api}"
 IMAGE_TAG="${IMAGE_TAG:-$(date +%Y%m%d-%H%M%S)}"
 API_URL="${API_URL:-}"
 
-IMAGE_URI="${REGION}-docker.pkg.dev/${PROJECT_ID}/${REPO_NAME}/${MCP_SERVICE_NAME}:${IMAGE_TAG}"
+IMAGE_URI="${REGION}-docker.pkg.dev/${PROJECT_ID}/${REPO_NAME}/${FRONTEND_SERVICE_NAME}:${IMAGE_TAG}"
 
 echo "==> Configurando projeto"
 gcloud config set project "$PROJECT_ID" >/dev/null
@@ -100,29 +100,29 @@ if [[ -z "$API_URL" ]]; then
   exit 1
 fi
 
-echo "==> Buildando imagem MCP no Cloud Build (${IMAGE_URI})"
+echo "==> Buildando imagem do frontend no Cloud Build (${IMAGE_URI})"
 gcloud builds submit \
   --project "$PROJECT_ID" \
   --config "scripts/cloudbuild-image.yaml" \
-  --substitutions "_IMAGE_URI=${IMAGE_URI},_DOCKER_TARGET=prod-mcp" \
+  --substitutions "_IMAGE_URI=${IMAGE_URI},_DOCKER_TARGET=prod-frontend" \
   .
 
-echo "==> Deployando MCP no Cloud Run"
-gcloud run deploy "$MCP_SERVICE_NAME" \
+echo "==> Deployando frontend no Cloud Run"
+gcloud run deploy "$FRONTEND_SERVICE_NAME" \
   --project "$PROJECT_ID" \
   --region "$REGION" \
   --platform managed \
   --image "$IMAGE_URI" \
   --allow-unauthenticated \
   --port 8080 \
-  --set-env-vars "DOTNET_ENVIRONMENT=Production,ASPNETCORE_ENVIRONMENT=Production,ASPNETCORE_URLS=http://0.0.0.0:8080,BUD_API_BASE_URL=${API_URL},OTEL_SERVICE_NAME=Bud.Mcp,OTEL_RESOURCE_ATTRIBUTES=cloud.provider=gcp\,cloud.platform=gcp_cloud_run,OTEL_EXPORTER_OTLP_ENDPOINT=https://telemetry.googleapis.com,GCP_PROJECT_ID=${PROJECT_ID}"
+  --set-env-vars "PORT=8080,BUD_API_BASE_URL=${API_URL}"
 
-echo "==> Validando MCP"
-MCP_URL="$(gcloud run services describe "$MCP_SERVICE_NAME" --region "$REGION" --project "$PROJECT_ID" --format='value(status.url)')"
+echo "==> Validando frontend"
+FRONTEND_URL="$(gcloud run services describe "$FRONTEND_SERVICE_NAME" --region "$REGION" --project "$PROJECT_ID" --format='value(status.url)')"
 
-curl --fail --silent --show-error "${MCP_URL}/health/live" >/dev/null
-curl --fail --silent --show-error "${MCP_URL}/health/ready" >/dev/null
+curl --fail --silent --show-error "${FRONTEND_URL}/" >/dev/null
+curl --fail --silent --show-error "${FRONTEND_URL}/health/live" >/dev/null
 
-echo "==> Deploy MCP concluido com sucesso"
-echo "MCP_URL=${MCP_URL}"
+echo "==> Deploy do frontend concluido com sucesso"
+echo "FRONTEND_URL=${FRONTEND_URL}"
 echo "API_URL=${API_URL}"

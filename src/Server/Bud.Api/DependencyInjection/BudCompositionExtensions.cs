@@ -12,7 +12,7 @@ public static class BudCompositionExtensions
     {
         return services
             .AddBudObservability(configuration, environment)
-            .AddBudApi()
+            .AddBudApi(configuration)
             .AddBudSettings(configuration)
             .AddBudAuthentication(configuration, environment)
             .AddBudAuthorization()
