@@ -41,11 +41,11 @@ public class TemplatesEndpointsTests : IClassFixture<CustomWebApplicationFactory
                 new()
                 {
                     Name = "Metric 1",
-                    Type = Bud.Shared.Contracts.IndicatorType.Quantitative,
+                    Type = Bud.Shared.Kernel.IndicatorType.Quantitative,
                     OrderIndex = 0,
-                    QuantitativeType = Bud.Shared.Contracts.QuantitativeIndicatorType.Achieve,
+                    QuantitativeType = Bud.Shared.Kernel.QuantitativeIndicatorType.Achieve,
                     MaxValue = 100,
-                    Unit = Bud.Shared.Contracts.IndicatorUnit.Percentage
+                    Unit = Bud.Shared.Kernel.IndicatorUnit.Percentage
                 }
             }
         };
@@ -71,16 +71,16 @@ public class TemplatesEndpointsTests : IClassFixture<CustomWebApplicationFactory
                 new()
                 {
                     Name = "Revenue Target",
-                    Type = Bud.Shared.Contracts.IndicatorType.Quantitative,
+                    Type = Bud.Shared.Kernel.IndicatorType.Quantitative,
                     OrderIndex = 0,
-                    QuantitativeType = Bud.Shared.Contracts.QuantitativeIndicatorType.Achieve,
+                    QuantitativeType = Bud.Shared.Kernel.QuantitativeIndicatorType.Achieve,
                     MaxValue = 1000,
-                    Unit = Bud.Shared.Contracts.IndicatorUnit.Integer
+                    Unit = Bud.Shared.Kernel.IndicatorUnit.Integer
                 },
                 new()
                 {
                     Name = "Quality Check",
-                    Type = Bud.Shared.Contracts.IndicatorType.Qualitative,
+                    Type = Bud.Shared.Kernel.IndicatorType.Qualitative,
                     OrderIndex = 1,
                     TargetText = "Ensure all deliverables meet standards"
                 }
@@ -123,12 +123,12 @@ public class TemplatesEndpointsTests : IClassFixture<CustomWebApplicationFactory
                 new TemplateIndicatorRequest
                 {
                     Name = "Métrica vinculada",
-                    Type = Bud.Shared.Contracts.IndicatorType.Quantitative,
+                    Type = Bud.Shared.Kernel.IndicatorType.Quantitative,
                     OrderIndex = 0,
                     TemplateGoalId = goalId,
-                    QuantitativeType = Bud.Shared.Contracts.QuantitativeIndicatorType.Achieve,
+                    QuantitativeType = Bud.Shared.Kernel.QuantitativeIndicatorType.Achieve,
                     MaxValue = 100,
-                    Unit = Bud.Shared.Contracts.IndicatorUnit.Percentage
+                    Unit = Bud.Shared.Kernel.IndicatorUnit.Percentage
                 }
             ]
         };
@@ -243,12 +243,12 @@ public class TemplatesEndpointsTests : IClassFixture<CustomWebApplicationFactory
                 new()
                 {
                     Name = "Updated Metric",
-                    Type = Bud.Shared.Contracts.IndicatorType.Quantitative,
+                    Type = Bud.Shared.Kernel.IndicatorType.Quantitative,
                     OrderIndex = 0,
-                    QuantitativeType = Bud.Shared.Contracts.QuantitativeIndicatorType.Reduce,
+                    QuantitativeType = Bud.Shared.Kernel.QuantitativeIndicatorType.Reduce,
                     MinValue = 0,
                     MaxValue = 50,
-                    Unit = Bud.Shared.Contracts.IndicatorUnit.Percentage
+                    Unit = Bud.Shared.Kernel.IndicatorUnit.Percentage
                 }
             }
         };

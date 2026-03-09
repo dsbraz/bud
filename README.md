@@ -40,7 +40,7 @@ O Bud segue uma arquitetura em camadas com separação explícita de responsabil
   - `Mapping`: mapeamento entre read models/domínio e contratos de borda.
 - **Domain (`src/Server/Bud.Domain`)**: entidades, aggregate roots, value objects, eventos de domínio, primitivos e interfaces de repositório.
 - **Infrastructure (`src/Server/Bud.Infrastructure`)**: EF Core (`ApplicationDbContext`), repositórios, serviços de infraestrutura, migrations e specifications de consulta.
-- **Client (`Bud.Client`)**: SPA Blazor WASM com consumo da API.
+- **Client (`Bud.BlazorWasm`)**: SPA Blazor WASM com consumo da API.
 - **Shared (`Bud.Shared`)**: contratos de borda compartilhados entre cliente, servidor e MCP.
 
 ### Organização do backend (`src/Server/*`)
@@ -272,7 +272,7 @@ Para lista atualizada de ADRs e ordem recomendada de leitura, consulte:
 
 ```mermaid
 flowchart LR
-    A[Bud.Client<br/>Blazor WASM] -->|HTTP + JWT + X-Tenant-Id| B[Bud.Api Controllers]
+    A[Bud.BlazorWasm<br/>Blazor WASM] -->|HTTP + JWT + X-Tenant-Id| B[Bud.Api Controllers]
     B --> C[Application<br/>Use Cases]
     C --> R[Infrastructure<br/>I*Repository + Repositories]
     R --> E[(PostgreSQL<br/>ApplicationDbContext)]
@@ -338,7 +338,7 @@ flowchart TD
 
 ```mermaid
 sequenceDiagram
-    participant UI as Bud.Client
+    participant UI as Bud.BlazorWasm
     participant API as Bud.Api
     participant SESS as SessionsController/CreateSession
     participant ME as MeController/ListMyOrganizations
@@ -364,7 +364,7 @@ sequenceDiagram
 
 ```mermaid
 sequenceDiagram
-    participant UI as Bud.Client / Caller
+    participant UI as Bud.BlazorWasm / Caller
     participant API as ASP.NET Core Pipeline
     participant AUTH as AuthN/AuthZ
     participant TENANT as TenantRequiredMiddleware
@@ -449,7 +449,7 @@ flowchart TB
 
 ```mermaid
 flowchart LR
-    subgraph Client["Bud.Client (Blazor WASM)"]
+    subgraph Client["Bud.BlazorWasm (Blazor WASM)"]
       UI["Pages + Layout"]
       ApiClient["ApiClient + TenantDelegatingHandler"]
     end
@@ -852,7 +852,7 @@ O Bud 2.0 usa um sistema de tokens de design baseado no [Figma Style Guide](http
 
 ### Tokens de design
 
-Todos os valores de design (cores, tipografia, espaçamento e sombras) são definidos como propriedades CSS em [`src/Bud.Client/wwwroot/css/tokens.css`](src/Bud.Client/wwwroot/css/tokens.css).
+Todos os valores de design (cores, tipografia, espaçamento e sombras) são definidos como propriedades CSS em [`src/Client/Bud.BlazorWasm/wwwroot/css/tokens.css`](src/Client/Bud.BlazorWasm/wwwroot/css/tokens.css).
 
 **Exemplo de uso:**
 ```css

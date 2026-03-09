@@ -33,7 +33,7 @@ public sealed class IndicatorWriteUseCasesTests
         {
             GoalId = Guid.NewGuid(),
             Name = "Metrica",
-            Type = Bud.Shared.Contracts.IndicatorType.Qualitative,
+            Type = Bud.Shared.Kernel.IndicatorType.Qualitative,
             TargetText = "Descricao"
         };
 
@@ -75,7 +75,7 @@ public sealed class IndicatorWriteUseCasesTests
         {
             GoalId = mission.Id,
             Name = "Metrica",
-            Type = Bud.Shared.Contracts.IndicatorType.Qualitative,
+            Type = Bud.Shared.Kernel.IndicatorType.Qualitative,
             TargetText = "Descricao"
         };
 
@@ -121,7 +121,7 @@ public sealed class IndicatorWriteUseCasesTests
         {
             GoalId = mission.Id,
             Name = "Quality Assessment",
-            Type = Bud.Shared.Contracts.IndicatorType.Qualitative,
+            Type = Bud.Shared.Kernel.IndicatorType.Qualitative,
             TargetText = "Achieve excellent quality"
         };
 
@@ -163,7 +163,7 @@ public sealed class IndicatorWriteUseCasesTests
         var request = new PatchIndicatorRequest
         {
             Name = "Nova Metrica",
-            Type = Bud.Shared.Contracts.IndicatorType.Qualitative,
+            Type = Bud.Shared.Kernel.IndicatorType.Qualitative,
             TargetText = "Descricao"
         };
 
@@ -209,10 +209,10 @@ public sealed class IndicatorWriteUseCasesTests
         var request = new PatchIndicatorRequest
         {
             Name = "Updated Metric",
-            Type = Bud.Shared.Contracts.IndicatorType.Quantitative,
-            QuantitativeType = Bud.Shared.Contracts.QuantitativeIndicatorType.KeepAbove,
+            Type = Bud.Shared.Kernel.IndicatorType.Quantitative,
+            QuantitativeType = Bud.Shared.Kernel.QuantitativeIndicatorType.KeepAbove,
             MinValue = 100m,
-            Unit = Bud.Shared.Contracts.IndicatorUnit.Points
+            Unit = Bud.Shared.Kernel.IndicatorUnit.Points
         };
 
         var result = await useCase.ExecuteAsync(User, indicatorId, request);

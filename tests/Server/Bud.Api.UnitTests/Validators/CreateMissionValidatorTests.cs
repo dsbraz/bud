@@ -20,7 +20,7 @@ public class CreateMissionValidatorTests
             Name = "Test Mission",
             StartDate = DateTime.UtcNow,
             EndDate = DateTime.UtcNow.AddDays(7),
-            Status = Bud.Shared.Contracts.GoalStatus.Planned
+            Status = Bud.Shared.Kernel.GoalStatus.Planned
         };
 
         // Act
@@ -43,7 +43,7 @@ public class CreateMissionValidatorTests
             Name = name!,
             StartDate = DateTime.UtcNow,
             EndDate = DateTime.UtcNow.AddDays(7),
-            Status = Bud.Shared.Contracts.GoalStatus.Planned
+            Status = Bud.Shared.Kernel.GoalStatus.Planned
         };
 
         // Act
@@ -63,7 +63,7 @@ public class CreateMissionValidatorTests
             Name = new string('A', 201), // 201 characters
             StartDate = DateTime.UtcNow,
             EndDate = DateTime.UtcNow.AddDays(7),
-            Status = Bud.Shared.Contracts.GoalStatus.Planned
+            Status = Bud.Shared.Kernel.GoalStatus.Planned
         };
 
         // Act
@@ -89,7 +89,7 @@ public class CreateMissionValidatorTests
             Name = "Test Mission",
             StartDate = DateTime.UtcNow.AddDays(7),
             EndDate = DateTime.UtcNow, // Before start date
-            Status = Bud.Shared.Contracts.GoalStatus.Planned
+            Status = Bud.Shared.Kernel.GoalStatus.Planned
         };
 
         // Act
@@ -112,7 +112,7 @@ public class CreateMissionValidatorTests
             Name = "Test Mission",
             StartDate = startDate,
             EndDate = startDate, // Same as start date
-            Status = Bud.Shared.Contracts.GoalStatus.Planned
+            Status = Bud.Shared.Kernel.GoalStatus.Planned
         };
 
         // Act
@@ -132,7 +132,7 @@ public class CreateMissionValidatorTests
             Name = "Test Mission",
             StartDate = DateTime.UtcNow,
             EndDate = DateTime.UtcNow.AddDays(7), // After start date
-            Status = Bud.Shared.Contracts.GoalStatus.Planned
+            Status = Bud.Shared.Kernel.GoalStatus.Planned
         };
 
         // Act
@@ -152,7 +152,7 @@ public class CreateMissionValidatorTests
             Name = "Test Mission",
             StartDate = default(DateTime), // Empty date
             EndDate = DateTime.UtcNow.AddDays(7),
-            Status = Bud.Shared.Contracts.GoalStatus.Planned
+            Status = Bud.Shared.Kernel.GoalStatus.Planned
         };
 
         // Act
@@ -172,7 +172,7 @@ public class CreateMissionValidatorTests
             Name = "Test Mission",
             StartDate = DateTime.UtcNow,
             EndDate = default(DateTime), // Empty date
-            Status = Bud.Shared.Contracts.GoalStatus.Planned
+            Status = Bud.Shared.Kernel.GoalStatus.Planned
         };
 
         // Act

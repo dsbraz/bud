@@ -29,7 +29,8 @@
     <ProjectReference Include="..\..\..\src\Server\Bud.Infrastructure\Bud.Infrastructure.csproj" />
     <ProjectReference Include="..\..\..\src\Server\Bud.Application\Bud.Application.csproj" />
     <ProjectReference Include="..\..\..\src\Server\Bud.Domain\Bud.Domain.csproj" />
-    <ProjectReference Include="..\..\..\src\Bud.Shared\Bud.Shared.csproj" />
+    <ProjectReference Include="..\..\..\src\Shared\Bud.Shared.Contracts\Bud.Shared.Contracts.csproj" />
+    <ProjectReference Include="..\..\..\src\Shared\Bud.Shared.Kernel\Bud.Shared.Kernel.csproj" />
   </ItemGroup>
 
 </Project>

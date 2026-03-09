@@ -23,7 +23,7 @@ services:
       DOTNET_USE_POLLING_FILE_WATCHER: "1"
       DOTNET_WATCH_RESTART_ON_RUDE_EDIT: "1"
       DOTNET_WATCH_SUPPRESS_LAUNCH_BROWSER: "1"
-      OTEL_SERVICE_NAME: Bud.Server
+      OTEL_SERVICE_NAME: Bud.Api
     ports:
       - "8080:8080"
     volumes:

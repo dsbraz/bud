@@ -58,7 +58,7 @@ O sistema Bud roda em produção no Google Cloud Run. A observabilidade inicial 
 
 ## Consequências
 - Logs em produção são indexáveis por `severity`, `traceId`, `correlationId` e `eventId` no Cloud Logging.
-- Distributed traces correlacionam requests do Bud.Client → Bud.Api → PostgreSQL e do agente → Bud.Mcp → Bud.Api.
+- Distributed traces correlacionam requests do Bud.BlazorWasm → Bud.Api → PostgreSQL e do agente → Bud.Mcp → Bud.Api.
 - Métricas HTTP padrão disponíveis via OTel sem manutenção de instrumentação customizada.
 - EventIds estáveis permitem alertas e dashboards baseados em IDs específicos.
 - Custo de instrumentação: ~zero em dev local (OTLP exporter falha silenciosamente sem `OTEL_EXPORTER_OTLP_ENDPOINT`).

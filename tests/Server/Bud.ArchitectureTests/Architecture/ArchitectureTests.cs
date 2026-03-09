@@ -24,8 +24,9 @@ public sealed class ArchitectureTests
         references.Should().NotContain("Bud.Application");
         references.Should().NotContain("Bud.Infrastructure");
         references.Should().NotContain("Bud.Api");
-        references.Should().NotContain("Bud.Client");
-        references.Should().Contain("Bud.Shared");
+        references.Should().NotContain("Bud.BlazorWasm");
+        references.Should().Contain("Bud.Shared.Contracts");
+        references.Should().Contain("Bud.Shared.Kernel");
     }
 
     [Fact]
@@ -34,10 +35,11 @@ public sealed class ArchitectureTests
         var references = GetProjectReferenceNames("src/Server/Bud.Application/Bud.Application.csproj");
 
         references.Should().Contain("Bud.Domain");
-        references.Should().Contain("Bud.Shared");
+        references.Should().Contain("Bud.Shared.Contracts");
+        references.Should().Contain("Bud.Shared.Kernel");
         references.Should().NotContain("Bud.Infrastructure");
         references.Should().NotContain("Bud.Api");
-        references.Should().NotContain("Bud.Client");
+        references.Should().NotContain("Bud.BlazorWasm");
     }
 
     [Fact]
@@ -47,9 +49,10 @@ public sealed class ArchitectureTests
 
         references.Should().Contain("Bud.Application");
         references.Should().Contain("Bud.Domain");
-        references.Should().Contain("Bud.Shared");
+        references.Should().Contain("Bud.Shared.Contracts");
+        references.Should().Contain("Bud.Shared.Kernel");
         references.Should().NotContain("Bud.Api");
-        references.Should().NotContain("Bud.Client");
+        references.Should().NotContain("Bud.BlazorWasm");
     }
 
     [Fact]
@@ -59,8 +62,9 @@ public sealed class ArchitectureTests
 
         references.Should().Contain("Bud.Application");
         references.Should().Contain("Bud.Infrastructure");
-        references.Should().Contain("Bud.Shared");
-        references.Should().Contain("Bud.Client");
+        references.Should().Contain("Bud.Shared.Contracts");
+        references.Should().Contain("Bud.Shared.Kernel");
+        references.Should().Contain("Bud.BlazorWasm");
         references.Should().NotContain("Bud.Domain");
     }
 

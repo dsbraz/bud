@@ -43,18 +43,18 @@ public sealed class CreateTemplateValidatorTests
                 new TemplateIndicatorRequest
                 {
                     Name = "Métrica Qualitativa",
-                    Type = Bud.Shared.Contracts.IndicatorType.Qualitative,
+                    Type = Bud.Shared.Kernel.IndicatorType.Qualitative,
                     OrderIndex = 0,
                     TargetText = "Texto alvo"
                 },
                 new TemplateIndicatorRequest
                 {
                     Name = "Métrica Quantitativa",
-                    Type = Bud.Shared.Contracts.IndicatorType.Quantitative,
+                    Type = Bud.Shared.Kernel.IndicatorType.Quantitative,
                     OrderIndex = 1,
-                    QuantitativeType = Bud.Shared.Contracts.QuantitativeIndicatorType.Achieve,
+                    QuantitativeType = Bud.Shared.Kernel.QuantitativeIndicatorType.Achieve,
                     MaxValue = 100m,
-                    Unit = Bud.Shared.Contracts.IndicatorUnit.Percentage
+                    Unit = Bud.Shared.Kernel.IndicatorUnit.Percentage
                 }
             ]
         };
@@ -315,7 +315,7 @@ public sealed class CreateTemplateValidatorTests
                 new TemplateIndicatorRequest
                 {
                     Name = "", // Invalid: empty name
-                    Type = Bud.Shared.Contracts.IndicatorType.Qualitative,
+                    Type = Bud.Shared.Kernel.IndicatorType.Qualitative,
                     OrderIndex = 0,
                     TargetText = "Texto alvo"
                 }
@@ -353,7 +353,7 @@ public sealed class CreateTemplateValidatorTests
                 new TemplateIndicatorRequest
                 {
                     Name = "Métrica 1",
-                    Type = Bud.Shared.Contracts.IndicatorType.Qualitative,
+                    Type = Bud.Shared.Kernel.IndicatorType.Qualitative,
                     OrderIndex = 0,
                     TemplateGoalId = Guid.NewGuid()
                 }

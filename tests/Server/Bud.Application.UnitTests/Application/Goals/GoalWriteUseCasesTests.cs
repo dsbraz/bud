@@ -41,7 +41,7 @@ public sealed class GoalWriteUseCasesTests
             Name = "Missão",
             StartDate = DateTime.UtcNow,
             EndDate = DateTime.UtcNow.AddDays(1),
-            Status = Bud.Shared.Contracts.GoalStatus.Planned
+            Status = Bud.Shared.Kernel.GoalStatus.Planned
         };
 
         var result = await useCase.ExecuteAsync(User, request);
@@ -66,7 +66,7 @@ public sealed class GoalWriteUseCasesTests
             Name = "Missão",
             StartDate = DateTime.UtcNow,
             EndDate = DateTime.UtcNow.AddDays(1),
-            Status = Bud.Shared.Contracts.GoalStatus.Planned
+            Status = Bud.Shared.Kernel.GoalStatus.Planned
         };
 
         var result = await useCase.ExecuteAsync(User, request);
@@ -91,7 +91,7 @@ public sealed class GoalWriteUseCasesTests
             Name = "Missão",
             StartDate = DateTime.UtcNow,
             EndDate = DateTime.UtcNow.AddDays(1),
-            Status = Bud.Shared.Contracts.GoalStatus.Planned
+            Status = Bud.Shared.Kernel.GoalStatus.Planned
         };
 
         var result = await useCase.ExecuteAsync(User, request);
@@ -243,7 +243,7 @@ public sealed class GoalWriteUseCasesTests
             Name = "Missão",
             StartDate = DateTime.UtcNow,
             EndDate = DateTime.UtcNow.AddDays(1),
-            Status = Bud.Shared.Contracts.GoalStatus.Planned
+            Status = Bud.Shared.Kernel.GoalStatus.Planned
         };
 
         var result = await useCase.ExecuteAsync(User, Guid.NewGuid(), request);
@@ -279,7 +279,7 @@ public sealed class GoalWriteUseCasesTests
             Name = "Missão Atualizada",
             StartDate = DateTime.UtcNow,
             EndDate = DateTime.UtcNow.AddDays(1),
-            Status = Bud.Shared.Contracts.GoalStatus.Active
+            Status = Bud.Shared.Kernel.GoalStatus.Active
         };
 
         var result = await useCase.ExecuteAsync(User, goalId, request);

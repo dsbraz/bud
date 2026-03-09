@@ -1,0 +1,161 @@
+@using Bud.BlazorWasm.Services
+
+@{
+    var progressPercent = (int)(Progress?.OverallProgress ?? 0);
+    var circumference = 2 * Math.PI * 19;
+    var dashOffset = circumference - (circumference * progressPercent / 100);
+}
+
+<div class="goal-card @(IsExpanded ? "expanded" : "") @(Goal.Status == GoalStatus.Planned ? "draft" : "")">
+    <div class="goal-card-header" @onclick="() => OnToggleExpand.InvokeAsync()">
+        @* Caret Toggle (esquerda) *@
+        <svg class="goal-caret-icon @(IsExpanded ? "expanded" : "")" width="20" height="20" viewBox="0 0 32 32" fill="none">
+            <path d="M8 12L16 20L24 12" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+
+        @* Círculo de Progresso *@
+        <div class="goal-progress-circle">
+            <svg width="44" height="44" viewBox="0 0 44 44">
+                <circle class="progress-bg" cx="22" cy="22" r="19" />
+                @if (Goal.Status != GoalStatus.Planned)
+                {
+                    <circle class="progress-value @GoalProgressDisplayHelper.GetGoalProgressStatusClass(Progress)"
+                            cx="22" cy="22" r="19"
+                            stroke-dasharray="@circumference.ToString("F2", System.Globalization.CultureInfo.InvariantCulture)"
+                            stroke-dashoffset="@dashOffset.ToString("F2", System.Globalization.CultureInfo.InvariantCulture)" />
+                }
+            </svg>
+            <div class="goal-progress-text">
+                <span class="goal-progress-number">@(Goal.Status == GoalStatus.Planned ? "00" : progressPercent.ToString())</span>
+                <span class="goal-progress-percent">%</span>
+            </div>
+        </div>
+
+        @* Título da Meta *@
+        <div class="goal-card-title-wrapper">
+            @if (Goal.Status == GoalStatus.Planned)
+            {
+                <span class="goal-draft-tag">RASCUNHO</span>
+            }
+            <div class="goal-card-title">@Goal.Name</div>
+        </div>
+
+        @* Ações *@
+        <div class="goal-card-actions" @onclick:stopPropagation="true">
+            @* Editar *@
+            <button class="goal-action-btn goal-action-hover-only" @onclick="() => OnEdit.InvokeAsync()" title="Editar missão">
+                <svg width="18" height="18" viewBox="0 0 32 32" fill="none">
+                    <path d="M22 4L28 10L10 28H4V22L22 4Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+            </button>
+            @* Excluir *@
+            @if (IsDeleting)
+            {
+                <button class="goal-action-btn goal-delete-confirm" @onclick="() => OnDeleteClick.InvokeAsync()" title="Confirmar exclusão">
+                    <span>ok?</span>
+                </button>
+            }
+            else
+            {
+                <button class="goal-action-btn goal-action-hover-only" @onclick="() => OnDeleteClick.InvokeAsync()" title="Excluir missão">
+                    <svg width="18" height="18" viewBox="0 0 32 32" fill="none">
+                        <path d="M6 8H26M12 8V6C12 4.9 12.9 4 14 4H18C19.1 4 20 4.9 20 6V8M10 12V26M16 12V26M22 12V26M8 8L9 28C9 29.1 9.9 30 11 30H21C22.1 30 23 29.1 23 28L24 8" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                </button>
+            }
+            @* ArrowsOutSimple - abre modal *@
+            <button class="goal-action-btn" @onclick="() => OnExpandModal.InvokeAsync(Goal)" title="Expandir em modal">
+                <svg width="20" height="20" viewBox="0 0 32 32" fill="none">
+                    <path d="M20 4H28V12" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    <path d="M12 28H4V20" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    <path d="M28 4L19 13" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    <path d="M4 28L13 19" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+            </button>
+        </div>
+    </div>
+
+    @* Conteúdo Expandido - Objetivos e Indicadores *@
+    @if (IsExpanded)
+    {
+        <div class="goal-card-content">
+            @if (Indicators is null)
+            {
+                <p class="muted">Carregando...</p>
+            }
+            else
+            {
+                var directIndicators = Indicators.Where(m => m.GoalId == Goal.Id).ToList();
+
+                @* Indicadores diretos *@
+                if (directIndicators.Count > 0)
+                {
+                    foreach (var indicator in directIndicators)
+                    {
+                        <IndicatorRow Goal="Goal"
+                                      Indicator="indicator"
+                                      GoalProgressResponse="Progress"
+                                      IndicatorProgressResponse="@(IndicatorProgressCache.GetValueOrDefault(indicator.Id))"
+                                      OnCheckinClick="OnCheckinClick"
+                                      OnHistoryClick="OnHistoryClick" />
+                    }
+                }
+
+                @* Metas filhas (sub-metas) *@
+                if (ChildGoals != null && ChildGoals.Count > 0)
+                {
+                    foreach (var childGoal in ChildGoals)
+                    {
+                        <GoalChildSection ChildGoal="childGoal"
+                                          GoalProgressResponse="@(GoalProgressCache.GetValueOrDefault(childGoal.Id))"
+                                          IsExpanded="@(ExpandedGoals.Contains(childGoal.Id))"
+                                          OnToggleExpand="() => OnToggleGoalExpand.InvokeAsync(childGoal.Id)"
+                                          Depth="0"
+                                          OnCheckinClick="OnCheckinClick"
+                                          OnHistoryClick="OnHistoryClick"
+                                          OnExpandModal="OnExpandModal" />
+                    }
+                }
+
+                @* Tarefas diretas da meta *@
+                @if (Tasks != null && Tasks.Count > 0)
+                {
+                    <div class="goal-tasks-section">
+                        @foreach (var task in Tasks)
+                        {
+                            <TaskRow Task="task"
+                                     ShowDeleteButton="false"
+                                     OnStateChange="async s => await OnTaskStateChange.InvokeAsync((task, s))" />
+                        }
+                    </div>
+                }
+
+                if (directIndicators.Count == 0 && (ChildGoals == null || ChildGoals.Count == 0) && (Tasks == null || Tasks.Count == 0))
+                {
+                    <p class="muted">Nenhum indicador, tarefa ou meta associada a esta missão.</p>
+                }
+            }
+        </div>
+    }
+</div>
+
+@code {
+    [Parameter, EditorRequired] public GoalResponse Goal { get; set; } = default!;
+    [Parameter] public GoalProgressResponse? Progress { get; set; }
+    [Parameter] public bool IsExpanded { get; set; }
+    [Parameter] public bool IsDeleting { get; set; }
+    [Parameter] public List<IndicatorResponse>? Indicators { get; set; }
+    [Parameter] public List<TaskResponse>? Tasks { get; set; }
+    [Parameter] public List<GoalResponse>? ChildGoals { get; set; }
+    [Parameter] public Dictionary<Guid, IndicatorProgressResponse> IndicatorProgressCache { get; set; } = new();
+    [Parameter] public Dictionary<Guid, GoalProgressResponse> GoalProgressCache { get; set; } = new();
+    [Parameter] public HashSet<Guid> ExpandedGoals { get; set; } = new();
+    [Parameter] public EventCallback OnToggleExpand { get; set; }
+    [Parameter] public EventCallback OnEdit { get; set; }
+    [Parameter] public EventCallback<GoalResponse> OnExpandModal { get; set; }
+    [Parameter] public EventCallback<(TaskResponse task, TaskState newState)> OnTaskStateChange { get; set; }
+    [Parameter] public EventCallback OnDeleteClick { get; set; }
+    [Parameter] public EventCallback<Guid> OnToggleGoalExpand { get; set; }
+    [Parameter] public EventCallback<IndicatorResponse> OnCheckinClick { get; set; }
+    [Parameter] public EventCallback<IndicatorResponse> OnHistoryClick { get; set; }
+}

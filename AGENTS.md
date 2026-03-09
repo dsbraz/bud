@@ -126,11 +126,11 @@ Main projects:
 - `src/Server/Bud.Application`: casos de uso, mapeamentos, read models e ports.
 - `src/Server/Bud.Domain`: domínio puro, value objects, eventos e interfaces de repositório.
 - `src/Server/Bud.Infrastructure`: EF Core, repositórios, serviços concretos e migrations.
-- `src/Bud.Client`: Blazor WebAssembly UI.
+- `src/Client/Bud.BlazorWasm`: Blazor WebAssembly UI.
 - `src/Bud.Shared`: shared contracts.
 - `src/Bud.Mcp`: MCP server over HTTP.
 - `tests/Server/*`: testes unitários, integração e arquitetura do backend.
-- `tests/Bud.Client.Tests` e `tests/Bud.Mcp.Tests`: testes do client e MCP.
+- `tests/Client/Bud.BlazorWasm.Tests` e `tests/Bud.Mcp.Tests`: testes do client e MCP.
 
 ## Layering and Dependencies (MUST)
 
@@ -247,6 +247,6 @@ Operational command details are maintained in:
 - `src/Server/Bud.Infrastructure/Persistence/ApplicationDbContext.cs`
 - `src/Server/Bud.Application/Ports/ITenantProvider.cs`
 - `src/Server/Bud.Api/MultiTenancy/TenantRequiredMiddleware.cs`
-- `src/Bud.Client/Services/OrganizationContext.cs`
+- `src/Client/Bud.BlazorWasm/State/OrganizationContext.cs`
 - `tests/Server/Bud.ArchitectureTests/Architecture/ArchitectureTests.cs`
 - `docs/adr/README.md`

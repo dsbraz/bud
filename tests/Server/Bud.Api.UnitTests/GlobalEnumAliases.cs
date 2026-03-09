@@ -1,6 +1,6 @@
-global using CollaboratorRole = Bud.Shared.Contracts.CollaboratorRole;
-global using GoalFilter = Bud.Shared.Contracts.GoalFilter;
-global using IndicatorType = Bud.Shared.Contracts.IndicatorType;
-global using IndicatorUnit = Bud.Shared.Contracts.IndicatorUnit;
-global using GoalStatus = Bud.Shared.Contracts.GoalStatus;
-global using QuantitativeIndicatorType = Bud.Shared.Contracts.QuantitativeIndicatorType;
+global using CollaboratorRole = Bud.Shared.Kernel.CollaboratorRole;
+global using GoalFilter = Bud.Shared.Kernel.GoalFilter;
+global using IndicatorType = Bud.Shared.Kernel.IndicatorType;
+global using IndicatorUnit = Bud.Shared.Kernel.IndicatorUnit;
+global using GoalStatus = Bud.Shared.Kernel.GoalStatus;
+global using QuantitativeIndicatorType = Bud.Shared.Kernel.QuantitativeIndicatorType;

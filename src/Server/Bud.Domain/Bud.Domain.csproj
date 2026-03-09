@@ -7,7 +7,8 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\Bud.Shared\Bud.Shared.csproj" />
+    <ProjectReference Include="..\..\Shared\Bud.Shared.Contracts\Bud.Shared.Contracts.csproj" />
+    <ProjectReference Include="..\..\Shared\Bud.Shared.Kernel\Bud.Shared.Kernel.csproj" />
   </ItemGroup>
 
 </Project>

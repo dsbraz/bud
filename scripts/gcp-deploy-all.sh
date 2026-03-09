@@ -75,7 +75,7 @@ if [[ -n "${SKIP_MIGRATION:-}" ]]; then
   export SKIP_MIGRATION
 fi
 
-echo "==> Etapa 1/2: deploy do Bud.Server (web)"
+echo "==> Etapa 1/2: deploy do Bud.Api (web)"
 "${SCRIPT_DIR}/gcp-deploy-web.sh"
 
 echo "==> Etapa 2/2: deploy do Bud.Mcp"

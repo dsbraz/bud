@@ -8,7 +8,7 @@ A evolução do sistema exige fronteiras arquiteturais rígidas para preservar o
 
 ## Decisão
 Estabelecer dependências unidirecionais:
-- `Bud.Api` -> `Bud.Application` + `Bud.Infrastructure` + `Bud.Shared` (+ `Bud.Client` para hosting híbrido temporário).
+- `Bud.Api` -> `Bud.Application` + `Bud.Infrastructure` + `Bud.Shared` (+ `Bud.BlazorWasm` para hosting híbrido temporário).
 - `Controllers` -> casos de uso de aplicação.
 - Casos de uso -> portas de repositório/serviço.
 - `Bud.Application` -> `Bud.Domain` + `Bud.Shared`.

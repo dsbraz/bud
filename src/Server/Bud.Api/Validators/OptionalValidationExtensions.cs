@@ -1,4 +1,4 @@
-using Bud.Shared.Contracts.Common;
+using Bud.Shared.Kernel;
 using FluentValidation;
 
 namespace Bud.Api.Validators;
