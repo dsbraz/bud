@@ -1,4 +1,4 @@
-# Deploy no Google Cloud (Bud.Server + Bud.Mcp)
+# Deploy no Google Cloud (Bud.Api + Bud.Mcp)
 
 ## INTRODUCAO
 
@@ -150,7 +150,7 @@ O deploy web executa migracoes EF Core automaticamente via Cloud Run Job.
 Para criar novas migracoes localmente:
 
 ```bash
-dotnet ef migrations add <NomeDaMigracao> --project src/Bud.Server --output-dir Infrastructure/Persistence/Migrations
+dotnet ef migrations add <NomeDaMigracao> --project src/Server/Bud.Infrastructure --startup-project src/Server/Bud.Api --output-dir Persistence/Migrations
 ```
 
 ## POS-DEPLOY
@@ -199,11 +199,11 @@ Nota: `Jwt__Key` ja e criado automaticamente pelo bootstrap e injetado via Secre
 
 O Bud usa OpenTelemetry com configuracao externalizada via variaveis de ambiente padrao do OTel spec. Os scripts de deploy ja incluem as variaveis abaixo.
 
-### Bud.Server (`bud-web`)
+### Bud.Api (`bud-web`)
 
 | Variavel | Valor em producao | Descricao |
 |----------|-------------------|-----------|
-| `OTEL_SERVICE_NAME` | `Bud.Server` | Nome do servico nos traces e metricas |
+| `OTEL_SERVICE_NAME` | `Bud.Api` | Nome do servico nos traces e metricas |
 | `OTEL_RESOURCE_ATTRIBUTES` | `cloud.provider=gcp,cloud.platform=gcp_cloud_run` | Atributos de recurso adicionados a todos os spans |
 | `OTEL_EXPORTER_OTLP_ENDPOINT` | `https://telemetry.googleapis.com` | Endpoint OTLP do Cloud Trace/Monitoring |
 | `GCP_PROJECT_ID` | `${PROJECT_ID}` | ID do projeto GCP; usado para formatar o trace ID no Cloud Logging JSON |

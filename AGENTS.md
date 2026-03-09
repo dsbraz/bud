@@ -39,7 +39,7 @@ This is the canonical agent contract for this repository.
 - Preserve architectural boundaries:
   - Controllers -> Use Cases.
   - Use Cases -> Repositories (interfaces in `Domain/Repositories`) and Ports (`Application/Ports`).
-  - Domain MUST NOT reference `Bud.Server.Infrastructure` (or sub-namespaces).
+  - Domain MUST NOT reference `Bud.Infrastructure` (or sub-namespaces).
   - Domain MUST NOT depend on `Infrastructure/`.
   - Application MUST depend only on abstractions (`Domain/Repositories`, `Application/Ports`).
   - Repositories MUST NOT return HTTP DTOs from `Bud.Shared.Contracts`.
@@ -50,7 +50,7 @@ This is the canonical agent contract for this repository.
 - Keep OpenAPI semantic documentation aligned with implementation.
 - Update or create ADR when architectural behavior changes.
 - Keep solution warning-free (`TreatWarningsAsErrors=true`).
-- For `Bud.Server` logging, use source-generated logging (`[LoggerMessage]`) local to each component (`partial` class); do not introduce centralized ad-hoc log catalogs.
+- For `Bud.Api` logging, use source-generated logging (`[LoggerMessage]`) local to each component (`partial` class); do not introduce centralized ad-hoc log catalogs.
 - For observability, register via `AddBudObservability()` in `BudObservabilityCompositionExtensions` (structured logging + OpenTelemetry). OTel config is **config-as-environment**: all export/resource/service-name settings come from standard OTel env vars, never hardcoded in code or appsettings.
 - Reserve EventId ranges per domain: 3100–3199 RequestTelemetryMiddleware; 4000–4009 Goal; 4010–4019 Organization; 4020–4029 Workspace; 4030–4039 Team; 4040–4049 Collaborator; 4050–4059 Indicator; 4060–4069 Checkin; 4070–4079 Template; 4080–4089 GoalTask; 4090–4099 Session/Notification; 5000–5009 McpRequestLoggingMiddleware.
 - For `Bud.Mcp`, keep tool schemas explicit (`required`, field types/formats/enums) and propagate API validation details (`errors` by field).
@@ -122,11 +122,15 @@ Bud is an ASP.NET Core 10 solution with Blazor WebAssembly frontend and PostgreS
 
 Main projects:
 
-- `src/Bud.Server`: API + static hosting for client.
+- `src/Server/Bud.Api`: API + hosting híbrido temporário do client.
+- `src/Server/Bud.Application`: casos de uso, mapeamentos, read models e ports.
+- `src/Server/Bud.Domain`: domínio puro, value objects, eventos e interfaces de repositório.
+- `src/Server/Bud.Infrastructure`: EF Core, repositórios, serviços concretos e migrations.
 - `src/Bud.Client`: Blazor WebAssembly UI.
 - `src/Bud.Shared`: shared contracts.
 - `src/Bud.Mcp`: MCP server over HTTP.
-- `tests/*`: server, integration, client, and MCP tests.
+- `tests/Server/*`: testes unitários, integração e arquitetura do backend.
+- `tests/Bud.Client.Tests` e `tests/Bud.Mcp.Tests`: testes do client e MCP.
 
 ## Layering and Dependencies (MUST)
 
@@ -168,7 +172,7 @@ Controllers must:
 
 ## Validation and OpenAPI (MUST)
 
-- Use FluentValidation in `src/Bud.Server/Validators/`, registered in DI.
+- Use FluentValidation in `src/Server/Bud.Api/Validators/`, registered in DI.
 - Validators must not access `ApplicationDbContext` directly.
 - Keep OpenAPI available at `/swagger` and `/openapi/v1.json` in Development.
 - Keep `ProducesResponseType`, `Consumes`, and `Produces` aligned with behavior.
@@ -189,7 +193,7 @@ Controllers must:
 To add migration:
 
 ```bash
-dotnet ef migrations add <Name> --project src/Bud.Server
+dotnet ef migrations add <Name> --project src/Server/Bud.Infrastructure --startup-project src/Server/Bud.Api
 ```
 
 ## Testing Guidelines (Normative)
@@ -234,15 +238,15 @@ Operational command details are maintained in:
 
 ## Key Files (Essential)
 
-- `src/Bud.Server/Controllers/ApiControllerBase.cs`
-- `src/Bud.Server/Controllers/OrganizationsController.cs`
-- `src/Bud.Server/Application/Common/Result.cs`
-- `src/Bud.Server/DependencyInjection/BudApplicationCompositionExtensions.cs`
-- `src/Bud.Server/DependencyInjection/BudObservabilityCompositionExtensions.cs`
-- `src/Bud.Server/DependencyInjection/BudSecurityCompositionExtensions.cs`
-- `src/Bud.Server/Infrastructure/Persistence/ApplicationDbContext.cs`
-- `src/Bud.Server/MultiTenancy/ITenantProvider.cs`
-- `src/Bud.Server/MultiTenancy/TenantRequiredMiddleware.cs`
+- `src/Server/Bud.Api/Controllers/ApiControllerBase.cs`
+- `src/Server/Bud.Api/Controllers/OrganizationsController.cs`
+- `src/Server/Bud.Application/Common/Result.cs`
+- `src/Server/Bud.Application/BudApplicationCompositionExtensions.cs`
+- `src/Server/Bud.Api/DependencyInjection/BudObservabilityCompositionExtensions.cs`
+- `src/Server/Bud.Api/DependencyInjection/BudSecurityCompositionExtensions.cs`
+- `src/Server/Bud.Infrastructure/Persistence/ApplicationDbContext.cs`
+- `src/Server/Bud.Application/Ports/ITenantProvider.cs`
+- `src/Server/Bud.Api/MultiTenancy/TenantRequiredMiddleware.cs`
 - `src/Bud.Client/Services/OrganizationContext.cs`
-- `tests/Bud.Server.Tests/Architecture/ArchitectureTests.cs`
+- `tests/Server/Bud.ArchitectureTests/Architecture/ArchitectureTests.cs`
 - `docs/adr/README.md`

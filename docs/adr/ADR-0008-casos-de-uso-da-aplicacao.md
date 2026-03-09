@@ -10,6 +10,7 @@ A camada de aplicação precisa expressar capacidades de negócio de forma expl�
 Modelar a aplicação por casos de uso com:
 - Uma classe por caso de uso.
 - Método único `ExecuteAsync`.
+- Organização física em `src/Server/Bud.Application/UseCases/<Domínio>/`.
 - Orquestração de regras de aplicação sem conter regra de domínio central.
 
 Os casos de uso cobrem autenticação, estrutura organizacional, missões, objetivos, métricas, check-ins, templates, dimensões, notificações e painel.

@@ -36,3 +36,4 @@ Cada ADR é autocontida e descreve contexto, decisão, consequências e alternat
 ## Governança
 
 Mudanças arquiteturais devem atualizar ADRs no mesmo conjunto de alterações.
+O baseline atual do backend é `src/Server/Bud.Api`, `Bud.Application`, `Bud.Domain` e `Bud.Infrastructure`, com testes em `tests/Server/*`.

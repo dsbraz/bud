@@ -8,6 +8,7 @@ Clientes HTTP e MCP precisam de contratos estáveis, independentes do modelo int
 
 ## Decisão
 - Endpoints retornam contratos de borda (`Bud.Shared.Contracts`).
+- Controllers e middleware HTTP vivem em `src/Server/Bud.Api`.
 - Controllers atuam como adaptadores HTTP puros.
 - Erros padronizados com `ProblemDetails`/`ValidationProblemDetails`.
 

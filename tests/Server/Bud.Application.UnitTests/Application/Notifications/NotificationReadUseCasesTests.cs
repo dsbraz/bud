@@ -1,0 +1,62 @@
+using Bud.Domain.Repositories;
+using Bud.Domain.Model;
+using Bud.Application.Common;
+using Bud.Application.Mapping;
+using Bud.Application.UseCases.Notifications;
+using Bud.Application.Ports;
+using Bud.Shared.Contracts;
+using FluentAssertions;
+using Moq;
+using Xunit;
+
+namespace Bud.Application.UnitTests.Application.Notifications;
+
+public sealed class NotificationReadUseCasesTests
+{
+    private readonly Mock<INotificationRepository> _repo = new();
+    private readonly Mock<ITenantProvider> _tenantProvider = new();
+
+    private ListNotifications CreateListUseCase()
+        => new(_repo.Object, _tenantProvider.Object);
+
+    #region GetMyNotificationsAsync
+
+    [Fact]
+    public async Task GetMyNotificationsAsync_WithoutCollaborator_ReturnsForbidden()
+    {
+        _tenantProvider.SetupGet(x => x.CollaboratorId).Returns((Guid?)null);
+
+        var result = await CreateListUseCase().ExecuteAsync(null, 1, 10);
+
+        result.IsSuccess.Should().BeFalse();
+        result.ErrorType.Should().Be(ErrorType.Forbidden);
+        result.Error.Should().Be("Colaborador não identificado.");
+        _repo.Verify(r => r.GetByRecipientAsync(It.IsAny<Guid>(), It.IsAny<bool?>(), It.IsAny<int>(), It.IsAny<int>(), It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task GetMyNotificationsAsync_ReturnsPagedNotifications()
+    {
+        var collaboratorId = Guid.NewGuid();
+        _tenantProvider.SetupGet(x => x.CollaboratorId).Returns(collaboratorId);
+
+        var pagedResult = new PagedResult<Notification>
+        {
+            Items = [new Notification { Id = Guid.NewGuid(), Title = "Test", Message = "Msg", Type = NotificationType.GoalCreated }],
+            Total = 1,
+            Page = 1,
+            PageSize = 10
+        };
+        _repo.Setup(r => r.GetByRecipientAsync(collaboratorId, null, 1, 10, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(pagedResult);
+
+        var result = await CreateListUseCase().ExecuteAsync(null, 1, 10);
+
+        result.IsSuccess.Should().BeTrue();
+        result.Value!.Items.Should().HaveCount(1);
+        result.Value.Total.Should().Be(1);
+        _repo.Verify(r => r.GetByRecipientAsync(collaboratorId, null, 1, 10, It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    #endregion
+}
