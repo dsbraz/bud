@@ -1,0 +1,16 @@
+using Microsoft.EntityFrameworkCore;
+
+namespace Bud.Infrastructure.Indicators;
+
+public sealed class IndicatorSearchSpecification(string? search, bool isNpgsql) : IQuerySpecification<Indicator>
+{
+    public IQueryable<Indicator> Apply(IQueryable<Indicator> query)
+    {
+        return QuerySearchHelper.ApplyCaseInsensitiveSearch(
+            query,
+            search,
+            isNpgsql,
+            (q, pattern) => q.Where(i => EF.Functions.ILike(i.Name, pattern)),
+            (q, term) => q.Where(i => i.Name.Contains(term, StringComparison.OrdinalIgnoreCase)));
+    }
+}
