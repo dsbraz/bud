@@ -1,7 +1,6 @@
-using Bud.Shared.Contracts.Requests;
 using FluentValidation;
 
-namespace Bud.Api.Validators;
+namespace Bud.Api.Features.Checkins;
 
 public sealed class CreateCheckinValidator : AbstractValidator<CreateCheckinRequest>
 {

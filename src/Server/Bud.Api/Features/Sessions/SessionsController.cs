@@ -1,13 +1,11 @@
-using Bud.Application.UseCases.Sessions;
 using Bud.Api.Authorization;
 using Bud.Shared.Contracts;
 using FluentValidation;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
-using Bud.Domain.Model;
 
-namespace Bud.Api.Controllers;
+namespace Bud.Api.Features.Sessions;
 
 [ApiController]
 [Route("api/sessions")]

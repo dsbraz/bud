@@ -1,7 +1,7 @@
 using Bud.Shared.Contracts;
 using FluentValidation;
 
-namespace Bud.Api.Validators;
+namespace Bud.Api.Features.Organizations;
 
 public sealed class CreateOrganizationValidator : AbstractValidator<CreateOrganizationRequest>
 {

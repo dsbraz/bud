@@ -1,8 +1,7 @@
 using Bud.Shared.Contracts;
-using Bud.Shared.Contracts.Requests;
 using FluentValidation;
 
-namespace Bud.Api.Validators;
+namespace Bud.Api.Features.Templates;
 
 public sealed class CreateTemplateValidator : AbstractValidator<CreateTemplateRequest>
 {

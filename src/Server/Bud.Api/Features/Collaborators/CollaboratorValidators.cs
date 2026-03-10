@@ -1,9 +1,8 @@
-using Bud.Domain.Repositories;
 using Bud.Application.Ports;
 using Bud.Shared.Contracts;
 using FluentValidation;
 
-namespace Bud.Api.Validators;
+namespace Bud.Api.Features.Collaborators;
 
 public sealed class CreateCollaboratorValidator : AbstractValidator<CreateCollaboratorRequest>
 {

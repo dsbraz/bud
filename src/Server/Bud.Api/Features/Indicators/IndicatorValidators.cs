@@ -1,8 +1,7 @@
 using Bud.Shared.Contracts;
-using Bud.Shared.Contracts.Requests;
 using FluentValidation;
 
-namespace Bud.Api.Validators;
+namespace Bud.Api.Features.Indicators;
 
 public sealed class CreateIndicatorValidator : AbstractValidator<CreateIndicatorRequest>
 {

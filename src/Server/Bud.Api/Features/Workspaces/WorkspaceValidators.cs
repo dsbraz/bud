@@ -1,7 +1,7 @@
 using Bud.Shared.Contracts;
 using FluentValidation;
 
-namespace Bud.Api.Validators;
+namespace Bud.Api.Features.Workspaces;
 
 public sealed class CreateWorkspaceValidator : AbstractValidator<CreateWorkspaceRequest>
 {

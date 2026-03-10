@@ -1,11 +1,9 @@
-using Bud.Application.UseCases.Notifications;
 using Bud.Api.Authorization;
 using Bud.Shared.Contracts;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Bud.Domain.Model;
 
-namespace Bud.Api.Controllers;
+namespace Bud.Api.Features.Notifications;
 
 /// <summary>
 /// Gerencia notificações do colaborador autenticado.

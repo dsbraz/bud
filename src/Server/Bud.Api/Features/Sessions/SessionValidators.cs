@@ -1,7 +1,7 @@
 using System.ComponentModel.DataAnnotations;
 using FluentValidation;
 
-namespace Bud.Api.Validators;
+namespace Bud.Api.Features.Sessions;
 
 public sealed class CreateSessionValidator : AbstractValidator<CreateSessionRequest>
 {

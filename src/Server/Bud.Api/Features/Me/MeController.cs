@@ -1,10 +1,9 @@
 using System.Security.Claims;
-using Bud.Application.UseCases.Me;
 using Bud.Api.Authorization;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
-namespace Bud.Api.Controllers;
+namespace Bud.Api.Features.Me;
 
 [ApiController]
 [Authorize]

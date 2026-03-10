@@ -1,16 +1,11 @@
-using Bud.Application.UseCases.Goals;
-using Bud.Application.UseCases.Tasks;
 using Bud.Api.Authorization;
 using Bud.Application.Ports;
 using Bud.Shared.Contracts;
-using Bud.Shared.Contracts.Requests;
-using Bud.Shared.Contracts.Responses;
 using FluentValidation;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Bud.Domain.Model;
 
-namespace Bud.Api.Controllers;
+namespace Bud.Api.Features.Goals;
 
 [ApiController]
 [Authorize(Policy = AuthorizationPolicies.TenantSelected)]
