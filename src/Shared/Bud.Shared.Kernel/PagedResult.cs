@@ -1,4 +1,4 @@
-namespace Bud.Shared.Contracts.Common;
+namespace Bud.Shared.Kernel;
 
 public sealed class PagedResult<T>
 {
