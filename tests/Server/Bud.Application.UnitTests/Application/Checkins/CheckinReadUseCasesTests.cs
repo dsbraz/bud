@@ -1,9 +1,5 @@
-using Bud.Domain.Repositories;
 using Bud.Application.Common;
-using Bud.Application.Mapping;
-using Bud.Application.UseCases.Checkins;
 using Bud.Shared.Contracts;
-using Bud.Domain.Model;
 using FluentAssertions;
 using Moq;
 using Xunit;

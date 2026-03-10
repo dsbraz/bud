@@ -1,0 +1,9 @@
+global using Bud.Domain.Goals;
+global using Bud.Domain.Indicators;
+global using Bud.Domain.Notifications;
+global using Bud.Domain.Organizations;
+global using Bud.Domain.People;
+global using Bud.Domain.Teams;
+global using Bud.Domain.Templates;
+global using Bud.Domain.Workspaces;
+global using Bud.Domain.Primitives;

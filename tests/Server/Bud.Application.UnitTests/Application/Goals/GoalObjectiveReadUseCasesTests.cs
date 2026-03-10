@@ -1,9 +1,4 @@
 using Bud.Application.Common;
-using Bud.Application.Mapping;
-using Bud.Application.UseCases.Goals;
-using Bud.Application.ReadModels;
-using Bud.Domain.Model;
-using Bud.Domain.Repositories;
 using Bud.Application.Ports;
 using Bud.Shared.Contracts;
 using FluentAssertions;

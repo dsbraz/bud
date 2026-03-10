@@ -1,4 +1,3 @@
-using Bud.Domain.Events;
 
 namespace Bud.Application.EventHandlers;
 

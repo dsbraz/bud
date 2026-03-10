@@ -1,5 +1,4 @@
 using Bud.Application.Ports;
-using Bud.Domain.Model;
 using Microsoft.EntityFrameworkCore;
 
 namespace Bud.Infrastructure.Persistence;

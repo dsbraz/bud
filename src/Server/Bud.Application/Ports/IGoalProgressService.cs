@@ -1,4 +1,3 @@
-using Bud.Application.ReadModels;
 using Bud.Application.Common;
 
 namespace Bud.Application.Ports;

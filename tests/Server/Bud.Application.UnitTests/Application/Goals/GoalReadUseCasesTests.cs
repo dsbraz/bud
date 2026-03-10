@@ -1,10 +1,6 @@
 using Bud.Application.Ports;
-using Bud.Domain.Repositories;
 using Bud.Application.Common;
-using Bud.Application.UseCases.Goals;
-using Bud.Application.ReadModels;
 using Bud.Shared.Contracts;
-using Bud.Domain.Model;
 using FluentAssertions;
 using Moq;
 using Xunit;
@@ -78,7 +74,7 @@ public sealed class GoalReadUseCasesTests
     {
         _repo.Setup(r => r.GetAllAsync(
                 GoalFilter.All, null, null, 1, 10, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new Bud.Shared.Contracts.Common.PagedResult<Goal> { Items = [], Total = 0, Page = 1, PageSize = 10 });
+            .ReturnsAsync(new PagedResult<Goal> { Items = [], Total = 0, Page = 1, PageSize = 10 });
 
         var useCase = CreateListGoals();
 

@@ -1,11 +1,7 @@
 using System.Security.Claims;
 using Bud.Application.Common;
-using Bud.Application.UseCases.Tasks;
 using Bud.Application.Ports;
-using Bud.Domain.Model;
-using Bud.Domain.Repositories;
 using Bud.Shared.Contracts;
-using Bud.Shared.Contracts.Requests;
 using FluentAssertions;
 using Microsoft.Extensions.Logging.Abstractions;
 using Moq;

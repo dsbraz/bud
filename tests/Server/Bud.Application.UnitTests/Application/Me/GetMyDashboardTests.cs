@@ -1,12 +1,9 @@
-using Bud.Application.UseCases.Me;
-using Bud.Application.ReadModels;
 using Bud.Application.Ports;
 using FluentAssertions;
 using Moq;
 using System.Security.Claims;
 using Xunit;
 using Bud.Application.Common;
-using Bud.Application.Mapping;
 
 namespace Bud.Application.UnitTests.Application.Me;
 

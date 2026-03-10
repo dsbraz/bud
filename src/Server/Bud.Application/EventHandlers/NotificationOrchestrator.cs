@@ -1,6 +1,4 @@
 using Bud.Application.Common;
-using Bud.Domain.Model;
-using Bud.Domain.Repositories;
 using Bud.Application.Ports;
 
 namespace Bud.Application.EventHandlers;

@@ -1,7 +1,5 @@
-using Bud.Domain.Repositories;
 using Bud.Application.Ports;
 using Bud.Application.EventHandlers;
-using Bud.Domain.Model;
 using FluentAssertions;
 using Moq;
 using Xunit;

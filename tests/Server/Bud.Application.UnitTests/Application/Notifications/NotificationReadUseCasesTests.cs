@@ -1,8 +1,4 @@
-using Bud.Domain.Repositories;
-using Bud.Domain.Model;
 using Bud.Application.Common;
-using Bud.Application.Mapping;
-using Bud.Application.UseCases.Notifications;
 using Bud.Application.Ports;
 using Bud.Shared.Contracts;
 using FluentAssertions;

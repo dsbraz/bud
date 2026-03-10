@@ -1,9 +1,5 @@
 using System.Security.Claims;
 using Bud.Application.Common;
-using Bud.Application.Mapping;
-using Bud.Application.UseCases.Templates;
-using Bud.Domain.Model;
-using Bud.Domain.Repositories;
 using Bud.Application.Ports;
 using Bud.Shared.Contracts;
 using FluentAssertions;

@@ -1,6 +1,4 @@
 using Bud.Application.EventHandlers;
-using Bud.Domain.Events;
-using Bud.Domain.Repositories;
 using Bud.Application.Ports;
 using Moq;
 using Xunit;

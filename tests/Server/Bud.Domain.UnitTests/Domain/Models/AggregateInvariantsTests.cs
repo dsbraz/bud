@@ -1,4 +1,3 @@
-using Bud.Domain.Model;
 using FluentAssertions;
 using Xunit;
 

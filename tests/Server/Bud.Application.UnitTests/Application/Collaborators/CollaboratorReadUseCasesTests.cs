@@ -1,8 +1,4 @@
-using Bud.Application.UseCases.Collaborators;
 using Bud.Application.Common;
-using Bud.Application.Mapping;
-using Bud.Domain.Model;
-using Bud.Domain.Repositories;
 using Bud.Shared.Contracts;
 using FluentAssertions;
 using Moq;

@@ -3,7 +3,6 @@ using System.Xml.Linq;
 using Bud.Api.Controllers;
 using Bud.Api.DependencyInjection;
 using Bud.Application;
-using Bud.Domain.Model;
 using Bud.Infrastructure;
 using Bud.Infrastructure.Persistence;
 using FluentAssertions;
@@ -116,11 +115,12 @@ public sealed class ArchitectureTests
     }
 
     [Fact]
-    public void Domain_repositories_should_not_depend_on_application_read_models_or_http_responses()
+    public void Application_repositories_should_not_depend_on_http_response_contracts()
     {
         var repositoryRoot = FindRepositoryRoot();
         var repositoryFiles = Directory
-            .EnumerateFiles(Path.Combine(repositoryRoot, "src", "Server", "Bud.Domain", "Repositories"), "*.cs", SearchOption.TopDirectoryOnly)
+            .EnumerateFiles(Path.Combine(repositoryRoot, "src", "Server", "Bud.Application"), "*.cs", SearchOption.AllDirectories)
+            .Where(path => Path.GetFileName(path).StartsWith('I') && Path.GetFileName(path).EndsWith("Repository.cs", StringComparison.Ordinal))
             .ToList();
 
         repositoryFiles.Should().NotBeEmpty();
@@ -129,8 +129,9 @@ public sealed class ArchitectureTests
             .Where(path =>
             {
                 var source = File.ReadAllText(path);
-                return source.Contains("Bud.Application.ReadModels", StringComparison.Ordinal)
-                    || source.Contains("Bud.Shared.Contracts.Responses", StringComparison.Ordinal);
+                return source.Contains("Bud.Shared.Contracts.Responses", StringComparison.Ordinal)
+                    || source.Contains("Bud.Shared.Contracts.Common", StringComparison.Ordinal)
+                    || source.Contains("Bud.Infrastructure", StringComparison.Ordinal);
             })
             .Select(path => Path.GetRelativePath(repositoryRoot, path))
             .ToList();
