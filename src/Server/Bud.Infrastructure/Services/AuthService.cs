@@ -4,9 +4,7 @@ using System.Text;
 using Bud.Application.Common;
 using Bud.Application.Configuration;
 using Bud.Application.Ports;
-using Bud.Application.ReadModels;
 using Bud.Infrastructure.Persistence;
-using Bud.Domain.Model;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
@@ -69,12 +67,12 @@ public sealed class AuthService(
         });
     }
 
-    public async Task<Result<List<Bud.Application.ReadModels.OrganizationSnapshot>>> GetMyOrganizationsAsync(string email, CancellationToken cancellationToken = default)
+    public async Task<Result<List<OrganizationSnapshot>>> GetMyOrganizationsAsync(string email, CancellationToken cancellationToken = default)
     {
         var normalizedEmail = email?.Trim().ToLowerInvariant();
         if (string.IsNullOrWhiteSpace(normalizedEmail))
         {
-            return Result<List<Bud.Application.ReadModels.OrganizationSnapshot>>.Failure("E-mail é obrigatório.");
+            return Result<List<OrganizationSnapshot>>.Failure("E-mail é obrigatório.");
         }
 
         var collaborator = await dbContext.Collaborators
@@ -88,14 +86,14 @@ public sealed class AuthService(
                 .AsNoTracking()
                 .IgnoreQueryFilters()
                 .OrderBy(o => o.Name)
-                .Select(o => new Bud.Application.ReadModels.OrganizationSnapshot
+                .Select(o => new OrganizationSnapshot
                 {
                     Id = o.Id,
                     Name = o.Name
                 })
                 .ToListAsync(cancellationToken);
 
-            return Result<List<Bud.Application.ReadModels.OrganizationSnapshot>>.Success(allOrgs);
+            return Result<List<OrganizationSnapshot>>.Success(allOrgs);
         }
 
         // Regular users: get organizations from two sources:
@@ -107,7 +105,7 @@ public sealed class AuthService(
             .IgnoreQueryFilters()
             .Where(c => c.Email == normalizedEmail)
             .Include(c => c.Organization)
-            .Select(c => new Bud.Application.ReadModels.OrganizationSnapshot
+            .Select(c => new OrganizationSnapshot
             {
                 Id = c.Organization.Id,
                 Name = c.Organization.Name
@@ -118,7 +116,7 @@ public sealed class AuthService(
             .AsNoTracking()
             .IgnoreQueryFilters()
             .Where(o => o.Owner != null && o.Owner.Email == normalizedEmail)
-            .Select(o => new Bud.Application.ReadModels.OrganizationSnapshot
+            .Select(o => new OrganizationSnapshot
             {
                 Id = o.Id,
                 Name = o.Name
@@ -133,7 +131,7 @@ public sealed class AuthService(
             .OrderBy(o => o.Name)
             .ToList();
 
-        return Result<List<Bud.Application.ReadModels.OrganizationSnapshot>>.Success(organizations);
+        return Result<List<OrganizationSnapshot>>.Success(organizations);
     }
 
     private async Task RegisterAccessLogAsync(Guid collaboratorId, Guid organizationId, CancellationToken cancellationToken)

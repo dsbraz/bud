@@ -1,5 +1,4 @@
 using Bud.Infrastructure.Persistence;
-using Bud.Domain.Model;
 using FluentAssertions;
 using Microsoft.EntityFrameworkCore;
 using Xunit;

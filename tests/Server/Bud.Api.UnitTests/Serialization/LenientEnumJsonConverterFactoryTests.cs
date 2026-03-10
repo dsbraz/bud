@@ -1,6 +1,5 @@
 using System.Text.Json;
 using Bud.Api.Serialization;
-using Bud.Domain.Model;
 using FluentAssertions;
 using Xunit;
 

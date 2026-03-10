@@ -4,13 +4,11 @@ using Bud.Application.Ports;
 using Bud.Application.Configuration;
 using Bud.Infrastructure.UnitTests.Helpers;
 using Bud.Shared.Contracts;
-using Bud.Domain.Model;
 using FluentAssertions;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using Xunit;
 using Bud.Application.Common;
-using Bud.Application.Mapping;
 
 namespace Bud.Infrastructure.UnitTests.Infrastructure.Services;
 

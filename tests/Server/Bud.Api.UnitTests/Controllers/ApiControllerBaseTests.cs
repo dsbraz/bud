@@ -1,4 +1,3 @@
-using Bud.Api.Controllers;
 using FluentAssertions;
 using FluentValidation.Results;
 using Microsoft.AspNetCore.Authorization;
@@ -6,7 +5,6 @@ using Microsoft.AspNetCore.Mvc;
 using Moq;
 using Xunit;
 using Bud.Application.Common;
-using Bud.Application.Mapping;
 
 namespace Bud.Api.UnitTests.Controllers;
 

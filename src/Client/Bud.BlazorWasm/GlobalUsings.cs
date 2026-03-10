@@ -1,5 +1,12 @@
 global using Bud.Shared.Contracts;
-global using Bud.Shared.Contracts.Common;
-global using Bud.Shared.Contracts.Requests;
-global using Bud.Shared.Contracts.Responses;
+global using Bud.Shared.Contracts.Goals;
+global using Bud.Shared.Contracts.Indicators;
+global using Bud.Shared.Contracts.Me;
+global using Bud.Shared.Contracts.Notifications;
+global using Bud.Shared.Contracts.Organizations;
+global using Bud.Shared.Contracts.People;
+global using Bud.Shared.Contracts.Sessions;
+global using Bud.Shared.Contracts.Teams;
+global using Bud.Shared.Contracts.Templates;
+global using Bud.Shared.Contracts.Workspaces;
 global using Bud.Shared.Kernel;

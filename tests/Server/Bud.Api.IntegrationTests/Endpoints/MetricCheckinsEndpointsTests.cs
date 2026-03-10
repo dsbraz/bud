@@ -1,7 +1,6 @@
 using System.Net;
 using System.Net.Http.Json;
 using Bud.Shared.Contracts;
-using Bud.Domain.Model;
 using FluentAssertions;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;

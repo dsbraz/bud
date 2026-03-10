@@ -1,6 +1,5 @@
 using Bud.BlazorWasm.Components.Common;
 using Bud.Shared.Contracts;
-using Bud.Shared.Contracts.Responses;
 using Microsoft.AspNetCore.Components;
 
 #pragma warning disable IDE0011

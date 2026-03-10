@@ -1,4 +1,3 @@
-using Bud.Api.Validators;
 using Bud.Shared.Contracts;
 using FluentAssertions;
 using Xunit;

@@ -3,8 +3,6 @@ using Bud.Infrastructure.Persistence;
 using Bud.Infrastructure.Authorization;
 using Bud.Infrastructure.DomainEvents;
 using Bud.Application.Ports;
-using Bud.Domain.Repositories;
-using Bud.Infrastructure.Repositories;
 using Bud.Infrastructure.Services;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.EntityFrameworkCore;

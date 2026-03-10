@@ -1,5 +1,3 @@
-using Bud.Domain.Events;
-using Bud.Domain.Model;
 using Bud.Infrastructure.Persistence;
 using FluentAssertions;
 using Microsoft.EntityFrameworkCore;

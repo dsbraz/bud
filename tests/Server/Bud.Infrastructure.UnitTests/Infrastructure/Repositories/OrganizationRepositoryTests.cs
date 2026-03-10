@@ -1,6 +1,5 @@
 using Bud.Infrastructure.Persistence;
 using Bud.Infrastructure.UnitTests.Helpers;
-using Bud.Domain.Model;
 using FluentAssertions;
 using Microsoft.EntityFrameworkCore;
 using Xunit;

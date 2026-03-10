@@ -4,7 +4,6 @@ using System.Diagnostics;
 using System.Text;
 using System.Text.Json;
 using Bud.Shared.Contracts;
-using Bud.Domain.Model;
 using FluentAssertions;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;

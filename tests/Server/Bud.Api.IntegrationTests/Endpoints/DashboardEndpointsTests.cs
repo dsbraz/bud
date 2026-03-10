@@ -3,7 +3,6 @@ using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using Bud.Infrastructure.Persistence;
 using Bud.Api.IntegrationTests.Helpers;
-using Bud.Domain.Model;
 using FluentAssertions;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;

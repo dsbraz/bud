@@ -1,6 +1,5 @@
 using Bud.Api.Authorization;
 using Bud.Application.Common;
-using Bud.Application.Mapping;
 using Bud.Application.Ports;
 
 namespace Bud.Api.UnitTests.Helpers;

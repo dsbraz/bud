@@ -2,8 +2,6 @@ using System.Globalization;
 using Bud.BlazorWasm.Api;
 using Bud.BlazorWasm.Services;
 using Bud.Shared.Contracts;
-using Bud.Shared.Contracts.Requests;
-using Bud.Shared.Contracts.Responses;
 using Microsoft.AspNetCore.Components;
 
 #pragma warning disable IDE0011, IDE0044

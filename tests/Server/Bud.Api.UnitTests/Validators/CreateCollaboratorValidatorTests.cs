@@ -1,6 +1,4 @@
-using Bud.Domain.Repositories;
 using Bud.Application.Ports;
-using Bud.Api.Validators;
 using Bud.Shared.Contracts;
 using FluentAssertions;
 using Moq;

@@ -2,7 +2,6 @@ using Bud.BlazorWasm.Services;
 using Bud.BlazorWasm.Components.Common;
 using Bud.BlazorWasm.Features.Goals.Components;
 using Bud.Shared.Contracts;
-using Bud.Shared.Contracts.Responses;
 using Bunit;
 using FluentAssertions;
 using Microsoft.Extensions.DependencyInjection;

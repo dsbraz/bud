@@ -1,7 +1,5 @@
 using Bud.Infrastructure.Persistence;
 using Bud.Application.Ports;
-using Bud.Application.ReadModels;
-using Bud.Domain.Model;
 using Bud.Shared.Contracts;
 using Microsoft.EntityFrameworkCore;
 using Bud.Application.Common;

@@ -5,7 +5,6 @@ using Bud.BlazorWasm.Api;
 using Bud.BlazorWasm.Services;
 using Bud.BlazorWasm.Features.Goals.Components;
 using Bud.Shared.Contracts;
-using Bud.Shared.Contracts.Responses;
 using Bunit;
 using FluentAssertions;
 using Microsoft.AspNetCore.Components;
