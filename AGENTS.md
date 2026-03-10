@@ -38,10 +38,10 @@ This is the canonical agent contract for this repository.
 - Keep all user-facing text in `pt-BR` (errors, validation, API problem responses, UI text).
 - Preserve architectural boundaries:
   - Controllers -> Use Cases.
-  - Use Cases -> Repositories (interfaces in `Domain/Repositories`) and Ports (`Application/Ports`).
+  - Use Cases -> Repository interfaces (`Application/<Feature>/`) and Ports (`Application/Ports`).
   - Domain MUST NOT reference `Bud.Infrastructure` (or sub-namespaces).
   - Domain MUST NOT depend on `Infrastructure/`.
-  - Application MUST depend only on abstractions (`Domain/Repositories`, `Application/Ports`).
+  - Application MUST depend only on abstractions (repository interfaces in `Application/<Feature>/`, ports in `Application/Ports`).
   - Repositories MUST NOT return HTTP DTOs from `Bud.Shared.Contracts`.
   - Repositories MUST return domain entities/read models; mapping to `Bud.Shared.Contracts` happens in Application.
 - Respect established patterns (specification, policy-based auth, composition root modules).
@@ -136,8 +136,8 @@ Main projects:
 ## Layering and Dependencies (MUST)
 
 - Controllers orchestrate validators + use cases.
-- Use cases depend on abstractions only (`Domain/Repositories`, `Application/Ports`).
-- Repository interfaces stay in Domain; implementations in Infrastructure.
+- Use cases depend on abstractions only (repository interfaces in `Application/<Feature>/`, ports in `Application/Ports`).
+- Repository interfaces live in `Bud.Application/<Feature>/`; implementations in `Bud.Infrastructure/Features/<Feature>/`.
 - Domain stays infrastructure-agnostic.
 - Mapping to shared HTTP contracts happens in Application.
 

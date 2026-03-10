@@ -4,22 +4,25 @@
 Accepted
 
 ## Contexto
-A camada de aplicação precisa expressar capacidades de negócio de forma explícita.
+A camada de aplicação precisa expressar capacidades de negócio de forma explícita e co-localizar todos os artefatos de uma feature.
 
 ## Decisão
-Modelar a aplicação por casos de uso com:
-- Uma classe por caso de uso.
-- Método único `ExecuteAsync`.
-- Organização física em `src/Server/Bud.Application/UseCases/<Domínio>/`.
-- Orquestração de regras de aplicação sem conter regra de domínio central.
+Modelar a aplicação por feature, co-localizando em `src/Server/Bud.Application/<Feature>/`:
+- Uma classe por caso de uso com método único `ExecuteAsync`.
+- Interface de repositório do feature (ex: `IGoalRepository`).
+- Mappers de contrato (ex: `CollaboratorsContractMapper`).
+- Read models internos (ex: `GoalProgressSnapshot`).
+- Policies de negócio do feature (ex: `GoalDateRangePolicy`).
 
-Os casos de uso cobrem autenticação, estrutura organizacional, missões, objetivos, métricas, check-ins, templates, dimensões, notificações e painel.
+Casos de uso orquestram regras de aplicação sem conter regra de domínio central.
 
 ## Consequências
 - Fluxos de negócio ficam rastreáveis por intenção.
-- Redução de classes “genéricas” sem foco de capacidade.
+- Todos os artefatos de uma feature estão co-localizados.
+- Redução de classes "genéricas" sem foco de capacidade.
 - Aumento de número de classes com maior coesão.
 
 ## Alternativas consideradas
+- Organização por tipo técnico (UseCases/, Mapping/, ReadModels/, Policies/ separados).
 - Agrupar múltiplos fluxos em classes de comando/consulta amplas.
 - Expor lógica diretamente em controllers.
