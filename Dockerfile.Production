@@ -25,6 +25,8 @@ RUN /tools/dotnet-ef migrations bundle --project src/Server/Bud.Infrastructure -
 FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS prod-migrate
 WORKDIR /app
 COPY --from=build-migrate /app/efbundle .
+COPY --from=publish-web /app/publish/appsettings.json .
+COPY --from=publish-web /app/publish/appsettings.Production.json .
 ENTRYPOINT ["./efbundle"]
 
 FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS prod-web

@@ -197,12 +197,11 @@ gcloud run deploy "$API_SERVICE_NAME" \
   --platform managed \
   --image "$IMAGE_URI" \
   --service-account "$SERVICE_ACCOUNT_EMAIL" \
-  --allow-unauthenticated \
   --port 8080 \
   --set-cloudsql-instances "$INSTANCE_CONNECTION_NAME" \
   --set-secrets "ConnectionStrings__DefaultConnection=${SECRET_DB_CONNECTION}:latest" \
   --set-secrets "Jwt__Key=${SECRET_JWT_KEY}:latest" \
-  --set-env-vars "ASPNETCORE_ENVIRONMENT=Production,DOTNET_ENVIRONMENT=Production,ASPNETCORE_URLS=http://0.0.0.0:8080,ASPNETCORE_FORWARDEDHEADERS_ENABLED=true,OTEL_SERVICE_NAME=Bud.Api,OTEL_RESOURCE_ATTRIBUTES=cloud.provider=gcp\,cloud.platform=gcp_cloud_run,OTEL_EXPORTER_OTLP_ENDPOINT=https://telemetry.googleapis.com,GCP_PROJECT_ID=${PROJECT_ID}"
+  --set-env-vars "^|^ASPNETCORE_ENVIRONMENT=Production|DOTNET_ENVIRONMENT=Production|ASPNETCORE_URLS=http://0.0.0.0:8080|ASPNETCORE_FORWARDEDHEADERS_ENABLED=true|OTEL_SERVICE_NAME=Bud.Api|OTEL_RESOURCE_ATTRIBUTES=cloud.provider=gcp,cloud.platform=gcp_cloud_run|OTEL_EXPORTER_OTLP_ENDPOINT=https://telemetry.googleapis.com|GCP_PROJECT_ID=${PROJECT_ID}"
 
 echo "==> Validando endpoints de health da API"
 API_URL="$(gcloud run services describe "$API_SERVICE_NAME" --region "$REGION" --project "$PROJECT_ID" --format='value(status.url)')"

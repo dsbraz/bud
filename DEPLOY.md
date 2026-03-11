@@ -122,7 +122,6 @@ Se nao houve mudanca no schema do banco:
 ./scripts/gcp-deploy-api.sh
 ./scripts/gcp-deploy-api.sh --skip-migration
 ./scripts/gcp-deploy-frontend.sh
-./scripts/gcp-deploy-web.sh
 ./scripts/gcp-deploy-mcp.sh
 ```
 
@@ -242,7 +241,6 @@ Em desenvolvimento local, nenhuma variavel OTel e configurada. O OTLP exporter t
   - `scripts/gcp-bootstrap.sh`
   - `scripts/gcp-deploy-api.sh`
   - `scripts/gcp-deploy-frontend.sh`
-  - `scripts/gcp-deploy-web.sh`
   - `scripts/gcp-deploy-mcp.sh`
   - `scripts/gcp-deploy-all.sh`
 

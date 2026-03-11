@@ -113,9 +113,8 @@ gcloud run deploy "$FRONTEND_SERVICE_NAME" \
   --region "$REGION" \
   --platform managed \
   --image "$IMAGE_URI" \
-  --allow-unauthenticated \
   --port 8080 \
-  --set-env-vars "PORT=8080,BUD_API_BASE_URL=${API_URL}"
+  --set-env-vars "BUD_API_BASE_URL=${API_URL}"
 
 echo "==> Validando frontend"
 FRONTEND_URL="$(gcloud run services describe "$FRONTEND_SERVICE_NAME" --region "$REGION" --project "$PROJECT_ID" --format='value(status.url)')"

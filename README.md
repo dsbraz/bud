@@ -634,7 +634,6 @@ Scripts disponíveis:
 - `scripts/gcp-bootstrap.sh`: prepara infraestrutura base (APIs, Artifact Registry, Cloud SQL, service account, secrets, permissões do Cloud Build).
 - `scripts/gcp-deploy-api.sh`: deploy do `Bud.Api` (com migração EF Core via Cloud Run Job).
 - `scripts/gcp-deploy-frontend.sh`: deploy do frontend Blazor WASM separado.
-- `scripts/gcp-deploy-web.sh`: wrapper legado que delega para `gcp-deploy-api.sh`.
 - `scripts/gcp-deploy-mcp.sh`: deploy do `Bud.Mcp` HTTP.
 - `scripts/gcp-deploy-all.sh`: executa deploy completo (`Bud.Api` + `Bud.Mcp` + frontend).
 
@@ -662,7 +661,6 @@ Deploy por serviço:
 ./scripts/gcp-deploy-api.sh
 ./scripts/gcp-deploy-api.sh --skip-migration
 ./scripts/gcp-deploy-frontend.sh
-./scripts/gcp-deploy-web.sh
 ./scripts/gcp-deploy-mcp.sh
 ```
 
