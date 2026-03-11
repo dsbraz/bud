@@ -32,10 +32,3 @@
     </Modal>
 }
 
-@code {
-    [Parameter] public bool IsOpen { get; set; }
-    [Parameter] public List<TemplateResponse> Templates { get; set; } = [];
-    [Parameter] public EventCallback OnClose { get; set; }
-    [Parameter] public EventCallback OnCreateFromScratch { get; set; }
-    [Parameter] public EventCallback<TemplateResponse> OnSelectTemplate { get; set; }
-}

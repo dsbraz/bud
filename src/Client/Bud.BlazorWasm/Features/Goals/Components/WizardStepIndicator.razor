@@ -26,15 +26,3 @@
     </div>
 }
 
-@code {
-    [Parameter] public WizardStep CurrentStep { get; set; }
-    [Parameter] public bool Hidden { get; set; }
-    [Parameter] public EventCallback<WizardStep> OnStepClick { get; set; }
-
-    private static readonly (WizardStep Value, string Label)[] Steps =
-    [
-        (WizardStep.ChooseTemplate, "Escolher template"),
-        (WizardStep.BuildGoal, "Construir meta"),
-        (WizardStep.Review, "Revisão")
-    ];
-}

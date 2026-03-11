@@ -1,5 +1,3 @@
-﻿@inject AuthState AuthState
-@inject NavigationManager Nav
 @using Bud.BlazorWasm.Features.Auth.Pages
 
 <Router AppAssembly="@typeof(App).Assembly" OnNavigateAsync="HandleNavigationAsync">
@@ -14,30 +12,3 @@
     </NotFound>
 </Router>
 
-@code {
-    private async Task HandleNavigationAsync(NavigationContext context)
-    {
-        await AuthState.EnsureInitializedAsync();
-
-        var path = context.Path ?? string.Empty;
-        var isLogin = path.StartsWith("login", StringComparison.OrdinalIgnoreCase);
-
-        if (!AuthState.IsAuthenticated && !isLogin)
-        {
-            var returnUrl = Uri.EscapeDataString(GetCurrentRelativeUrl());
-            Nav.NavigateTo($"login?returnUrl={returnUrl}");
-            return;
-        }
-
-        if (AuthState.IsAuthenticated && isLogin)
-        {
-            Nav.NavigateTo("/");
-        }
-    }
-
-    private string GetCurrentRelativeUrl()
-    {
-        var uri = Nav.ToAbsoluteUri(Nav.Uri);
-        return string.IsNullOrWhiteSpace(uri.PathAndQuery) ? "/" : uri.PathAndQuery;
-    }
-}

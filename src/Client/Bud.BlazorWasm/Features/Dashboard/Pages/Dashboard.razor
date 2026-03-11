@@ -1,10 +1,5 @@
 @page "/"
 @page "/dashboard"
-@implements IDisposable
-@inject ApiClient Api
-@inject AuthState AuthState
-@inject OrganizationContext OrgContext
-@inject NavigationManager Navigation
 
 @if (dashboard is null)
 {
@@ -186,60 +181,4 @@ else
     </div>
 }
 
-@code {
-    private MyDashboardResponse? dashboard;
-    private List<CollaboratorTeamResponse>? userTeams;
-    private Guid? selectedTeamId;
 
-    protected override async Task OnInitializedAsync()
-    {
-        OrgContext.OnOrganizationChanged += OnOrganizationChanged;
-
-        // Aguardar inicialização do OrgContext (MainLayout pode ainda estar carregando)
-        var maxWait = 50; // 50 * 100ms = 5 segundos máximo
-        while (!OrgContext.IsInitialized && maxWait > 0)
-        {
-            await Task.Delay(100);
-            maxWait--;
-        }
-
-        await AuthState.EnsureInitializedAsync();
-        await LoadUserTeams();
-        await LoadDashboard();
-    }
-
-    private async Task LoadUserTeams()
-    {
-        if (AuthState.SessionResponse?.CollaboratorId is { } collaboratorId)
-        {
-            userTeams = await Api.GetCollaboratorTeamsAsync(collaboratorId);
-        }
-    }
-
-    private async Task LoadDashboard()
-    {
-        dashboard = await Api.GetMyDashboardAsync(selectedTeamId) ?? new MyDashboardResponse();
-    }
-
-    private async Task OnTeamSelectionChanged(ChangeEventArgs e)
-    {
-        selectedTeamId = Guid.TryParse(e.Value?.ToString(), out var id) ? id : null;
-        await LoadDashboard();
-    }
-
-    private void OnOrganizationChanged()
-    {
-        _ = InvokeAsync(async () =>
-        {
-            selectedTeamId = null;
-            await LoadUserTeams();
-            await LoadDashboard();
-            StateHasChanged();
-        });
-    }
-
-    public void Dispose()
-    {
-        OrgContext.OnOrganizationChanged -= OnOrganizationChanged;
-    }
-}
