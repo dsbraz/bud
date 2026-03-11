@@ -1,6 +1,3 @@
-@inject ToastService ToastService
-@implements IDisposable
-
 <div class="toast-container">
     @foreach (var toast in toasts)
     {
@@ -13,28 +10,4 @@
     }
 </div>
 
-@code {
-    private List<ToastMessage> toasts = new();
 
-    protected override void OnInitialized()
-    {
-        ToastService.OnToastAdded += AddToast;
-    }
-
-    private void AddToast(ToastMessage toast)
-    {
-        toasts.Add(toast);
-        InvokeAsync(StateHasChanged);
-    }
-
-    private void RemoveToast(ToastMessage toast)
-    {
-        toasts.Remove(toast);
-        StateHasChanged();
-    }
-
-    public void Dispose()
-    {
-        ToastService.OnToastAdded -= AddToast;
-    }
-}
