@@ -72,6 +72,13 @@ public sealed class ApplicationDbContext : DbContext
                 (_tenantId != null && c.OrganizationId == _tenantId)
             );
 
+        modelBuilder.Entity<CollaboratorTeam>()
+            .HasQueryFilter(ct =>
+                !_applyTenantFilter ||
+                (_isGlobalAdmin && _tenantId == null) ||
+                (_tenantId != null && ct.Collaborator.OrganizationId == _tenantId)
+            );
+
         modelBuilder.Entity<Goal>()
             .HasQueryFilter(g =>
                 !_applyTenantFilter ||
