@@ -1,4 +1,4 @@
-namespace Bud.Domain.People;
+namespace Bud.Domain.Collaborators;
 
 public sealed class CollaboratorTeam
 {

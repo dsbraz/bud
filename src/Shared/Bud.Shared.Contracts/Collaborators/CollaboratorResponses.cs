@@ -1,6 +1,6 @@
 using Bud.Shared.Kernel;
 
-namespace Bud.Shared.Contracts.People;
+namespace Bud.Shared.Contracts.Collaborators;
 
 public sealed class CollaboratorResponse
 {

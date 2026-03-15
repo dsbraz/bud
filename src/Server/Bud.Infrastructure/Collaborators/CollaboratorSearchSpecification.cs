@@ -1,7 +1,7 @@
 
 using Microsoft.EntityFrameworkCore;
 
-namespace Bud.Infrastructure.People;
+namespace Bud.Infrastructure.Collaborators;
 
 public sealed class CollaboratorSearchSpecification(string? search, bool isNpgsql) : IQuerySpecification<Collaborator>
 {

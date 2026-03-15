@@ -1,7 +1,7 @@
 using Bud.Shared.Kernel;
 using System.Text.Json.Serialization;
 
-namespace Bud.Shared.Contracts.People;
+namespace Bud.Shared.Contracts.Collaborators;
 
 public sealed class CreateCollaboratorRequest
 {

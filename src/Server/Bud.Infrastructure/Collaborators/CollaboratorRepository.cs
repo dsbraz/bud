@@ -3,7 +3,7 @@ using Microsoft.EntityFrameworkCore;
 
 using Bud.Shared.Contracts;
 
-namespace Bud.Infrastructure.People;
+namespace Bud.Infrastructure.Collaborators;
 
 public sealed class CollaboratorRepository(ApplicationDbContext dbContext) : ICollaboratorRepository
 {

@@ -1,9 +1,9 @@
 global using Organization = Bud.Domain.Organizations.Organization;
 global using Workspace = Bud.Domain.Workspaces.Workspace;
 global using Team = Bud.Domain.Teams.Team;
-global using Collaborator = Bud.Domain.People.Collaborator;
+global using Collaborator = Bud.Domain.Collaborators.Collaborator;
 global using Goal = Bud.Domain.Goals.Goal;
 global using Indicator = Bud.Domain.Indicators.Indicator;
 global using Checkin = Bud.Domain.Indicators.Checkin;
 global using Template = Bud.Domain.Templates.Template;
-global using CollaboratorTeam = Bud.Domain.People.CollaboratorTeam;
+global using CollaboratorTeam = Bud.Domain.Collaborators.CollaboratorTeam;
