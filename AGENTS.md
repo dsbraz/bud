@@ -38,10 +38,10 @@ This is the canonical agent contract for this repository.
 - Keep all user-facing text in `pt-BR` (errors, validation, API problem responses, UI text).
 - Preserve architectural boundaries:
   - Controllers -> Use Cases.
-  - Use Cases -> Repository interfaces (`Application/<Feature>/`), feature ports (`Application/<Feature>/`) e ports transversais (`Application/Ports`).
+  - Use Cases -> Repository interfaces (`Application/Features/<Feature>/`), feature ports (`Application/Features/<Feature>/`) e ports transversais (`Application/Ports`).
   - Domain MUST NOT reference `Bud.Infrastructure` (or sub-namespaces).
   - Domain MUST NOT depend on `Infrastructure/`.
-  - Application MUST depend only on abstractions (repository interfaces in `Application/<Feature>/`, ports feature-scoped em `Application/<Feature>/` e ports transversais em `Application/Ports`).
+  - Application MUST depend only on abstractions (repository interfaces in `Application/Features/<Feature>/`, ports feature-scoped em `Application/Features/<Feature>/` e ports transversais em `Application/Ports`).
   - Repositories MUST NOT return HTTP DTOs from `Bud.Shared.Contracts`.
   - Repositories MUST return domain entities/read models; mapping to `Bud.Shared.Contracts` happens in Application.
 - Respect established patterns (specification, policy-based auth, composition root modules).
@@ -136,8 +136,8 @@ Main projects:
 ## Layering and Dependencies (MUST)
 
 - Controllers orchestrate validators + use cases.
-- Use cases depend on abstractions only (repository interfaces in `Application/<Feature>/`, ports feature-scoped em `Application/<Feature>/` e ports transversais em `Application/Ports`).
-- Repository interfaces live in `Bud.Application/<Feature>/`; implementations in `Bud.Infrastructure/Features/<Feature>/`.
+- Use cases depend on abstractions only (repository interfaces in `Application/Features/<Feature>/`, ports feature-scoped em `Application/Features/<Feature>/` e ports transversais em `Application/Ports`).
+- Repository interfaces live in `Bud.Application/Features/<Feature>/`; implementations in `Bud.Infrastructure/Features/<Feature>/`.
 - Domain stays infrastructure-agnostic.
 - Mapping to shared HTTP contracts happens in Application.
 

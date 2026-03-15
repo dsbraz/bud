@@ -1,15 +1,17 @@
 using Bud.Application.Abstractions;
-using Bud.Application.Goals;
-using Bud.Application.Indicators;
-using Bud.Application.Me;
-using Bud.Application.Notifications;
-using Bud.Application.Organizations;
+using Bud.Application.Features.Goals;
+using Bud.Application.Features.Indicators;
+using Bud.Application.Features.Tasks;
+using Bud.Application.Features.Me;
+using Bud.Application.Features.Notifications;
+using Bud.Application.Features.Organizations;
 using Bud.Infrastructure.Persistence;
 using Bud.Infrastructure.Authorization;
 using Bud.Infrastructure.DomainEvents;
+using Bud.Infrastructure.Features.Tasks;
 using Bud.Application.Ports;
-using Bud.Infrastructure.Me;
-using Bud.Infrastructure.Sessions;
+using Bud.Infrastructure.Features.Me;
+using Bud.Infrastructure.Features.Sessions;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.EntityFrameworkCore;
 

@@ -7,7 +7,7 @@ Accepted
 A camada de aplicação precisa expressar capacidades de negócio de forma explícita e co-localizar todos os artefatos de uma feature.
 
 ## Decisão
-Modelar a aplicação por feature, co-localizando em `src/Server/Bud.Application/<Feature>/`:
+Modelar a aplicação por feature, co-localizando em `src/Server/Bud.Application/Features/<Feature>/`:
 - Uma classe por caso de uso com método único `ExecuteAsync`.
 - Interface de repositório do feature (ex: `IGoalRepository`).
 - Ports da feature quando o adapter tem dono funcional claro (ex: `IMyDashboardReadStore` em `Me/`).

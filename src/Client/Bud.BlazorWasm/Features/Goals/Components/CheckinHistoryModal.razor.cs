@@ -1,5 +1,5 @@
 using Bud.BlazorWasm.Services;
-using Bud.Shared.Contracts.Goals;
+using Bud.Shared.Contracts.Features.Goals;
 using Microsoft.AspNetCore.Components;
 
 namespace Bud.BlazorWasm.Features.Goals.Components;
