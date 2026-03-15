@@ -60,7 +60,7 @@ Valores principais:
 ```bash
 PROJECT_ID="bud2-spike"
 REGION="us-central1"
-FRONTEND_SERVICE_NAME="bud-web"
+WEB_SERVICE_NAME="bud-web"
 API_SERVICE_NAME="bud-api"
 MCP_SERVICE_NAME="bud-mcp"
 DB_PASS=""

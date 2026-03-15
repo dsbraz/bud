@@ -11,7 +11,7 @@ Opcoes:
   --project-id <id>                  PROJECT_ID
   --region <region>                  REGION
   --repo-name <nome>                 REPO_NAME
-  --frontend-service-name <nome>     FRONTEND_SERVICE_NAME
+  --web-service-name <nome>          WEB_SERVICE_NAME
   --api-service-name <nome>          API_SERVICE_NAME
   --api-url <url>                    API_URL (opcional)
   --web-api-url <url>                Alias legado para API_URL
@@ -66,7 +66,7 @@ while [[ $# -gt 0 ]]; do
     --project-id) PROJECT_ID="$2"; shift 2 ;;
     --region) REGION="$2"; shift 2 ;;
     --repo-name) REPO_NAME="$2"; shift 2 ;;
-    --frontend-service-name) FRONTEND_SERVICE_NAME="$2"; shift 2 ;;
+    --web-service-name) WEB_SERVICE_NAME="$2"; shift 2 ;;
     --api-service-name) API_SERVICE_NAME="$2"; shift 2 ;;
     --api-url) API_URL="$2"; shift 2 ;;
     --web-api-url) API_URL="$2"; shift 2 ;;
@@ -80,12 +80,12 @@ require_env PROJECT_ID
 require_env REGION
 
 REPO_NAME="${REPO_NAME:-bud}"
-FRONTEND_SERVICE_NAME="${FRONTEND_SERVICE_NAME:-bud-web}"
+WEB_SERVICE_NAME="${WEB_SERVICE_NAME:-bud-web}"
 API_SERVICE_NAME="${API_SERVICE_NAME:-bud-api}"
 IMAGE_TAG="${IMAGE_TAG:-$(date +%Y%m%d-%H%M%S)}"
 API_URL="${API_URL:-}"
 
-IMAGE_URI="${REGION}-docker.pkg.dev/${PROJECT_ID}/${REPO_NAME}/${FRONTEND_SERVICE_NAME}:${IMAGE_TAG}"
+IMAGE_URI="${REGION}-docker.pkg.dev/${PROJECT_ID}/${REPO_NAME}/${WEB_SERVICE_NAME}:${IMAGE_TAG}"
 
 echo "==> Configurando projeto"
 gcloud config set project "$PROJECT_ID" >/dev/null
@@ -108,7 +108,7 @@ gcloud builds submit \
   .
 
 echo "==> Deployando frontend no Cloud Run"
-gcloud run deploy "$FRONTEND_SERVICE_NAME" \
+gcloud run deploy "$WEB_SERVICE_NAME" \
   --project "$PROJECT_ID" \
   --region "$REGION" \
   --platform managed \
@@ -117,7 +117,7 @@ gcloud run deploy "$FRONTEND_SERVICE_NAME" \
   --set-env-vars "BUD_API_BASE_URL=${API_URL}"
 
 echo "==> Validando frontend"
-FRONTEND_URL="$(gcloud run services describe "$FRONTEND_SERVICE_NAME" --region "$REGION" --project "$PROJECT_ID" --format='value(status.url)')"
+FRONTEND_URL="$(gcloud run services describe "$WEB_SERVICE_NAME" --region "$REGION" --project "$PROJECT_ID" --format='value(status.url)')"
 
 curl --fail --silent --show-error "${FRONTEND_URL}/" >/dev/null
 curl --fail --silent --show-error "${FRONTEND_URL}/health/live" >/dev/null
