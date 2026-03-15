@@ -1,5 +1,4 @@
 using Bud.Application.Common;
-using Bud.Application.Ports;
 using Bud.Shared.Contracts;
 using FluentAssertions;
 using Moq;
@@ -10,7 +9,7 @@ namespace Bud.Application.UnitTests.Application.Goals;
 public sealed class GoalObjectiveReadUseCasesTests
 {
     private readonly Mock<IGoalRepository> _repository = new();
-    private readonly Mock<IGoalProgressService> _progressService = new();
+    private readonly Mock<IGoalProgressReadStore> _progressService = new();
 
     [Fact]
     public async Task ViewMissionObjectiveDetails_WhenFound_ReturnsObjective()

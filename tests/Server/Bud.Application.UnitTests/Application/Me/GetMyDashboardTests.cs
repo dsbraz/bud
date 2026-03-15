@@ -1,4 +1,3 @@
-using Bud.Application.Ports;
 using FluentAssertions;
 using Moq;
 using System.Security.Claims;

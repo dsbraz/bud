@@ -1,9 +1,15 @@
 using Bud.Application.Abstractions;
+using Bud.Application.Goals;
+using Bud.Application.Indicators;
+using Bud.Application.Me;
+using Bud.Application.Notifications;
+using Bud.Application.Organizations;
 using Bud.Infrastructure.Persistence;
 using Bud.Infrastructure.Authorization;
 using Bud.Infrastructure.DomainEvents;
 using Bud.Application.Ports;
-using Bud.Infrastructure.Services;
+using Bud.Infrastructure.Me;
+using Bud.Infrastructure.Sessions;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.EntityFrameworkCore;
 
@@ -28,9 +34,11 @@ public static class BudInfrastructureCompositionExtensions
         services.AddScoped<IIndicatorRepository, IndicatorRepository>();
         services.AddScoped<ITemplateRepository, TemplateRepository>();
         services.AddScoped<INotificationRepository, NotificationRepository>();
-        services.AddScoped<IAuthService, AuthService>();
+        services.AddScoped<ISessionAuthenticator, SessionAuthenticator>();
+        services.AddScoped<IMyOrganizationsReadStore, MyOrganizationsReadStore>();
         services.AddScoped<IMyDashboardReadStore, DashboardReadStore>();
-        services.AddScoped<IGoalProgressService, GoalProgressService>();
+        services.AddScoped<IGoalProgressReadStore, GoalProgressService>();
+        services.AddScoped<IIndicatorProgressReadStore, GoalProgressService>();
         services.AddScoped<INotificationRecipientResolver, NotificationRecipientResolver>();
         services.AddScoped<ITenantAuthorizationService, TenantAuthorizationService>();
         services.AddScoped<IOrganizationAuthorizationService, OrganizationAuthorizationService>();

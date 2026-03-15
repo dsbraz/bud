@@ -1,6 +1,4 @@
 using Bud.Infrastructure.Persistence;
-using Bud.Infrastructure.Services;
-using Bud.Application.Ports;
 using Bud.Infrastructure.UnitTests.Helpers;
 using FluentAssertions;
 using Microsoft.EntityFrameworkCore;

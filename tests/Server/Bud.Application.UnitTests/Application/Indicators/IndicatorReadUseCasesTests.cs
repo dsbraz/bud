@@ -1,5 +1,4 @@
 using Bud.Application.Common;
-using Bud.Application.Ports;
 using Bud.Shared.Contracts;
 using FluentAssertions;
 using Moq;
@@ -77,7 +76,7 @@ public sealed class IndicatorReadUseCasesTests
     public async Task CalculateMissionMetricProgress_DelegatesToProgressService()
     {
         var indicatorId = Guid.NewGuid();
-        var progressService = new Mock<IGoalProgressService>();
+        var progressService = new Mock<IIndicatorProgressReadStore>();
 
         var snapshot = new IndicatorProgressSnapshot { IndicatorId = indicatorId };
         progressService

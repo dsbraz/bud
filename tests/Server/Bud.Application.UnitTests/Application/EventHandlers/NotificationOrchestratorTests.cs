@@ -1,4 +1,3 @@
-using Bud.Application.Ports;
 using Bud.Application.EventHandlers;
 using FluentAssertions;
 using Moq;
