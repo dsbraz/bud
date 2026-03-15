@@ -3,7 +3,7 @@ using Bud.Api.Middleware;
 using Bud.Api.Serialization;
 using Bud.Api.Settings;
 using Bud.Application.Configuration;
-using Bud.Api.Organizations;
+using Bud.Api.Features.Organizations;
 using FluentValidation;
 using Microsoft.AspNetCore.HttpOverrides;
 

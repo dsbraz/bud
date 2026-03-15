@@ -1,16 +1,15 @@
 using Bud.Application.Common;
-using Bud.Application.Ports;
 using Bud.Shared.Contracts;
 
 namespace Bud.Application.Goals;
 
-public sealed class ListGoalProgress(IGoalProgressService goalProgressService)
+public sealed class ListGoalProgress(IGoalProgressReadStore goalProgressReadStore)
 {
     public async Task<Result<List<GoalProgressResponse>>> ExecuteAsync(
         List<Guid> goalIds,
         CancellationToken cancellationToken = default)
     {
-        var result = await goalProgressService.GetProgressAsync(goalIds, cancellationToken);
+        var result = await goalProgressReadStore.GetProgressAsync(goalIds, cancellationToken);
         if (!result.IsSuccess)
         {
             return Result<List<GoalProgressResponse>>.Failure(

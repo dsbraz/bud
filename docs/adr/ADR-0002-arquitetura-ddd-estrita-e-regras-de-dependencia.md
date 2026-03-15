@@ -20,7 +20,8 @@ Estabelecer dependências unidirecionais e organização física por feature:
 
 **Organização física por feature:**
 - `Bud.Domain/<Feature>/` — entidades, value objects e eventos de domínio.
-- `Bud.Application/<Feature>/` — casos de uso, interfaces de repositório, mappers, read models e policies por feature.
+- `Bud.Application/<Feature>/` — casos de uso, interfaces de repositório, ports da feature, mappers, read models e policies por feature.
+- `Bud.Application/Ports/` — apenas ports transversais (ex: tenant/auth).
 - `Bud.Infrastructure/Features/<Feature>/` — implementações de repositório e search specs.
 - `Bud.Api/Features/<Feature>/` — controller e validators por feature.
 - `Bud.Shared.Contracts/<Feature>/` — DTOs de request e response por feature.

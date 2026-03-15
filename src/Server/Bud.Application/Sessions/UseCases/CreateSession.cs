@@ -1,12 +1,11 @@
 using Bud.Application.Common;
-using Bud.Application.Ports;
 using Bud.Shared.Contracts;
 using Microsoft.Extensions.Logging;
 
 namespace Bud.Application.Sessions;
 
 public sealed partial class CreateSession(
-    IAuthService authService,
+    ISessionAuthenticator sessionAuthenticator,
     ILogger<CreateSession> logger)
 {
     public async Task<Result<SessionResponse>> ExecuteAsync(
@@ -15,7 +14,7 @@ public sealed partial class CreateSession(
     {
         LogCreatingSession(logger);
 
-        var result = await authService.LoginAsync(request, cancellationToken);
+        var result = await sessionAuthenticator.LoginAsync(request, cancellationToken);
         if (!result.IsSuccess)
         {
             LogSessionCreationFailed(logger, result.Error ?? "Unknown error");

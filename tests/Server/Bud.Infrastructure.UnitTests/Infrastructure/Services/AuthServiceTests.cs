@@ -1,6 +1,4 @@
 using Bud.Infrastructure.Persistence;
-using Bud.Infrastructure.Services;
-using Bud.Application.Ports;
 using Bud.Application.Configuration;
 using Bud.Infrastructure.UnitTests.Helpers;
 using Bud.Shared.Contracts;
@@ -32,9 +30,14 @@ public class AuthServiceTests
         return new ApplicationDbContext(options, _tenantProvider);
     }
 
-    private static AuthService CreateService(ApplicationDbContext context)
+    private static SessionAuthenticator CreateService(ApplicationDbContext context)
     {
-        return new AuthService(context, Options.Create(TestJwtSettings));
+        return new SessionAuthenticator(context, Options.Create(TestJwtSettings));
+    }
+
+    private static MyOrganizationsReadStore CreateReadStore(ApplicationDbContext context)
+    {
+        return new MyOrganizationsReadStore(context);
     }
 
     #region Global Admin Login Detection Tests
@@ -486,7 +489,7 @@ public class AuthServiceTests
         context.Collaborators.Add(adminCollaborator);
         await context.SaveChangesAsync();
 
-        var service = CreateService(context);
+        var service = CreateReadStore(context);
 
         // Act
         var result = await service.GetMyOrganizationsAsync("globaladmin@anycompany.com");
@@ -526,7 +529,7 @@ public class AuthServiceTests
         context.Collaborators.Add(collaborator);
         await context.SaveChangesAsync();
 
-        var service = CreateService(context);
+        var service = CreateReadStore(context);
 
         // Act
         var result = await service.GetMyOrganizationsAsync(userEmail);
@@ -568,7 +571,7 @@ public class AuthServiceTests
         org.OwnerId = ownerCollaborator.Id;
         await context.SaveChangesAsync();
 
-        var service = CreateService(context);
+        var service = CreateReadStore(context);
 
         // Act
         var result = await service.GetMyOrganizationsAsync(ownerEmail);
@@ -584,7 +587,7 @@ public class AuthServiceTests
     {
         // Arrange
         using var context = CreateInMemoryContext();
-        var service = CreateService(context);
+        var service = CreateReadStore(context);
 
         // Act
         var result = await service.GetMyOrganizationsAsync("");
@@ -600,7 +603,7 @@ public class AuthServiceTests
     {
         // Arrange
         using var context = CreateInMemoryContext();
-        var service = CreateService(context);
+        var service = CreateReadStore(context);
 
         // Act
         var result = await service.GetMyOrganizationsAsync("   ");

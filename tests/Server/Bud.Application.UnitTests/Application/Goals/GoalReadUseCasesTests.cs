@@ -1,4 +1,3 @@
-using Bud.Application.Ports;
 using Bud.Application.Common;
 using Bud.Shared.Contracts;
 using FluentAssertions;
@@ -10,7 +9,7 @@ namespace Bud.Application.UnitTests.Application.Goals;
 public sealed class GoalReadUseCasesTests
 {
     private readonly Mock<IGoalRepository> _repo = new();
-    private readonly Mock<IGoalProgressService> _progressService = new();
+    private readonly Mock<IGoalProgressReadStore> _progressService = new();
 
     private GetGoalById CreateGetMissionById()
         => new(_repo.Object);

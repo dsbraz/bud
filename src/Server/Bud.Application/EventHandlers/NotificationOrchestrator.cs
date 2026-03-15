@@ -1,5 +1,4 @@
 using Bud.Application.Common;
-using Bud.Application.Ports;
 
 namespace Bud.Application.EventHandlers;
 
