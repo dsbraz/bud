@@ -327,7 +327,9 @@ gcloud services enable \
   sqladmin.googleapis.com \
   artifactregistry.googleapis.com \
   secretmanager.googleapis.com \
-  iam.googleapis.com
+  iam.googleapis.com \
+  cloudtrace.googleapis.com \
+  monitoring.googleapis.com
 
 echo "==> Garantindo Artifact Registry"
 if gcloud artifacts repositories describe "$REPO_NAME" --location "$REGION" >/dev/null 2>&1; then
