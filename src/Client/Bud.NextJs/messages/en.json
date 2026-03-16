@@ -1,0 +1,24 @@
+{
+  "TranslationInput": {
+    "portuguese": "Portuguese (BR)",
+    "english": "English (EN)",
+    "LanguageSelection": "Select a language"
+  },
+  "FileInput": {
+    "fileDescription": "JPG, JPEG, PNG or GIF images up to 900MB.",
+    "inputText": "Select a file"
+  },
+  "SelectInput": {
+    "defaultSelect": "Select..."
+  },
+  "WorkspaceSelection": {
+    "mainTitle": "You already have access to some workspaces:",
+    "redirectCreation": "Create new workspace",
+    "userConnected": "Connected as {email}",
+    "logout": "Logout",
+    "WorkspaceAvatar": {
+      "membersCount": "{count, plural, =0 {# member} =1 {# member} other {# members}}",
+      "submit": "Enter"
+    }
+  }
+}
