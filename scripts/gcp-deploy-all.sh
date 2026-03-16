@@ -10,7 +10,7 @@ Opcoes:
   --env-file <path>             Arquivo de variaveis (default: .env.gcp, se existir)
   --project-id <id>             PROJECT_ID
   --region <region>             REGION
-  --api-url <url>               API_URL (opcional; usado no deploy do MCP e frontend)
+  --api-url <url>               API_URL (opcional; usado no deploy do MCP e web)
   --web-api-url <url>           Alias legado para API_URL
   --skip-migration              Pular etapa de migracao (EF migrations)
 USAGE
@@ -83,7 +83,7 @@ echo "==> Etapa 1/3: deploy do Bud.Api"
 echo "==> Etapa 2/3: deploy do Bud.Mcp"
 "${SCRIPT_DIR}/gcp-deploy-mcp.sh"
 
-echo "==> Etapa 3/3: deploy do frontend"
-"${SCRIPT_DIR}/gcp-deploy-frontend.sh"
+echo "==> Etapa 3/3: deploy do web"
+"${SCRIPT_DIR}/gcp-deploy-web.sh"
 
 echo "==> Deploy completo finalizado com sucesso"

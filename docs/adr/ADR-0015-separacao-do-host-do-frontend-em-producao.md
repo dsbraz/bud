@@ -1,7 +1,7 @@
 # ADR-0015: Separação do Host do Frontend em Produção
 
 ## Status
-Accepted
+Deprecated — conteudo movido para `DEPLOY.md` (secao "Topologia de producao"). Decisao de hospedagem, nao arquitetural.
 
 ## Contexto
 
@@ -26,7 +26,7 @@ O `Bud.Api` deixa de referenciar `Bud.BlazorWasm` e deixa de ser responsável po
 - Deploy e rollback de frontend e API passam a ser independentes.
 - O browser continua sem depender de CORS em produção, porque a origem pública permanece a mesma.
 - O `Bud.Mcp` passa a depender explicitamente da URL do `bud-api`, não do serviço público `bud-web`.
-- O fluxo de deploy continua automatizado por scripts, agora com `gcp-deploy-api.sh`, `gcp-deploy-frontend.sh` e `gcp-deploy-all.sh`.
+- O fluxo de deploy continua automatizado por scripts, agora com `gcp-deploy-api.sh`, `gcp-deploy-web.sh` e `gcp-deploy-all.sh`.
 - O ambiente local passa a tratar frontend, API e MCP como processos/serviços distintos.
 
 ## Alternativas consideradas

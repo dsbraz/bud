@@ -4,7 +4,7 @@ set -euo pipefail
 usage() {
   cat <<USAGE
 Uso:
-  ./scripts/gcp-deploy-frontend.sh [opcoes]
+  ./scripts/gcp-deploy-web.sh [opcoes]
 
 Opcoes:
   --env-file <path>                  Arquivo de variaveis (default: .env.gcp, se existir)
@@ -100,14 +100,14 @@ if [[ -z "$API_URL" ]]; then
   exit 1
 fi
 
-echo "==> Buildando imagem do frontend no Cloud Build (${IMAGE_URI})"
+echo "==> Buildando imagem do web no Cloud Build (${IMAGE_URI})"
 gcloud builds submit \
   --project "$PROJECT_ID" \
   --config "scripts/cloudbuild-image.yaml" \
   --substitutions "_IMAGE_URI=${IMAGE_URI},_DOCKER_TARGET=prod-frontend" \
   .
 
-echo "==> Deployando frontend no Cloud Run"
+echo "==> Deployando web no Cloud Run"
 gcloud run deploy "$WEB_SERVICE_NAME" \
   --project "$PROJECT_ID" \
   --region "$REGION" \
@@ -116,12 +116,12 @@ gcloud run deploy "$WEB_SERVICE_NAME" \
   --port 8080 \
   --set-env-vars "BUD_API_BASE_URL=${API_URL}"
 
-echo "==> Validando frontend"
-FRONTEND_URL="$(gcloud run services describe "$WEB_SERVICE_NAME" --region "$REGION" --project "$PROJECT_ID" --format='value(status.url)')"
+echo "==> Validando web"
+WEB_URL="$(gcloud run services describe "$WEB_SERVICE_NAME" --region "$REGION" --project "$PROJECT_ID" --format='value(status.url)')"
 
-curl --fail --silent --show-error "${FRONTEND_URL}/" >/dev/null
-curl --fail --silent --show-error "${FRONTEND_URL}/health/live" >/dev/null
+curl --fail --silent --show-error "${WEB_URL}/" >/dev/null
+curl --fail --silent --show-error "${WEB_URL}/health/live" >/dev/null
 
-echo "==> Deploy do frontend concluido com sucesso"
-echo "FRONTEND_URL=${FRONTEND_URL}"
+echo "==> Deploy do web concluido com sucesso"
+echo "WEB_URL=${WEB_URL}"
 echo "API_URL=${API_URL}"
