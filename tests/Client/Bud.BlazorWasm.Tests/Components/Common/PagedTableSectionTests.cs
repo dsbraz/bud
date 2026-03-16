@@ -14,6 +14,7 @@ public sealed class PagedTableSectionTests : TestContext
             .Add(p => p.IsLoading, true)
             .Add(p => p.LoadingText, "Carregando dados..."));
 
+        cut.Find(".paged-section-state.paged-section-loading");
         cut.Markup.Should().Contain("Carregando dados...");
         cut.Markup.Should().NotContain("Total:");
     }
@@ -25,6 +26,7 @@ public sealed class PagedTableSectionTests : TestContext
             .Add(p => p.IsEmpty, true)
             .Add(p => p.EmptyText, "Sem registros."));
 
+        cut.Find(".paged-section-state.paged-section-empty");
         cut.Markup.Should().Contain("Sem registros.");
         cut.Markup.Should().NotContain("Total:");
     }
@@ -36,6 +38,8 @@ public sealed class PagedTableSectionTests : TestContext
             .Add(p => p.Total, 12)
             .AddChildContent("<table><tbody><tr><td>Linha</td></tr></tbody></table>"));
 
+        cut.Find(".paged-section");
+        cut.Find(".paged-section-meta");
         cut.Markup.Should().Contain("Linha");
         cut.Markup.Should().Contain("Total: 12");
     }

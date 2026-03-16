@@ -25,6 +25,8 @@ public sealed class LoginPageTests : TestContext
 
         cut.Markup.Should().Contain("Entrar");
         cut.Markup.Should().Contain("E-mail");
+        cut.Markup.Should().Contain("Acesso interno");
+        cut.Markup.Should().Contain("Continuar");
     }
 
     [Fact]

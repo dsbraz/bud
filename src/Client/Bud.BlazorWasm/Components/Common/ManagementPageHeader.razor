@@ -1,7 +1,7 @@
-<div class="page-header">
-    <div>
+<header class="page-header page-header-shell">
+    <div class="page-header-copy">
         <div class="page-kicker">@Kicker</div>
-        <h1>@Title</h1>
+        <h1 class="page-title">@Title</h1>
         @if (!string.IsNullOrWhiteSpace(Subtitle))
         {
             <p class="page-subtitle">@Subtitle</p>
@@ -9,10 +9,11 @@
     </div>
     @if (ShowPrimaryAction)
     {
+        <div class="page-header-actions">
         <button class="button primary" @onclick="OnPrimaryAction">
             <span class="button-icon-text">+</span>
             @PrimaryActionText
         </button>
+        </div>
     }
-</div>
-
+</header>

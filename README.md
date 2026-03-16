@@ -861,6 +861,13 @@ O Bud 2.0 usa um sistema de tokens de design baseado no [Figma Style Guide](http
 
 Todos os valores de design (cores, tipografia, espaçamento e sombras) são definidos como propriedades CSS em [`src/Client/Bud.BlazorWasm/wwwroot/css/tokens.css`](src/Client/Bud.BlazorWasm/wwwroot/css/tokens.css).
 
+### Runtime do design system
+
+- `src/Client/Bud.BlazorWasm/wwwroot/css/fonts.css`: carrega `Crimson Pro` e `Plus Jakarta Sans` de forma local/self-hosted.
+- `src/Client/Bud.BlazorWasm/wwwroot/css/design-system.css`: aplica shell global, superfícies, tabelas, autenticação e overrides visuais do design system.
+- `src/Client/Bud.BlazorWasm/wwwroot/index.html`: carrega `fonts.css`, `tokens.css`, `app.css` e `design-system.css` nessa ordem.
+- O frontend não depende mais do CSS do Bootstrap para a camada visual principal.
+
 **Exemplo de uso:**
 ```css
 .button {

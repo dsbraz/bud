@@ -1,14 +1,23 @@
 @if (IsLoading)
 {
-    <p class="muted">@LoadingText</p>
+    <div class="paged-section">
+        <div class="paged-section-state paged-section-loading">
+            <p class="muted">@LoadingText</p>
+        </div>
+    </div>
 }
 else if (IsEmpty)
 {
-    <p class="muted">@EmptyText</p>
+    <div class="paged-section">
+        <div class="paged-section-state paged-section-empty">
+            <p class="muted">@EmptyText</p>
+        </div>
+    </div>
 }
 else
 {
-    @ChildContent
-    <p class="muted" style="margin-top: var(--spacing-4);">Total: @Total</p>
+    <div class="paged-section">
+        @ChildContent
+        <div class="paged-section-meta">Total: @Total</div>
+    </div>
 }
-

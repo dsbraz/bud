@@ -2,8 +2,9 @@
 @layout AuthLayout
 
 <div class="auth-card">
+    <div class="page-kicker">Acesso interno</div>
     <h2>Entrar</h2>
-    <p class="muted">Não é necessário senha.</p>
+    <p class="auth-helper">Acesso interno sem senha. Use seu e-mail corporativo para continuar.</p>
 
     <EditForm Model="@login" OnValidSubmit="HandleLogin">
         <DataAnnotationsValidator />
@@ -12,9 +13,7 @@
             <InputText class="input" @bind-Value="login.Email" placeholder="admin ou colaborador@empresa.com" />
         </div>
         <div class="form-actions">
-            <button class="button primary" type="submit" disabled="@isSubmitting">Entrar</button>
+            <button class="button primary" type="submit" disabled="@isSubmitting">Continuar</button>
         </div>
     </EditForm>
 </div>
-
-

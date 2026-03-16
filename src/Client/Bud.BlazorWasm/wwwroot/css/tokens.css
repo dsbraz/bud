@@ -1,224 +1,325 @@
 /**
  * Design Tokens - Bud 2.0
- * Source: Figma Style Guide
- * URL: https://www.figma.com/design/j3n8YHBusCH8KEHvheGeF8/-ASSETS--Style-Guide
- * Last updated: 2026-02-02
+ * Source: mdonangelo/bud-2-design-system (React + CSS Modules)
+ * Last updated: 2026-03-15
  *
- * This file contains all design tokens extracted from the Figma Style Guide.
- * Colors, typography, spacing, and other design values are defined here as CSS custom properties.
+ * Naming convention follows the DS repo:
+ *   --color-{palette}-{shade}   (primitives)
+ *   --font-display / --font-heading / --font-body  (families)
+ *   --text-{scale}              (font sizes, rem-based)
+ *   --sp-{token}                (spacing)
+ *   --radius-{token}            (border radius)
  */
 
 :root {
   /* ========================================
-     PRIMITIVE COLORS
-     Based on Figma Primitives page
+     PRIMITIVE COLORS (DS source of truth)
      ======================================== */
 
   /* Orange - Primary Brand Color */
-  --orange-50: #FFF4ED;
-  --orange-100: #FFE6D5;
-  --orange-200: #FFC9A1;
-  --orange-300: #FFA76B;
-  --orange-400: #FF8642;
-  --orange-500: #FF6B35;  /* Primary Orange */
-  --orange-600: #E8501A;
-  --orange-700: #C33A0F;
-  --orange-800: #9C2D0C;
-  --orange-900: #7A2409;
-  --orange-950: #4A1505;
+  --color-orange-50: #fff4ed;
+  --color-orange-100: #ffe6d5;
+  --color-orange-200: #ffc9a1;
+  --color-orange-300: #ffa76b;
+  --color-orange-400: #ff8132;
+  --color-orange-500: #fd5f28;
+  --color-orange-600: #ee4510;
+  --color-orange-700: #c5300d;
+  --color-orange-800: #9c2712;
+  --color-orange-900: #7e2312;
+  --color-orange-950: #440e07;
 
   /* Wine - Secondary Brand Color */
-  --wine-50: #FDF3F8;
-  --wine-100: #FCE7F3;
-  --wine-200: #FBC7E5;
-  --wine-300: #F99FD4;
-  --wine-400: #F568BC;
-  --wine-500: #E838A3;  /* Primary Wine */
-  --wine-600: #C71F82;
-  --wine-700: #A11568;
-  --wine-800: #7D1152;
-  --wine-900: #600D3E;
-  --wine-950: #3A0824;
+  --color-wine-50: #fef1f7;
+  --color-wine-100: #fee5f1;
+  --color-wine-200: #ffcbe5;
+  --color-wine-300: #ffa1cd;
+  --color-wine-400: #ff5fa5;
+  --color-wine-500: #fa3a82;
+  --color-wine-600: #ea1760;
+  --color-wine-700: #cc0947;
+  --color-wine-800: #a60c46;
+  --color-wine-900: #8b0f3d;
+  --color-wine-950: #560121;
 
   /* Caramel - Tertiary/Accent Color */
-  --caramel-50: #FAF8F3;
-  --caramel-100: #F5F0E5;
-  --caramel-200: #E8DCC4;
-  --caramel-300: #D6C299;
-  --caramel-400: #C0A36D;
-  --caramel-500: #A8864B;  /* Primary Caramel */
-  --caramel-600: #8B6C3A;
-  --caramel-700: #6F5530;
-  --caramel-800: #574227;
-  --caramel-900: #42331F;
-  --caramel-950: #281E12;
+  --color-caramel-50: #faf8f3;
+  --color-caramel-100: #f5f0e5;
+  --color-caramel-200: #e8dcc4;
+  --color-caramel-300: #d6c299;
+  --color-caramel-400: #c0a36d;
+  --color-caramel-500: #a8864b;
+  --color-caramel-600: #8b6c3a;
+  --color-caramel-700: #6f5530;
+  --color-caramel-800: #574227;
+  --color-caramel-900: #42331f;
+  --color-caramel-950: #281e12;
 
   /* Neutral - Grayscale */
-  --neutral-50: #FAFAFA;
-  --neutral-100: #F5F5F5;
-  --neutral-200: #E5E5E5;
-  --neutral-300: #D4D4D4;
-  --neutral-400: #A3A3A3;
-  --neutral-500: #737373;
-  --neutral-600: #525252;
-  --neutral-700: #404040;
-  --neutral-800: #262626;
-  --neutral-900: #171717;
-  --neutral-950: #0A0A0A;
+  --color-neutral-50: #fafafa;
+  --color-neutral-100: #f5f5f5;
+  --color-neutral-200: #e5e5e5;
+  --color-neutral-300: #d4d4d4;
+  --color-neutral-400: #a3a3a3;
+  --color-neutral-500: #737373;
+  --color-neutral-600: #525252;
+  --color-neutral-700: #404040;
+  --color-neutral-800: #262626;
+  --color-neutral-900: #171717;
+  --color-neutral-950: #0a0a0a;
 
   /* Red - Error/Danger States */
-  --red-50: #FEF2F2;
-  --red-100: #FEE2E2;
-  --red-200: #FECACA;
-  --red-300: #FCA5A5;
-  --red-400: #F87171;
-  --red-500: #EF4444;  /* Primary Red */
-  --red-600: #DC2626;
-  --red-700: #B91C1C;
-  --red-800: #991B1B;
-  --red-900: #7F1D1D;
-  --red-950: #450A0A;
+  --color-red-50: #fef2f2;
+  --color-red-100: #fee2e2;
+  --color-red-200: #fecaca;
+  --color-red-300: #fca5a5;
+  --color-red-400: #f87171;
+  --color-red-500: #ef4444;
+  --color-red-600: #dc2626;
+  --color-red-700: #b91c1c;
+  --color-red-800: #991b1b;
+  --color-red-900: #7f1d1d;
+  --color-red-950: #450a0a;
 
   /* Green - Success States */
-  --green-50: #F0FDF4;
-  --green-100: #DCFCE7;
-  --green-200: #BBF7D0;
-  --green-300: #86EFAC;
-  --green-400: #4ADE80;
-  --green-500: #22C55E;  /* Primary Green */
-  --green-600: #16A34A;
-  --green-700: #15803D;
-  --green-800: #166534;
-  --green-900: #14532D;
-  --green-950: #052E16;
+  --color-green-50: #f0fdf4;
+  --color-green-100: #dcfce7;
+  --color-green-200: #bbf7d0;
+  --color-green-300: #86efac;
+  --color-green-400: #4ade80;
+  --color-green-500: #22c55e;
+  --color-green-600: #16a34a;
+  --color-green-700: #15803d;
+  --color-green-800: #166534;
+  --color-green-900: #14532d;
+  --color-green-950: #052e16;
 
   /* Yellow - Warning States */
-  --yellow-50: #FEFCE8;
-  --yellow-100: #FEF9C3;
-  --yellow-200: #FEF08A;
-  --yellow-300: #FDE047;
-  --yellow-400: #FACC15;
-  --yellow-500: #EAB308;  /* Primary Yellow */
-  --yellow-600: #CA8A04;
-  --yellow-700: #A16207;
-  --yellow-800: #854D0E;
-  --yellow-900: #713F12;
-  --yellow-950: #422006;
+  --color-yellow-50: #fefce8;
+  --color-yellow-100: #fef9c3;
+  --color-yellow-200: #fef08a;
+  --color-yellow-300: #fde047;
+  --color-yellow-400: #facc15;
+  --color-yellow-500: #eab308;
+  --color-yellow-600: #ca8a04;
+  --color-yellow-700: #a16207;
+  --color-yellow-800: #854d0e;
+  --color-yellow-900: #713f12;
+  --color-yellow-950: #422006;
+
+  /* ========================================
+     BACKWARD-COMPAT ALIASES (primitives)
+     Old name -> new name
+     ======================================== */
+  --orange-50: var(--color-orange-50);
+  --orange-100: var(--color-orange-100);
+  --orange-200: var(--color-orange-200);
+  --orange-300: var(--color-orange-300);
+  --orange-400: var(--color-orange-400);
+  --orange-500: var(--color-orange-500);
+  --orange-600: var(--color-orange-600);
+  --orange-700: var(--color-orange-700);
+  --orange-800: var(--color-orange-800);
+  --orange-900: var(--color-orange-900);
+  --orange-950: var(--color-orange-950);
+
+  --wine-50: var(--color-wine-50);
+  --wine-100: var(--color-wine-100);
+  --wine-200: var(--color-wine-200);
+  --wine-300: var(--color-wine-300);
+  --wine-400: var(--color-wine-400);
+  --wine-500: var(--color-wine-500);
+  --wine-600: var(--color-wine-600);
+  --wine-700: var(--color-wine-700);
+  --wine-800: var(--color-wine-800);
+  --wine-900: var(--color-wine-900);
+  --wine-950: var(--color-wine-950);
+
+  --caramel-50: var(--color-caramel-50);
+  --caramel-100: var(--color-caramel-100);
+  --caramel-200: var(--color-caramel-200);
+  --caramel-300: var(--color-caramel-300);
+  --caramel-400: var(--color-caramel-400);
+  --caramel-500: var(--color-caramel-500);
+  --caramel-600: var(--color-caramel-600);
+  --caramel-700: var(--color-caramel-700);
+  --caramel-800: var(--color-caramel-800);
+  --caramel-900: var(--color-caramel-900);
+  --caramel-950: var(--color-caramel-950);
+
+  --neutral-50: var(--color-neutral-50);
+  --neutral-100: var(--color-neutral-100);
+  --neutral-200: var(--color-neutral-200);
+  --neutral-300: var(--color-neutral-300);
+  --neutral-400: var(--color-neutral-400);
+  --neutral-500: var(--color-neutral-500);
+  --neutral-600: var(--color-neutral-600);
+  --neutral-700: var(--color-neutral-700);
+  --neutral-800: var(--color-neutral-800);
+  --neutral-900: var(--color-neutral-900);
+  --neutral-950: var(--color-neutral-950);
+
+  --red-50: var(--color-red-50);
+  --red-100: var(--color-red-100);
+  --red-200: var(--color-red-200);
+  --red-300: var(--color-red-300);
+  --red-400: var(--color-red-400);
+  --red-500: var(--color-red-500);
+  --red-600: var(--color-red-600);
+  --red-700: var(--color-red-700);
+  --red-800: var(--color-red-800);
+  --red-900: var(--color-red-900);
+  --red-950: var(--color-red-950);
+
+  --green-50: var(--color-green-50);
+  --green-100: var(--color-green-100);
+  --green-200: var(--color-green-200);
+  --green-300: var(--color-green-300);
+  --green-400: var(--color-green-400);
+  --green-500: var(--color-green-500);
+  --green-600: var(--color-green-600);
+  --green-700: var(--color-green-700);
+  --green-800: var(--color-green-800);
+  --green-900: var(--color-green-900);
+  --green-950: var(--color-green-950);
+
+  --yellow-50: var(--color-yellow-50);
+  --yellow-100: var(--color-yellow-100);
+  --yellow-200: var(--color-yellow-200);
+  --yellow-300: var(--color-yellow-300);
+  --yellow-400: var(--color-yellow-400);
+  --yellow-500: var(--color-yellow-500);
+  --yellow-600: var(--color-yellow-600);
+  --yellow-700: var(--color-yellow-700);
+  --yellow-800: var(--color-yellow-800);
+  --yellow-900: var(--color-yellow-900);
+  --yellow-950: var(--color-yellow-950);
 
   /* ========================================
      SEMANTIC COLORS
-     Mapped from primitives to use cases
      ======================================== */
 
   /* Brand Colors */
-  --color-brand-primary: var(--orange-500);
-  --color-brand-primary-hover: var(--orange-600);
-  --color-brand-primary-active: var(--orange-700);
-  --color-brand-secondary: var(--wine-500);
-  --color-brand-secondary-hover: var(--wine-600);
-  --color-brand-secondary-active: var(--wine-700);
+  --color-brand-primary: var(--color-orange-500);
+  --color-brand-primary-hover: var(--color-orange-600);
+  --color-brand-primary-active: var(--color-orange-700);
+  --color-brand-secondary: var(--color-wine-500);
+  --color-brand-secondary-hover: var(--color-wine-600);
+  --color-brand-secondary-active: var(--color-wine-700);
 
   /* Background Colors */
-  --color-background: var(--neutral-50);
-  --color-background-alt: var(--neutral-100);
-  --color-surface: #FFFFFF;
-  --color-surface-hover: var(--neutral-50);
-  --color-overlay: rgba(0, 0, 0, 0.5);
+  --color-background: var(--color-neutral-100);
+  --color-background-alt: var(--color-neutral-100);
+  --color-surface: #ffffff;
+  --color-surface-hover: var(--color-neutral-50);
+  --color-overlay: rgba(10, 10, 10, 0.4);
 
   /* Text Colors */
-  --color-text-primary: var(--neutral-900);
-  --color-text-secondary: var(--neutral-700);
-  --color-text-muted: var(--neutral-500);
-  --color-text-disabled: var(--neutral-400);
-  --color-text-inverse: #FFFFFF;
-  --color-text-link: var(--orange-600);
-  --color-text-link-hover: var(--orange-700);
+  --color-text-primary: var(--color-neutral-950);
+  --color-text-secondary: var(--color-neutral-700);
+  --color-text-muted: var(--color-neutral-500);
+  --color-text-disabled: var(--color-neutral-400);
+  --color-text-inverse: #ffffff;
+  --color-text-link: var(--color-orange-600);
+  --color-text-link-hover: var(--color-orange-700);
 
   /* Border Colors */
-  --color-border: var(--neutral-300);
-  --color-border-light: var(--neutral-200);
-  --color-border-dark: var(--neutral-400);
-  --color-border-focus: var(--orange-500);
+  --color-border: var(--color-caramel-200);
+  --color-border-light: var(--color-caramel-100);
+  --color-border-dark: var(--color-caramel-300);
+  --color-border-focus: var(--color-caramel-700);
 
   /* State Colors */
-  --color-success: var(--green-500);
-  --color-success-bg: var(--green-50);
-  --color-success-border: var(--green-300);
-  --color-warning: var(--yellow-500);
-  --color-warning-bg: var(--yellow-50);
-  --color-warning-border: var(--yellow-300);
-  --color-error: var(--red-500);
-  --color-error-bg: var(--red-50);
-  --color-error-border: var(--red-300);
-  --color-info: var(--wine-500);
-  --color-info-bg: var(--wine-50);
-  --color-info-border: var(--wine-300);
+  --color-success: var(--color-green-500);
+  --color-success-bg: var(--color-green-50);
+  --color-success-border: var(--color-green-300);
+  --color-warning: var(--color-yellow-500);
+  --color-warning-bg: var(--color-yellow-50);
+  --color-warning-border: var(--color-yellow-300);
+  --color-error: var(--color-red-500);
+  --color-error-bg: var(--color-red-50);
+  --color-error-border: var(--color-red-300);
+  --color-info: var(--color-wine-500);
+  --color-info-bg: var(--color-wine-50);
+  --color-info-border: var(--color-wine-300);
 
   /* Interactive States */
-  --color-hover: var(--neutral-100);
-  --color-active: var(--neutral-200);
-  --color-selected: var(--orange-50);
-  --color-selected-border: var(--orange-500);
-  --color-disabled-bg: var(--neutral-100);
-  --color-disabled-text: var(--neutral-400);
+  --color-hover: var(--color-caramel-50);
+  --color-active: var(--color-caramel-100);
+  --color-selected: var(--color-orange-50);
+  --color-selected-border: var(--color-orange-500);
+  --color-disabled-bg: var(--color-neutral-100);
+  --color-disabled-text: var(--color-neutral-400);
 
   /* Sidebar Specific Colors */
-  --color-sidebar-bg: var(--caramel-50);
-  --color-sidebar-border: var(--caramel-200);
-  --color-sidebar-hover: var(--caramel-100);
-  --color-nav-active-bg: var(--caramel-200);
-  --color-nav-active-border: var(--caramel-300);
+  --color-sidebar-bg: var(--color-caramel-50);
+  --color-sidebar-border: var(--color-caramel-200);
+  --color-sidebar-hover: var(--color-caramel-100);
+  --color-sidebar-active: var(--color-caramel-200);
+  --color-nav-active-bg: var(--color-caramel-200);
+  --color-nav-active-border: var(--color-caramel-300);
 
   /* Assistant/AI Specific Colors */
-  --color-assistant-accent: var(--wine-600);
-  --color-assistant-bg: var(--wine-50);
-  --color-assistant-border: var(--wine-600);
+  --color-assistant-accent: var(--color-wine-600);
+  --color-assistant-bg: var(--color-wine-50);
+  --color-assistant-border: var(--color-wine-600);
 
   /* ========================================
-     TYPOGRAPHY
-     Based on Figma Typography page
+     TYPOGRAPHY (DS source of truth)
      ======================================== */
 
-  /* Font Families */
-  --font-family-display: 'Crimson Pro', Georgia, 'Times New Roman', serif;
-  --font-family-body: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-  --font-family-mono: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+  /* Font Families - DS naming */
+  --font-display: 'Crimson Pro', Georgia, 'Times New Roman', serif;
+  --font-heading: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  --font-body: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  --font-mono: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
 
-  /* Font Sizes - Display */
-  --font-size-display-xl: 64px;      /* Display Extra Large */
-  --font-size-display-lg: 52px;      /* Display Large */
-  --font-size-display-md: 44px;      /* Display Medium */
-  --font-size-display-sm: 36px;      /* Display Small */
+  /* Backward-compat aliases */
+  --font-family-display: var(--font-display);
+  --font-family-body: var(--font-body);
+  --font-family-mono: var(--font-mono);
 
-  /* Font Sizes - Title */
-  --font-size-title-xl: 32px;        /* Title Extra Large */
-  --font-size-title-lg: 28px;        /* Title Large */
-  --font-size-title-md: 24px;        /* Title Medium */
-  --font-size-title-sm: 20px;        /* Title Small */
-  --font-size-title-xs: 18px;        /* Title Extra Small */
+  /* Font Sizes - DS rem-based scale */
+  --text-8xl: 4rem;       /* 64px - Display XL */
+  --text-7xl: 3.25rem;    /* 52px - Display LG */
+  --text-6xl: 2.75rem;    /* 44px - Display MD */
+  --text-5xl: 2.25rem;    /* 36px - Display SM */
+  --text-4xl: 2rem;       /* 32px - Title XL */
+  --text-3xl: 1.75rem;    /* 28px - Title LG */
+  --text-2xl: 1.5rem;     /* 24px - Title MD */
+  --text-xl: 1.25rem;     /* 20px - Title SM */
+  --text-lg: 1.125rem;    /* 18px */
+  --text-base: 1rem;      /* 16px */
+  --text-sm: 0.875rem;    /* 14px */
+  --text-xs: 0.75rem;     /* 12px */
 
-  /* Font Sizes - Paragraph */
-  --font-size-paragraph-xl: 20px;    /* Paragraph Extra Large */
-  --font-size-paragraph-lg: 18px;    /* Paragraph Large */
-  --font-size-paragraph-md: 16px;    /* Paragraph Medium */
-  --font-size-paragraph-sm: 14px;    /* Paragraph Small */
-
-  /* Font Sizes - Label */
-  --font-size-label-lg: 14px;        /* Label Large */
-  --font-size-label-md: 13px;        /* Label Medium */
-  --font-size-label-sm: 12px;        /* Label Small */
-
-  /* Font Sizes - Utility */
+  /* Backward-compat font-size aliases */
+  --font-size-display-xl: var(--text-8xl);
+  --font-size-display-lg: var(--text-7xl);
+  --font-size-display-md: var(--text-6xl);
+  --font-size-display-sm: var(--text-5xl);
+  --font-size-title-xl: var(--text-4xl);
+  --font-size-title-lg: var(--text-3xl);
+  --font-size-title-md: var(--text-2xl);
+  --font-size-title-sm: var(--text-xl);
+  --font-size-title-xs: var(--text-lg);
+  --font-size-paragraph-xl: var(--text-xl);
+  --font-size-paragraph-lg: var(--text-lg);
+  --font-size-paragraph-md: var(--text-base);
+  --font-size-paragraph-sm: var(--text-sm);
+  --font-size-label-lg: var(--text-sm);
+  --font-size-label-md: 0.8125rem; /* 13px */
+  --font-size-label-sm: var(--text-xs);
   --font-size-xs: 10px;
-  --font-size-sm: 12px;
-  --font-size-base: 14px;
-  --font-size-md: 16px;
-  --font-size-lg: 18px;
-  --font-size-xl: 20px;
-  --font-size-2xl: 24px;
-  --font-size-3xl: 28px;
-  --font-size-4xl: 32px;
-  --font-size-5xl: 36px;
+  --font-size-sm: var(--text-xs);
+  --font-size-base: var(--text-sm);
+  --font-size-md: var(--text-base);
+  --font-size-lg: var(--text-lg);
+  --font-size-xl: var(--text-xl);
+  --font-size-2xl: var(--text-2xl);
+  --font-size-3xl: var(--text-3xl);
+  --font-size-4xl: var(--text-4xl);
+  --font-size-5xl: var(--text-5xl);
 
   /* Font Weights */
   --font-weight-light: 300;
@@ -245,30 +346,39 @@
   --letter-spacing-widest: 0.1em;
 
   /* ========================================
-     SPACING
-     8px base unit scale
+     SPACING (DS source of truth)
      ======================================== */
 
-  --spacing-0: 0;
-  --spacing-1: 4px;      /* 0.25rem */
-  --spacing-2: 8px;      /* 0.5rem */
-  --spacing-3: 12px;     /* 0.75rem */
-  --spacing-4: 16px;     /* 1rem */
-  --spacing-5: 20px;     /* 1.25rem */
-  --spacing-6: 24px;     /* 1.5rem */
-  --spacing-7: 28px;     /* 1.75rem */
-  --spacing-8: 32px;     /* 2rem */
-  --spacing-9: 36px;     /* 2.25rem */
-  --spacing-10: 40px;    /* 2.5rem */
-  --spacing-12: 48px;    /* 3rem */
-  --spacing-14: 56px;    /* 3.5rem */
-  --spacing-16: 64px;    /* 4rem */
-  --spacing-20: 80px;    /* 5rem */
-  --spacing-24: 96px;    /* 6rem */
-  --spacing-28: 112px;   /* 7rem */
-  --spacing-32: 128px;   /* 8rem */
+  --sp-3xs: 0.25rem;   /* 4px */
+  --sp-2xs: 0.5rem;    /* 8px */
+  --sp-xs: 0.75rem;    /* 12px */
+  --sp-sm: 1rem;       /* 16px */
+  --sp-md: 1.25rem;    /* 20px */
+  --sp-lg: 1.5rem;     /* 24px */
+  --sp-xl: 2rem;       /* 32px */
+  --sp-2xl: 2.5rem;    /* 40px */
+  --sp-3xl: 3rem;      /* 48px */
+  --sp-4xl: 4rem;      /* 64px */
 
-  /* Semantic Spacing Aliases */
+  /* Backward-compat spacing aliases */
+  --spacing-0: 0;
+  --spacing-1: 4px;
+  --spacing-2: 8px;
+  --spacing-3: 12px;
+  --spacing-4: 16px;
+  --spacing-5: 20px;
+  --spacing-6: 24px;
+  --spacing-7: 28px;
+  --spacing-8: 32px;
+  --spacing-9: 36px;
+  --spacing-10: 40px;
+  --spacing-12: 48px;
+  --spacing-14: 56px;
+  --spacing-16: 64px;
+  --spacing-20: 80px;
+  --spacing-24: 96px;
+  --spacing-28: 112px;
+  --spacing-32: 128px;
   --spacing-xs: var(--spacing-1);
   --spacing-sm: var(--spacing-2);
   --spacing-md: var(--spacing-4);
@@ -278,36 +388,40 @@
   --spacing-3xl: var(--spacing-12);
 
   /* ========================================
-     BORDER RADIUS
+     BORDER RADIUS (DS source of truth)
      ======================================== */
 
-  --radius-none: 0;
-  --radius-sm: 4px;
-  --radius-base: 6px;
+  --radius-2xs: 2px;
+  --radius-xs: 4px;
+  --radius-sm: 6px;
   --radius-md: 8px;
   --radius-lg: 12px;
+  --radius-full: 9999px;
+
+  /* Backward-compat radius aliases */
+  --radius-none: 0;
+  --radius-base: var(--radius-sm);
   --radius-xl: 16px;
   --radius-2xl: 20px;
   --radius-3xl: 24px;
-  --radius-full: 9999px;  /* Pill shape */
   --radius-circle: 50%;
 
   /* ========================================
-     SHADOWS
+     SHADOWS (DS warm-brown base)
      ======================================== */
 
-  --shadow-xs: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
-  --shadow-sm: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
-  --shadow-base: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-  --shadow-md: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
-  --shadow-lg: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
-  --shadow-xl: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
-  --shadow-2xl: 0 30px 60px -15px rgba(0, 0, 0, 0.3);
-  --shadow-inner: inset 0 2px 4px 0 rgba(0, 0, 0, 0.06);
+  --shadow-xs: 0 1px 2px 0 rgba(24, 18, 12, 0.05);
+  --shadow-sm: 0 1px 3px 0 rgba(24, 18, 12, 0.1), 0 1px 2px 0 rgba(24, 18, 12, 0.06);
+  --shadow-base: 0 4px 6px -1px rgba(24, 18, 12, 0.1), 0 2px 4px -1px rgba(24, 18, 12, 0.06);
+  --shadow-md: 0 10px 15px -3px rgba(24, 18, 12, 0.1), 0 4px 6px -2px rgba(24, 18, 12, 0.05);
+  --shadow-lg: 0 20px 25px -5px rgba(24, 18, 12, 0.1), 0 10px 10px -5px rgba(24, 18, 12, 0.04);
+  --shadow-xl: 0 25px 50px -12px rgba(24, 18, 12, 0.25);
+  --shadow-2xl: 0 30px 60px -15px rgba(24, 18, 12, 0.3);
+  --shadow-inner: inset 0 2px 4px 0 rgba(24, 18, 12, 0.06);
   --shadow-none: none;
 
   /* Component-specific shadows */
-  --shadow-card: var(--shadow-sm);
+  --shadow-card: var(--shadow-xs);
   --shadow-card-hover: var(--shadow-md);
   --shadow-dropdown: var(--shadow-lg);
   --shadow-modal: var(--shadow-2xl);
@@ -316,7 +430,6 @@
      LAYOUT
      ======================================== */
 
-  /* Container Widths */
   --container-xs: 480px;
   --container-sm: 640px;
   --container-md: 768px;
@@ -324,14 +437,11 @@
   --container-xl: 1280px;
   --container-2xl: 1536px;
 
-  /* Sidebar */
   --sidebar-width: 240px;
-  --sidebar-width-collapsed: 80px;
+  --sidebar-width-collapsed: 56px;
 
-  /* Header */
   --header-height: 64px;
 
-  /* Grid */
   --grid-gap: 24px;
   --grid-column-min-width: 280px;
 
@@ -356,37 +466,7 @@
   --transition-slow: 300ms ease;
   --transition-slower: 500ms ease;
 
-  /* Easing Functions */
   --ease-in: cubic-bezier(0.4, 0, 1, 1);
   --ease-out: cubic-bezier(0, 0, 0.2, 1);
   --ease-in-out: cubic-bezier(0.4, 0, 0.2, 1);
-
-  /* ========================================
-     BREAKPOINTS (for reference in media queries)
-     Not directly usable in CSS, but documented here
-     ======================================== */
-
-  /*
-  --breakpoint-sm: 640px;
-  --breakpoint-md: 768px;
-  --breakpoint-lg: 1024px;
-  --breakpoint-xl: 1280px;
-  --breakpoint-2xl: 1536px;
-  */
 }
-
-/* ========================================
-   DARK MODE (Future Enhancement)
-   ======================================== */
-
-/*
-@media (prefers-color-scheme: dark) {
-  :root {
-    --color-background: var(--neutral-900);
-    --color-surface: var(--neutral-800);
-    --color-text-primary: var(--neutral-50);
-    --color-text-secondary: var(--neutral-300);
-    --color-text-muted: var(--neutral-400);
-  }
-}
-*/

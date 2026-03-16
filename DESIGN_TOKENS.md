@@ -1,53 +1,59 @@
 # Design Tokens - Bud 2.0
 
-This document describes the design token system implemented in the Bud application, based on the Figma Style Guide.
+This document describes the design token system implemented in the Bud application, sourced from the `mdonangelo/bud-2-design-system` repository (React + CSS Modules).
 
 ## Overview
 
 Design tokens are the visual design atoms of the design system — specifically, they are named entities that store visual design attributes. We use them in place of hard-coded values (like hex values for color or pixels for spacing) to maintain a scalable and consistent visual system.
 
-## Figma Style Guide
+The DS repo is the **source of truth**. When tokens change there, this project updates to match.
 
-**Source:** [Bud 2.0 Style Guide on Figma](https://www.figma.com/design/j3n8YHBusCH8KEHvheGeF8/-ASSETS--Style-Guide)
+## Source
 
-The style guide is organized into the following sections:
+**DS Repository:** `mdonangelo/bud-2-design-system` (React + CSS Modules)
+**Figma Style Guide:** [Bud 2.0 Style Guide on Figma](https://www.figma.com/design/j3n8YHBusCH8KEHvheGeF8/-ASSETS--Style-Guide)
 
-### Foundation
-- **Colors**: [Primitives](https://www.figma.com/design/j3n8YHBusCH8KEHvheGeF8/-ASSETS--Style-Guide?node-id=37-684) - Complete color palette with Orange, Wine, Caramel, Neutral, Red, Green, Yellow
-- **Typography**: [Estilos tipográficos](https://www.figma.com/design/j3n8YHBusCH8KEHvheGeF8/-ASSETS--Style-Guide?node-id=34-11) - Crimson Pro and Plus Jakarta Sans
-- **Logos**: [Brand logos](https://www.figma.com/design/j3n8YHBusCH8KEHvheGeF8/-ASSETS--Style-Guide?node-id=45-7412) - Primary and secondary logos
-- **Icons**: [Phosphor Icons 2.1](https://www.figma.com/design/j3n8YHBusCH8KEHvheGeF8/-ASSETS--Style-Guide?node-id=46-7595)
+## Token Naming Convention
 
-### Components
-- **Buttons**: [Button styles](https://www.figma.com/design/j3n8YHBusCH8KEHvheGeF8/-ASSETS--Style-Guide?node-id=144-1509)
-- **Inputs**: [Input fields](https://www.figma.com/design/j3n8YHBusCH8KEHvheGeF8/-ASSETS--Style-Guide?node-id=159-6)
-- **Checkboxes**: [Checkbox components](https://www.figma.com/design/j3n8YHBusCH8KEHvheGeF8/-ASSETS--Style-Guide?node-id=199-562)
-- **Badges**: [Badge variants](https://www.figma.com/design/j3n8YHBusCH8KEHvheGeF8/-ASSETS--Style-Guide?node-id=234-3825)
-- **Loading**: [Loading states](https://www.figma.com/design/j3n8YHBusCH8KEHvheGeF8/-ASSETS--Style-Guide?node-id=164-1037)
+The DS uses a consistent naming pattern:
+
+```
+--color-{palette}-{shade}   (primitive colors)
+--font-{role}                (font families)
+--text-{scale}               (font sizes, rem-based)
+--sp-{token}                 (spacing)
+--radius-{token}             (border radius)
+--shadow-{size}              (shadows)
+```
+
+### Backward Compatibility
+
+Old token names (e.g. `--orange-500`, `--font-family-body`, `--spacing-4`) are defined as aliases pointing to the new DS names. This allows gradual migration without breaking existing code.
 
 ## Token Structure
 
-Design tokens are defined in [`src/Bud.Client/wwwroot/css/tokens.css`](src/Bud.Client/wwwroot/css/tokens.css) and organized into the following categories:
+Design tokens are defined in [`src/Client/Bud.BlazorWasm/wwwroot/css/tokens.css`](src/Client/Bud.BlazorWasm/wwwroot/css/tokens.css).
 
 ### 1. Primitive Colors
 
-Base color scales (50-950) for each color family:
+Base color scales (50-950) for each color family, prefixed with `--color-`:
 
 ```css
 /* Orange - Primary Brand Color */
---orange-50: #FFF4ED;
---orange-500: #FF6B35;  /* Primary Orange */
---orange-950: #4A1505;
+--color-orange-50: #fff4ed;
+--color-orange-500: #fd5f28;  /* Primary Orange */
+--color-orange-950: #440e07;
 
 /* Wine - Secondary Brand Color */
---wine-50: #FDF3F8;
---wine-500: #E838A3;  /* Primary Wine */
---wine-950: #3A0824;
+--color-wine-50: #fef1f7;
+--color-wine-500: #fa3a82;  /* Primary Wine */
+--color-wine-800: #a60c46;
+--color-wine-950: #560121;
 
 /* Neutral - Grayscale */
---neutral-50: #FAFAFA;
---neutral-500: #737373;
---neutral-950: #0A0A0A;
+--color-neutral-50: #fafafa;
+--color-neutral-500: #737373;
+--color-neutral-950: #0a0a0a;
 ```
 
 Other color families: `caramel`, `red`, `green`, `yellow`
@@ -58,35 +64,50 @@ Meaningful color assignments mapped from primitives:
 
 ```css
 /* Brand Colors */
---color-brand-primary: var(--orange-500);
---color-brand-secondary: var(--wine-500);
+--color-brand-primary: var(--color-orange-500);
+--color-brand-secondary: var(--color-wine-500);
 
 /* Text Colors */
---color-text-primary: var(--neutral-900);
---color-text-muted: var(--neutral-500);
---color-text-inverse: #FFFFFF;
+--color-text-primary: var(--color-neutral-950);
+--color-text-muted: var(--color-neutral-500);
+--color-text-inverse: #ffffff;
+
+/* Border Colors (caramel-based) */
+--color-border: var(--color-caramel-200);
+--color-border-light: var(--color-caramel-100);
+--color-border-focus: var(--color-caramel-700);
 
 /* State Colors */
---color-success: var(--green-500);
---color-error: var(--red-500);
---color-warning: var(--yellow-500);
---color-info: var(--wine-500);
+--color-success: var(--color-green-500);
+--color-error: var(--color-red-500);
+--color-warning: var(--color-yellow-500);
+--color-info: var(--color-wine-500);
 ```
 
 ### 3. Typography
 
-Font families, sizes, weights, and spacing:
+Three font families sourced from the DS:
 
 ```css
 /* Font Families */
---font-family-display: 'Crimson Pro', Georgia, 'Times New Roman', serif;
---font-family-body: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+--font-display: 'Crimson Pro', Georgia, serif;         /* Display/decorative */
+--font-heading: 'Plus Jakarta Sans', sans-serif;        /* Headings */
+--font-body: 'Inter', sans-serif;                       /* Body text (default) */
+--font-mono: 'SFMono-Regular', Consolas, monospace;     /* Code */
 
-/* Font Sizes - Display */
---font-size-display-xl: 64px;
---font-size-display-lg: 52px;
---font-size-display-md: 44px;
---font-size-display-sm: 36px;
+/* Font Sizes (rem-based) */
+--text-8xl: 4rem;       /* 64px */
+--text-7xl: 3.25rem;    /* 52px */
+--text-6xl: 2.75rem;    /* 44px */
+--text-5xl: 2.25rem;    /* 36px */
+--text-4xl: 2rem;       /* 32px */
+--text-3xl: 1.75rem;    /* 28px */
+--text-2xl: 1.5rem;     /* 24px */
+--text-xl: 1.25rem;     /* 20px */
+--text-lg: 1.125rem;    /* 18px */
+--text-base: 1rem;      /* 16px */
+--text-sm: 0.875rem;    /* 14px */
+--text-xs: 0.75rem;     /* 12px */
 
 /* Font Weights */
 --font-weight-regular: 400;
@@ -97,205 +118,79 @@ Font families, sizes, weights, and spacing:
 
 ### 4. Spacing
 
-8px-based spacing scale:
+DS spacing scale using `--sp-` prefix:
 
 ```css
---spacing-1: 4px;
---spacing-2: 8px;
---spacing-4: 16px;
---spacing-6: 24px;
---spacing-8: 32px;
-
-/* Semantic Aliases */
---spacing-xs: var(--spacing-1);
---spacing-sm: var(--spacing-2);
---spacing-md: var(--spacing-4);
---spacing-lg: var(--spacing-6);
---spacing-xl: var(--spacing-8);
+--sp-3xs: 0.25rem;   /* 4px */
+--sp-2xs: 0.5rem;    /* 8px */
+--sp-xs: 0.75rem;    /* 12px */
+--sp-sm: 1rem;       /* 16px */
+--sp-md: 1.25rem;    /* 20px */
+--sp-lg: 1.5rem;     /* 24px */
+--sp-xl: 2rem;       /* 32px */
+--sp-2xl: 2.5rem;    /* 40px */
+--sp-3xl: 3rem;      /* 48px */
+--sp-4xl: 4rem;      /* 64px */
 ```
+
+Legacy `--spacing-N` aliases (pixel-based) are preserved for backward compatibility.
 
 ### 5. Border Radius
 
 ```css
---radius-sm: 4px;
+--radius-2xs: 2px;
+--radius-xs: 4px;
+--radius-sm: 6px;
 --radius-md: 8px;
 --radius-lg: 12px;
---radius-xl: 16px;
 --radius-full: 9999px;  /* Pill shape */
 ```
 
 ### 6. Shadows
 
+Warm-brown base (`rgba(24, 18, 12, ...)`) per DS spec:
+
 ```css
---shadow-sm: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
---shadow-md: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
---shadow-card: var(--shadow-sm);
+--shadow-xs: 0 1px 2px 0 rgba(24, 18, 12, 0.05);
+--shadow-sm: 0 1px 3px 0 rgba(24, 18, 12, 0.1), 0 1px 2px 0 rgba(24, 18, 12, 0.06);
+--shadow-md: 0 10px 15px -3px rgba(24, 18, 12, 0.1), 0 4px 6px -2px rgba(24, 18, 12, 0.05);
+--shadow-card: var(--shadow-xs);
 ```
 
 ### 7. Layout
 
 ```css
---sidebar-width: 280px;
+--sidebar-width: 240px;
+--sidebar-width-collapsed: 56px;
 --header-height: 64px;
 --grid-gap: 24px;
 ```
 
-## Token Naming Convention
-
-Tokens follow a consistent naming pattern:
+## CSS Architecture
 
 ```
---{category}-{property}-{variant}-{state}
+wwwroot/css/
+  reset.css       ← Box-sizing reset, font smoothing
+  fonts.css       ← @font-face for Crimson Pro, Plus Jakarta Sans, Inter
+  tokens.css      ← Design tokens (DS source of truth + backward aliases)
+  app.css         ← All component and page styles
 ```
 
-**Examples:**
-- `--color-text-primary` - Text color, primary variant
-- `--font-size-title-lg` - Font size for titles, large variant
-- `--spacing-md` - Medium spacing
-- `--shadow-card` - Shadow for card components
-
-## Using Tokens in Code
-
-### In CSS
-
-Replace hardcoded values with token references:
-
-```css
-/* ❌ Before */
-.button {
-    background: #FF6B35;
-    padding: 10px 16px;
-    border-radius: 10px;
-}
-
-/* ✅ After */
-.button {
-    background: var(--color-brand-primary);
-    padding: var(--spacing-3) var(--spacing-4);
-    border-radius: var(--radius-md);
-}
+Load order in `index.html`:
+```html
+<link rel="stylesheet" href="css/reset.css" />
+<link rel="stylesheet" href="css/fonts.css" />
+<link rel="stylesheet" href="css/tokens.css" />
+<link rel="stylesheet" href="css/app.css" />
 ```
-
-### In Blazor Components
-
-Tokens are automatically available in all components via the cascading CSS:
-
-```razor
-<div style="color: var(--color-text-muted); font-size: var(--font-size-sm);">
-    Muted text
-</div>
-```
-
-For component-specific styles, create a `.razor.css` file:
-
-```css
-/* MyComponent.razor.css */
-.container {
-    padding: var(--spacing-6);
-    background: var(--color-surface);
-    border-radius: var(--radius-lg);
-}
-```
-
-## Updating Tokens from Figma
-
-There are two methods to update design tokens when the Figma Style Guide changes:
-
-### Method 1: MCP-Powered Sync (Recommended)
-
-If you have Figma MCP configured, you can use Claude Code to fetch updated tokens:
-
-1. **Prerequisites:**
-   - Figma MCP server configured (see MCP Setup section below)
-   - Figma Desktop app open with the Style Guide file
-
-2. **Update Process:**
-   ```bash
-   # Open Claude Code and ask:
-   "Check the Figma Style Guide for design token changes and update tokens.css"
-   ```
-
-3. **Review Changes:**
-   ```bash
-   git diff src/Bud.Client/wwwroot/css/tokens.css
-   ```
-
-4. **Test and Commit:**
-   - Run `docker compose up --build`
-   - Test all pages
-   - Commit if approved
-
-### Method 2: Manual Export via Figma Plugin
-
-1. **Install Plugin:**
-   - Open [Figma Token Exporter](https://www.figma.com/community/plugin/1345069854741911632/figma-token-exporter) in Figma
-
-2. **Export Tokens:**
-   - Open the Bud 2.0 Style Guide in Figma
-   - Run the Figma Token Exporter plugin
-   - Select **CSS Custom Properties** format
-   - Download the exported `.css` file
-
-3. **Update tokens.css:**
-   - Compare the exported file with [`src/Bud.Client/wwwroot/css/tokens.css`](src/Bud.Client/wwwroot/css/tokens.css)
-   - Update changed values
-   - Maintain the existing file structure and comments
-
-4. **Test and Commit:**
-   - Run `docker compose up --build`
-   - Test all pages
-   - Commit changes
-
-## MCP Setup
-
-To use Figma MCP integration for automated token updates:
-
-### Option 1: Remote MCP Server (Recommended)
-
-```bash
-# Add Figma MCP to Claude Code
-claude mcp add --transport http figma https://mcp.figma.com/mcp
-
-# Authenticate
-# 1. Type /mcp in Claude Code
-# 2. Select "figma" from MCP Servers
-# 3. Click "Authenticate"
-# 4. Allow access in browser
-```
-
-### Option 2: Desktop MCP Server
-
-1. Open Figma Desktop app
-2. Navigate to any file
-3. Open Inspect panel
-4. Enable "Desktop MCP server"
-5. Server runs at `http://127.0.0.1:3845/mcp`
-
-## Token Update Workflow
-
-When a designer updates the Figma Style Guide:
-
-1. **Notification**: Designer notifies team of Figma updates
-2. **Sync**: Developer runs MCP sync or manual export
-3. **Review**: Check `git diff` for changes
-4. **Test**: Visual regression testing on all pages
-5. **Approve**: Team reviews visual changes
-6. **Deploy**: Merge and deploy to production
 
 ## Font Loading
 
-The application uses two font families from Google Fonts:
+Three font families self-hosted in `wwwroot/fonts/`:
 
-- **Crimson Pro**: For headings and display text
-- **Plus Jakarta Sans**: For body text and UI elements
-
-Fonts should be loaded in [`src/Bud.Client/wwwroot/index.html`](src/Bud.Client/wwwroot/index.html):
-
-```html
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:wght@400;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
-```
+- **Crimson Pro** (`crimson-pro-latin.woff2`): Display/decorative text
+- **Plus Jakarta Sans** (`plus-jakarta-sans-latin.woff2`): Headings
+- **Inter** (`inter-latin.woff2`): Body text and UI elements
 
 ## Color Palette Reference
 
@@ -303,140 +198,46 @@ Fonts should be loaded in [`src/Bud.Client/wwwroot/index.html`](src/Bud.Client/w
 
 | Token | Hex | Usage |
 |-------|-----|-------|
-| `--orange-500` | #FF6B35 | Primary brand color, CTAs, active states |
-| `--wine-500` | #E838A3 | Secondary brand color, accents, highlights |
+| `--color-orange-500` | #fd5f28 | Primary brand color, CTAs, active states |
+| `--color-wine-500` | #fa3a82 | Secondary brand color, accents |
+| `--color-wine-800` | #a60c46 | Dark wine, used in dense contexts |
 
 ### Neutral Scale
 
 | Token | Hex | Usage |
 |-------|-----|-------|
-| `--neutral-50` | #FAFAFA | Background, page background |
-| `--neutral-100` | #F5F5F5 | Subtle backgrounds, hover states |
-| `--neutral-300` | #D4D4D4 | Borders, dividers |
-| `--neutral-500` | #737373 | Muted text, placeholders |
-| `--neutral-700` | #404040 | Secondary text |
-| `--neutral-900` | #171717 | Primary text |
+| `--color-neutral-100` | #f5f5f5 | Page background |
+| `--color-neutral-500` | #737373 | Muted text, placeholders |
+| `--color-neutral-950` | #0a0a0a | Primary text |
 
 ### Semantic Colors
 
 | Token | Hex | Usage |
 |-------|-----|-------|
-| `--green-500` | #22C55E | Success messages, positive states |
-| `--red-500` | #EF4444 | Error messages, danger states |
-| `--yellow-500` | #EAB308 | Warning messages, caution states |
+| `--color-green-500` | #22c55e | Success messages, positive states |
+| `--color-red-500` | #ef4444 | Error messages, danger states |
+| `--color-yellow-500` | #eab308 | Warning messages, caution states |
 
-## Typography Scale
+## Updating Tokens from DS Repo
 
-### Display (Crimson Pro)
+When the `mdonangelo/bud-2-design-system` repo updates tokens:
 
-| Token | Size | Usage |
-|-------|------|-------|
-| `--font-size-display-xl` | 64px | Hero headlines |
-| `--font-size-display-lg` | 52px | Page headlines |
-| `--font-size-display-md` | 44px | Section headlines |
-| `--font-size-display-sm` | 36px | Subsection headlines |
-
-### Titles (Crimson Pro)
-
-| Token | Size | Usage |
-|-------|------|-------|
-| `--font-size-title-xl` | 32px | Main page titles |
-| `--font-size-title-lg` | 28px | Section titles |
-| `--font-size-title-md` | 24px | Subsection titles |
-| `--font-size-title-sm` | 20px | Card titles |
-
-### Body (Plus Jakarta Sans)
-
-| Token | Size | Usage |
-|-------|------|-------|
-| `--font-size-paragraph-lg` | 18px | Lead paragraphs |
-| `--font-size-base` | 14px | Body text, inputs |
-| `--font-size-label-md` | 13px | Form labels, captions |
-| `--font-size-label-sm` | 12px | Small text, metadata |
-
-## Spacing Scale
-
-| Token | Value | Usage |
-|-------|-------|-------|
-| `--spacing-1` | 4px | Tight spacing, icon gaps |
-| `--spacing-2` | 8px | Small gaps, form elements |
-| `--spacing-3` | 12px | Button padding, small cards |
-| `--spacing-4` | 16px | Default spacing, margins |
-| `--spacing-6` | 24px | Section spacing, card padding |
-| `--spacing-8` | 32px | Large spacing, page margins |
-| `--spacing-10` | 40px | Extra large spacing |
-
-## Browser Support
-
-Design tokens using CSS Custom Properties are supported in:
-
-- Chrome 49+
-- Firefox 31+
-- Safari 9.1+
-- Edge 15+
-
-For older browsers, consider using a CSS preprocessor to compile tokens at build time.
+1. Compare new values with `tokens.css`
+2. Update primitive and semantic values
+3. Verify backward-compat aliases still resolve correctly
+4. Run `docker compose up --build` and visually test all pages
+5. Run `dotnet test` to verify no test regressions
 
 ## Best Practices
 
 1. **Always use tokens**: Never hardcode colors, spacing, or typography values
-2. **Use semantic tokens**: Prefer `--color-text-primary` over `--neutral-900`
-3. **Maintain hierarchy**: Use primitive → semantic → component token structure
+2. **Use semantic tokens**: Prefer `--color-text-primary` over `--color-neutral-950`
+3. **New code uses DS names**: Prefer `--color-orange-500` over `--orange-500`, `--sp-sm` over `--spacing-4`
 4. **Document changes**: Update this file when adding new tokens
 5. **Test thoroughly**: Check all pages after token updates
-6. **Keep in sync**: Regularly sync tokens with Figma Style Guide
-
-## Troubleshooting
-
-### Tokens not loading
-
-Check that `tokens.css` is loaded before `app.css` in [`index.html`](src/Bud.Client/wwwroot/index.html):
-
-```html
-<link rel="stylesheet" href="css/tokens.css" />
-<link rel="stylesheet" href="css/app.css" />
-```
-
-### Colors look wrong
-
-1. Clear browser cache
-2. Check browser DevTools → Computed styles
-3. Verify token values in `tokens.css`
-4. Check for typos in variable names
-
-### Fonts not loading
-
-1. Verify Google Fonts link in `index.html`
-2. Check browser console for font loading errors
-3. Verify font-family declarations in tokens.css
-
-## Resources
-
-- [Figma Style Guide](https://www.figma.com/design/j3n8YHBusCH8KEHvheGeF8/-ASSETS--Style-Guide)
-- [Figma MCP Documentation](https://developers.figma.com/docs/figma-mcp-server/)
-- [CSS Custom Properties (MDN)](https://developer.mozilla.org/en-US/docs/Web/CSS/Using_CSS_custom_properties)
-- [Design Tokens W3C Draft](https://design-tokens.github.io/community-group/format/)
-
-## Contributing
-
-When adding new components or pages:
-
-1. **Use existing tokens**: Check if existing tokens fit your needs
-2. **Request new tokens**: If needed, request addition to Figma Style Guide
-3. **Update documentation**: Add new tokens to this document
-4. **Follow conventions**: Use established naming patterns
-
-## Version History
-
-| Version | Date | Changes |
-|---------|------|---------|
-| 2.0.0 | 2026-02-02 | Initial design token system implementation |
-| | | - Complete rebrand with Orange/Wine palette |
-| | | - Crimson Pro + Plus Jakarta Sans typography |
-| | | - Comprehensive spacing, shadow, and layout tokens |
 
 ---
 
-**Last Updated:** 2026-02-02
-**Maintained By:** Bud Development Team
+**Last Updated:** 2026-03-15
+**Source of Truth:** `mdonangelo/bud-2-design-system`
 **Figma Style Guide:** [View on Figma](https://www.figma.com/design/j3n8YHBusCH8KEHvheGeF8/-ASSETS--Style-Guide)

@@ -6,6 +6,14 @@
 @inject UiOperationService UiOps
 @implements IDisposable
 
+<div class="goals-page">
+<ManagementPageHeader
+    Kicker="Performance e engajamento"
+    Title="Metas"
+    Subtitle="Organize objetivos, acompanhe indicadores e mantenha o ciclo de check-ins no ritmo certo."
+    PrimaryActionText="Criar meta"
+    OnPrimaryAction="OpenCreateModal" />
+
 <GoalsFilterBar Filter="_filter"
                 FilterActiveOnly="_filterActiveOnly"
                 FilterStartDate="_filterStartDate"
@@ -53,10 +61,6 @@
             </svg>
             <span>Vendo em kanban</span>
         }
-    </button>
-    <button class="button primary" @onclick="OpenCreateModal">
-        <span class="button-icon-text">+</span>
-        Criar meta
     </button>
 </div>
 
@@ -168,3 +172,4 @@ else
                  OnCheckinClick="m => { if (_detailModalGoal != null) OpenCheckinModalForIndicator(_detailModalGoal, m); }"
                  OnHistoryClick="async m => { if (_detailModalGoal != null) await OpenCheckinHistoryModal(_detailModalGoal, m); }"
                  OnTaskStateChange="async t => { if (_detailModalGoal != null) await HandleTaskStateChange(_detailModalGoal.Id, t.task, t.newState); }" />
+</div>

@@ -1,11 +1,8 @@
 html, body {
-    font-family: var(--font-family-body);
+    font-family: var(--font-body);
+    font-size: var(--text-sm);
     background: var(--color-background);
     color: var(--color-text-primary);
-}
-
-* {
-    box-sizing: border-box;
 }
 
 a {
@@ -35,6 +32,24 @@ a {
     justify-content: space-between;
 }
 
+.brand-lockup {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-3);
+}
+
+.brand-lockup img {
+    width: 42px;
+    height: 42px;
+    border-radius: var(--radius-lg);
+}
+
+.brand-copy {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
 .sidebar-close-btn {
     display: none;
     width: 36px;
@@ -59,7 +74,7 @@ a {
     font-weight: var(--font-weight-bold);
     letter-spacing: var(--letter-spacing-wide);
     color: var(--color-brand-primary);
-    font-family: var(--font-family-body);
+    font-family: var(--font-body);
     text-transform: lowercase;
     line-height: 1;
 }
@@ -340,12 +355,23 @@ a {
     padding: var(--spacing-7) var(--spacing-8) var(--spacing-10);
 }
 
+.dashboard-page,
+.goals-page,
+.management-page {
+    display: grid;
+    gap: var(--spacing-6);
+}
+
 .page-header {
     display: flex;
     justify-content: space-between;
     align-items: flex-end;
     gap: var(--spacing-4);
     margin-bottom: var(--spacing-6);
+}
+
+.page-header-copy {
+    max-width: 720px;
 }
 
 .page-header h1 {
@@ -434,7 +460,7 @@ a {
     gap: var(--spacing-2);
     border: 1px solid transparent;
     cursor: pointer;
-    font-family: var(--font-family-body);
+    font-family: var(--font-body);
     font-weight: var(--font-weight-semibold);
     text-decoration: none;
     transition: all var(--transition-fast);
@@ -645,7 +671,7 @@ a {
 }
 
 .mono {
-    font-family: var(--font-family-mono);
+    font-family: var(--font-mono);
     font-size: var(--font-size-label-sm);
 }
 
@@ -824,18 +850,32 @@ a {
     gap: var(--spacing-2);
 }
 
+.auth-logo-mark {
+    width: 56px;
+    height: 56px;
+    border-radius: var(--radius-xl);
+}
+
 .auth-logo {
     font-size: var(--font-size-3xl);
     font-weight: var(--font-weight-bold);
     letter-spacing: var(--letter-spacing-wider);
     color: var(--color-brand-primary);
-    font-family: var(--font-family-body);
+    font-family: var(--font-body);
     text-transform: lowercase;
 }
 
-.auth-subtitle {
+.auth-subtitle,
+.auth-overline {
     font-size: var(--font-size-label-md);
+    text-transform: uppercase;
+    letter-spacing: var(--letter-spacing-widest);
     color: var(--color-text-muted);
+}
+
+.auth-helper {
+    margin-bottom: var(--spacing-5);
+    color: var(--color-text-secondary);
 }
 
 .auth-card {
@@ -2328,7 +2368,7 @@ a {
 
 .toast-title {
     flex: 1;
-    font-family: var(--font-family-body);
+    font-family: var(--font-body);
     font-size: 16px;
     font-weight: 600;
     line-height: 1.25;
@@ -2381,7 +2421,7 @@ a {
 
 .toast-body p {
     margin: 0;
-    font-family: var(--font-family-body);
+    font-family: var(--font-body);
     font-size: 16px;
     font-weight: 500;
     line-height: 1.4;
