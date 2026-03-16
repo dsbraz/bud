@@ -17,7 +17,17 @@ Fluxo principal (3 etapas):
 Resumo:
 
 - `gcp-bootstrap.sh`: prepara infraestrutura base e atualiza `.env.gcp`
-- `gcp-deploy-all.sh`: publica `bud-api`, `bud-mcp` e o frontend publico `bud-web`
+- `gcp-deploy-all.sh`: publica `bud-api`, `bud-mcp` e `bud-web`
+
+## TOPOLOGIA DE PRODUCAO
+
+Tres servicos independentes no Cloud Run:
+
+- `bud-api`: API ASP.NET Core dedicada.
+- `bud-web`: Blazor WASM em container nginx estatico. Serve os assets e faz proxy reverso para `bud-api` em `/api/*`, `/health/*`, `/swagger/*` e `/openapi/*`, preservando o modelo same-origin (sem CORS no browser).
+- `bud-mcp`: servidor MCP HTTP. Depende da URL do `bud-api` diretamente (nao passa pelo `bud-web`).
+
+Deploy e rollback de cada servico sao independentes. A URL publica do ambiente e a do `bud-web`.
 
 ## PRE-REQUISITOS (primeira vez)
 
@@ -106,7 +116,7 @@ Esse comando executa:
 3. execucao da migracao via Cloud Run Job
 4. deploy do `bud-api` no Cloud Run
 5. build, push e deploy do `bud-mcp` no Cloud Run
-6. build, push e deploy do frontend `bud-web` no Cloud Run
+6. build, push e deploy do `bud-web` no Cloud Run
 
 ### Pular migracao
 
@@ -121,7 +131,7 @@ Se nao houve mudanca no schema do banco:
 ```bash
 ./scripts/gcp-deploy-api.sh
 ./scripts/gcp-deploy-api.sh --skip-migration
-./scripts/gcp-deploy-frontend.sh
+./scripts/gcp-deploy-web.sh
 ./scripts/gcp-deploy-mcp.sh
 ```
 
@@ -240,7 +250,7 @@ Em desenvolvimento local, nenhuma variavel OTel e configurada. O OTLP exporter t
 - Scripts oficiais:
   - `scripts/gcp-bootstrap.sh`
   - `scripts/gcp-deploy-api.sh`
-  - `scripts/gcp-deploy-frontend.sh`
+  - `scripts/gcp-deploy-web.sh`
   - `scripts/gcp-deploy-mcp.sh`
   - `scripts/gcp-deploy-all.sh`
 
