@@ -10,7 +10,6 @@ public sealed class TenantAuthorizationService(
 {
     public async Task<bool> UserBelongsToTenantAsync(Guid tenantId, CancellationToken cancellationToken = default)
     {
-        // Global admin tem acesso a tudo
         if (tenantProvider.IsGlobalAdmin)
         {
             return true;
@@ -21,20 +20,6 @@ public sealed class TenantAuthorizationService(
             return false;
         }
 
-        // Verificar se usuário é owner ou colaborador da organização
-        var isOwner = await dbContext.Organizations
-            .AnyAsync(o =>
-                o.Id == tenantId &&
-                o.Owner != null &&
-                o.Owner.Email == tenantProvider.UserEmail,
-                cancellationToken);
-
-        if (isOwner)
-        {
-            return true;
-        }
-
-        // Verificar se é colaborador
         return await dbContext.Collaborators
             .AnyAsync(c =>
                 c.OrganizationId == tenantId &&
@@ -54,19 +39,10 @@ public sealed class TenantAuthorizationService(
             return [];
         }
 
-        // Organizações onde o usuário é owner
-        var ownedOrgIds = await dbContext.Organizations
-            .Where(o => o.Owner != null && o.Owner.Email == tenantProvider.UserEmail)
-            .Select(o => o.Id)
-            .ToListAsync(cancellationToken);
-
-        // Organizações onde o usuário é colaborador
-        var collaboratorOrgIds = await dbContext.Collaborators
+        return await dbContext.Collaborators
             .Where(c => c.Email == tenantProvider.UserEmail)
             .Select(c => c.OrganizationId)
+            .Distinct()
             .ToListAsync(cancellationToken);
-
-        // Combinar e remover duplicatas
-        return ownedOrgIds.Union(collaboratorOrgIds).ToList();
     }
 }

@@ -18,7 +18,7 @@ public sealed partial class DeleteOrganization(
     {
         LogDeletingOrganization(logger, id);
 
-        var organization = await organizationRepository.GetByIdWithOwnerAsync(id, cancellationToken);
+        var organization = await organizationRepository.GetByIdAsync(id, cancellationToken);
         if (organization is null)
         {
             LogOrganizationDeletionFailed(logger, id, "Not found");

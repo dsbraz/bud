@@ -112,26 +112,8 @@ public sealed class AuthService(
             })
             .ToListAsync(cancellationToken);
 
-        var orgsFromOwnership = await dbContext.Organizations
-            .AsNoTracking()
-            .IgnoreQueryFilters()
-            .Where(o => o.Owner != null && o.Owner.Email == normalizedEmail)
-            .Select(o => new OrganizationSnapshot
-            {
-                Id = o.Id,
-                Name = o.Name
-            })
-            .ToListAsync(cancellationToken);
 
-        // Combine and deduplicate
-        var organizations = orgsFromMembership
-            .Concat(orgsFromOwnership)
-            .GroupBy(o => o.Id)
-            .Select(g => g.First())
-            .OrderBy(o => o.Name)
-            .ToList();
-
-        return Result<List<OrganizationSnapshot>>.Success(organizations);
+        return Result<List<OrganizationSnapshot>>.Success(orgsFromMembership);
     }
 
     private async Task RegisterAccessLogAsync(Guid collaboratorId, Guid organizationId, CancellationToken cancellationToken)

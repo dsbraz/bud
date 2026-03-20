@@ -6,7 +6,8 @@ namespace Bud.Shared.Contracts.Organizations;
 public sealed class CreateOrganizationRequest
 {
     public string Name { get; set; } = string.Empty;
-    public Guid OwnerId { get; set; }
+    public string? Plan { get; set; }
+    public string? IconUrl { get; set; }
 }
 
 public sealed class PatchOrganizationRequest
@@ -14,5 +15,7 @@ public sealed class PatchOrganizationRequest
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
     public Optional<string> Name { get; set; }
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
-    public Optional<Guid?> OwnerId { get; set; }
+    public Optional<string?> Plan { get; set; }
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
+    public Optional<string?> IconUrl { get; set; }
 }

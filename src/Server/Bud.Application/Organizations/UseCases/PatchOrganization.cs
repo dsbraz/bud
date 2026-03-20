@@ -8,7 +8,6 @@ namespace Bud.Application.Organizations;
 
 public sealed partial class PatchOrganization(
     IOrganizationRepository organizationRepository,
-    ICollaboratorRepository collaboratorRepository,
     IOptions<GlobalAdminSettings> globalAdminSettings,
     ILogger<PatchOrganization> logger,
     IUnitOfWork? unitOfWork = null)
@@ -22,7 +21,7 @@ public sealed partial class PatchOrganization(
     {
         LogPatchingOrganization(logger, id);
 
-        var organization = await organizationRepository.GetByIdWithOwnerAsync(id, cancellationToken);
+        var organization = await organizationRepository.GetByIdAsync(id, cancellationToken);
         if (organization is null)
         {
             LogOrganizationPatchFailed(logger, id, "Not found");
@@ -44,27 +43,14 @@ public sealed partial class PatchOrganization(
                 organization.Rename(request.Name.Value ?? string.Empty);
             }
 
-            if (request.OwnerId.HasValue && request.OwnerId.Value.HasValue && request.OwnerId.Value.Value != Guid.Empty)
+            if (request.Plan.HasValue)
             {
-                var ownerId = request.OwnerId.Value.Value;
-                var newOwner = await collaboratorRepository.GetByIdAsync(ownerId, cancellationToken);
-                if (newOwner is null)
-                {
-                    LogOrganizationPatchFailed(logger, id, UserErrorMessages.SelectedOwnerNotFound);
-                    return Result<Organization>.NotFound(UserErrorMessages.SelectedOwnerNotFound);
-                }
+                organization.SetPlan(request.Plan.Value);
+            }
 
-                try
-                {
-                    newOwner.EnsureCanOwnOrganization();
-                }
-                catch (DomainInvariantException ex)
-                {
-                    LogOrganizationPatchFailed(logger, id, ex.Message);
-                    return Result<Organization>.Failure(ex.Message, ErrorType.Validation);
-                }
-
-                organization.AssignOwner(ownerId);
+            if (request.IconUrl.HasValue)
+            {
+                organization.SetIconUrl(request.IconUrl.Value);
             }
 
             await unitOfWork.CommitAsync(organizationRepository.SaveChangesAsync, cancellationToken);

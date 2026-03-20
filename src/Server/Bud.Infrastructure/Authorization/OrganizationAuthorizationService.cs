@@ -11,7 +11,6 @@ public sealed class OrganizationAuthorizationService(
 {
     public async Task<Result> RequireOrgOwnerAsync(Guid organizationId, CancellationToken cancellationToken = default)
     {
-        // Global admin sempre tem acesso
         if (tenantProvider.IsGlobalAdmin)
         {
             return Result.Success();
@@ -22,15 +21,15 @@ public sealed class OrganizationAuthorizationService(
             return Result.Forbidden("Colaborador não identificado.");
         }
 
-        var isOwner = await dbContext.Organizations
-            .AnyAsync(o =>
-                o.Id == organizationId &&
-                o.OwnerId == tenantProvider.CollaboratorId.Value,
+        var isMember = await dbContext.Collaborators
+            .AnyAsync(c =>
+                c.OrganizationId == organizationId &&
+                c.Id == tenantProvider.CollaboratorId.Value,
                 cancellationToken);
 
-        return isOwner
+        return isMember
             ? Result.Success()
-            : Result.Forbidden("Apenas o proprietário da organização pode realizar esta ação.");
+            : Result.Forbidden("Você não tem acesso a esta organização.");
     }
 
     public async Task<Result> RequireWriteAccessAsync(
@@ -48,14 +47,13 @@ public sealed class OrganizationAuthorizationService(
             return Result.Forbidden("Colaborador não identificado.");
         }
 
-        // Implementar lógica de write access conforme regras de negócio
-        var isOwner = await dbContext.Organizations
-            .AnyAsync(o =>
-                o.Id == organizationId &&
-                o.OwnerId == tenantProvider.CollaboratorId.Value,
+        var isMember = await dbContext.Collaborators
+            .AnyAsync(c =>
+                c.OrganizationId == organizationId &&
+                c.Id == tenantProvider.CollaboratorId.Value,
                 cancellationToken);
 
-        return isOwner
+        return isMember
             ? Result.Success()
             : Result.Forbidden("Você não tem permissão de escrita nesta organização.");
     }

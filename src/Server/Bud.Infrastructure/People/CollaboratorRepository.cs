@@ -145,7 +145,7 @@ public sealed class CollaboratorRepository(ApplicationDbContext dbContext) : ICo
         => await dbContext.Collaborators.AnyAsync(c => c.LeaderId == collaboratorId, ct);
 
     public async Task<bool> IsOrganizationOwnerAsync(Guid collaboratorId, CancellationToken ct = default)
-        => await dbContext.Organizations.AnyAsync(o => o.OwnerId == collaboratorId, ct);
+        => await dbContext.Collaborators.AnyAsync(c => c.Id == collaboratorId && c.Role == CollaboratorRole.Admin, ct);
 
     public async Task<bool> HasGoalsAsync(Guid collaboratorId, CancellationToken ct = default)
         => await dbContext.Goals.AnyAsync(m => m.CollaboratorId == collaboratorId, ct);

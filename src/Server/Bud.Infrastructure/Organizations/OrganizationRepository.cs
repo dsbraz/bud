@@ -13,11 +13,6 @@ public sealed class OrganizationRepository(ApplicationDbContext dbContext) : IOr
             .AsNoTracking()
             .FirstOrDefaultAsync(o => o.Id == id, ct);
 
-    public async Task<Organization?> GetByIdWithOwnerAsync(Guid id, CancellationToken ct = default)
-        => await dbContext.Organizations
-            .Include(o => o.Owner)
-            .FirstOrDefaultAsync(o => o.Id == id, ct);
-
     public async Task<PagedResult<Organization>> GetAllAsync(
         string? search, int page, int pageSize, CancellationToken ct = default)
     {
@@ -26,7 +21,6 @@ public sealed class OrganizationRepository(ApplicationDbContext dbContext) : IOr
 
         var total = await query.CountAsync(ct);
         var items = await query
-            .Include(o => o.Owner)
             .OrderBy(o => o.Name)
             .Skip((page - 1) * pageSize)
             .Take(pageSize)

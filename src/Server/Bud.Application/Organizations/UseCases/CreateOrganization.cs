@@ -6,7 +6,6 @@ namespace Bud.Application.Organizations;
 
 public sealed partial class CreateOrganization(
     IOrganizationRepository organizationRepository,
-    ICollaboratorRepository collaboratorRepository,
     ILogger<CreateOrganization> logger,
     IUnitOfWork? unitOfWork = null)
 {
@@ -16,31 +15,13 @@ public sealed partial class CreateOrganization(
     {
         LogCreatingOrganization(logger, request.Name);
 
-        var owner = await collaboratorRepository.GetByIdAsync(request.OwnerId, cancellationToken);
-        if (owner is null)
-        {
-            LogOrganizationCreationFailed(logger, request.Name, UserErrorMessages.SelectedOwnerNotFound);
-            return Result<Organization>.NotFound(UserErrorMessages.SelectedOwnerNotFound);
-        }
-
         try
         {
-            owner.EnsureCanOwnOrganization();
-        }
-        catch (DomainInvariantException ex)
-        {
-            LogOrganizationCreationFailed(logger, request.Name, ex.Message);
-            return Result<Organization>.Failure(ex.Message, ErrorType.Validation);
-        }
-
-        try
-        {
-            var organization = Organization.Create(Guid.NewGuid(), request.Name, request.OwnerId);
+            var organization = Organization.Create(Guid.NewGuid(), request.Name, request.Plan, request.IconUrl);
 
             await organizationRepository.AddAsync(organization, cancellationToken);
             await unitOfWork.CommitAsync(organizationRepository.SaveChangesAsync, cancellationToken);
 
-            organization.Owner = owner;
             LogOrganizationCreated(logger, organization.Id, organization.Name);
             return Result<Organization>.Success(organization);
         }

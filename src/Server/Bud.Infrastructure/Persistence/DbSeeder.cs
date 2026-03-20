@@ -19,7 +19,7 @@ public static class DbSeeder
             {
                 Id = Guid.NewGuid(),
                 Name = DefaultOrganizationName,
-                OwnerId = null
+                CreatedAt = DateTime.UtcNow,
             };
             context.Organizations.Add(budOrg);
             await context.SaveChangesAsync();
@@ -49,12 +49,6 @@ public static class DbSeeder
         if (!adminLeader.IsGlobalAdmin)
         {
             adminLeader.IsGlobalAdmin = true;
-            await context.SaveChangesAsync();
-        }
-
-        if (budOrg.OwnerId != adminLeader.Id)
-        {
-            budOrg.OwnerId = adminLeader.Id;
             await context.SaveChangesAsync();
         }
 

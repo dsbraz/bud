@@ -8,17 +8,16 @@ public sealed class OrganizationConfiguration : IEntityTypeConfiguration<Organiz
     public void Configure(EntityTypeBuilder<Organization> builder)
     {
         builder.Property(o => o.Name)
-            .HasMaxLength(200);
+            .HasMaxLength(255)
+            .IsRequired();
 
-        builder.HasOne(o => o.Owner)
-            .WithMany()
-            .HasForeignKey(o => o.OwnerId)
-            .OnDelete(DeleteBehavior.Restrict)
-            .IsRequired(false);
+        builder.Property(o => o.Plan)
+            .HasMaxLength(255);
 
-        builder.HasMany(o => o.Workspaces)
-            .WithOne(w => w.Organization)
-            .HasForeignKey(w => w.OrganizationId)
-            .OnDelete(DeleteBehavior.Cascade);
+        builder.Property(o => o.IconUrl)
+            .HasMaxLength(255);
+
+        builder.Property(o => o.CreatedAt)
+            .IsRequired();
     }
 }
