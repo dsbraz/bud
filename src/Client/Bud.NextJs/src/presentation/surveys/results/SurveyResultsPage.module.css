@@ -1,0 +1,33 @@
+.page {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2xs);
+  width: 100%;
+}
+
+.headerActions {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-sm);
+}
+
+.periodText {
+  font-family: var(--font-body);
+  font-size: var(--text-sm);
+  color: var(--color-neutral-500);
+}
+
+.emptyText {
+  font-family: var(--font-body);
+  font-size: var(--text-sm);
+  color: var(--color-neutral-600);
+  margin: 0;
+}
+
+/* ——— Responsive ——— */
+
+@media (max-width: 768px) {
+  .headerActions {
+    flex-wrap: wrap;
+  }
+}

@@ -1,0 +1,27 @@
+.page {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2xs);
+}
+
+.card {
+  background-color: var(--color-white);
+  border: 1px solid var(--color-caramel-200);
+  border-radius: var(--radius-sm);
+}
+
+.content {
+  padding: var(--sp-xl) var(--sp-2xl);
+}
+
+@media (max-width: 768px) {
+  .content {
+    padding: var(--sp-lg) var(--sp-md);
+  }
+}
+
+@media (max-width: 480px) {
+  .content {
+    padding: var(--sp-md) var(--sp-sm);
+  }
+}

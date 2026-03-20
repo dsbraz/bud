@@ -1,0 +1,57 @@
+/* ——— Layout ——— */
+
+.layout {
+  display: flex;
+  flex-direction: column;
+  min-height: 100dvh;
+  background: var(--color-neutral-50);
+  overflow-y: auto;
+  height: 100dvh;
+}
+
+/* ——— Header ——— */
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--sp-md) var(--sp-lg);
+  background: var(--color-white);
+  border-bottom: 1px solid var(--color-caramel-200);
+}
+
+/* ——— Main ——— */
+
+.main {
+  flex: 1;
+  padding: var(--sp-2xl) var(--sp-lg);
+}
+
+/* ——— Footer ——— */
+
+.footer {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--sp-lg);
+  border-top: 1px solid var(--color-caramel-100);
+}
+
+.footerText {
+  font-family: var(--font-body);
+  font-size: var(--text-xs);
+  color: var(--color-neutral-400);
+}
+
+.footerText strong {
+  font-weight: 600;
+  color: var(--color-neutral-500);
+}
+
+/* ——— Responsive ——— */
+
+@media (max-width: 480px) {
+  .main {
+    padding: var(--sp-lg) var(--sp-sm);
+  }
+}

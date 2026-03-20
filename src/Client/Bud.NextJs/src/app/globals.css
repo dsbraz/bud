@@ -1,5 +1,7 @@
 @import "tailwindcss";
 @import "tw-animate-css";
+@import "@mdonangelo/bud-ds/styles";
+
 
 @custom-variant dark (&:is(.dark *));
 
@@ -44,41 +46,55 @@
   --color-sidebar-ring: var(--sidebar-ring);
 }
 
+/* ——— 4. Tokens semânticos: mapeiam para a paleta do bud-ds ——— */
 :root {
-  --radius: 0.625rem;
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.145 0 0);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.145 0 0);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.145 0 0);
-  --primary: oklch(0.205 0 0);
-  --primary-foreground: oklch(0.985 0 0);
-  --secondary: oklch(0.97 0 0);
-  --secondary-foreground: oklch(0.205 0 0);
-  --muted: oklch(0.97 0 0);
-  --muted-foreground: oklch(0.556 0 0);
-  --accent: oklch(0.97 0 0);
-  --accent-foreground: oklch(0.205 0 0);
-  --destructive: oklch(0.577 0.245 27.325);
-  --border: oklch(0.922 0 0);
-  --input: oklch(0.922 0 0);
-  --ring: oklch(0.708 0 0);
-  --chart-1: oklch(0.646 0.222 41.116);
-  --chart-2: oklch(0.6 0.118 184.704);
-  --chart-3: oklch(0.398 0.07 227.392);
-  --chart-4: oklch(0.828 0.189 84.429);
-  --chart-5: oklch(0.769 0.188 70.08);
-  --sidebar: oklch(0.985 0 0);
-  --sidebar-foreground: oklch(0.145 0 0);
-  --sidebar-primary: oklch(0.205 0 0);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.97 0 0);
-  --sidebar-accent-foreground: oklch(0.205 0 0);
-  --sidebar-border: oklch(0.922 0 0);
-  --sidebar-ring: oklch(0.708 0 0);
+  --radius: 0.5rem;
+
+  /* Base */
+  --background: #ffffff;            /* color-neutral-0 */
+  --foreground: #171717;            /* color-neutral-900 */
+  --card: #ffffff;
+  --card-foreground: #171717;
+  --popover: #ffffff;
+  --popover-foreground: #171717;
+
+  /* Primary */
+  --primary: #0a0a0a;               /* color-neutral-950 */
+  --primary-foreground: #ffffff;
+
+  /* Secondary / Muted / Accent — paleta caramel */
+  --secondary: #faf8f2;             /* color-caramel-50 */
+  --secondary-foreground: #0a0a0a;
+  --muted: #faf8f2;                 /* color-caramel-50 */
+  --muted-foreground: #737373;      /* color-neutral-500 */
+  --accent: #f9f7f0;                /* color-caramel-100 */
+  --accent-foreground: #0a0a0a;
+
+  /* Semantic */
+  --destructive: #fb2c36;           /* color-red-500 */
+  --border: #f1edde;                /* color-caramel-200 */
+  --input: #f1edde;                 /* color-caramel-200 */
+  --ring: #c7b98a;                  /* color-caramel-700 */
+
+  /* Charts */
+  --chart-1: #fa4405;               /* color-orange-600 */
+  --chart-2: #262626;               /* color-neutral-800 */
+  --chart-3: #a1a1a1;               /* color-neutral-400 */
+  --chart-4: #860b38;               /* color-wine-600 */
+  --chart-5: #a99656;               /* color-caramel-900 */
+
+  /* Sidebar — espelha os tokens do componente Sidebar do bud-ds */
+  --sidebar: #faf8f2;               /* color-caramel-50 */
+  --sidebar-foreground: #0a0a0a;
+  --sidebar-primary: #0a0a0a;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #f9f7f0;        /* color-caramel-100 */
+  --sidebar-accent-foreground: #0a0a0a;
+  --sidebar-border: #f1edde;        /* color-caramel-200 */
+  --sidebar-ring: #c7b98a;          /* color-caramel-700 */
 }
 
+/* ——— 5. Dark mode ——— */
 .dark {
   --background: oklch(0.145 0 0);
   --foreground: oklch(0.985 0 0);
@@ -113,12 +129,48 @@
   --sidebar-ring: oklch(0.556 0 0);
 }
 
-@layer base {
-  * {
-    @apply border-border outline-ring/50;
+/* ——— Keyframes ——— */
+@keyframes fadeSlideIn {
+  from {
+    opacity: 0;
+    transform: translateX(8px);
   }
-  body {
-    @apply bg-background text-foreground;
+  to {
+    opacity: 1;
+    transform: translateX(0);
   }
 }
 
+/* ——— 6. Base resets (alinhados com bud-2-saas/src/styles/global.css) ——— */
+@layer base {
+  html,
+  body {
+    height: 100dvh;
+    overflow: hidden;
+  }
+
+  html {
+    font-size: 16px;
+  }
+
+  * {
+    @apply border-border outline-ring/50;
+  }
+
+  body {
+    font-family: var(--font-body);
+    font-size: var(--text-sm);
+    color: var(--color-neutral-900);
+    background-color: var(--color-neutral-0);
+    line-height: 1.5;
+  }
+
+  a {
+    color: inherit;
+    text-decoration: none;
+  }
+
+  button {
+    cursor: pointer;
+  }
+}

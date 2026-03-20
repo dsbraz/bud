@@ -1,0 +1,110 @@
+/* ——— Question block ——— */
+
+.question {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-sm);
+  padding: var(--sp-lg);
+  border-radius: var(--radius-md);
+  background: var(--color-white);
+  border: 1px solid var(--color-caramel-200);
+  transition: border-color 150ms ease;
+}
+
+.question:hover {
+  border-color: var(--color-caramel-300);
+}
+
+.questionError {
+  border-color: var(--color-red-300);
+  background: var(--color-red-50);
+}
+
+.questionError:hover {
+  border-color: var(--color-red-400);
+}
+
+/* ——— Header ——— */
+
+.questionHeader {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-xs);
+}
+
+.questionNumber {
+  font-family: var(--font-label);
+  font-size: var(--text-xs);
+  font-weight: 500;
+  color: var(--color-neutral-500);
+}
+
+.required {
+  font-family: var(--font-label);
+  font-size: var(--text-xs);
+  font-weight: 500;
+  color: var(--color-red-500);
+}
+
+/* ——— Text ——— */
+
+.questionText {
+  font-family: var(--font-heading);
+  font-size: var(--text-md);
+  font-weight: 600;
+  color: var(--color-neutral-950);
+  margin: 0;
+  line-height: 1.4;
+}
+
+.questionDescription {
+  font-family: var(--font-body);
+  font-size: var(--text-sm);
+  color: var(--color-neutral-500);
+  margin: 0;
+  line-height: 1.4;
+}
+
+/* ——— Field wrapper ——— */
+
+.questionField {
+  padding-top: var(--sp-2xs);
+}
+
+/* ——— Options list (radio, checkbox) ——— */
+
+.optionsList {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-xs);
+}
+
+/* ——— Error message ——— */
+
+.errorMessage {
+  font-family: var(--font-label);
+  font-size: var(--text-xs);
+  font-weight: 500;
+  color: var(--color-red-500);
+  margin: 0;
+}
+
+/* ——— Responsive ——— */
+
+@media (max-width: 768px) {
+  .questionText {
+    font-size: var(--text-sm);
+  }
+}
+
+@media (max-width: 480px) {
+  .question {
+    padding: var(--sp-sm);
+    gap: var(--sp-xs);
+  }
+
+  /* Bigger touch targets for radio/checkbox options */
+  .optionsList {
+    gap: var(--sp-2xs);
+  }
+}

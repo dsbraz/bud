@@ -1,0 +1,13 @@
+/* ——— Page ——— */
+
+.page {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-lg);
+}
+
+/* ——— Content ——— */
+
+.content {
+  padding: var(--sp-lg) 0;
+}

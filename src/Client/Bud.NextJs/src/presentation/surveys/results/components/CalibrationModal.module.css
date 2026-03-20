@@ -1,0 +1,135 @@
+.modalContent {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-md);
+}
+
+/* ——— Scores grid ——— */
+
+.scoresGrid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--sp-sm);
+}
+
+.scoreCard {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--sp-2xs);
+}
+
+.scoreLabel {
+  font-family: var(--font-label);
+  font-weight: 500;
+  font-size: var(--text-xs);
+  color: var(--color-neutral-500);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.scoreNumber {
+  font-family: var(--font-heading);
+  font-weight: 700;
+  font-size: var(--text-lg);
+  color: var(--color-neutral-950);
+}
+
+/* ——— Field label ——— */
+
+.fieldLabel {
+  font-family: var(--font-label);
+  font-weight: 500;
+  font-size: var(--text-sm);
+  color: var(--color-neutral-700);
+  margin-bottom: var(--sp-2xs);
+  display: block;
+}
+
+/* ——— 9-Box classification ——— */
+
+.nineBoxSection {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2xs);
+}
+
+.nineBoxRow {
+  display: grid;
+  grid-template-columns: 1fr 1fr auto;
+  gap: var(--sp-sm);
+  align-items: end;
+}
+
+.nineBoxResultCard {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--sp-3xs);
+  padding-bottom: var(--sp-3xs);
+}
+
+.overrideHint {
+  font-family: var(--font-body);
+  font-size: var(--text-xs);
+  color: var(--color-orange-600);
+  font-style: italic;
+}
+
+/* ——— Deloitte section ——— */
+
+.deloitteSection {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-sm);
+}
+
+/* ——— Support data ——— */
+
+.supportGrid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: var(--sp-sm);
+  margin-top: var(--sp-2xs);
+}
+
+.supportItem {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.supportLabel {
+  font-family: var(--font-body);
+  font-size: var(--text-xs);
+  color: var(--color-neutral-500);
+}
+
+.supportValue {
+  font-family: var(--font-heading);
+  font-weight: 600;
+  font-size: var(--text-md);
+  color: var(--color-neutral-950);
+}
+
+/* ——— Responsive ——— */
+
+@media (max-width: 768px) {
+  .scoresGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .nineBoxRow {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .nineBoxResultCard {
+    grid-column: 1 / -1;
+    flex-direction: row;
+    justify-content: center;
+  }
+
+  .supportGrid {
+    grid-template-columns: 1fr;
+  }
+}

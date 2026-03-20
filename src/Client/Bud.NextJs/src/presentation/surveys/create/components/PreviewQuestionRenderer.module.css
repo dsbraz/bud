@@ -1,0 +1,261 @@
+/* ——— Question block ——— */
+
+.question {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-sm);
+}
+
+.questionHeader {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-xs);
+}
+
+.questionNumber {
+  font-family: var(--font-label);
+  font-size: var(--text-xs);
+  font-weight: 500;
+  color: var(--color-neutral-500);
+}
+
+.required {
+  font-family: var(--font-label);
+  font-size: var(--text-xs);
+  font-weight: 500;
+  color: var(--color-red-500);
+}
+
+.questionText {
+  font-family: var(--font-heading);
+  font-size: var(--text-md);
+  font-weight: 600;
+  color: var(--color-neutral-950);
+  margin: 0;
+  line-height: 1.4;
+}
+
+.questionDescription {
+  font-family: var(--font-body);
+  font-size: var(--text-sm);
+  color: var(--color-neutral-500);
+  margin: 0;
+  line-height: 1.4;
+}
+
+.questionField {
+  padding-top: var(--sp-2xs);
+}
+
+/* ——— Options list (radio, checkbox) ——— */
+
+.optionsList {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-xs);
+}
+
+/* ——— Ranking ——— */
+
+.rankingItem {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-sm);
+  padding: var(--sp-xs) var(--sp-sm);
+  border: 1px solid var(--color-caramel-200);
+  border-radius: var(--radius-xs);
+  background: var(--color-white);
+}
+
+.rankingNumber {
+  font-family: var(--font-label);
+  font-size: var(--text-xs);
+  font-weight: 600;
+  color: var(--color-neutral-500);
+  width: 20px;
+  text-align: center;
+}
+
+.rankingLabel {
+  font-family: var(--font-body);
+  font-size: var(--text-sm);
+  color: var(--color-neutral-950);
+}
+
+/* ——— Scale (Likert) ——— */
+
+.scaleWrapper {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2xs);
+}
+
+.scaleRow {
+  display: flex;
+  gap: var(--sp-2xs);
+}
+
+.scaleButton {
+  flex: 1;
+  min-width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--color-caramel-300);
+  border-radius: var(--radius-xs);
+  background: var(--color-white);
+  font-family: var(--font-label);
+  font-size: var(--text-sm);
+  font-weight: 500;
+  color: var(--color-neutral-700);
+  cursor: pointer;
+  transition: background-color 120ms ease, border-color 120ms ease, color 120ms ease;
+}
+
+.scaleButton:hover {
+  background: var(--color-caramel-50);
+  border-color: var(--color-caramel-500);
+}
+
+.scaleButtonActive {
+  background: var(--color-orange-500);
+  border-color: var(--color-orange-600);
+  color: var(--color-white);
+}
+
+.scaleButtonActive:hover {
+  background: var(--color-orange-600);
+  border-color: var(--color-orange-600);
+}
+
+.scaleLabels {
+  display: flex;
+  justify-content: space-between;
+  font-family: var(--font-body);
+  font-size: var(--text-xs);
+  color: var(--color-neutral-500);
+}
+
+/* ——— NPS ——— */
+
+.npsRow {
+  display: flex;
+  gap: 0;
+}
+
+.npsButton {
+  flex: 1;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--color-caramel-200);
+  background: var(--color-white);
+  font-family: var(--font-label);
+  font-size: var(--text-sm);
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 120ms ease, color 120ms ease;
+  margin-left: -1px;
+}
+
+.npsButton:first-child {
+  border-radius: var(--radius-xs) 0 0 var(--radius-xs);
+  margin-left: 0;
+}
+
+.npsButton:last-child {
+  border-radius: 0 var(--radius-xs) var(--radius-xs) 0;
+}
+
+.npsDetractor {
+  color: var(--color-red-600);
+}
+
+.npsPassive {
+  color: var(--color-yellow-600);
+}
+
+.npsPromoter {
+  color: var(--color-green-600);
+}
+
+.npsButton:hover {
+  background: var(--color-caramel-50);
+}
+
+.npsButtonActive.npsDetractor {
+  background: var(--color-red-500);
+  border-color: var(--color-red-500);
+  color: var(--color-white);
+}
+
+.npsButtonActive.npsPassive {
+  background: var(--color-yellow-500);
+  border-color: var(--color-yellow-500);
+  color: var(--color-white);
+}
+
+.npsButtonActive.npsPromoter {
+  background: var(--color-green-500);
+  border-color: var(--color-green-500);
+  color: var(--color-white);
+}
+
+/* ——— Star Rating ——— */
+
+.starRow {
+  display: flex;
+  gap: var(--sp-3xs);
+}
+
+.starButton {
+  background: none;
+  border: none;
+  padding: var(--sp-3xs);
+  cursor: pointer;
+  color: var(--color-caramel-300);
+  transition: color 120ms ease, transform 120ms ease;
+  display: flex;
+  border-radius: var(--radius-2xs);
+}
+
+.starButton:hover {
+  color: var(--color-yellow-500);
+  transform: scale(1.15);
+}
+
+.starFilled {
+  color: var(--color-yellow-500);
+}
+
+@media (max-width: 480px) {
+  .scaleRow {
+    flex-wrap: wrap;
+  }
+
+  .scaleButton {
+    min-width: 36px;
+    height: 36px;
+    font-size: var(--text-xs);
+  }
+
+  .npsRow {
+    flex-wrap: wrap;
+    gap: var(--sp-3xs);
+  }
+
+  .npsButton {
+    min-width: 30px;
+    height: 36px;
+    font-size: var(--text-xs);
+    margin-left: 0;
+    border-radius: var(--radius-2xs);
+  }
+
+  .npsButton:first-child,
+  .npsButton:last-child {
+    border-radius: var(--radius-2xs);
+  }
+}

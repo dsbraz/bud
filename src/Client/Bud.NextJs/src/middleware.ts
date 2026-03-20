@@ -1,10 +1,16 @@
 import { auth0 } from "./lib/auth0";
 import { NextRequest, NextResponse } from "next/server";
 
+/*
 export async function middleware(request: NextRequest) {
+  
   const authResponse = await auth0.middleware(request);
 
-  if (request.nextUrl.pathname.startsWith("/auth")) {
+  if (
+    request.nextUrl.pathname.startsWith("/auth") ||
+    request.nextUrl.pathname.startsWith("/invite") ||
+    request.nextUrl.pathname.startsWith("/api/o/")
+  ) {
     return authResponse;
   }
 
@@ -17,8 +23,10 @@ export async function middleware(request: NextRequest) {
   }
 
   return authResponse;
+  
 }
 
 export const config = {
   matcher: ["/((?!_next/static|_next/image|favicon.ico|.*\\..*).*)"],
 };
+*/

@@ -1,19 +1,25 @@
 import { auth0 } from "@/lib/auth0";
+import { getBudToken } from "@/lib/bud-token";
 import { NextResponse } from "next/server";
 
 export async function GET() {
-  const URL = process.env.BUD_API_URL;
-  const { token: accessToken } = await auth0.getAccessToken();
+  // Front → Front: verifica sessão Auth0
+  const session = await auth0.getSession();
+  if (!session) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
 
-  console.log(accessToken);
-  const response = await fetch(`${URL}/api/user/get-user`, {
+  // Front → Back: usa bud_token via cookie
+  const apiUrl = process.env.BUD_API_URL;
+  const token = await getBudToken();
+
+  const response = await fetch(`${apiUrl}/api/user/get-user`, {
     headers: {
-      Authorization: `Bearer ${accessToken}`,
+      Authorization: `Bearer ${token}`,
       "Content-Type": "application/json",
     },
   });
 
-  const data = await response;
-  console.log(data);
+  const data = await response.json();
   return NextResponse.json(data);
 }

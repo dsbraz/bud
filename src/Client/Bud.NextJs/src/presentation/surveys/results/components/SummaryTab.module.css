@@ -1,0 +1,134 @@
+.tab {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-md);
+  padding: var(--sp-lg);
+}
+
+/* ——— KPI Grid ——— */
+
+.indicatorGrid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: var(--sp-sm);
+}
+
+.indicatorCard {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-sm);
+}
+
+.indicatorIconWrapper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: var(--radius-sm);
+  flex-shrink: 0;
+}
+
+.indicatorContent {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.indicatorValue {
+  font-family: var(--font-heading);
+  font-size: var(--text-xl);
+  font-weight: 600;
+  color: var(--color-neutral-950);
+  line-height: 1;
+}
+
+.indicatorLabel {
+  font-family: var(--font-body);
+  font-size: var(--text-xs);
+  color: var(--color-neutral-500);
+}
+
+/* ——— Filter dropdown ——— */
+
+.filterDropdownBody {
+  display: flex;
+  flex-direction: column;
+  padding: var(--sp-3xs);
+  max-height: 320px;
+  overflow-y: auto;
+}
+
+.filterDropdownItem {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2xs);
+  width: 100%;
+  padding: var(--sp-2xs);
+  border: none;
+  background: transparent;
+  border-radius: var(--radius-2xs);
+  font-family: var(--font-label);
+  font-weight: 500;
+  font-size: var(--text-xs);
+  color: var(--color-neutral-950);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background-color 120ms ease;
+  text-align: left;
+}
+
+.filterDropdownItem:hover {
+  background: var(--color-caramel-50);
+}
+
+.filterDropdownItemActive {
+  background: var(--color-caramel-100);
+}
+
+/* ——— Sections ——— */
+
+.sectionsArea {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-sm);
+}
+
+.sectionTitle {
+  font-family: var(--font-heading);
+  font-size: var(--text-md);
+  font-weight: 600;
+  color: var(--color-neutral-950);
+  margin: 0;
+}
+
+.questionList {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-sm);
+  padding: var(--sp-2xs) 0;
+}
+
+/* ——— Responsive ——— */
+
+@media (max-width: 1400px) {
+  .indicatorGrid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+@media (max-width: 768px) {
+  .tab {
+    padding: var(--sp-sm);
+  }
+
+  .indicatorGrid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 480px) {
+  .indicatorGrid {
+    grid-template-columns: 1fr;
+  }
+}

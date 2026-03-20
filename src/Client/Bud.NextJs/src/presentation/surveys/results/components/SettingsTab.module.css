@@ -1,0 +1,154 @@
+.tab {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-md);
+  padding: var(--sp-lg);
+}
+
+/* ——— Status ——— */
+
+.statusSection {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-md);
+  flex-wrap: wrap;
+}
+
+.statusInfo {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-sm);
+}
+
+.statusLabel {
+  font-family: var(--font-body);
+  font-size: var(--text-sm);
+  color: var(--color-neutral-600);
+}
+
+.statusActions {
+  display: flex;
+  gap: var(--sp-2xs);
+}
+
+/* ——— Forms ——— */
+
+.formStack {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-md);
+}
+
+.formRow {
+  display: flex;
+  gap: var(--sp-md);
+}
+
+.formRow > * {
+  flex: 1;
+}
+
+/* ——— Radio group ——— */
+
+.radioGroup {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-sm);
+}
+
+/* ——— Channels ——— */
+
+.channelsRow {
+  display: flex;
+  gap: var(--sp-lg);
+}
+
+/* ——— Publish ——— */
+
+.publishActions {
+  display: flex;
+  gap: var(--sp-2xs);
+  padding-top: var(--sp-sm);
+  border-top: 1px solid var(--color-caramel-200);
+}
+
+/* ——— Link ——— */
+
+.linkRow {
+  display: flex;
+  gap: var(--sp-2xs);
+  align-items: flex-end;
+}
+
+.linkRow > :first-child {
+  flex: 1;
+}
+
+/* ——— Danger zone ——— */
+
+.dangerSection {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-sm);
+}
+
+.dangerItem {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-md);
+  padding: var(--sp-sm);
+  border: 1px solid var(--color-caramel-200);
+  border-radius: var(--radius-sm);
+}
+
+.dangerText {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.dangerTitle {
+  font-family: var(--font-body);
+  font-size: var(--text-sm);
+  font-weight: 500;
+  color: var(--color-neutral-950);
+}
+
+.dangerDesc {
+  font-family: var(--font-body);
+  font-size: var(--text-xs);
+  color: var(--color-neutral-500);
+}
+
+/* ——— Save bar ——— */
+
+.saveBar {
+  display: flex;
+  justify-content: flex-end;
+  padding-top: var(--sp-sm);
+  border-top: 1px solid var(--color-caramel-200);
+}
+
+/* ——— Responsive ——— */
+
+@media (max-width: 768px) {
+  .tab {
+    padding: var(--sp-sm);
+  }
+
+  .formRow {
+    flex-direction: column;
+  }
+
+  .statusSection {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .dangerItem {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}
