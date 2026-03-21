@@ -4,14 +4,20 @@ using Microsoft.Extensions.Logging;
 
 namespace Bud.Application.Features.Tasks.UseCases;
 
+public sealed record PatchTaskCommand(
+    Optional<string> Name,
+    Optional<string?> Description,
+    Optional<TaskState> State,
+    Optional<DateTime?> DueDate);
+
 public sealed partial class PatchTask(
     ITaskRepository taskRepository,
     ILogger<PatchTask> logger,
     IUnitOfWork? unitOfWork = null)
 {
-    public async Task<Result<TaskResponse>> ExecuteAsync(
+    public async Task<Result<GoalTask>> ExecuteAsync(
         Guid id,
-        PatchTaskRequest request,
+        PatchTaskCommand command,
         CancellationToken cancellationToken = default)
     {
         LogPatchingTask(logger, id);
@@ -20,26 +26,26 @@ public sealed partial class PatchTask(
         if (task is null)
         {
             LogTaskPatchFailed(logger, id, "Not found");
-            return Result<TaskResponse>.NotFound(UserErrorMessages.TaskNotFound);
+            return Result<GoalTask>.NotFound(UserErrorMessages.TaskNotFound);
         }
 
         try
         {
-            var name = request.Name.HasValue ? (request.Name.Value ?? task.Name) : task.Name;
-            var description = request.Description.HasValue ? request.Description.Value : task.Description;
-            var state = request.State.HasValue ? request.State.Value : task.State;
-            var dueDate = request.DueDate.HasValue ? request.DueDate.Value : task.DueDate;
+            var name = command.Name.HasValue ? (command.Name.Value ?? task.Name) : task.Name;
+            var description = command.Description.HasValue ? command.Description.Value : task.Description;
+            var state = command.State.HasValue ? command.State.Value : task.State;
+            var dueDate = command.DueDate.HasValue ? command.DueDate.Value : task.DueDate;
 
             task.UpdateDetails(name, description, state, dueDate);
             await unitOfWork.CommitAsync(taskRepository.SaveChangesAsync, cancellationToken);
 
             LogTaskPatched(logger, id, task.Name);
-            return Result<TaskResponse>.Success(task.ToResponse());
+            return Result<GoalTask>.Success(task);
         }
         catch (DomainInvariantException ex)
         {
             LogTaskPatchFailed(logger, id, ex.Message);
-            return Result<TaskResponse>.Failure(ex.Message, ErrorType.Validation);
+            return Result<GoalTask>.Failure(ex.Message, ErrorType.Validation);
         }
     }
 

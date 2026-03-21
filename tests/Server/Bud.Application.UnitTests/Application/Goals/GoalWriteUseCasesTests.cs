@@ -1,6 +1,3 @@
-using Bud.Application.Common;
-using Bud.Application.Ports;
-using Bud.Shared.Contracts;
 using FluentAssertions;
 using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
@@ -29,15 +26,9 @@ public sealed class GoalWriteUseCasesTests
         _tenantProvider.SetupGet(t => t.TenantId).Returns((Guid?)null);
 
         var useCase = CreatePlanningUseCase();
-        var request = new CreateGoalRequest
-        {
-            Name = "Missão",
-            StartDate = DateTime.UtcNow,
-            EndDate = DateTime.UtcNow.AddDays(1),
-            Status = Bud.Shared.Kernel.Enums.GoalStatus.Planned
-        };
+        var command = new CreateGoalCommand("Missão", null, null, DateTime.UtcNow, DateTime.UtcNow.AddDays(1), GoalStatus.Planned, null, null);
 
-        var result = await useCase.ExecuteAsync(request);
+        var result = await useCase.ExecuteAsync(command);
 
         result.IsSuccess.Should().BeFalse();
         result.ErrorType.Should().Be(ErrorType.Forbidden);
@@ -51,15 +42,9 @@ public sealed class GoalWriteUseCasesTests
         _tenantProvider.SetupGet(t => t.TenantId).Returns(orgId);
 
         var useCase = CreatePlanningUseCase();
-        var request = new CreateGoalRequest
-        {
-            Name = "Missão",
-            StartDate = DateTime.UtcNow,
-            EndDate = DateTime.UtcNow.AddDays(1),
-            Status = Bud.Shared.Kernel.Enums.GoalStatus.Planned
-        };
+        var command = new CreateGoalCommand("Missão", null, null, DateTime.UtcNow, DateTime.UtcNow.AddDays(1), GoalStatus.Planned, null, null);
 
-        var result = await useCase.ExecuteAsync(request);
+        var result = await useCase.ExecuteAsync(command);
 
         result.IsSuccess.Should().BeTrue();
         _repo.Verify(r => r.AddAsync(It.IsAny<Goal>(), It.IsAny<CancellationToken>()), Times.Once);
@@ -90,16 +75,17 @@ public sealed class GoalWriteUseCasesTests
             .ReturnsAsync(parentGoal);
 
         var useCase = CreatePlanningUseCase();
-        var request = new CreateGoalRequest
-        {
-            Name = "Meta filha",
-            StartDate = new DateTime(2026, 1, 15, 0, 0, 0, DateTimeKind.Utc), // Before parent's start
-            EndDate = new DateTime(2026, 6, 30, 0, 0, 0, DateTimeKind.Utc),
-            Status = GoalStatus.Planned,
-            ParentId = parentId
-        };
+        var command = new CreateGoalCommand(
+            "Meta filha",
+            null,
+            null,
+            new DateTime(2026, 1, 15, 0, 0, 0, DateTimeKind.Utc), // Before parent's start
+            new DateTime(2026, 6, 30, 0, 0, 0, DateTimeKind.Utc),
+            GoalStatus.Planned,
+            parentId,
+            null);
 
-        var result = await useCase.ExecuteAsync(request);
+        var result = await useCase.ExecuteAsync(command);
 
         result.IsSuccess.Should().BeFalse();
         result.ErrorType.Should().Be(ErrorType.Validation);
@@ -128,16 +114,17 @@ public sealed class GoalWriteUseCasesTests
             .ReturnsAsync(parentGoal);
 
         var useCase = CreatePlanningUseCase();
-        var request = new CreateGoalRequest
-        {
-            Name = "Meta filha",
-            StartDate = parentStartDate, // Same as parent — should be allowed
-            EndDate = new DateTime(2026, 6, 30, 0, 0, 0, DateTimeKind.Utc),
-            Status = GoalStatus.Planned,
-            ParentId = parentId
-        };
+        var command = new CreateGoalCommand(
+            "Meta filha",
+            null,
+            null,
+            parentStartDate, // Same as parent — should be allowed
+            new DateTime(2026, 6, 30, 0, 0, 0, DateTimeKind.Utc),
+            GoalStatus.Planned,
+            parentId,
+            null);
 
-        var result = await useCase.ExecuteAsync(request);
+        var result = await useCase.ExecuteAsync(command);
 
         result.IsSuccess.Should().BeTrue();
         _repo.Verify(r => r.AddAsync(It.IsAny<Goal>(), It.IsAny<CancellationToken>()), Times.Once);
@@ -175,12 +162,16 @@ public sealed class GoalWriteUseCasesTests
             .ReturnsAsync(parentGoal);
 
         var useCase = CreateReplanningUseCase();
-        var request = new PatchGoalRequest
-        {
-            StartDate = new DateTime(2026, 1, 15, 0, 0, 0, DateTimeKind.Utc) // Before parent's start
-        };
+        var command = new PatchGoalCommand(
+            default,
+            default,
+            default,
+            new DateTime(2026, 1, 15, 0, 0, 0, DateTimeKind.Utc), // Before parent's start
+            default,
+            default,
+            default);
 
-        var result = await useCase.ExecuteAsync(goalId, request);
+        var result = await useCase.ExecuteAsync(goalId, command);
 
         result.IsSuccess.Should().BeFalse();
         result.ErrorType.Should().Be(ErrorType.Validation);
@@ -194,15 +185,16 @@ public sealed class GoalWriteUseCasesTests
             .ReturnsAsync((Goal?)null);
 
         var useCase = CreateReplanningUseCase();
-        var request = new PatchGoalRequest
-        {
-            Name = "Missão",
-            StartDate = DateTime.UtcNow,
-            EndDate = DateTime.UtcNow.AddDays(1),
-            Status = Bud.Shared.Kernel.Enums.GoalStatus.Planned
-        };
+        var command = new PatchGoalCommand(
+            "Missão",
+            default,
+            default,
+            DateTime.UtcNow,
+            DateTime.UtcNow.AddDays(1),
+            GoalStatus.Planned,
+            default);
 
-        var result = await useCase.ExecuteAsync(Guid.NewGuid(), request);
+        var result = await useCase.ExecuteAsync(Guid.NewGuid(), command);
 
         result.IsSuccess.Should().BeFalse();
         result.ErrorType.Should().Be(ErrorType.NotFound);
@@ -227,15 +219,16 @@ public sealed class GoalWriteUseCasesTests
             .ReturnsAsync(mission);
 
         var useCase = CreateReplanningUseCase();
-        var request = new PatchGoalRequest
-        {
-            Name = "Missão Atualizada",
-            StartDate = DateTime.UtcNow,
-            EndDate = DateTime.UtcNow.AddDays(1),
-            Status = Bud.Shared.Kernel.Enums.GoalStatus.Active
-        };
+        var command = new PatchGoalCommand(
+            "Missão Atualizada",
+            default,
+            default,
+            DateTime.UtcNow,
+            DateTime.UtcNow.AddDays(1),
+            GoalStatus.Active,
+            default);
 
-        var result = await useCase.ExecuteAsync(goalId, request);
+        var result = await useCase.ExecuteAsync(goalId, command);
 
         result.IsSuccess.Should().BeTrue();
         var updatedEvent = mission.DomainEvents.Should().ContainSingle().Subject;

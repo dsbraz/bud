@@ -39,8 +39,16 @@ public sealed class TasksController(
             return ValidationProblemFrom(validationResult);
         }
 
-        var result = await createTask.ExecuteAsync(request, cancellationToken);
-        return FromResult(result, task => CreatedAtAction(nameof(Update), new { id = task.Id }, task));
+        var command = new CreateTaskCommand(
+            goalId,
+            request.Name,
+            request.Description,
+            request.State,
+            request.DueDate);
+
+        var result = await createTask.ExecuteAsync(command, cancellationToken);
+        return FromResult<GoalTask, TaskResponse>(result, task =>
+            CreatedAtAction(nameof(Update), new { id = task.Id }, task.ToResponse()));
     }
 
     /// <summary>
@@ -64,8 +72,14 @@ public sealed class TasksController(
             return ValidationProblemFrom(validationResult);
         }
 
-        var result = await patchTask.ExecuteAsync(id, request, cancellationToken);
-        return FromResultOk(result);
+        var command = new PatchTaskCommand(
+            request.Name,
+            request.Description,
+            request.State,
+            request.DueDate);
+
+        var result = await patchTask.ExecuteAsync(id, command, cancellationToken);
+        return FromResultOk(result, task => task.ToResponse());
     }
 
     /// <summary>

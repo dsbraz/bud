@@ -1,10 +1,11 @@
 using System.Security.Claims;
 using Bud.Application.Common;
 using Bud.Application.Ports;
-using Bud.Shared.Contracts;
 using Microsoft.Extensions.Logging;
 
 namespace Bud.Application.Features.Workspaces.UseCases;
+
+public sealed record CreateWorkspaceCommand(string Name, Guid OrganizationId);
 
 public sealed partial class CreateWorkspace(
     IWorkspaceRepository workspaceRepository,
@@ -15,33 +16,33 @@ public sealed partial class CreateWorkspace(
 {
     public async Task<Result<Workspace>> ExecuteAsync(
         ClaimsPrincipal user,
-        CreateWorkspaceRequest request,
+        CreateWorkspaceCommand command,
         CancellationToken cancellationToken = default)
     {
-        LogCreatingWorkspace(logger, request.Name, request.OrganizationId);
+        LogCreatingWorkspace(logger, command.Name, command.OrganizationId);
 
-        var canCreate = await authorizationGateway.IsOrganizationOwnerAsync(user, request.OrganizationId, cancellationToken);
+        var canCreate = await authorizationGateway.IsOrganizationOwnerAsync(user, command.OrganizationId, cancellationToken);
         if (!canCreate)
         {
-            LogWorkspaceCreationFailed(logger, request.Name, "Forbidden");
+            LogWorkspaceCreationFailed(logger, command.Name, "Forbidden");
             return Result<Workspace>.Forbidden(UserErrorMessages.WorkspaceCreateForbidden);
         }
 
-        if (!await organizationRepository.ExistsAsync(request.OrganizationId, cancellationToken))
+        if (!await organizationRepository.ExistsAsync(command.OrganizationId, cancellationToken))
         {
-            LogWorkspaceCreationFailed(logger, request.Name, "Organization not found");
+            LogWorkspaceCreationFailed(logger, command.Name, "Organization not found");
             return Result<Workspace>.NotFound(UserErrorMessages.OrganizationNotFound);
         }
 
-        if (!await workspaceRepository.IsNameUniqueAsync(request.OrganizationId, request.Name, ct: cancellationToken))
+        if (!await workspaceRepository.IsNameUniqueAsync(command.OrganizationId, command.Name, ct: cancellationToken))
         {
-            LogWorkspaceCreationFailed(logger, request.Name, "Name already exists");
+            LogWorkspaceCreationFailed(logger, command.Name, "Name already exists");
             return Result<Workspace>.Failure(UserErrorMessages.WorkspaceNameConflict, ErrorType.Conflict);
         }
 
         try
         {
-            var workspace = Workspace.Create(Guid.NewGuid(), request.OrganizationId, request.Name);
+            var workspace = Workspace.Create(Guid.NewGuid(), command.OrganizationId, command.Name);
 
             await workspaceRepository.AddAsync(workspace, cancellationToken);
             await unitOfWork.CommitAsync(workspaceRepository.SaveChangesAsync, cancellationToken);
@@ -51,7 +52,7 @@ public sealed partial class CreateWorkspace(
         }
         catch (DomainInvariantException ex)
         {
-            LogWorkspaceCreationFailed(logger, request.Name, ex.Message);
+            LogWorkspaceCreationFailed(logger, command.Name, ex.Message);
             return Result<Workspace>.Failure(ex.Message, ErrorType.Validation);
         }
     }

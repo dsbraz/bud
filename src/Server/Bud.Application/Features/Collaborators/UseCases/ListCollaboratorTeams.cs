@@ -14,6 +14,6 @@ public sealed class ListCollaboratorTeams(ICollaboratorRepository collaboratorRe
         }
 
         var teams = await collaboratorRepository.GetTeamsAsync(collaboratorId, cancellationToken);
-        return Result<List<CollaboratorTeamResponse>>.Success(teams.Select(t => t.ToResponse()).ToList());
+        return Result<List<CollaboratorTeamResponse>>.Success(teams.Select(t => t.ToCollaboratorTeamResponse()).ToList());
     }
 }

@@ -1,6 +1,3 @@
-using Bud.Application.Common;
-using Bud.Application.Ports;
-using Bud.Shared.Contracts;
 using FluentAssertions;
 using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
@@ -19,22 +16,13 @@ public sealed class TemplateUseCasesTests
             _repository.Object,
             NullLogger<CreateTemplate>.Instance);
 
-        var request = new CreateTemplateRequest
-        {
-            Name = "Template",
-            Indicators =
-            [
-                new TemplateIndicatorRequest
-                {
-                    Name = "Metric",
-                    Type = Bud.Shared.Kernel.Enums.IndicatorType.Qualitative,
-                    OrderIndex = 0,
-                    TargetText = "Target"
-                }
-            ]
-        };
-
-        var result = await useCase.ExecuteAsync(request);
+        var result = await useCase.ExecuteAsync(new CreateTemplateCommand(
+            "Template",
+            null,
+            null,
+            null,
+            [],
+            [new TemplateIndicatorDraft("Metric", IndicatorType.Qualitative, 0, null, null, null, null, null, "Target")]));
 
         result.IsSuccess.Should().BeTrue();
         result.Value!.Name.Should().Be("Template");
@@ -65,7 +53,7 @@ public sealed class TemplateUseCasesTests
             _repository.Object,
             NullLogger<PatchTemplate>.Instance);
 
-        var result = await useCase.ExecuteAsync(template.Id, new PatchTemplateRequest { Name = "Updated" });
+        var result = await useCase.ExecuteAsync(template.Id, new PatchTemplateCommand("Updated", default, default, default, [], []));
 
         result.IsSuccess.Should().BeTrue();
         result.Value!.Name.Should().Be("Updated");
@@ -83,7 +71,7 @@ public sealed class TemplateUseCasesTests
             _repository.Object,
             NullLogger<PatchTemplate>.Instance);
 
-        var result = await useCase.ExecuteAsync(Guid.NewGuid(), new PatchTemplateRequest { Name = "Updated" });
+        var result = await useCase.ExecuteAsync(Guid.NewGuid(), new PatchTemplateCommand("Updated", default, default, default, [], []));
 
         result.IsSuccess.Should().BeFalse();
         result.ErrorType.Should().Be(ErrorType.NotFound);

@@ -1,10 +1,14 @@
 using System.Security.Claims;
 using Bud.Application.Common;
 using Bud.Application.Ports;
-using Bud.Shared.Contracts;
 using Microsoft.Extensions.Logging;
 
 namespace Bud.Application.Features.Teams.UseCases;
+
+public sealed record PatchTeamCommand(
+    Optional<string> Name,
+    Optional<Guid> LeaderId,
+    Optional<Guid?> ParentTeamId);
 
 public sealed partial class PatchTeam(
     ITeamRepository teamRepository,
@@ -16,7 +20,7 @@ public sealed partial class PatchTeam(
     public async Task<Result<Team>> ExecuteAsync(
         ClaimsPrincipal user,
         Guid id,
-        PatchTeamRequest request,
+        PatchTeamCommand command,
         CancellationToken cancellationToken = default)
     {
         LogPatchingTeam(logger, id);
@@ -35,11 +39,11 @@ public sealed partial class PatchTeam(
             return Result<Team>.Forbidden(UserErrorMessages.TeamUpdateForbidden);
         }
 
-        var requestedParentTeamId = request.ParentTeamId.HasValue ? request.ParentTeamId.Value : team.ParentTeamId;
-        var requestedLeaderId = request.LeaderId.HasValue ? request.LeaderId.Value : team.LeaderId;
-        var requestedName = request.Name.HasValue ? (request.Name.Value ?? team.Name) : team.Name;
+        var requestedParentTeamId = command.ParentTeamId.HasValue ? command.ParentTeamId.Value : team.ParentTeamId;
+        var requestedLeaderId = command.LeaderId.HasValue ? command.LeaderId.Value : team.LeaderId;
+        var requestedName = command.Name.HasValue ? (command.Name.Value ?? team.Name) : team.Name;
 
-        if (request.ParentTeamId.HasValue && requestedParentTeamId != team.ParentTeamId)
+        if (command.ParentTeamId.HasValue && requestedParentTeamId != team.ParentTeamId)
         {
             if (requestedParentTeamId.HasValue && requestedParentTeamId.Value == id)
             {

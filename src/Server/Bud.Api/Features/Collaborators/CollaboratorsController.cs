@@ -1,5 +1,4 @@
 using Bud.Api.Authorization;
-using Bud.Shared.Contracts;
 using FluentValidation;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -38,7 +37,7 @@ public sealed class CollaboratorsController(
     [ProducesResponseType(typeof(ValidationProblemDetails), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status403Forbidden)]
-    public async Task<ActionResult<Collaborator>> Create(CreateCollaboratorRequest request, CancellationToken cancellationToken)
+    public async Task<ActionResult<CollaboratorResponse>> Create(CreateCollaboratorRequest request, CancellationToken cancellationToken)
     {
         var validationResult = await createValidator.ValidateAsync(request, cancellationToken);
         if (!validationResult.IsValid)
@@ -46,8 +45,16 @@ public sealed class CollaboratorsController(
             return ValidationProblemFrom(validationResult);
         }
 
-        var result = await createCollaborator.ExecuteAsync(User, request, cancellationToken);
-        return FromResult(result, collaborator => CreatedAtAction(nameof(GetById), new { id = collaborator.Id }, collaborator));
+        var command = new CreateCollaboratorCommand(
+            request.FullName,
+            request.Email,
+            request.Role,
+            request.TeamId,
+            request.LeaderId);
+
+        var result = await createCollaborator.ExecuteAsync(User, command, cancellationToken);
+        return FromResult<Collaborator, CollaboratorResponse>(result, collaborator =>
+            CreatedAtAction(nameof(GetById), new { id = collaborator.Id }, collaborator.ToCollaboratorResponse()));
     }
 
     /// <summary>
@@ -63,7 +70,7 @@ public sealed class CollaboratorsController(
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
     [ProducesResponseType(typeof(ValidationProblemDetails), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status403Forbidden)]
-    public async Task<ActionResult<Collaborator>> Update(Guid id, PatchCollaboratorRequest request, CancellationToken cancellationToken)
+    public async Task<ActionResult<CollaboratorResponse>> Update(Guid id, PatchCollaboratorRequest request, CancellationToken cancellationToken)
     {
         var validationResult = await updateValidator.ValidateAsync(request, cancellationToken);
         if (!validationResult.IsValid)
@@ -71,8 +78,14 @@ public sealed class CollaboratorsController(
             return ValidationProblemFrom(validationResult);
         }
 
-        var result = await patchCollaborator.ExecuteAsync(User, id, request, cancellationToken);
-        return FromResultOk(result);
+        var command = new PatchCollaboratorCommand(
+            request.FullName,
+            request.Email,
+            request.Role,
+            request.LeaderId);
+
+        var result = await patchCollaborator.ExecuteAsync(User, id, command, cancellationToken);
+        return FromResultOk(result, collaborator => collaborator.ToCollaboratorResponse());
     }
 
     /// <summary>
@@ -101,10 +114,10 @@ public sealed class CollaboratorsController(
     [HttpGet("{id:guid}")]
     [ProducesResponseType(typeof(CollaboratorResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
-    public async Task<ActionResult<Collaborator>> GetById(Guid id, CancellationToken cancellationToken)
+    public async Task<ActionResult<CollaboratorResponse>> GetById(Guid id, CancellationToken cancellationToken)
     {
         var result = await getCollaboratorById.ExecuteAsync(id, cancellationToken);
-        return FromResultOk(result);
+        return FromResultOk(result, collaborator => collaborator.ToCollaboratorResponse());
     }
 
     /// <summary>
@@ -113,9 +126,9 @@ public sealed class CollaboratorsController(
     /// <response code="200">Lista paginada retornada com sucesso.</response>
     /// <response code="400">Parâmetros inválidos.</response>
     [HttpGet]
-    [ProducesResponseType(typeof(PagedResult<Collaborator>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(PagedResult<CollaboratorResponse>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
-    public async Task<ActionResult<PagedResult<Collaborator>>> GetAll(
+    public async Task<ActionResult<PagedResult<CollaboratorResponse>>> GetAll(
         [FromQuery] Guid? teamId,
         [FromQuery] string? search = null,
         [FromQuery] int page = 1,
@@ -135,7 +148,7 @@ public sealed class CollaboratorsController(
         }
 
         var result = await listCollaborators.ExecuteAsync(teamId, searchValidation.Value, page, pageSize, cancellationToken);
-        return FromResultOk(result);
+        return FromResultOk(result, paged => paged.MapPaged(c => c.ToCollaboratorResponse()));
     }
 
     /// <summary>
@@ -238,8 +251,8 @@ public sealed class CollaboratorsController(
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status403Forbidden)]
     public async Task<IActionResult> UpdateTeams(Guid id, PatchCollaboratorTeamsRequest request, CancellationToken cancellationToken)
     {
-        var result = await patchCollaboratorTeams.ExecuteAsync(User, id, request, cancellationToken);
+        var command = new PatchCollaboratorTeamsCommand(request.TeamIds);
+        var result = await patchCollaboratorTeams.ExecuteAsync(User, id, command, cancellationToken);
         return FromResult(result, NoContent);
     }
-
 }

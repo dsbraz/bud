@@ -1,9 +1,17 @@
 using Bud.Application.Common;
 using Bud.Application.Ports;
-using Bud.Shared.Contracts;
 using Microsoft.Extensions.Logging;
 
 namespace Bud.Application.Features.Indicators.UseCases;
+
+public sealed record PatchIndicatorCommand(
+    Optional<string> Name,
+    Optional<IndicatorType> Type,
+    Optional<QuantitativeIndicatorType?> QuantitativeType,
+    Optional<decimal?> MinValue,
+    Optional<decimal?> MaxValue,
+    Optional<IndicatorUnit?> Unit,
+    Optional<string?> TargetText);
 
 public sealed partial class PatchIndicator(
     IIndicatorRepository indicatorRepository,
@@ -12,7 +20,7 @@ public sealed partial class PatchIndicator(
 {
     public async Task<Result<Indicator>> ExecuteAsync(
         Guid id,
-        PatchIndicatorRequest request,
+        PatchIndicatorCommand command,
         CancellationToken cancellationToken = default)
     {
         LogPatchingIndicator(logger, id);
@@ -26,15 +34,15 @@ public sealed partial class PatchIndicator(
 
         try
         {
-            var type = request.Type.HasValue ? request.Type.Value : indicator.Type;
-            var quantitativeType = request.QuantitativeType.HasValue
-                ? request.QuantitativeType.Value
+            var type = command.Type.HasValue ? command.Type.Value : indicator.Type;
+            var quantitativeType = command.QuantitativeType.HasValue
+                ? command.QuantitativeType.Value
                 : indicator.QuantitativeType;
-            var unit = request.Unit.HasValue ? request.Unit.Value : indicator.Unit;
-            var name = request.Name.HasValue ? (request.Name.Value ?? indicator.Name) : indicator.Name;
-            var minValue = request.MinValue.HasValue ? request.MinValue.Value : indicator.MinValue;
-            var maxValue = request.MaxValue.HasValue ? request.MaxValue.Value : indicator.MaxValue;
-            var targetText = request.TargetText.HasValue ? request.TargetText.Value : indicator.TargetText;
+            var unit = command.Unit.HasValue ? command.Unit.Value : indicator.Unit;
+            var name = command.Name.HasValue ? (command.Name.Value ?? indicator.Name) : indicator.Name;
+            var minValue = command.MinValue.HasValue ? command.MinValue.Value : indicator.MinValue;
+            var maxValue = command.MaxValue.HasValue ? command.MaxValue.Value : indicator.MaxValue;
+            var targetText = command.TargetText.HasValue ? command.TargetText.Value : indicator.TargetText;
 
             indicator.UpdateDefinition(name, type);
             indicator.ApplyTarget(type, quantitativeType, minValue, maxValue, unit, targetText);

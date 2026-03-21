@@ -5,7 +5,7 @@ namespace Bud.Application.Features.Tasks.UseCases;
 
 public sealed class ListTasks(ITaskRepository taskRepository, IGoalRepository goalRepository)
 {
-    public async Task<Result<PagedResult<TaskResponse>>> ExecuteAsync(
+    public async Task<Result<PagedResult<GoalTask>>> ExecuteAsync(
         Guid goalId,
         int page,
         int pageSize,
@@ -16,10 +16,10 @@ public sealed class ListTasks(ITaskRepository taskRepository, IGoalRepository go
         var goalExists = await goalRepository.ExistsAsync(goalId, cancellationToken);
         if (!goalExists)
         {
-            return Result<PagedResult<TaskResponse>>.NotFound(UserErrorMessages.GoalNotFound);
+            return Result<PagedResult<GoalTask>>.NotFound(UserErrorMessages.GoalNotFound);
         }
 
         var result = await taskRepository.GetByGoalIdAsync(goalId, page, pageSize, cancellationToken);
-        return Result<PagedResult<TaskResponse>>.Success(result.MapPaged(t => t.ToResponse()));
+        return Result<PagedResult<GoalTask>>.Success(result);
     }
 }

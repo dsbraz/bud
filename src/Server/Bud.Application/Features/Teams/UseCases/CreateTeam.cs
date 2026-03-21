@@ -1,10 +1,11 @@
 using System.Security.Claims;
 using Bud.Application.Common;
 using Bud.Application.Ports;
-using Bud.Shared.Contracts;
 using Microsoft.Extensions.Logging;
 
 namespace Bud.Application.Features.Teams.UseCases;
+
+public sealed record CreateTeamCommand(string Name, Guid WorkspaceId, Guid LeaderId, Guid? ParentTeamId);
 
 public sealed partial class CreateTeam(
     ITeamRepository teamRepository,
@@ -16,49 +17,49 @@ public sealed partial class CreateTeam(
 {
     public async Task<Result<Team>> ExecuteAsync(
         ClaimsPrincipal user,
-        CreateTeamRequest request,
+        CreateTeamCommand command,
         CancellationToken cancellationToken = default)
     {
-        LogCreatingTeam(logger, request.Name, request.WorkspaceId);
+        LogCreatingTeam(logger, command.Name, command.WorkspaceId);
 
-        var workspace = await workspaceRepository.GetByIdAsync(request.WorkspaceId, cancellationToken);
+        var workspace = await workspaceRepository.GetByIdAsync(command.WorkspaceId, cancellationToken);
         if (workspace is null)
         {
-            LogTeamCreationFailed(logger, request.Name, "Workspace not found");
+            LogTeamCreationFailed(logger, command.Name, "Workspace not found");
             return Result<Team>.NotFound(UserErrorMessages.WorkspaceNotFound);
         }
 
         var canCreate = await authorizationGateway.IsOrganizationOwnerAsync(user, workspace.OrganizationId, cancellationToken);
         if (!canCreate)
         {
-            LogTeamCreationFailed(logger, request.Name, "Forbidden");
+            LogTeamCreationFailed(logger, command.Name, "Forbidden");
             return Result<Team>.Forbidden(UserErrorMessages.TeamCreateForbidden);
         }
 
-        if (request.ParentTeamId.HasValue)
+        if (command.ParentTeamId.HasValue)
         {
-            var parentTeam = await teamRepository.GetByIdAsync(request.ParentTeamId.Value, cancellationToken);
+            var parentTeam = await teamRepository.GetByIdAsync(command.ParentTeamId.Value, cancellationToken);
             if (parentTeam is null)
             {
-                LogTeamCreationFailed(logger, request.Name, "Parent team not found");
+                LogTeamCreationFailed(logger, command.Name, "Parent team not found");
                 return Result<Team>.NotFound(UserErrorMessages.ParentTeamNotFound);
             }
 
-            if (parentTeam.WorkspaceId != request.WorkspaceId)
+            if (parentTeam.WorkspaceId != command.WorkspaceId)
             {
-                LogTeamCreationFailed(logger, request.Name, "Parent team belongs to different workspace");
+                LogTeamCreationFailed(logger, command.Name, "Parent team belongs to different workspace");
                 return Result<Team>.Failure(UserErrorMessages.TeamParentMustBeSameWorkspace);
             }
         }
 
         var leaderValidation = await CollaboratorLeadershipPolicy.ValidateLeaderForOrganizationAsync<Team>(
             collaboratorRepository,
-            request.LeaderId,
+            command.LeaderId,
             workspace.OrganizationId,
             cancellationToken);
         if (leaderValidation is not null)
         {
-            LogTeamCreationFailed(logger, request.Name, "Leader validation failed");
+            LogTeamCreationFailed(logger, command.Name, "Leader validation failed");
             return leaderValidation;
         }
 
@@ -67,14 +68,14 @@ public sealed partial class CreateTeam(
             var team = Team.Create(
                 Guid.NewGuid(),
                 workspace.OrganizationId,
-                request.WorkspaceId,
-                request.Name,
-                request.LeaderId,
-                request.ParentTeamId);
+                command.WorkspaceId,
+                command.Name,
+                command.LeaderId,
+                command.ParentTeamId);
 
             team.CollaboratorTeams.Add(new CollaboratorTeam
             {
-                CollaboratorId = request.LeaderId,
+                CollaboratorId = command.LeaderId,
                 TeamId = team.Id,
                 AssignedAt = DateTime.UtcNow
             });
@@ -87,7 +88,7 @@ public sealed partial class CreateTeam(
         }
         catch (DomainInvariantException ex)
         {
-            LogTeamCreationFailed(logger, request.Name, ex.Message);
+            LogTeamCreationFailed(logger, command.Name, ex.Message);
             return Result<Team>.Failure(ex.Message, ErrorType.Validation);
         }
     }

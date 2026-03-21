@@ -1,10 +1,11 @@
 using System.Security.Claims;
 using Bud.Application.Common;
 using Bud.Application.Ports;
-using Bud.Shared.Contracts;
 using Microsoft.Extensions.Logging;
 
 namespace Bud.Application.Features.Workspaces.UseCases;
+
+public sealed record PatchWorkspaceCommand(Optional<string> Name);
 
 public sealed partial class PatchWorkspace(
     IWorkspaceRepository workspaceRepository,
@@ -15,7 +16,7 @@ public sealed partial class PatchWorkspace(
     public async Task<Result<Workspace>> ExecuteAsync(
         ClaimsPrincipal user,
         Guid id,
-        PatchWorkspaceRequest request,
+        PatchWorkspaceCommand command,
         CancellationToken cancellationToken = default)
     {
         LogPatchingWorkspace(logger, id);
@@ -36,9 +37,9 @@ public sealed partial class PatchWorkspace(
 
         try
         {
-            if (request.Name.HasValue)
+            if (command.Name.HasValue)
             {
-                var newName = request.Name.Value ?? string.Empty;
+                var newName = command.Name.Value ?? string.Empty;
 
                 if (!await workspaceRepository.IsNameUniqueAsync(workspace.OrganizationId, newName, excludeId: id, ct: cancellationToken))
                 {

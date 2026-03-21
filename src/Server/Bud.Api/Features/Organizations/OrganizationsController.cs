@@ -1,5 +1,4 @@
 using Bud.Api.Authorization;
-using Bud.Shared.Contracts;
 using FluentValidation;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -34,7 +33,7 @@ public sealed class OrganizationsController(
     [ProducesResponseType(typeof(ValidationProblemDetails), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status403Forbidden)]
-    public async Task<ActionResult<Organization>> Create(CreateOrganizationRequest request, CancellationToken cancellationToken)
+    public async Task<ActionResult<OrganizationResponse>> Create(CreateOrganizationRequest request, CancellationToken cancellationToken)
     {
         var validationResult = await createValidator.ValidateAsync(request, cancellationToken);
         if (!validationResult.IsValid)
@@ -42,8 +41,11 @@ public sealed class OrganizationsController(
             return ValidationProblemFrom(validationResult);
         }
 
-        var result = await createOrganization.ExecuteAsync(request, cancellationToken);
-        return FromResult(result, organization => CreatedAtAction(nameof(GetById), new { id = organization.Id }, organization));
+        var command = new CreateOrganizationCommand(request.Name, request.OwnerId);
+
+        var result = await createOrganization.ExecuteAsync(command, cancellationToken);
+        return FromResult<Organization, OrganizationResponse>(result, organization =>
+            CreatedAtAction(nameof(GetById), new { id = organization.Id }, organization.ToResponse()));
     }
 
     /// <summary>
@@ -60,7 +62,7 @@ public sealed class OrganizationsController(
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
     [ProducesResponseType(typeof(ValidationProblemDetails), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status403Forbidden)]
-    public async Task<ActionResult<Organization>> Update(Guid id, PatchOrganizationRequest request, CancellationToken cancellationToken)
+    public async Task<ActionResult<OrganizationResponse>> Update(Guid id, PatchOrganizationRequest request, CancellationToken cancellationToken)
     {
         var validationResult = await updateValidator.ValidateAsync(request, cancellationToken);
         if (!validationResult.IsValid)
@@ -68,8 +70,10 @@ public sealed class OrganizationsController(
             return ValidationProblemFrom(validationResult);
         }
 
-        var result = await patchOrganization.ExecuteAsync(id, request, cancellationToken);
-        return FromResultOk(result);
+        var command = new PatchOrganizationCommand(request.Name, request.OwnerId);
+
+        var result = await patchOrganization.ExecuteAsync(id, command, cancellationToken);
+        return FromResultOk(result, organization => organization.ToResponse());
     }
 
     /// <summary>
@@ -99,10 +103,10 @@ public sealed class OrganizationsController(
     [HttpGet("{id:guid}")]
     [ProducesResponseType(typeof(OrganizationResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
-    public async Task<ActionResult<Organization>> GetById(Guid id, CancellationToken cancellationToken)
+    public async Task<ActionResult<OrganizationResponse>> GetById(Guid id, CancellationToken cancellationToken)
     {
         var result = await getOrganizationById.ExecuteAsync(id, cancellationToken);
-        return FromResultOk(result);
+        return FromResultOk(result, organization => organization.ToResponse());
     }
 
     /// <summary>
@@ -111,9 +115,9 @@ public sealed class OrganizationsController(
     /// <response code="200">Lista paginada retornada com sucesso.</response>
     /// <response code="400">Parâmetros inválidos.</response>
     [HttpGet]
-    [ProducesResponseType(typeof(PagedResult<Organization>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(PagedResult<OrganizationResponse>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
-    public async Task<ActionResult<PagedResult<Organization>>> GetAll(
+    public async Task<ActionResult<PagedResult<OrganizationResponse>>> GetAll(
         [FromQuery] string? search,
         [FromQuery] int page = 1,
         [FromQuery] int pageSize = 10,
@@ -132,7 +136,7 @@ public sealed class OrganizationsController(
         }
 
         var result = await listOrganizations.ExecuteAsync(searchValidation.Value, page, pageSize, cancellationToken);
-        return FromResultOk(result);
+        return FromResultOk(result, paged => paged.MapPaged(o => o.ToResponse()));
     }
 
     /// <summary>
@@ -142,10 +146,10 @@ public sealed class OrganizationsController(
     /// <response code="400">Parâmetros inválidos.</response>
     /// <response code="404">Organização não encontrada.</response>
     [HttpGet("{id:guid}/workspaces")]
-    [ProducesResponseType(typeof(PagedResult<Workspace>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(PagedResult<WorkspaceResponse>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
-    public async Task<ActionResult<PagedResult<Workspace>>> GetWorkspaces(
+    public async Task<ActionResult<PagedResult<WorkspaceResponse>>> GetWorkspaces(
         Guid id,
         [FromQuery] int page = 1,
         [FromQuery] int pageSize = 10,
@@ -158,7 +162,7 @@ public sealed class OrganizationsController(
         }
 
         var result = await listOrganizationWorkspaces.ExecuteAsync(id, page, pageSize, cancellationToken);
-        return FromResultOk(result);
+        return FromResultOk(result, paged => paged.MapPaged(w => w.ToResponse()));
     }
 
     /// <summary>
@@ -168,10 +172,10 @@ public sealed class OrganizationsController(
     /// <response code="400">Parâmetros inválidos.</response>
     /// <response code="404">Organização não encontrada.</response>
     [HttpGet("{id:guid}/collaborators")]
-    [ProducesResponseType(typeof(PagedResult<Collaborator>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(PagedResult<CollaboratorResponse>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
-    public async Task<ActionResult<PagedResult<Collaborator>>> GetCollaborators(
+    public async Task<ActionResult<PagedResult<CollaboratorResponse>>> GetCollaborators(
         Guid id,
         [FromQuery] int page = 1,
         [FromQuery] int pageSize = 10,
@@ -184,6 +188,6 @@ public sealed class OrganizationsController(
         }
 
         var result = await listOrganizationCollaborators.ExecuteAsync(id, page, pageSize, cancellationToken);
-        return FromResultOk(result);
+        return FromResultOk(result, paged => paged.MapPaged(c => c.ToCollaboratorResponse()));
     }
 }

@@ -1,5 +1,3 @@
-using Bud.Application.Common;
-using Bud.Application.Ports;
 using FluentAssertions;
 using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
@@ -20,14 +18,15 @@ public sealed class GoalObjectiveWriteUseCasesTests
 
         var useCase = new CreateGoal(_repository.Object, _collaboratorRepository.Object, _tenantProvider.Object, NullLogger<CreateGoal>.Instance);
 
-        var result = await useCase.ExecuteAsync(new CreateGoalRequest
-        {
-            ParentId = Guid.NewGuid(),
-            Name = "Objetivo",
-            StartDate = DateTime.UtcNow,
-            EndDate = DateTime.UtcNow.AddDays(30),
-            Status = GoalStatus.Planned
-        });
+        var result = await useCase.ExecuteAsync(new CreateGoalCommand(
+            "Objetivo",
+            null,
+            null,
+            DateTime.UtcNow,
+            DateTime.UtcNow.AddDays(30),
+            GoalStatus.Planned,
+            Guid.NewGuid(),
+            null));
 
         result.IsSuccess.Should().BeFalse();
         result.ErrorType.Should().Be(ErrorType.Forbidden);
@@ -58,15 +57,15 @@ public sealed class GoalObjectiveWriteUseCasesTests
 
         var useCase = new CreateGoal(_repository.Object, _collaboratorRepository.Object, _tenantProvider.Object, NullLogger<CreateGoal>.Instance);
 
-        var result = await useCase.ExecuteAsync(new CreateGoalRequest
-        {
-            ParentId = parentId,
-            Name = "Objetivo",
-            Dimension = "Clientes",
-            StartDate = DateTime.UtcNow,
-            EndDate = DateTime.UtcNow.AddDays(30),
-            Status = GoalStatus.Planned
-        });
+        var result = await useCase.ExecuteAsync(new CreateGoalCommand(
+            "Objetivo",
+            null,
+            "Clientes",
+            DateTime.UtcNow,
+            DateTime.UtcNow.AddDays(30),
+            GoalStatus.Planned,
+            parentId,
+            null));
 
         result.IsSuccess.Should().BeTrue();
         result.Value!.OrganizationId.Should().Be(organizationId);
@@ -84,7 +83,7 @@ public sealed class GoalObjectiveWriteUseCasesTests
 
         var useCase = new PatchGoal(_repository.Object, _collaboratorRepository.Object, _tenantProvider.Object, NullLogger<PatchGoal>.Instance);
 
-        var result = await useCase.ExecuteAsync(Guid.NewGuid(), new PatchGoalRequest { Name = "X" });
+        var result = await useCase.ExecuteAsync(Guid.NewGuid(), new PatchGoalCommand("X", default, default, default, default, default, default));
 
         result.IsSuccess.Should().BeFalse();
         result.ErrorType.Should().Be(ErrorType.NotFound);
@@ -112,11 +111,14 @@ public sealed class GoalObjectiveWriteUseCasesTests
 
         var useCase = new PatchGoal(_repository.Object, _collaboratorRepository.Object, _tenantProvider.Object, NullLogger<PatchGoal>.Instance);
 
-        var result = await useCase.ExecuteAsync(objective.Id, new PatchGoalRequest
-        {
-            Name = "Atualizado",
-            Description = "Nova descrição"
-        });
+        var result = await useCase.ExecuteAsync(objective.Id, new PatchGoalCommand(
+            "Atualizado",
+            "Nova descrição",
+            default,
+            default,
+            default,
+            default,
+            default));
 
         result.IsSuccess.Should().BeTrue();
         result.Value!.Name.Should().Be("Atualizado");

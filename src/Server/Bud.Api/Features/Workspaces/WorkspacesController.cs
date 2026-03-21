@@ -1,5 +1,4 @@
 using Bud.Api.Authorization;
-using Bud.Shared.Contracts;
 using FluentValidation;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -33,7 +32,7 @@ public sealed class WorkspacesController(
     [ProducesResponseType(typeof(ValidationProblemDetails), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status403Forbidden)]
-    public async Task<ActionResult<Workspace>> Create(CreateWorkspaceRequest request, CancellationToken cancellationToken)
+    public async Task<ActionResult<WorkspaceResponse>> Create(CreateWorkspaceRequest request, CancellationToken cancellationToken)
     {
         var validationResult = await createValidator.ValidateAsync(request, cancellationToken);
         if (!validationResult.IsValid)
@@ -41,8 +40,11 @@ public sealed class WorkspacesController(
             return ValidationProblemFrom(validationResult);
         }
 
-        var result = await createWorkspace.ExecuteAsync(User, request, cancellationToken);
-        return FromResult(result, workspace => CreatedAtAction(nameof(GetById), new { id = workspace.Id }, workspace));
+        var command = new CreateWorkspaceCommand(request.Name, request.OrganizationId);
+
+        var result = await createWorkspace.ExecuteAsync(User, command, cancellationToken);
+        return FromResult<Workspace, WorkspaceResponse>(result, workspace =>
+            CreatedAtAction(nameof(GetById), new { id = workspace.Id }, workspace.ToResponse()));
     }
 
     /// <summary>
@@ -58,7 +60,7 @@ public sealed class WorkspacesController(
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status403Forbidden)]
     [ProducesResponseType(typeof(ValidationProblemDetails), StatusCodes.Status400BadRequest)]
-    public async Task<ActionResult<Workspace>> Update(Guid id, PatchWorkspaceRequest request, CancellationToken cancellationToken)
+    public async Task<ActionResult<WorkspaceResponse>> Update(Guid id, PatchWorkspaceRequest request, CancellationToken cancellationToken)
     {
         var validationResult = await updateValidator.ValidateAsync(request, cancellationToken);
         if (!validationResult.IsValid)
@@ -66,8 +68,10 @@ public sealed class WorkspacesController(
             return ValidationProblemFrom(validationResult);
         }
 
-        var result = await patchWorkspace.ExecuteAsync(User, id, request, cancellationToken);
-        return FromResultOk(result);
+        var command = new PatchWorkspaceCommand(request.Name);
+
+        var result = await patchWorkspace.ExecuteAsync(User, id, command, cancellationToken);
+        return FromResultOk(result, workspace => workspace.ToResponse());
     }
 
     /// <summary>
@@ -94,10 +98,10 @@ public sealed class WorkspacesController(
     [HttpGet("{id:guid}")]
     [ProducesResponseType(typeof(WorkspaceResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
-    public async Task<ActionResult<Workspace>> GetById(Guid id, CancellationToken cancellationToken)
+    public async Task<ActionResult<WorkspaceResponse>> GetById(Guid id, CancellationToken cancellationToken)
     {
         var result = await getWorkspaceById.ExecuteAsync(id, cancellationToken);
-        return FromResultOk(result);
+        return FromResultOk(result, workspace => workspace.ToResponse());
     }
 
     /// <summary>
@@ -106,9 +110,9 @@ public sealed class WorkspacesController(
     /// <response code="200">Lista paginada retornada com sucesso.</response>
     /// <response code="400">Parâmetros inválidos.</response>
     [HttpGet]
-    [ProducesResponseType(typeof(PagedResult<Workspace>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(PagedResult<WorkspaceResponse>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
-    public async Task<ActionResult<PagedResult<Workspace>>> GetAll(
+    public async Task<ActionResult<PagedResult<WorkspaceResponse>>> GetAll(
         [FromQuery] Guid? organizationId,
         [FromQuery] string? search,
         [FromQuery] int page = 1,
@@ -128,7 +132,7 @@ public sealed class WorkspacesController(
         }
 
         var result = await listWorkspaces.ExecuteAsync(organizationId, searchValidation.Value, page, pageSize, cancellationToken);
-        return FromResultOk(result);
+        return FromResultOk(result, paged => paged.MapPaged(w => w.ToResponse()));
     }
 
     /// <summary>
@@ -138,10 +142,10 @@ public sealed class WorkspacesController(
     /// <response code="400">Parâmetros inválidos.</response>
     /// <response code="404">Workspace não encontrado.</response>
     [HttpGet("{id:guid}/teams")]
-    [ProducesResponseType(typeof(PagedResult<Team>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(PagedResult<TeamResponse>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
-    public async Task<ActionResult<PagedResult<Team>>> GetTeams(
+    public async Task<ActionResult<PagedResult<TeamResponse>>> GetTeams(
         Guid id,
         [FromQuery] int page = 1,
         [FromQuery] int pageSize = 10,
@@ -154,6 +158,6 @@ public sealed class WorkspacesController(
         }
 
         var result = await listWorkspaceTeams.ExecuteAsync(id, page, pageSize, cancellationToken);
-        return FromResultOk(result);
+        return FromResultOk(result, paged => paged.MapPaged(t => t.ToResponse()));
     }
 }

@@ -4,6 +4,16 @@ using Microsoft.Extensions.Logging;
 
 namespace Bud.Application.Features.Goals.UseCases;
 
+public sealed record CreateGoalCommand(
+    string Name,
+    string? Description,
+    string? Dimension,
+    DateTime StartDate,
+    DateTime EndDate,
+    GoalStatus Status,
+    Guid? ParentId,
+    Guid? CollaboratorId);
+
 public sealed partial class CreateGoal(
     IGoalRepository goalRepository,
     ICollaboratorRepository collaboratorRepository,
@@ -12,25 +22,25 @@ public sealed partial class CreateGoal(
     IUnitOfWork? unitOfWork = null)
 {
     public async Task<Result<Goal>> ExecuteAsync(
-        CreateGoalRequest request,
+        CreateGoalCommand command,
         CancellationToken cancellationToken = default)
     {
-        LogCreatingGoal(logger, request.Name);
+        LogCreatingGoal(logger, command.Name);
 
         var organizationId = tenantProvider.TenantId;
         if (!organizationId.HasValue)
         {
-            LogGoalCreationFailed(logger, request.Name, "Tenant not selected");
+            LogGoalCreationFailed(logger, command.Name, "Tenant not selected");
             return Result<Goal>.Forbidden(UserErrorMessages.GoalCreateForbidden);
         }
 
         Goal? parentGoal = null;
-        if (request.ParentId.HasValue)
+        if (command.ParentId.HasValue)
         {
-            parentGoal = await goalRepository.GetByIdReadOnlyAsync(request.ParentId.Value, cancellationToken);
+            parentGoal = await goalRepository.GetByIdReadOnlyAsync(command.ParentId.Value, cancellationToken);
             if (parentGoal is null)
             {
-                LogGoalCreationFailed(logger, request.Name, UserErrorMessages.ParentGoalNotFound);
+                LogGoalCreationFailed(logger, command.Name, UserErrorMessages.ParentGoalNotFound);
                 return Result<Goal>.NotFound(UserErrorMessages.ParentGoalNotFound);
             }
         }
@@ -38,10 +48,10 @@ public sealed partial class CreateGoal(
         if (parentGoal is not null)
         {
             var violation = GoalDateRangePolicy.ValidateChildStartDate<Goal>(
-                UtcDateTimeNormalizer.Normalize(request.StartDate), parentGoal.StartDate);
+                UtcDateTimeNormalizer.Normalize(command.StartDate), parentGoal.StartDate);
             if (violation is not null)
             {
-                LogGoalCreationFailed(logger, request.Name, violation.Error!);
+                LogGoalCreationFailed(logger, command.Name, violation.Error!);
                 return violation;
             }
         }
@@ -51,31 +61,31 @@ public sealed partial class CreateGoal(
             var goal = Goal.Create(
                 Guid.NewGuid(),
                 organizationId.Value,
-                request.Name,
-                request.Description,
-                request.Dimension,
-                UtcDateTimeNormalizer.Normalize(request.StartDate),
-                UtcDateTimeNormalizer.Normalize(request.EndDate),
-                request.Status,
+                command.Name,
+                command.Description,
+                command.Dimension,
+                UtcDateTimeNormalizer.Normalize(command.StartDate),
+                UtcDateTimeNormalizer.Normalize(command.EndDate),
+                command.Status,
                 parentGoal?.Id,
                 tenantProvider.CollaboratorId);
 
-            if (request.CollaboratorId.HasValue)
+            if (command.CollaboratorId.HasValue)
             {
-                var collaborator = await collaboratorRepository.GetByIdAsync(request.CollaboratorId.Value, cancellationToken);
+                var collaborator = await collaboratorRepository.GetByIdAsync(command.CollaboratorId.Value, cancellationToken);
                 if (collaborator is null)
                 {
-                    LogGoalCreationFailed(logger, request.Name, UserErrorMessages.CollaboratorNotFound);
+                    LogGoalCreationFailed(logger, command.Name, UserErrorMessages.CollaboratorNotFound);
                     return Result<Goal>.NotFound(UserErrorMessages.CollaboratorNotFound);
                 }
 
                 if (collaborator.OrganizationId != organizationId.Value)
                 {
-                    LogGoalCreationFailed(logger, request.Name, "Collaborator belongs to different organization");
+                    LogGoalCreationFailed(logger, command.Name, "Collaborator belongs to different organization");
                     return Result<Goal>.Forbidden(UserErrorMessages.GoalCreateForbidden);
                 }
 
-                goal.CollaboratorId = request.CollaboratorId.Value;
+                goal.CollaboratorId = command.CollaboratorId.Value;
             }
 
             await goalRepository.AddAsync(goal, cancellationToken);
@@ -86,7 +96,7 @@ public sealed partial class CreateGoal(
         }
         catch (DomainInvariantException ex)
         {
-            LogGoalCreationFailed(logger, request.Name, ex.Message);
+            LogGoalCreationFailed(logger, command.Name, ex.Message);
             return Result<Goal>.Failure(ex.Message, ErrorType.Validation);
         }
     }

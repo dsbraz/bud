@@ -1,8 +1,23 @@
 
 namespace Bud.Application.Features.Collaborators;
 
-internal static class CollaboratorsContractMapper
+public static class CollaboratorsContractMapper
 {
+    public static CollaboratorResponse ToCollaboratorResponse(this Collaborator source)
+    {
+        return new CollaboratorResponse
+        {
+            Id = source.Id,
+            FullName = source.FullName,
+            Email = source.Email,
+            Role = source.Role,
+            OrganizationId = source.OrganizationId,
+            TeamId = source.TeamId,
+            LeaderId = source.LeaderId,
+            IsGlobalAdmin = source.IsGlobalAdmin
+        };
+    }
+
     public static CollaboratorLookupResponse ToResponse(this Collaborator source)
     {
         return new CollaboratorLookupResponse
@@ -13,7 +28,7 @@ internal static class CollaboratorsContractMapper
             Role = source.Role        };
     }
 
-    public static CollaboratorTeamResponse ToResponse(this Team source)
+    public static CollaboratorTeamResponse ToCollaboratorTeamResponse(this Team source)
     {
         return new CollaboratorTeamResponse
         {

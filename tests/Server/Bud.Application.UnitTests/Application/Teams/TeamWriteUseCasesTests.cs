@@ -1,7 +1,4 @@
 using System.Security.Claims;
-using Bud.Application.Common;
-using Bud.Application.Ports;
-using Bud.Shared.Contracts;
 using FluentAssertions;
 using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
@@ -32,14 +29,7 @@ public sealed class TeamWriteUseCasesTests
             _authorizationGateway.Object,
             NullLogger<CreateTeam>.Instance);
 
-        var request = new CreateTeamRequest
-        {
-            Name = "Team",
-            WorkspaceId = Guid.NewGuid(),
-            LeaderId = Guid.NewGuid()
-        };
-
-        var result = await useCase.ExecuteAsync(User, request);
+        var result = await useCase.ExecuteAsync(User, new CreateTeamCommand("Team", Guid.NewGuid(), Guid.NewGuid(), null));
 
         result.IsSuccess.Should().BeFalse();
         result.ErrorType.Should().Be(ErrorType.NotFound);
@@ -65,14 +55,7 @@ public sealed class TeamWriteUseCasesTests
             _authorizationGateway.Object,
             NullLogger<CreateTeam>.Instance);
 
-        var request = new CreateTeamRequest
-        {
-            Name = "Team",
-            WorkspaceId = workspace.Id,
-            LeaderId = Guid.NewGuid()
-        };
-
-        var result = await useCase.ExecuteAsync(User, request);
+        var result = await useCase.ExecuteAsync(User, new CreateTeamCommand("Team", workspace.Id, Guid.NewGuid(), null));
 
         result.IsSuccess.Should().BeFalse();
         result.ErrorType.Should().Be(ErrorType.Forbidden);
@@ -91,9 +74,7 @@ public sealed class TeamWriteUseCasesTests
             _authorizationGateway.Object,
             NullLogger<PatchTeam>.Instance);
 
-        var request = new PatchTeamRequest { Name = "Novo Team", LeaderId = Guid.NewGuid() };
-
-        var result = await useCase.ExecuteAsync(User, Guid.NewGuid(), request);
+        var result = await useCase.ExecuteAsync(User, Guid.NewGuid(), new PatchTeamCommand("Novo Team", Guid.NewGuid(), default));
 
         result.IsSuccess.Should().BeFalse();
         result.ErrorType.Should().Be(ErrorType.NotFound);
@@ -123,9 +104,7 @@ public sealed class TeamWriteUseCasesTests
             _authorizationGateway.Object,
             NullLogger<PatchTeam>.Instance);
 
-        var request = new PatchTeamRequest { Name = "Novo Team", LeaderId = Guid.NewGuid() };
-
-        var result = await useCase.ExecuteAsync(User, team.Id, request);
+        var result = await useCase.ExecuteAsync(User, team.Id, new PatchTeamCommand("Novo Team", Guid.NewGuid(), default));
 
         result.IsSuccess.Should().BeFalse();
         result.ErrorType.Should().Be(ErrorType.Forbidden);
@@ -212,9 +191,7 @@ public sealed class TeamWriteUseCasesTests
             _authorizationGateway.Object,
             NullLogger<PatchTeamCollaborators>.Instance);
 
-        var request = new PatchTeamCollaboratorsRequest { CollaboratorIds = [leaderId] };
-
-        var result = await useCase.ExecuteAsync(User, team.Id, request);
+        var result = await useCase.ExecuteAsync(User, team.Id, new PatchTeamCollaboratorsCommand([leaderId]));
 
         result.IsSuccess.Should().BeTrue();
         _teamRepository.Verify(repository => repository.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
@@ -244,9 +221,7 @@ public sealed class TeamWriteUseCasesTests
             _authorizationGateway.Object,
             NullLogger<PatchTeamCollaborators>.Instance);
 
-        var request = new PatchTeamCollaboratorsRequest { CollaboratorIds = [] };
-
-        var result = await useCase.ExecuteAsync(User, team.Id, request);
+        var result = await useCase.ExecuteAsync(User, team.Id, new PatchTeamCollaboratorsCommand([]));
 
         result.IsSuccess.Should().BeFalse();
         result.ErrorType.Should().Be(ErrorType.Forbidden);

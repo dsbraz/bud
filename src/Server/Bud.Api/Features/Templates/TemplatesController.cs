@@ -1,5 +1,4 @@
 using Bud.Api.Authorization;
-using Bud.Shared.Contracts;
 using FluentValidation;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -28,7 +27,7 @@ public sealed class TemplatesController(
     [Consumes("application/json")]
     [ProducesResponseType(typeof(TemplateResponse), StatusCodes.Status201Created)]
     [ProducesResponseType(typeof(ValidationProblemDetails), StatusCodes.Status400BadRequest)]
-    public async Task<ActionResult<Template>> Create(CreateTemplateRequest request, CancellationToken cancellationToken)
+    public async Task<ActionResult<TemplateResponse>> Create(CreateTemplateRequest request, CancellationToken cancellationToken)
     {
         var validationResult = await createValidator.ValidateAsync(request, cancellationToken);
         if (!validationResult.IsValid)
@@ -36,8 +35,24 @@ public sealed class TemplatesController(
             return ValidationProblemFrom(validationResult);
         }
 
-        var result = await createTemplate.ExecuteAsync(request, cancellationToken);
-        return FromResult(result, template => CreatedAtAction(nameof(GetById), new { id = template.Id }, template));
+        var goals = request.Goals
+            .Select(g => new TemplateGoalDraft(g.Id, g.ParentId, g.Name, g.Description, g.OrderIndex, g.Dimension))
+            .ToList();
+        var indicators = request.Indicators
+            .Select(i => new TemplateIndicatorDraft(i.Name, i.Type, i.OrderIndex, i.TemplateGoalId, i.QuantitativeType, i.MinValue, i.MaxValue, i.Unit, i.TargetText))
+            .ToList();
+
+        var command = new CreateTemplateCommand(
+            request.Name,
+            request.Description,
+            request.GoalNamePattern,
+            request.GoalDescriptionPattern,
+            goals,
+            indicators);
+
+        var result = await createTemplate.ExecuteAsync(command, cancellationToken);
+        return FromResult<Template, TemplateResponse>(result, template =>
+            CreatedAtAction(nameof(GetById), new { id = template.Id }, template.ToResponse()));
     }
 
     /// <summary>
@@ -51,7 +66,7 @@ public sealed class TemplatesController(
     [ProducesResponseType(typeof(TemplateResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ValidationProblemDetails), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
-    public async Task<ActionResult<Template>> Update(Guid id, PatchTemplateRequest request, CancellationToken cancellationToken)
+    public async Task<ActionResult<TemplateResponse>> Update(Guid id, PatchTemplateRequest request, CancellationToken cancellationToken)
     {
         var validationResult = await updateValidator.ValidateAsync(request, cancellationToken);
         if (!validationResult.IsValid)
@@ -59,8 +74,23 @@ public sealed class TemplatesController(
             return ValidationProblemFrom(validationResult);
         }
 
-        var result = await patchTemplate.ExecuteAsync(id, request, cancellationToken);
-        return FromResultOk(result);
+        var goals = (request.Goals.HasValue ? request.Goals.Value ?? [] : [])
+            .Select(g => new TemplateGoalDraft(g.Id, g.ParentId, g.Name, g.Description, g.OrderIndex, g.Dimension))
+            .ToList();
+        var indicators = (request.Indicators.HasValue ? request.Indicators.Value ?? [] : [])
+            .Select(i => new TemplateIndicatorDraft(i.Name, i.Type, i.OrderIndex, i.TemplateGoalId, i.QuantitativeType, i.MinValue, i.MaxValue, i.Unit, i.TargetText))
+            .ToList();
+
+        var command = new PatchTemplateCommand(
+            request.Name,
+            request.Description,
+            request.GoalNamePattern,
+            request.GoalDescriptionPattern,
+            goals,
+            indicators);
+
+        var result = await patchTemplate.ExecuteAsync(id, command, cancellationToken);
+        return FromResultOk(result, template => template.ToResponse());
     }
 
     /// <summary>
@@ -85,10 +115,10 @@ public sealed class TemplatesController(
     [HttpGet("{id:guid}")]
     [ProducesResponseType(typeof(TemplateResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
-    public async Task<ActionResult<Template>> GetById(Guid id, CancellationToken cancellationToken)
+    public async Task<ActionResult<TemplateResponse>> GetById(Guid id, CancellationToken cancellationToken)
     {
         var result = await getTemplateById.ExecuteAsync(id, cancellationToken);
-        return FromResultOk(result);
+        return FromResultOk(result, template => template.ToResponse());
     }
 
     /// <summary>
@@ -97,9 +127,9 @@ public sealed class TemplatesController(
     /// <response code="200">Lista paginada retornada com sucesso.</response>
     /// <response code="400">Parâmetros de filtro/paginação inválidos.</response>
     [HttpGet]
-    [ProducesResponseType(typeof(PagedResult<Template>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(PagedResult<TemplateResponse>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
-    public async Task<ActionResult<PagedResult<Template>>> GetAll(
+    public async Task<ActionResult<PagedResult<TemplateResponse>>> GetAll(
         [FromQuery] string? search,
         [FromQuery] int page = 1,
         [FromQuery] int pageSize = 10,
@@ -118,6 +148,6 @@ public sealed class TemplatesController(
         }
 
         var result = await listTemplates.ExecuteAsync(searchValidation.Value, page, pageSize, cancellationToken);
-        return FromResultOk(result);
+        return FromResultOk(result, paged => paged.MapPaged(t => t.ToResponse()));
     }
 }

@@ -1,7 +1,7 @@
 
 namespace Bud.Application.Features.Tasks;
 
-internal static class TaskContractMapper
+public static class TaskContractMapper
 {
     public static TaskResponse ToResponse(this GoalTask source)
     {

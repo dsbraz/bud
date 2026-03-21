@@ -1,9 +1,15 @@
 using Bud.Application.Common;
 using Bud.Application.Ports;
-using Bud.Shared.Contracts;
 using Microsoft.Extensions.Logging;
 
 namespace Bud.Application.Features.Indicators.UseCases;
+
+public sealed record CreateCheckinCommand(
+    decimal? Value,
+    string? Text,
+    DateTime CheckinDate,
+    string? Note,
+    int ConfidenceLevel);
 
 public sealed partial class CreateCheckin(
     IIndicatorRepository indicatorRepository,
@@ -14,7 +20,7 @@ public sealed partial class CreateCheckin(
 {
     public async Task<Result<Checkin>> ExecuteAsync(
         Guid indicatorId,
-        CreateCheckinRequest request,
+        CreateCheckinCommand command,
         CancellationToken cancellationToken = default)
     {
         LogCreatingCheckin(logger, indicatorId);
@@ -54,11 +60,11 @@ public sealed partial class CreateCheckin(
             var checkin = indicator.CreateCheckin(
                 Guid.NewGuid(),
                 collaboratorId.Value,
-                request.Value,
-                request.Text,
-                DateTime.SpecifyKind(request.CheckinDate, DateTimeKind.Utc),
-                request.Note,
-                request.ConfidenceLevel);
+                command.Value,
+                command.Text,
+                DateTime.SpecifyKind(command.CheckinDate, DateTimeKind.Utc),
+                command.Note,
+                command.ConfidenceLevel);
 
             await indicatorRepository.AddCheckinAsync(checkin, cancellationToken);
             await unitOfWork.CommitAsync(indicatorRepository.SaveChangesAsync, cancellationToken);

@@ -1,5 +1,4 @@
 using Bud.Api.Authorization;
-using Bud.Shared.Contracts;
 using FluentValidation;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -37,7 +36,7 @@ public sealed class TeamsController(
     [ProducesResponseType(typeof(ValidationProblemDetails), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status403Forbidden)]
-    public async Task<ActionResult<Team>> Create(CreateTeamRequest request, CancellationToken cancellationToken)
+    public async Task<ActionResult<TeamResponse>> Create(CreateTeamRequest request, CancellationToken cancellationToken)
     {
         var validationResult = await createValidator.ValidateAsync(request, cancellationToken);
         if (!validationResult.IsValid)
@@ -45,8 +44,15 @@ public sealed class TeamsController(
             return ValidationProblemFrom(validationResult);
         }
 
-        var result = await createTeam.ExecuteAsync(User, request, cancellationToken);
-        return FromResult(result, team => CreatedAtAction(nameof(GetById), new { id = team.Id }, team));
+        var command = new CreateTeamCommand(
+            request.Name,
+            request.WorkspaceId,
+            request.LeaderId,
+            request.ParentTeamId);
+
+        var result = await createTeam.ExecuteAsync(User, command, cancellationToken);
+        return FromResult<Team, TeamResponse>(result, team =>
+            CreatedAtAction(nameof(GetById), new { id = team.Id }, team.ToResponse()));
     }
 
     /// <summary>
@@ -62,7 +68,7 @@ public sealed class TeamsController(
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
     [ProducesResponseType(typeof(ValidationProblemDetails), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status403Forbidden)]
-    public async Task<ActionResult<Team>> Update(Guid id, PatchTeamRequest request, CancellationToken cancellationToken)
+    public async Task<ActionResult<TeamResponse>> Update(Guid id, PatchTeamRequest request, CancellationToken cancellationToken)
     {
         var validationResult = await updateValidator.ValidateAsync(request, cancellationToken);
         if (!validationResult.IsValid)
@@ -70,8 +76,13 @@ public sealed class TeamsController(
             return ValidationProblemFrom(validationResult);
         }
 
-        var result = await patchTeam.ExecuteAsync(User, id, request, cancellationToken);
-        return FromResultOk(result);
+        var command = new PatchTeamCommand(
+            request.Name,
+            request.LeaderId,
+            request.ParentTeamId);
+
+        var result = await patchTeam.ExecuteAsync(User, id, command, cancellationToken);
+        return FromResultOk(result, team => team.ToResponse());
     }
 
     /// <summary>
@@ -100,10 +111,10 @@ public sealed class TeamsController(
     [HttpGet("{id:guid}")]
     [ProducesResponseType(typeof(TeamResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
-    public async Task<ActionResult<Team>> GetById(Guid id, CancellationToken cancellationToken)
+    public async Task<ActionResult<TeamResponse>> GetById(Guid id, CancellationToken cancellationToken)
     {
         var result = await getTeamById.ExecuteAsync(id, cancellationToken);
-        return FromResultOk(result);
+        return FromResultOk(result, team => team.ToResponse());
     }
 
     /// <summary>
@@ -112,9 +123,9 @@ public sealed class TeamsController(
     /// <response code="200">Lista paginada retornada com sucesso.</response>
     /// <response code="400">Parâmetros inválidos.</response>
     [HttpGet]
-    [ProducesResponseType(typeof(PagedResult<Team>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(PagedResult<TeamResponse>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
-    public async Task<ActionResult<PagedResult<Team>>> GetAll(
+    public async Task<ActionResult<PagedResult<TeamResponse>>> GetAll(
         [FromQuery] Guid? workspaceId,
         [FromQuery] Guid? parentTeamId,
         [FromQuery] string? search,
@@ -141,7 +152,7 @@ public sealed class TeamsController(
             page,
             pageSize,
             cancellationToken);
-        return FromResultOk(result);
+        return FromResultOk(result, paged => paged.MapPaged(t => t.ToResponse()));
     }
 
     /// <summary>
@@ -151,10 +162,10 @@ public sealed class TeamsController(
     /// <response code="400">Parâmetros inválidos.</response>
     /// <response code="404">Time não encontrado.</response>
     [HttpGet("{id:guid}/subteams")]
-    [ProducesResponseType(typeof(PagedResult<Team>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(PagedResult<TeamResponse>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
-    public async Task<ActionResult<PagedResult<Team>>> GetSubTeams(
+    public async Task<ActionResult<PagedResult<TeamResponse>>> GetSubTeams(
         Guid id,
         [FromQuery] int page = 1,
         [FromQuery] int pageSize = 10,
@@ -167,7 +178,7 @@ public sealed class TeamsController(
         }
 
         var result = await listSubTeams.ExecuteAsync(id, page, pageSize, cancellationToken);
-        return FromResultOk(result);
+        return FromResultOk(result, paged => paged.MapPaged(t => t.ToResponse()));
     }
 
     /// <summary>
@@ -177,10 +188,10 @@ public sealed class TeamsController(
     /// <response code="400">Parâmetros inválidos.</response>
     /// <response code="404">Time não encontrado.</response>
     [HttpGet("{id:guid}/collaborators")]
-    [ProducesResponseType(typeof(PagedResult<Collaborator>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(PagedResult<CollaboratorResponse>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
-    public async Task<ActionResult<PagedResult<Collaborator>>> GetCollaborators(
+    public async Task<ActionResult<PagedResult<CollaboratorResponse>>> GetCollaborators(
         Guid id,
         [FromQuery] int page = 1,
         [FromQuery] int pageSize = 10,
@@ -193,7 +204,7 @@ public sealed class TeamsController(
         }
 
         var result = await listTeamCollaborators.ExecuteAsync(id, page, pageSize, cancellationToken);
-        return FromResultOk(result);
+        return FromResultOk(result, paged => paged.MapPaged(c => c.ToCollaboratorResponse()));
     }
 
     /// <summary>
@@ -247,8 +258,8 @@ public sealed class TeamsController(
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status403Forbidden)]
     public async Task<IActionResult> UpdateCollaborators(Guid id, PatchTeamCollaboratorsRequest request, CancellationToken cancellationToken)
     {
-        var result = await patchTeamCollaborators.ExecuteAsync(User, id, request, cancellationToken);
+        var command = new PatchTeamCollaboratorsCommand(request.CollaboratorIds);
+        var result = await patchTeamCollaborators.ExecuteAsync(User, id, command, cancellationToken);
         return FromResult(result, NoContent);
     }
-
 }

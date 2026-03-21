@@ -103,6 +103,22 @@ public abstract class ApiControllerBase : ControllerBase
         };
     }
 
+    protected ActionResult<TResult> FromResult<TSource, TResult>(Result<TSource> result, Func<TSource, ActionResult<TResult>> onSuccess)
+    {
+        if (result.IsSuccess)
+        {
+            return onSuccess(result.Value!);
+        }
+
+        return result.ErrorType switch
+        {
+            ErrorType.NotFound => NotFound(new ProblemDetails { Detail = result.Error }),
+            ErrorType.Conflict => Conflict(new ProblemDetails { Detail = result.Error }),
+            ErrorType.Forbidden => ForbiddenProblem(result.Error ?? "Você não tem permissão para realizar esta ação."),
+            _ => BadRequest(new ProblemDetails { Detail = result.Error })
+        };
+    }
+
     protected ActionResult<T> FromResultOk<T>(Result<T> result)
     {
         return FromResult(result, value => Ok(value));

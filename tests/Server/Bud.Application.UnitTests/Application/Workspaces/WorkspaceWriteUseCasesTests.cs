@@ -1,7 +1,4 @@
 using System.Security.Claims;
-using Bud.Application.Common;
-using Bud.Application.Ports;
-using Bud.Shared.Contracts;
 using FluentAssertions;
 using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
@@ -33,13 +30,8 @@ public sealed class WorkspaceWriteUseCasesTests
             .ReturnsAsync(false);
 
         var useCase = CreateCreateWorkspace();
-        var request = new CreateWorkspaceRequest
-        {
-            Name = "Workspace",
-            OrganizationId = Guid.NewGuid()
-        };
 
-        var result = await useCase.ExecuteAsync(User, request);
+        var result = await useCase.ExecuteAsync(User, new CreateWorkspaceCommand("Workspace", Guid.NewGuid()));
 
         result.IsSuccess.Should().BeFalse();
         result.ErrorType.Should().Be(ErrorType.Forbidden);
@@ -53,7 +45,7 @@ public sealed class WorkspaceWriteUseCasesTests
 
         var useCase = CreatePatchWorkspace();
 
-        var result = await useCase.ExecuteAsync(User, Guid.NewGuid(), new PatchWorkspaceRequest { Name = "Novo Nome" });
+        var result = await useCase.ExecuteAsync(User, Guid.NewGuid(), new PatchWorkspaceCommand("Novo Nome"));
 
         result.IsSuccess.Should().BeFalse();
         result.ErrorType.Should().Be(ErrorType.NotFound);

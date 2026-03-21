@@ -1,4 +1,6 @@
 using Bud.Api.Authorization;
+using Bud.Application.Common;
+using Bud.Application.Features.Indicators;
 using Bud.Shared.Contracts;
 using FluentValidation;
 using Microsoft.AspNetCore.Authorization;
@@ -44,7 +46,7 @@ public sealed class IndicatorsController(
     [ProducesResponseType(typeof(ValidationProblemDetails), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status403Forbidden)]
-    public async Task<ActionResult<Indicator>> Create(CreateIndicatorRequest request, CancellationToken cancellationToken)
+    public async Task<ActionResult<IndicatorResponse>> Create(CreateIndicatorRequest request, CancellationToken cancellationToken)
     {
         var validationResult = await createValidator.ValidateAsync(request, cancellationToken);
         if (!validationResult.IsValid)
@@ -52,8 +54,19 @@ public sealed class IndicatorsController(
             return ValidationProblemFrom(validationResult);
         }
 
-        var result = await createIndicator.ExecuteAsync(request, cancellationToken);
-        return FromResult(result, indicator => CreatedAtAction(nameof(GetById), new { id = indicator.Id }, indicator));
+        var command = new CreateIndicatorCommand(
+            request.GoalId,
+            request.Name,
+            request.Type,
+            request.QuantitativeType,
+            request.MinValue,
+            request.MaxValue,
+            request.Unit,
+            request.TargetText);
+
+        var result = await createIndicator.ExecuteAsync(command, cancellationToken);
+        return FromResult<Indicator, IndicatorResponse>(result, indicator =>
+            CreatedAtAction(nameof(GetById), new { id = indicator.Id }, indicator.ToResponse()));
     }
 
     /// <summary>
@@ -69,7 +82,7 @@ public sealed class IndicatorsController(
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
     [ProducesResponseType(typeof(ValidationProblemDetails), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status403Forbidden)]
-    public async Task<ActionResult<Indicator>> Update(Guid id, PatchIndicatorRequest request, CancellationToken cancellationToken)
+    public async Task<ActionResult<IndicatorResponse>> Update(Guid id, PatchIndicatorRequest request, CancellationToken cancellationToken)
     {
         var validationResult = await updateValidator.ValidateAsync(request, cancellationToken);
         if (!validationResult.IsValid)
@@ -77,8 +90,17 @@ public sealed class IndicatorsController(
             return ValidationProblemFrom(validationResult);
         }
 
-        var result = await patchIndicator.ExecuteAsync(id, request, cancellationToken);
-        return FromResultOk(result);
+        var command = new PatchIndicatorCommand(
+            request.Name,
+            request.Type,
+            request.QuantitativeType,
+            request.MinValue,
+            request.MaxValue,
+            request.Unit,
+            request.TargetText);
+
+        var result = await patchIndicator.ExecuteAsync(id, command, cancellationToken);
+        return FromResultOk(result, indicator => indicator.ToResponse());
     }
 
     /// <summary>
@@ -105,10 +127,10 @@ public sealed class IndicatorsController(
     [HttpGet("{id:guid}")]
     [ProducesResponseType(typeof(IndicatorResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
-    public async Task<ActionResult<Indicator>> GetById(Guid id, CancellationToken cancellationToken)
+    public async Task<ActionResult<IndicatorResponse>> GetById(Guid id, CancellationToken cancellationToken)
     {
         var result = await getIndicatorById.ExecuteAsync(id, cancellationToken);
-        return FromResultOk(result);
+        return FromResultOk(result, indicator => indicator.ToResponse());
     }
 
     /// <summary>
@@ -117,9 +139,9 @@ public sealed class IndicatorsController(
     /// <response code="200">Lista paginada retornada com sucesso.</response>
     /// <response code="400">Parâmetros inválidos.</response>
     [HttpGet]
-    [ProducesResponseType(typeof(PagedResult<Indicator>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(PagedResult<IndicatorResponse>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
-    public async Task<ActionResult<PagedResult<Indicator>>> GetAll(
+    public async Task<ActionResult<PagedResult<IndicatorResponse>>> GetAll(
         [FromQuery] Guid? goalId,
         [FromQuery] string? search,
         [FromQuery] int page = 1,
@@ -139,7 +161,7 @@ public sealed class IndicatorsController(
         }
 
         var result = await listIndicators.ExecuteAsync(goalId, searchValidation.Value, page, pageSize, cancellationToken);
-        return FromResultOk(result);
+        return FromResultOk(result, paged => paged.MapPaged(i => i.ToResponse()));
     }
 
     /// <summary>
@@ -165,7 +187,7 @@ public sealed class IndicatorsController(
     [ProducesResponseType(typeof(ValidationProblemDetails), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status403Forbidden)]
-    public async Task<ActionResult<Checkin>> CreateCheckinAction(
+    public async Task<ActionResult<CheckinResponse>> CreateCheckinAction(
         Guid indicatorId,
         CreateCheckinRequest request,
         CancellationToken cancellationToken)
@@ -176,18 +198,25 @@ public sealed class IndicatorsController(
             return ValidationProblemFrom(validationResult);
         }
 
-        var result = await createCheckin.ExecuteAsync(indicatorId, request, cancellationToken);
-        return FromResult(result, checkin =>
-            CreatedAtAction(nameof(GetCheckinById), new { indicatorId, checkinId = checkin.Id }, checkin));
+        var command = new CreateCheckinCommand(
+            request.Value,
+            request.Text,
+            request.CheckinDate,
+            request.Note,
+            request.ConfidenceLevel);
+
+        var result = await createCheckin.ExecuteAsync(indicatorId, command, cancellationToken);
+        return FromResult<Checkin, CheckinResponse>(result, checkin =>
+            CreatedAtAction(nameof(GetCheckinById), new { indicatorId, checkinId = checkin.Id }, checkin.ToResponse()));
     }
 
     /// <summary>
     /// Lista check-ins de um indicador com paginação.
     /// </summary>
     [HttpGet("{indicatorId:guid}/checkins")]
-    [ProducesResponseType(typeof(PagedResult<Checkin>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(PagedResult<CheckinResponse>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
-    public async Task<ActionResult<PagedResult<Checkin>>> GetCheckins(
+    public async Task<ActionResult<PagedResult<CheckinResponse>>> GetCheckins(
         Guid indicatorId,
         [FromQuery] int page = 1,
         [FromQuery] int pageSize = 10,
@@ -200,7 +229,7 @@ public sealed class IndicatorsController(
         }
 
         var result = await listCheckins.ExecuteAsync(indicatorId, page, pageSize, cancellationToken);
-        return FromResultOk(result);
+        return FromResultOk(result, paged => paged.MapPaged(c => c.ToResponse()));
     }
 
     /// <summary>
@@ -209,13 +238,13 @@ public sealed class IndicatorsController(
     [HttpGet("{indicatorId:guid}/checkins/{checkinId:guid}")]
     [ProducesResponseType(typeof(CheckinResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
-    public async Task<ActionResult<Checkin>> GetCheckinById(
+    public async Task<ActionResult<CheckinResponse>> GetCheckinById(
         Guid indicatorId,
         Guid checkinId,
         CancellationToken cancellationToken)
     {
         var result = await getCheckinById.ExecuteAsync(indicatorId, checkinId, cancellationToken);
-        return FromResultOk(result);
+        return FromResultOk(result, checkin => checkin.ToResponse());
     }
 
     /// <summary>
@@ -227,7 +256,7 @@ public sealed class IndicatorsController(
     [ProducesResponseType(typeof(ValidationProblemDetails), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status403Forbidden)]
-    public async Task<ActionResult<Checkin>> PatchCheckinAction(
+    public async Task<ActionResult<CheckinResponse>> PatchCheckinAction(
         Guid indicatorId,
         Guid checkinId,
         PatchCheckinRequest request,
@@ -239,8 +268,15 @@ public sealed class IndicatorsController(
             return ValidationProblemFrom(validationResult);
         }
 
-        var result = await patchCheckin.ExecuteAsync(indicatorId, checkinId, request, cancellationToken);
-        return FromResultOk(result);
+        var command = new PatchCheckinCommand(
+            request.Value,
+            request.Text,
+            request.CheckinDate,
+            request.Note,
+            request.ConfidenceLevel);
+
+        var result = await patchCheckin.ExecuteAsync(indicatorId, checkinId, command, cancellationToken);
+        return FromResultOk(result, checkin => checkin.ToResponse());
     }
 
     /// <summary>

@@ -4,22 +4,29 @@ using Microsoft.Extensions.Logging;
 
 namespace Bud.Application.Features.Tasks.UseCases;
 
+public sealed record CreateTaskCommand(
+    Guid GoalId,
+    string Name,
+    string? Description,
+    TaskState State,
+    DateTime? DueDate);
+
 public sealed partial class CreateTask(
     ITaskRepository taskRepository,
     ILogger<CreateTask> logger,
     IUnitOfWork? unitOfWork = null)
 {
-    public async Task<Result<TaskResponse>> ExecuteAsync(
-        CreateTaskRequest request,
+    public async Task<Result<GoalTask>> ExecuteAsync(
+        CreateTaskCommand command,
         CancellationToken cancellationToken = default)
     {
-        LogCreatingTask(logger, request.Name, request.GoalId);
+        LogCreatingTask(logger, command.Name, command.GoalId);
 
-        var goal = await taskRepository.GetGoalByIdAsync(request.GoalId, cancellationToken);
+        var goal = await taskRepository.GetGoalByIdAsync(command.GoalId, cancellationToken);
         if (goal is null)
         {
-            LogTaskCreationFailed(logger, request.Name, "Goal not found");
-            return Result<TaskResponse>.NotFound(UserErrorMessages.GoalNotFound);
+            LogTaskCreationFailed(logger, command.Name, "Goal not found");
+            return Result<GoalTask>.NotFound(UserErrorMessages.GoalNotFound);
         }
 
         try
@@ -27,22 +34,22 @@ public sealed partial class CreateTask(
             var task = GoalTask.Create(
                 Guid.NewGuid(),
                 goal.OrganizationId,
-                request.GoalId,
-                request.Name,
-                request.Description,
-                request.State,
-                request.DueDate);
+                command.GoalId,
+                command.Name,
+                command.Description,
+                command.State,
+                command.DueDate);
 
             await taskRepository.AddAsync(task, cancellationToken);
             await unitOfWork.CommitAsync(taskRepository.SaveChangesAsync, cancellationToken);
 
             LogTaskCreated(logger, task.Id, task.Name);
-            return Result<TaskResponse>.Success(task.ToResponse());
+            return Result<GoalTask>.Success(task);
         }
         catch (DomainInvariantException ex)
         {
-            LogTaskCreationFailed(logger, request.Name, ex.Message);
-            return Result<TaskResponse>.Failure(ex.Message, ErrorType.Validation);
+            LogTaskCreationFailed(logger, command.Name, ex.Message);
+            return Result<GoalTask>.Failure(ex.Message, ErrorType.Validation);
         }
     }
 

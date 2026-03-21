@@ -1,6 +1,3 @@
-using Bud.Application.Common;
-using Bud.Application.Ports;
-using Bud.Shared.Contracts;
 using FluentAssertions;
 using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
@@ -41,12 +38,7 @@ public sealed class TaskWriteUseCasesTests
 
         var useCase = new CreateTask(repo.Object, NullLogger<CreateTask>.Instance);
 
-        var result = await useCase.ExecuteAsync(new CreateTaskRequest
-        {
-            GoalId = Guid.NewGuid(),
-            Name = "Tarefa",
-            State = TaskState.ToDo
-        });
+        var result = await useCase.ExecuteAsync(new CreateTaskCommand(Guid.NewGuid(), "Tarefa", null, TaskState.ToDo, null));
 
         result.IsSuccess.Should().BeFalse();
         result.ErrorType.Should().Be(ErrorType.NotFound);
@@ -67,13 +59,12 @@ public sealed class TaskWriteUseCasesTests
 
         var useCase = new CreateTask(repo.Object, NullLogger<CreateTask>.Instance);
 
-        var result = await useCase.ExecuteAsync(new CreateTaskRequest
-        {
-            GoalId = goal.Id,
-            Name = "Implementar feature",
-            Description = "Detalhes da feature",
-            State = TaskState.Doing
-        });
+        var result = await useCase.ExecuteAsync(new CreateTaskCommand(
+            goal.Id,
+            "Implementar feature",
+            "Detalhes da feature",
+            TaskState.Doing,
+            null));
 
         result.IsSuccess.Should().BeTrue();
         result.Value!.Name.Should().Be("Implementar feature");
@@ -100,13 +91,7 @@ public sealed class TaskWriteUseCasesTests
 
         var useCase = new CreateTask(repo.Object, NullLogger<CreateTask>.Instance);
 
-        var result = await useCase.ExecuteAsync(new CreateTaskRequest
-        {
-            GoalId = goal.Id,
-            Name = "Tarefa com prazo",
-            State = TaskState.ToDo,
-            DueDate = dueDate
-        });
+        var result = await useCase.ExecuteAsync(new CreateTaskCommand(goal.Id, "Tarefa com prazo", null, TaskState.ToDo, dueDate));
 
         result.IsSuccess.Should().BeTrue();
         result.Value!.DueDate.Should().Be(dueDate);
@@ -124,7 +109,7 @@ public sealed class TaskWriteUseCasesTests
 
         var useCase = new PatchTask(repo.Object, NullLogger<PatchTask>.Instance);
 
-        var result = await useCase.ExecuteAsync(Guid.NewGuid(), new PatchTaskRequest());
+        var result = await useCase.ExecuteAsync(Guid.NewGuid(), new PatchTaskCommand(default, default, default, default));
 
         result.IsSuccess.Should().BeFalse();
         result.ErrorType.Should().Be(ErrorType.NotFound);
@@ -143,12 +128,7 @@ public sealed class TaskWriteUseCasesTests
 
         var useCase = new PatchTask(repo.Object, NullLogger<PatchTask>.Instance);
 
-        var request = new PatchTaskRequest
-        {
-            State = TaskState.Done
-        };
-
-        var result = await useCase.ExecuteAsync(task.Id, request);
+        var result = await useCase.ExecuteAsync(task.Id, new PatchTaskCommand(default, default, TaskState.Done, default));
 
         result.IsSuccess.Should().BeTrue();
         result.Value!.State.Should().Be(TaskState.Done);
@@ -168,12 +148,7 @@ public sealed class TaskWriteUseCasesTests
 
         var useCase = new PatchTask(repo.Object, NullLogger<PatchTask>.Instance);
 
-        var request = new PatchTaskRequest
-        {
-            DueDate = dueDate
-        };
-
-        var result = await useCase.ExecuteAsync(task.Id, request);
+        var result = await useCase.ExecuteAsync(task.Id, new PatchTaskCommand(default, default, default, (DateTime?)dueDate));
 
         result.IsSuccess.Should().BeTrue();
         result.Value!.DueDate.Should().Be(dueDate);

@@ -1,9 +1,16 @@
 using Bud.Application.Common;
 using Bud.Application.Ports;
-using Bud.Shared.Contracts;
 using Microsoft.Extensions.Logging;
 
 namespace Bud.Application.Features.Templates.UseCases;
+
+public sealed record PatchTemplateCommand(
+    Optional<string> Name,
+    Optional<string?> Description,
+    Optional<string?> GoalNamePattern,
+    Optional<string?> GoalDescriptionPattern,
+    IReadOnlyList<TemplateGoalDraft> Goals,
+    IReadOnlyList<TemplateIndicatorDraft> Indicators);
 
 public sealed partial class PatchTemplate(
     ITemplateRepository templateRepository,
@@ -12,7 +19,7 @@ public sealed partial class PatchTemplate(
 {
     public async Task<Result<Template>> ExecuteAsync(
         Guid id,
-        PatchTemplateRequest request,
+        PatchTemplateCommand command,
         CancellationToken cancellationToken = default)
     {
         LogPatchingTemplate(logger, id);
@@ -27,34 +34,15 @@ public sealed partial class PatchTemplate(
         try
         {
             template.UpdateBasics(
-                request.Name.HasValue ? (request.Name.Value ?? template.Name) : template.Name,
-                request.Description.HasValue ? request.Description.Value : template.Description,
-                request.GoalNamePattern.HasValue ? request.GoalNamePattern.Value : template.GoalNamePattern,
-                request.GoalDescriptionPattern.HasValue ? request.GoalDescriptionPattern.Value : template.GoalDescriptionPattern);
+                command.Name.HasValue ? (command.Name.Value ?? template.Name) : template.Name,
+                command.Description.HasValue ? command.Description.Value : template.Description,
+                command.GoalNamePattern.HasValue ? command.GoalNamePattern.Value : template.GoalNamePattern,
+                command.GoalDescriptionPattern.HasValue ? command.GoalDescriptionPattern.Value : template.GoalDescriptionPattern);
 
             var previousIndicators = template.Indicators.ToList();
             var previousGoals = template.Goals.ToList();
-            var goalRequests = request.Goals.AsEnumerable().ToList();
-            var indicatorRequests = request.Indicators.AsEnumerable().ToList();
 
-            template.ReplaceGoalsAndIndicators(
-                goalRequests.Select(goal => new TemplateGoalDraft(
-                    goal.Id,
-                    goal.ParentId,
-                    goal.Name,
-                    goal.Description,
-                    goal.OrderIndex,
-                    goal.Dimension)),
-                indicatorRequests.Select(indicator => new TemplateIndicatorDraft(
-                    indicator.Name,
-                    indicator.Type,
-                    indicator.OrderIndex,
-                    indicator.TemplateGoalId,
-                    indicator.QuantitativeType,
-                    indicator.MinValue,
-                    indicator.MaxValue,
-                    indicator.Unit,
-                    indicator.TargetText)));
+            template.ReplaceGoalsAndIndicators(command.Goals, command.Indicators);
 
             await templateRepository.RemoveGoalsAndIndicatorsAsync(previousGoals, previousIndicators, cancellationToken);
             await templateRepository.AddGoalsAndIndicatorsAsync(template.Goals, template.Indicators, cancellationToken);

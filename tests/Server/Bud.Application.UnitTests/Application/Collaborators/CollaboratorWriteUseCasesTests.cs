@@ -1,7 +1,4 @@
 using System.Security.Claims;
-using Bud.Application.Common;
-using Bud.Application.Ports;
-using Bud.Shared.Contracts;
 using FluentAssertions;
 using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
@@ -33,14 +30,12 @@ public sealed class CollaboratorWriteUseCasesTests
             _tenantProvider.Object,
             NullLogger<CreateCollaborator>.Instance);
 
-        var request = new CreateCollaboratorRequest
-        {
-            FullName = "User",
-            Email = "user@test.com",
-            Role = Bud.Shared.Kernel.Enums.CollaboratorRole.IndividualContributor
-        };
-
-        var result = await useCase.ExecuteAsync(User, request);
+        var result = await useCase.ExecuteAsync(User, new CreateCollaboratorCommand(
+            "User",
+            "user@test.com",
+            CollaboratorRole.IndividualContributor,
+            null,
+            null));
 
         result.IsSuccess.Should().BeFalse();
         result.ErrorType.Should().Be(ErrorType.Forbidden);
@@ -58,14 +53,11 @@ public sealed class CollaboratorWriteUseCasesTests
             _authorizationGateway.Object,
             NullLogger<PatchCollaborator>.Instance);
 
-        var request = new PatchCollaboratorRequest
-        {
-            FullName = "User",
-            Email = "user@test.com",
-            Role = Bud.Shared.Kernel.Enums.CollaboratorRole.IndividualContributor
-        };
-
-        var result = await useCase.ExecuteAsync(User, Guid.NewGuid(), request);
+        var result = await useCase.ExecuteAsync(User, Guid.NewGuid(), new PatchCollaboratorCommand(
+            "User",
+            "user@test.com",
+            CollaboratorRole.IndividualContributor,
+            default));
 
         result.IsSuccess.Should().BeFalse();
         result.ErrorType.Should().Be(ErrorType.NotFound);
@@ -165,9 +157,7 @@ public sealed class CollaboratorWriteUseCasesTests
             _authorizationGateway.Object,
             NullLogger<PatchCollaboratorTeams>.Instance);
 
-        var request = new PatchCollaboratorTeamsRequest { TeamIds = [] };
-
-        var result = await useCase.ExecuteAsync(User, collaborator.Id, request);
+        var result = await useCase.ExecuteAsync(User, collaborator.Id, new PatchCollaboratorTeamsCommand([]));
 
         result.IsSuccess.Should().BeTrue();
         _collaboratorRepository.Verify(repository => repository.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
@@ -196,9 +186,7 @@ public sealed class CollaboratorWriteUseCasesTests
             _authorizationGateway.Object,
             NullLogger<PatchCollaboratorTeams>.Instance);
 
-        var request = new PatchCollaboratorTeamsRequest { TeamIds = [] };
-
-        var result = await useCase.ExecuteAsync(User, collaborator.Id, request);
+        var result = await useCase.ExecuteAsync(User, collaborator.Id, new PatchCollaboratorTeamsCommand([]));
 
         result.IsSuccess.Should().BeFalse();
         result.ErrorType.Should().Be(ErrorType.Forbidden);

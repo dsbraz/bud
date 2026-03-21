@@ -1,6 +1,3 @@
-using Bud.Application.Common;
-using Bud.Application.Ports;
-using Bud.Shared.Contracts;
 using FluentAssertions;
 using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
@@ -50,14 +47,7 @@ public sealed class CheckinWriteUseCasesTests
             tenantProvider.Object,
             NullLogger<CreateCheckin>.Instance);
 
-        var request = new CreateCheckinRequest
-        {
-            Text = "ok",
-            CheckinDate = DateTime.UtcNow,
-            ConfidenceLevel = 3
-        };
-
-        var result = await useCase.ExecuteAsync(metric.Id, request);
+        var result = await useCase.ExecuteAsync(metric.Id, new CreateCheckinCommand(null, "ok", DateTime.UtcNow, null, 3));
 
         result.IsSuccess.Should().BeFalse();
         result.ErrorType.Should().Be(ErrorType.Forbidden);
@@ -108,14 +98,7 @@ public sealed class CheckinWriteUseCasesTests
             tenantProvider.Object,
             NullLogger<CreateCheckin>.Instance);
 
-        var request = new CreateCheckinRequest
-        {
-            Text = "ok",
-            CheckinDate = DateTime.UtcNow,
-            ConfidenceLevel = 3
-        };
-
-        var result = await useCase.ExecuteAsync(indicator.Id, request);
+        var result = await useCase.ExecuteAsync(indicator.Id, new CreateCheckinCommand(null, "ok", DateTime.UtcNow, null, 3));
 
         result.IsSuccess.Should().BeFalse();
         result.ErrorType.Should().Be(ErrorType.NotFound);
@@ -175,14 +158,7 @@ public sealed class CheckinWriteUseCasesTests
             tenantProvider.Object,
             NullLogger<CreateCheckin>.Instance);
 
-        var request = new CreateCheckinRequest
-        {
-            Value = 10m,
-            CheckinDate = DateTime.UtcNow,
-            ConfidenceLevel = 3
-        };
-
-        var result = await useCase.ExecuteAsync(metric.Id, request);
+        var result = await useCase.ExecuteAsync(metric.Id, new CreateCheckinCommand(10m, null, DateTime.UtcNow, null, 3));
 
         result.IsSuccess.Should().BeTrue();
         checkinRepository.Verify(r => r.AddCheckinAsync(It.IsAny<Checkin>(), It.IsAny<CancellationToken>()), Times.Once);
@@ -239,14 +215,7 @@ public sealed class CheckinWriteUseCasesTests
             tenantProvider.Object,
             NullLogger<CreateCheckin>.Instance);
 
-        var request = new CreateCheckinRequest
-        {
-            Value = 10m,
-            CheckinDate = DateTime.UtcNow,
-            ConfidenceLevel = 3
-        };
-
-        var result = await useCase.ExecuteAsync(metric.Id, request);
+        var result = await useCase.ExecuteAsync(metric.Id, new CreateCheckinCommand(10m, null, DateTime.UtcNow, null, 3));
 
         result.IsSuccess.Should().BeFalse();
         result.ErrorType.Should().Be(ErrorType.Validation);
@@ -279,14 +248,7 @@ public sealed class CheckinWriteUseCasesTests
             tenantProvider.Object,
             NullLogger<PatchCheckin>.Instance);
 
-        var request = new PatchCheckinRequest
-        {
-            Value = 10m,
-            CheckinDate = DateTime.UtcNow,
-            ConfidenceLevel = 2
-        };
-
-        var result = await useCase.ExecuteAsync(checkin.IndicatorId, checkin.Id, request);
+        var result = await useCase.ExecuteAsync(checkin.IndicatorId, checkin.Id, new PatchCheckinCommand(10m, null, DateTime.UtcNow, null, 2));
 
         result.IsSuccess.Should().BeFalse();
         result.ErrorType.Should().Be(ErrorType.Forbidden);
@@ -339,14 +301,7 @@ public sealed class CheckinWriteUseCasesTests
             tenantProvider.Object,
             NullLogger<PatchCheckin>.Instance);
 
-        var request = new PatchCheckinRequest
-        {
-            Value = 25m,
-            CheckinDate = DateTime.UtcNow,
-            ConfidenceLevel = 4
-        };
-
-        var result = await useCase.ExecuteAsync(checkin.IndicatorId, checkin.Id, request);
+        var result = await useCase.ExecuteAsync(checkin.IndicatorId, checkin.Id, new PatchCheckinCommand(25m, null, DateTime.UtcNow, null, 4));
 
         result.IsSuccess.Should().BeTrue();
         result.Value!.Value.Should().Be(25m);

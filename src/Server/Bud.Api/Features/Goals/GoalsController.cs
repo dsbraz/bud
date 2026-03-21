@@ -1,4 +1,8 @@
 using Bud.Api.Authorization;
+using Bud.Application.Common;
+using Bud.Application.Features.Goals;
+using Bud.Application.Features.Indicators;
+using Bud.Application.Features.Tasks;
 using Bud.Application.Ports;
 using Bud.Shared.Contracts;
 using FluentValidation;
@@ -38,7 +42,7 @@ public sealed class GoalsController(
     [Consumes("application/json")]
     [ProducesResponseType(typeof(GoalResponse), StatusCodes.Status201Created)]
     [ProducesResponseType(typeof(ValidationProblemDetails), StatusCodes.Status400BadRequest)]
-    public async Task<ActionResult<Goal>> Create(CreateGoalRequest request, CancellationToken cancellationToken)
+    public async Task<ActionResult<GoalResponse>> Create(CreateGoalRequest request, CancellationToken cancellationToken)
     {
         var validationResult = await createValidator.ValidateAsync(request, cancellationToken);
         if (!validationResult.IsValid)
@@ -46,8 +50,19 @@ public sealed class GoalsController(
             return ValidationProblemFrom(validationResult);
         }
 
-        var result = await createGoal.ExecuteAsync(request, cancellationToken);
-        return FromResult(result, goal => CreatedAtAction(nameof(GetById), new { id = goal.Id }, goal));
+        var command = new CreateGoalCommand(
+            request.Name,
+            request.Description,
+            request.Dimension,
+            request.StartDate,
+            request.EndDate,
+            request.Status,
+            request.ParentId,
+            request.CollaboratorId);
+
+        var result = await createGoal.ExecuteAsync(command, cancellationToken);
+        return FromResult<Goal, GoalResponse>(result, goal =>
+            CreatedAtAction(nameof(GetById), new { id = goal.Id }, goal.ToResponse()));
     }
 
     /// <summary>
@@ -65,7 +80,7 @@ public sealed class GoalsController(
     [ProducesResponseType(typeof(GoalResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
     [ProducesResponseType(typeof(ValidationProblemDetails), StatusCodes.Status400BadRequest)]
-    public async Task<ActionResult<Goal>> Update(Guid id, PatchGoalRequest request, CancellationToken cancellationToken)
+    public async Task<ActionResult<GoalResponse>> Update(Guid id, PatchGoalRequest request, CancellationToken cancellationToken)
     {
         var validationResult = await updateValidator.ValidateAsync(request, cancellationToken);
         if (!validationResult.IsValid)
@@ -73,8 +88,17 @@ public sealed class GoalsController(
             return ValidationProblemFrom(validationResult);
         }
 
-        var result = await patchGoal.ExecuteAsync(id, request, cancellationToken);
-        return FromResultOk(result);
+        var command = new PatchGoalCommand(
+            request.Name,
+            request.Description,
+            request.Dimension,
+            request.StartDate,
+            request.EndDate,
+            request.Status,
+            request.CollaboratorId);
+
+        var result = await patchGoal.ExecuteAsync(id, command, cancellationToken);
+        return FromResultOk(result, goal => goal.ToResponse());
     }
 
     /// <summary>
@@ -99,10 +123,10 @@ public sealed class GoalsController(
     [HttpGet("{id:guid}")]
     [ProducesResponseType(typeof(GoalResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
-    public async Task<ActionResult<Goal>> GetById(Guid id, CancellationToken cancellationToken)
+    public async Task<ActionResult<GoalResponse>> GetById(Guid id, CancellationToken cancellationToken)
     {
         var result = await getGoalById.ExecuteAsync(id, cancellationToken);
-        return FromResultOk(result);
+        return FromResultOk(result, goal => goal.ToResponse());
     }
 
     /// <summary>
@@ -111,9 +135,9 @@ public sealed class GoalsController(
     /// <response code="200">Lista paginada retornada com sucesso.</response>
     /// <response code="400">Parâmetros de filtro/paginação inválidos.</response>
     [HttpGet]
-    [ProducesResponseType(typeof(PagedResult<Goal>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(PagedResult<GoalResponse>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
-    public async Task<ActionResult<PagedResult<Goal>>> GetAll(
+    public async Task<ActionResult<PagedResult<GoalResponse>>> GetAll(
         [FromQuery] GoalFilter? filter,
         [FromQuery] string? search,
         [FromQuery] int page = 1,
@@ -133,7 +157,7 @@ public sealed class GoalsController(
         }
 
         var result = await listGoals.ExecuteAsync(filter, tenantProvider.CollaboratorId, searchValidation.Value, page, pageSize, cancellationToken);
-        return FromResultOk(result);
+        return FromResultOk(result, paged => paged.MapPaged(g => g.ToResponse()));
     }
 
     /// <summary>
@@ -165,10 +189,10 @@ public sealed class GoalsController(
     /// <response code="400">Parâmetros de paginação inválidos.</response>
     /// <response code="404">Meta não encontrada.</response>
     [HttpGet("{id:guid}/indicators")]
-    [ProducesResponseType(typeof(PagedResult<Indicator>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(PagedResult<IndicatorResponse>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
-    public async Task<ActionResult<PagedResult<Indicator>>> GetIndicators(
+    public async Task<ActionResult<PagedResult<IndicatorResponse>>> GetIndicators(
         Guid id,
         [FromQuery] int page = 1,
         [FromQuery] int pageSize = 10,
@@ -181,7 +205,7 @@ public sealed class GoalsController(
         }
 
         var result = await listGoalIndicators.ExecuteAsync(id, page, pageSize, cancellationToken);
-        return FromResultOk(result);
+        return FromResultOk(result, paged => paged.MapPaged(i => i.ToResponse()));
     }
 
     /// <summary>
@@ -191,10 +215,10 @@ public sealed class GoalsController(
     /// <response code="400">Parâmetros de paginação inválidos.</response>
     /// <response code="404">Meta não encontrada.</response>
     [HttpGet("{id:guid}/children")]
-    [ProducesResponseType(typeof(PagedResult<Goal>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(PagedResult<GoalResponse>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
-    public async Task<ActionResult<PagedResult<Goal>>> GetChildren(
+    public async Task<ActionResult<PagedResult<GoalResponse>>> GetChildren(
         Guid id,
         [FromQuery] int page = 1,
         [FromQuery] int pageSize = 10,
@@ -207,7 +231,7 @@ public sealed class GoalsController(
         }
 
         var result = await listGoalChildren.ExecuteAsync(id, page, pageSize, cancellationToken);
-        return FromResultOk(result);
+        return FromResultOk(result, paged => paged.MapPaged(g => g.ToResponse()));
     }
 
     /// <summary>
@@ -233,6 +257,6 @@ public sealed class GoalsController(
         }
 
         var result = await listTasks.ExecuteAsync(id, page, pageSize, cancellationToken);
-        return FromResultOk(result);
+        return FromResultOk(result, paged => paged.MapPaged(t => t.ToResponse()));
     }
 }

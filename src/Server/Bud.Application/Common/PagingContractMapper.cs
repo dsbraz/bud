@@ -1,6 +1,6 @@
 namespace Bud.Application.Common;
 
-internal static class PagingContractMapper
+public static class PagingContractMapper
 {
     public static PagedResult<TDestination> MapPaged<TSource, TDestination>(
         this PagedResult<TSource> source,

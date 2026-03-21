@@ -1,10 +1,11 @@
 using System.Security.Claims;
 using Bud.Application.Common;
 using Bud.Application.Ports;
-using Bud.Shared.Contracts;
 using Microsoft.Extensions.Logging;
 
 namespace Bud.Application.Features.Teams.UseCases;
+
+public sealed record PatchTeamCollaboratorsCommand(List<Guid> CollaboratorIds);
 
 public sealed partial class PatchTeamCollaborators(
     ITeamRepository teamRepository,
@@ -16,7 +17,7 @@ public sealed partial class PatchTeamCollaborators(
     public async Task<Result> ExecuteAsync(
         ClaimsPrincipal user,
         Guid id,
-        PatchTeamCollaboratorsRequest request,
+        PatchTeamCollaboratorsCommand command,
         CancellationToken cancellationToken = default)
     {
         LogPatchingTeamCollaborators(logger, id);
@@ -35,7 +36,7 @@ public sealed partial class PatchTeamCollaborators(
             return Result.Forbidden(UserErrorMessages.TeamAssignForbidden);
         }
 
-        var distinctCollaboratorIds = request.CollaboratorIds.Distinct().ToList();
+        var distinctCollaboratorIds = command.CollaboratorIds.Distinct().ToList();
 
         if (!distinctCollaboratorIds.Contains(team.LeaderId))
         {

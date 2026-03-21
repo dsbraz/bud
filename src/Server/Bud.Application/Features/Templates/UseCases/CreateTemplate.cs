@@ -1,9 +1,16 @@
 using Bud.Application.Common;
 using Bud.Application.Ports;
-using Bud.Shared.Contracts;
 using Microsoft.Extensions.Logging;
 
 namespace Bud.Application.Features.Templates.UseCases;
+
+public sealed record CreateTemplateCommand(
+    string Name,
+    string? Description,
+    string? GoalNamePattern,
+    string? GoalDescriptionPattern,
+    IReadOnlyList<TemplateGoalDraft> Goals,
+    IReadOnlyList<TemplateIndicatorDraft> Indicators);
 
 public sealed partial class CreateTemplate(
     ITemplateRepository templateRepository,
@@ -11,39 +18,22 @@ public sealed partial class CreateTemplate(
     IUnitOfWork? unitOfWork = null)
 {
     public async Task<Result<Template>> ExecuteAsync(
-        CreateTemplateRequest request,
+        CreateTemplateCommand command,
         CancellationToken cancellationToken = default)
     {
-        LogCreatingTemplate(logger, request.Name);
+        LogCreatingTemplate(logger, command.Name);
 
         try
         {
             var template = Template.Create(
                 Guid.NewGuid(),
                 Guid.Empty,
-                request.Name,
-                request.Description,
-                request.GoalNamePattern,
-                request.GoalDescriptionPattern);
+                command.Name,
+                command.Description,
+                command.GoalNamePattern,
+                command.GoalDescriptionPattern);
 
-            template.ReplaceGoalsAndIndicators(
-                request.Goals.Select(goal => new TemplateGoalDraft(
-                    goal.Id,
-                    goal.ParentId,
-                    goal.Name,
-                    goal.Description,
-                    goal.OrderIndex,
-                    goal.Dimension)),
-                request.Indicators.Select(indicator => new TemplateIndicatorDraft(
-                    indicator.Name,
-                    indicator.Type,
-                    indicator.OrderIndex,
-                    indicator.TemplateGoalId,
-                    indicator.QuantitativeType,
-                    indicator.MinValue,
-                    indicator.MaxValue,
-                    indicator.Unit,
-                    indicator.TargetText)));
+            template.ReplaceGoalsAndIndicators(command.Goals, command.Indicators);
 
             await templateRepository.AddAsync(template, cancellationToken);
             await unitOfWork.CommitAsync(templateRepository.SaveChangesAsync, cancellationToken);
@@ -53,7 +43,7 @@ public sealed partial class CreateTemplate(
         }
         catch (DomainInvariantException ex)
         {
-            LogTemplateCreationFailed(logger, request.Name, ex.Message);
+            LogTemplateCreationFailed(logger, command.Name, ex.Message);
             return Result<Template>.Failure(ex.Message, ErrorType.Validation);
         }
     }

@@ -4,6 +4,15 @@ using Microsoft.Extensions.Logging;
 
 namespace Bud.Application.Features.Goals.UseCases;
 
+public sealed record PatchGoalCommand(
+    Optional<string> Name,
+    Optional<string?> Description,
+    Optional<string?> Dimension,
+    Optional<DateTime> StartDate,
+    Optional<DateTime> EndDate,
+    Optional<GoalStatus> Status,
+    Optional<Guid?> CollaboratorId);
+
 public sealed partial class PatchGoal(
     IGoalRepository goalRepository,
     ICollaboratorRepository collaboratorRepository,
@@ -13,7 +22,7 @@ public sealed partial class PatchGoal(
 {
     public async Task<Result<Goal>> ExecuteAsync(
         Guid id,
-        PatchGoalRequest request,
+        PatchGoalCommand command,
         CancellationToken cancellationToken = default)
     {
         LogPatchingGoal(logger, id);
@@ -25,13 +34,13 @@ public sealed partial class PatchGoal(
             return Result<Goal>.NotFound(UserErrorMessages.GoalNotFound);
         }
 
-        if (goal.ParentId.HasValue && request.StartDate.HasValue)
+        if (goal.ParentId.HasValue && command.StartDate.HasValue)
         {
             var parentGoal = await goalRepository.GetByIdReadOnlyAsync(goal.ParentId.Value, cancellationToken);
             if (parentGoal is not null)
             {
                 var violation = GoalDateRangePolicy.ValidateChildStartDate<Goal>(
-                    UtcDateTimeNormalizer.Normalize(request.StartDate.Value), parentGoal.StartDate);
+                    UtcDateTimeNormalizer.Normalize(command.StartDate.Value), parentGoal.StartDate);
                 if (violation is not null)
                 {
                     LogGoalPatchFailed(logger, id, violation.Error!);
@@ -42,12 +51,12 @@ public sealed partial class PatchGoal(
 
         try
         {
-            var status = request.Status.HasValue ? request.Status.Value : goal.Status;
-            var name = request.Name.HasValue ? (request.Name.Value ?? goal.Name) : goal.Name;
-            var description = request.Description.HasValue ? request.Description.Value : goal.Description;
-            var dimension = request.Dimension.HasValue ? request.Dimension.Value : goal.Dimension;
-            var startDate = request.StartDate.HasValue ? request.StartDate.Value : goal.StartDate;
-            var endDate = request.EndDate.HasValue ? request.EndDate.Value : goal.EndDate;
+            var status = command.Status.HasValue ? command.Status.Value : goal.Status;
+            var name = command.Name.HasValue ? (command.Name.Value ?? goal.Name) : goal.Name;
+            var description = command.Description.HasValue ? command.Description.Value : goal.Description;
+            var dimension = command.Dimension.HasValue ? command.Dimension.Value : goal.Dimension;
+            var startDate = command.StartDate.HasValue ? command.StartDate.Value : goal.StartDate;
+            var endDate = command.EndDate.HasValue ? command.EndDate.Value : goal.EndDate;
 
             goal.UpdateDetails(
                 name,
@@ -57,9 +66,9 @@ public sealed partial class PatchGoal(
                 UtcDateTimeNormalizer.Normalize(endDate),
                 status);
 
-            if (request.CollaboratorId.HasValue)
+            if (command.CollaboratorId.HasValue)
             {
-                var newCollaboratorId = request.CollaboratorId.Value;
+                var newCollaboratorId = command.CollaboratorId.Value;
                 if (newCollaboratorId.HasValue)
                 {
                     var collaborator = await collaboratorRepository.GetByIdAsync(newCollaboratorId.Value, cancellationToken);

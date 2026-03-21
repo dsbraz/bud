@@ -1,6 +1,4 @@
-using Bud.Application.Common;
 using Bud.Application.Configuration;
-using Bud.Shared.Contracts;
 using FluentAssertions;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
@@ -43,10 +41,9 @@ public sealed class OrganizationWriteUseCasesTests
             .ReturnsAsync((Guid id, CancellationToken _) => new Organization { Id = id, Name = "Test Org", OwnerId = ownerId, Owner = owner });
 
         var useCase = CreateRegisterOrganization();
-        var request = new CreateOrganizationRequest { Name = "Test Org", OwnerId = ownerId };
 
         // Act
-        var result = await useCase.ExecuteAsync(request);
+        var result = await useCase.ExecuteAsync(new CreateOrganizationCommand("Test Org", ownerId));
 
         // Assert
         result.IsSuccess.Should().BeTrue();
@@ -61,10 +58,9 @@ public sealed class OrganizationWriteUseCasesTests
         _collabRepo.Setup(r => r.GetByIdAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>())).ReturnsAsync((Collaborator?)null);
 
         var useCase = CreateRegisterOrganization();
-        var request = new CreateOrganizationRequest { Name = "Test Org", OwnerId = Guid.NewGuid() };
 
         // Act
-        var result = await useCase.ExecuteAsync(request);
+        var result = await useCase.ExecuteAsync(new CreateOrganizationCommand("Test Org", Guid.NewGuid()));
 
         // Assert
         result.IsSuccess.Should().BeFalse();
@@ -81,10 +77,9 @@ public sealed class OrganizationWriteUseCasesTests
         _collabRepo.Setup(r => r.GetByIdAsync(ownerId, It.IsAny<CancellationToken>())).ReturnsAsync(nonLeader);
 
         var useCase = CreateRegisterOrganization();
-        var request = new CreateOrganizationRequest { Name = "Test Org", OwnerId = ownerId };
 
         // Act
-        var result = await useCase.ExecuteAsync(request);
+        var result = await useCase.ExecuteAsync(new CreateOrganizationCommand("Test Org", ownerId));
 
         // Assert
         result.IsSuccess.Should().BeFalse();
@@ -105,7 +100,7 @@ public sealed class OrganizationWriteUseCasesTests
         var useCase = CreateRenameOrganization();
 
         // Act
-        var result = await useCase.ExecuteAsync(Guid.NewGuid(), new PatchOrganizationRequest { Name = "New Name" });
+        var result = await useCase.ExecuteAsync(Guid.NewGuid(), new PatchOrganizationCommand("New Name", default));
 
         // Assert
         result.IsSuccess.Should().BeFalse();
@@ -124,7 +119,7 @@ public sealed class OrganizationWriteUseCasesTests
         var useCase = CreateRenameOrganization("getbud.co");
 
         // Act
-        var result = await useCase.ExecuteAsync(orgId, new PatchOrganizationRequest { Name = "New Name" });
+        var result = await useCase.ExecuteAsync(orgId, new PatchOrganizationCommand("New Name", default));
 
         // Assert
         result.IsSuccess.Should().BeFalse();
@@ -144,7 +139,7 @@ public sealed class OrganizationWriteUseCasesTests
         var useCase = CreateRenameOrganization();
 
         // Act
-        var result = await useCase.ExecuteAsync(orgId, new PatchOrganizationRequest { Name = "New Name", OwnerId = Guid.NewGuid() });
+        var result = await useCase.ExecuteAsync(orgId, new PatchOrganizationCommand("New Name", (Guid?)Guid.NewGuid()));
 
         // Assert
         result.IsSuccess.Should().BeFalse();
@@ -166,7 +161,7 @@ public sealed class OrganizationWriteUseCasesTests
         var useCase = CreateRenameOrganization();
 
         // Act
-        var result = await useCase.ExecuteAsync(orgId, new PatchOrganizationRequest { Name = "New Name", OwnerId = nonLeaderId });
+        var result = await useCase.ExecuteAsync(orgId, new PatchOrganizationCommand("New Name", (Guid?)nonLeaderId));
 
         // Assert
         result.IsSuccess.Should().BeFalse();

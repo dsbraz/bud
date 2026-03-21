@@ -1,10 +1,15 @@
 using System.Security.Claims;
 using Bud.Application.Common;
 using Bud.Application.Ports;
-using Bud.Shared.Contracts;
 using Microsoft.Extensions.Logging;
 
 namespace Bud.Application.Features.Collaborators.UseCases;
+
+public sealed record PatchCollaboratorCommand(
+    Optional<string> FullName,
+    Optional<string> Email,
+    Optional<CollaboratorRole> Role,
+    Optional<Guid?> LeaderId);
 
 public sealed partial class PatchCollaborator(
     ICollaboratorRepository collaboratorRepository,
@@ -15,7 +20,7 @@ public sealed partial class PatchCollaborator(
     public async Task<Result<Collaborator>> ExecuteAsync(
         ClaimsPrincipal user,
         Guid id,
-        PatchCollaboratorRequest request,
+        PatchCollaboratorCommand command,
         CancellationToken cancellationToken = default)
     {
         LogPatchingCollaborator(logger, id);
@@ -34,10 +39,10 @@ public sealed partial class PatchCollaborator(
             return Result<Collaborator>.Forbidden(UserErrorMessages.CollaboratorUpdateForbidden);
         }
 
-        var requestedEmail = request.Email.HasValue ? request.Email.Value : collaborator.Email;
-        var requestedFullName = request.FullName.HasValue ? request.FullName.Value : collaborator.FullName;
-        var requestedLeaderId = request.LeaderId.HasValue ? request.LeaderId.Value : collaborator.LeaderId;
-        var requestedRole = request.Role.HasValue ? request.Role.Value : collaborator.Role;
+        var requestedEmail = command.Email.HasValue ? command.Email.Value : collaborator.Email;
+        var requestedFullName = command.FullName.HasValue ? command.FullName.Value : collaborator.FullName;
+        var requestedLeaderId = command.LeaderId.HasValue ? command.LeaderId.Value : collaborator.LeaderId;
+        var requestedRole = command.Role.HasValue ? command.Role.Value : collaborator.Role;
 
         if (!EmailAddress.TryCreate(requestedEmail, out var emailAddress))
         {
@@ -60,7 +65,7 @@ public sealed partial class PatchCollaborator(
             }
         }
 
-        if (request.LeaderId.HasValue && requestedLeaderId.HasValue)
+        if (command.LeaderId.HasValue && requestedLeaderId.HasValue)
         {
             var leader = await collaboratorRepository.GetByIdAsync(requestedLeaderId.Value, cancellationToken);
             if (leader is null)

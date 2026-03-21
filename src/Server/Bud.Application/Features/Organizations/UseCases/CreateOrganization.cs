@@ -1,8 +1,9 @@
 using Bud.Application.Common;
-using Bud.Shared.Contracts;
 using Microsoft.Extensions.Logging;
 
 namespace Bud.Application.Features.Organizations.UseCases;
+
+public sealed record CreateOrganizationCommand(string Name, Guid OwnerId);
 
 public sealed partial class CreateOrganization(
     IOrganizationRepository organizationRepository,
@@ -11,15 +12,15 @@ public sealed partial class CreateOrganization(
     IUnitOfWork? unitOfWork = null)
 {
     public async Task<Result<Organization>> ExecuteAsync(
-        CreateOrganizationRequest request,
+        CreateOrganizationCommand command,
         CancellationToken cancellationToken = default)
     {
-        LogCreatingOrganization(logger, request.Name);
+        LogCreatingOrganization(logger, command.Name);
 
-        var owner = await collaboratorRepository.GetByIdAsync(request.OwnerId, cancellationToken);
+        var owner = await collaboratorRepository.GetByIdAsync(command.OwnerId, cancellationToken);
         if (owner is null)
         {
-            LogOrganizationCreationFailed(logger, request.Name, UserErrorMessages.SelectedOwnerNotFound);
+            LogOrganizationCreationFailed(logger, command.Name, UserErrorMessages.SelectedOwnerNotFound);
             return Result<Organization>.NotFound(UserErrorMessages.SelectedOwnerNotFound);
         }
 
@@ -29,13 +30,13 @@ public sealed partial class CreateOrganization(
         }
         catch (DomainInvariantException ex)
         {
-            LogOrganizationCreationFailed(logger, request.Name, ex.Message);
+            LogOrganizationCreationFailed(logger, command.Name, ex.Message);
             return Result<Organization>.Failure(ex.Message, ErrorType.Validation);
         }
 
         try
         {
-            var organization = Organization.Create(Guid.NewGuid(), request.Name, request.OwnerId);
+            var organization = Organization.Create(Guid.NewGuid(), command.Name, command.OwnerId);
 
             await organizationRepository.AddAsync(organization, cancellationToken);
             await unitOfWork.CommitAsync(organizationRepository.SaveChangesAsync, cancellationToken);
@@ -46,7 +47,7 @@ public sealed partial class CreateOrganization(
         }
         catch (DomainInvariantException ex)
         {
-            LogOrganizationCreationFailed(logger, request.Name, ex.Message);
+            LogOrganizationCreationFailed(logger, command.Name, ex.Message);
             return Result<Organization>.Failure(ex.Message, ErrorType.Validation);
         }
     }

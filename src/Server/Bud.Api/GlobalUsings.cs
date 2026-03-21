@@ -1,5 +1,6 @@
 global using Bud.Api.Controllers;
 global using Bud.Application.Abstractions;
+global using Bud.Application.Common;
 global using Bud.Application.Features.Collaborators;
 global using Bud.Application.Features.Collaborators.UseCases;
 global using Bud.Application.Features.Goals;

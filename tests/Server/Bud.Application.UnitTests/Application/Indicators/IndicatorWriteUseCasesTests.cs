@@ -1,6 +1,3 @@
-using Bud.Application.Common;
-using Bud.Application.Ports;
-using Bud.Shared.Contracts;
 using FluentAssertions;
 using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
@@ -21,15 +18,15 @@ public sealed class IndicatorWriteUseCasesTests
 
         var useCase = new CreateIndicator(metricRepository.Object, NullLogger<CreateIndicator>.Instance);
 
-        var request = new CreateIndicatorRequest
-        {
-            GoalId = Guid.NewGuid(),
-            Name = "Metrica",
-            Type = Bud.Shared.Kernel.Enums.IndicatorType.Qualitative,
-            TargetText = "Descricao"
-        };
-
-        var result = await useCase.ExecuteAsync(request);
+        var result = await useCase.ExecuteAsync(new CreateIndicatorCommand(
+            Guid.NewGuid(),
+            "Metrica",
+            IndicatorType.Qualitative,
+            null,
+            null,
+            null,
+            null,
+            "Descricao"));
 
         result.IsSuccess.Should().BeFalse();
         result.ErrorType.Should().Be(ErrorType.NotFound);
@@ -63,15 +60,15 @@ public sealed class IndicatorWriteUseCasesTests
 
         var useCase = new CreateIndicator(metricRepository.Object, NullLogger<CreateIndicator>.Instance);
 
-        var request = new CreateIndicatorRequest
-        {
-            GoalId = mission.Id,
-            Name = "Quality Assessment",
-            Type = Bud.Shared.Kernel.Enums.IndicatorType.Qualitative,
-            TargetText = "Achieve excellent quality"
-        };
-
-        var result = await useCase.ExecuteAsync(request);
+        var result = await useCase.ExecuteAsync(new CreateIndicatorCommand(
+            mission.Id,
+            "Quality Assessment",
+            IndicatorType.Qualitative,
+            null,
+            null,
+            null,
+            null,
+            "Achieve excellent quality"));
 
         result.IsSuccess.Should().BeTrue();
         result.Value!.Name.Should().Be("Quality Assessment");
@@ -91,14 +88,14 @@ public sealed class IndicatorWriteUseCasesTests
 
         var useCase = new PatchIndicator(metricRepository.Object, NullLogger<PatchIndicator>.Instance);
 
-        var request = new PatchIndicatorRequest
-        {
-            Name = "Nova Metrica",
-            Type = Bud.Shared.Kernel.Enums.IndicatorType.Qualitative,
-            TargetText = "Descricao"
-        };
-
-        var result = await useCase.ExecuteAsync(Guid.NewGuid(), request);
+        var result = await useCase.ExecuteAsync(Guid.NewGuid(), new PatchIndicatorCommand(
+            "Nova Metrica",
+            IndicatorType.Qualitative,
+            default,
+            default,
+            default,
+            default,
+            "Descricao"));
 
         result.IsSuccess.Should().BeFalse();
         result.ErrorType.Should().Be(ErrorType.NotFound);
@@ -129,16 +126,14 @@ public sealed class IndicatorWriteUseCasesTests
 
         var useCase = new PatchIndicator(metricRepository.Object, NullLogger<PatchIndicator>.Instance);
 
-        var request = new PatchIndicatorRequest
-        {
-            Name = "Updated Metric",
-            Type = Bud.Shared.Kernel.Enums.IndicatorType.Quantitative,
-            QuantitativeType = Bud.Shared.Kernel.Enums.QuantitativeIndicatorType.KeepAbove,
-            MinValue = 100m,
-            Unit = Bud.Shared.Kernel.Enums.IndicatorUnit.Points
-        };
-
-        var result = await useCase.ExecuteAsync(indicatorId, request);
+        var result = await useCase.ExecuteAsync(indicatorId, new PatchIndicatorCommand(
+            "Updated Metric",
+            IndicatorType.Quantitative,
+            QuantitativeIndicatorType.KeepAbove,
+            (decimal?)100m,
+            default,
+            IndicatorUnit.Points,
+            default));
 
         result.IsSuccess.Should().BeTrue();
         result.Value!.Name.Should().Be("Updated Metric");

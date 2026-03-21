@@ -1,9 +1,15 @@
 using Bud.Application.Common;
 using Bud.Application.Ports;
-using Bud.Shared.Contracts;
 using Microsoft.Extensions.Logging;
 
 namespace Bud.Application.Features.Indicators.UseCases;
+
+public sealed record PatchCheckinCommand(
+    decimal? Value,
+    string? Text,
+    DateTime CheckinDate,
+    string? Note,
+    int ConfidenceLevel);
 
 public sealed partial class PatchCheckin(
     IIndicatorRepository indicatorRepository,
@@ -14,7 +20,7 @@ public sealed partial class PatchCheckin(
     public async Task<Result<Checkin>> ExecuteAsync(
         Guid indicatorId,
         Guid checkinId,
-        PatchCheckinRequest request,
+        PatchCheckinCommand command,
         CancellationToken cancellationToken = default)
     {
         LogPatchingCheckin(logger, checkinId, indicatorId);
@@ -43,11 +49,11 @@ public sealed partial class PatchCheckin(
         {
             indicator.UpdateCheckin(
                 checkin,
-                request.Value,
-                request.Text,
-                DateTime.SpecifyKind(request.CheckinDate, DateTimeKind.Utc),
-                request.Note,
-                request.ConfidenceLevel);
+                command.Value,
+                command.Text,
+                DateTime.SpecifyKind(command.CheckinDate, DateTimeKind.Utc),
+                command.Note,
+                command.ConfidenceLevel);
 
             await unitOfWork.CommitAsync(indicatorRepository.SaveChangesAsync, cancellationToken);
             LogCheckinPatched(logger, checkinId, indicatorId);

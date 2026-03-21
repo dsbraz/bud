@@ -1,10 +1,16 @@
 using System.Security.Claims;
 using Bud.Application.Common;
 using Bud.Application.Ports;
-using Bud.Shared.Contracts;
 using Microsoft.Extensions.Logging;
 
 namespace Bud.Application.Features.Collaborators.UseCases;
+
+public sealed record CreateCollaboratorCommand(
+    string FullName,
+    string Email,
+    CollaboratorRole Role,
+    Guid? TeamId,
+    Guid? LeaderId);
 
 public sealed partial class CreateCollaborator(
     ICollaboratorRepository collaboratorRepository,
@@ -15,48 +21,46 @@ public sealed partial class CreateCollaborator(
 {
     public async Task<Result<Collaborator>> ExecuteAsync(
         ClaimsPrincipal user,
-        CreateCollaboratorRequest request,
+        CreateCollaboratorCommand command,
         CancellationToken cancellationToken = default)
     {
-        LogCreatingCollaborator(logger, request.FullName);
+        LogCreatingCollaborator(logger, command.FullName);
 
         var organizationId = tenantProvider.TenantId;
         if (!organizationId.HasValue)
         {
-            LogCollaboratorCreationFailed(logger, request.FullName, "Organization context not found");
+            LogCollaboratorCreationFailed(logger, command.FullName, "Organization context not found");
             return Result<Collaborator>.Failure(UserErrorMessages.CollaboratorContextNotFound, ErrorType.Validation);
         }
 
         var canCreate = await authorizationGateway.IsOrganizationOwnerAsync(user, organizationId.Value, cancellationToken);
         if (!canCreate)
         {
-            LogCollaboratorCreationFailed(logger, request.FullName, "Forbidden");
+            LogCollaboratorCreationFailed(logger, command.FullName, "Forbidden");
             return Result<Collaborator>.Forbidden(UserErrorMessages.CollaboratorCreateForbidden);
         }
 
-        if (!EmailAddress.TryCreate(request.Email, out var emailAddress))
+        if (!EmailAddress.TryCreate(command.Email, out var emailAddress))
         {
-            LogCollaboratorCreationFailed(logger, request.FullName, "Invalid email");
+            LogCollaboratorCreationFailed(logger, command.FullName, "Invalid email");
             return Result<Collaborator>.Failure(UserErrorMessages.CollaboratorInvalidEmail, ErrorType.Validation);
         }
 
-        if (!PersonName.TryCreate(request.FullName, out var personName))
+        if (!PersonName.TryCreate(command.FullName, out var personName))
         {
-            LogCollaboratorCreationFailed(logger, request.FullName, "Invalid name");
+            LogCollaboratorCreationFailed(logger, command.FullName, "Invalid name");
             return Result<Collaborator>.Failure(UserErrorMessages.CollaboratorNameRequired, ErrorType.Validation);
         }
 
         try
         {
-            var requestedRole = request.Role;
-
             var collaborator = Collaborator.Create(
                 Guid.NewGuid(),
                 organizationId.Value,
                 personName.Value,
                 emailAddress.Value,
-                requestedRole,
-                request.LeaderId);
+                command.Role,
+                command.LeaderId);
 
             await collaboratorRepository.AddAsync(collaborator, cancellationToken);
             await unitOfWork.CommitAsync(collaboratorRepository.SaveChangesAsync, cancellationToken);
@@ -66,7 +70,7 @@ public sealed partial class CreateCollaborator(
         }
         catch (DomainInvariantException ex)
         {
-            LogCollaboratorCreationFailed(logger, request.FullName, ex.Message);
+            LogCollaboratorCreationFailed(logger, command.FullName, ex.Message);
             return Result<Collaborator>.Failure(ex.Message, ErrorType.Validation);
         }
     }

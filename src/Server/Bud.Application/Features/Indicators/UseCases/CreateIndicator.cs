@@ -1,9 +1,18 @@
 using Bud.Application.Common;
 using Bud.Application.Ports;
-using Bud.Shared.Contracts;
 using Microsoft.Extensions.Logging;
 
 namespace Bud.Application.Features.Indicators.UseCases;
+
+public sealed record CreateIndicatorCommand(
+    Guid GoalId,
+    string Name,
+    IndicatorType Type,
+    QuantitativeIndicatorType? QuantitativeType,
+    decimal? MinValue,
+    decimal? MaxValue,
+    IndicatorUnit? Unit,
+    string? TargetText);
 
 public sealed partial class CreateIndicator(
     IIndicatorRepository indicatorRepository,
@@ -11,16 +20,16 @@ public sealed partial class CreateIndicator(
     IUnitOfWork? unitOfWork = null)
 {
     public async Task<Result<Indicator>> ExecuteAsync(
-        CreateIndicatorRequest request,
+        CreateIndicatorCommand command,
         CancellationToken cancellationToken = default)
     {
-        LogCreatingIndicator(logger, request.Name, request.GoalId);
+        LogCreatingIndicator(logger, command.Name, command.GoalId);
 
-        var goal = await indicatorRepository.GetGoalByIdAsync(request.GoalId, cancellationToken);
+        var goal = await indicatorRepository.GetGoalByIdAsync(command.GoalId, cancellationToken);
 
         if (goal is null)
         {
-            LogIndicatorCreationFailed(logger, request.Name, "Goal not found");
+            LogIndicatorCreationFailed(logger, command.Name, "Goal not found");
             return Result<Indicator>.NotFound(UserErrorMessages.GoalNotFound);
         }
 
@@ -29,11 +38,11 @@ public sealed partial class CreateIndicator(
             var indicator = Indicator.Create(
                 Guid.NewGuid(),
                 goal.OrganizationId,
-                request.GoalId,
-                request.Name,
-                request.Type);
+                command.GoalId,
+                command.Name,
+                command.Type);
 
-            indicator.ApplyTarget(request.Type, request.QuantitativeType, request.MinValue, request.MaxValue, request.Unit, request.TargetText);
+            indicator.ApplyTarget(command.Type, command.QuantitativeType, command.MinValue, command.MaxValue, command.Unit, command.TargetText);
 
             await indicatorRepository.AddAsync(indicator, cancellationToken);
             await unitOfWork.CommitAsync(indicatorRepository.SaveChangesAsync, cancellationToken);
@@ -43,7 +52,7 @@ public sealed partial class CreateIndicator(
         }
         catch (DomainInvariantException ex)
         {
-            LogIndicatorCreationFailed(logger, request.Name, ex.Message);
+            LogIndicatorCreationFailed(logger, command.Name, ex.Message);
             return Result<Indicator>.Failure(ex.Message, ErrorType.Validation);
         }
     }

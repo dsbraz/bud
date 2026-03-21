@@ -1,10 +1,11 @@
 using Bud.Application.Common;
 using Bud.Application.Configuration;
-using Bud.Shared.Contracts;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
 namespace Bud.Application.Features.Organizations.UseCases;
+
+public sealed record PatchOrganizationCommand(Optional<string> Name, Optional<Guid?> OwnerId);
 
 public sealed partial class PatchOrganization(
     IOrganizationRepository organizationRepository,
@@ -17,7 +18,7 @@ public sealed partial class PatchOrganization(
 
     public async Task<Result<Organization>> ExecuteAsync(
         Guid id,
-        PatchOrganizationRequest request,
+        PatchOrganizationCommand command,
         CancellationToken cancellationToken = default)
     {
         LogPatchingOrganization(logger, id);
@@ -39,14 +40,14 @@ public sealed partial class PatchOrganization(
 
         try
         {
-            if (request.Name.HasValue)
+            if (command.Name.HasValue)
             {
-                organization.Rename(request.Name.Value ?? string.Empty);
+                organization.Rename(command.Name.Value ?? string.Empty);
             }
 
-            if (request.OwnerId.HasValue && request.OwnerId.Value.HasValue && request.OwnerId.Value.Value != Guid.Empty)
+            if (command.OwnerId.HasValue && command.OwnerId.Value.HasValue && command.OwnerId.Value.Value != Guid.Empty)
             {
-                var ownerId = request.OwnerId.Value.Value;
+                var ownerId = command.OwnerId.Value.Value;
                 var newOwner = await collaboratorRepository.GetByIdAsync(ownerId, cancellationToken);
                 if (newOwner is null)
                 {
