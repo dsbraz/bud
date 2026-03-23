@@ -9,7 +9,7 @@ public sealed class NginxTemplateTests
     public void Template_ShouldEnableSniForHttpsApiProxy()
     {
         var templatePath = Path.GetFullPath(
-            Path.Combine(AppContext.BaseDirectory, "../../../../../../src/Client/Bud.BlazorWasm/Hosting/nginx.conf.template"));
+            Path.Combine(AppContext.BaseDirectory, "../../../../../../src/Web/Bud.BlazorWasm/Hosting/nginx.conf.template"));
 
         File.Exists(templatePath).Should().BeTrue($"template should exist at {templatePath}");
 

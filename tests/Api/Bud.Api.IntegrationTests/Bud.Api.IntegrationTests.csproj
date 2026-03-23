@@ -26,8 +26,8 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\..\src\Server\Bud.Api\Bud.Api.csproj" />
-    <ProjectReference Include="..\..\..\src\Server\Bud.Infrastructure\Bud.Infrastructure.csproj" />
+    <ProjectReference Include="..\..\..\src\Api\Bud.Api\Bud.Api.csproj" />
+    <ProjectReference Include="..\..\..\src\Api\Bud.Infrastructure\Bud.Infrastructure.csproj" />
   </ItemGroup>
 
 </Project>

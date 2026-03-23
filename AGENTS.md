@@ -123,16 +123,16 @@ Bud is an ASP.NET Core 10 solution with Blazor WebAssembly frontend and PostgreS
 
 Main projects:
 
-- `src/Server/Bud.Api`: API + hosting híbrido temporário do client.
-- `src/Server/Bud.Application`: casos de uso, mapeamentos, read models e ports.
-- `src/Server/Bud.Domain`: domínio puro, value objects, eventos e interfaces de repositório.
-- `src/Server/Bud.Infrastructure`: EF Core, repositórios, serviços concretos e migrations.
-- `src/Client/Bud.BlazorWasm`: Blazor WebAssembly UI.
+- `src/Api/Bud.Api`: API + hosting híbrido temporário do client.
+- `src/Api/Bud.Application`: casos de uso, mapeamentos, read models e ports.
+- `src/Api/Bud.Domain`: domínio puro, value objects, eventos e interfaces de repositório.
+- `src/Api/Bud.Infrastructure`: EF Core, repositórios, serviços concretos e migrations.
+- `src/Web/Bud.BlazorWasm`: Blazor WebAssembly UI.
 - `src/Shared/Bud.Shared.Kernel`: tipos compartilhados estáveis.
 - `src/Shared/Bud.Shared.Contracts`: contratos compartilhados de borda.
-- `src/Client/Bud.Mcp`: MCP server over HTTP tratado como client conversacional do `Bud.Api`.
-- `tests/Server/*`: testes unitários, integração e arquitetura do backend.
-- `tests/Client/Bud.BlazorWasm.Tests` e `tests/Client/Bud.Mcp.Tests`: testes do client e MCP.
+- `src/Mcp/Bud.Mcp`: MCP server over HTTP tratado como client conversacional do `Bud.Api`.
+- `tests/Api/*`: testes unitários, integração e arquitetura do backend.
+- `tests/Web/Bud.BlazorWasm.Tests` e `tests/Mcp/Bud.Mcp.Tests`: testes do client e MCP.
 
 ## Layering and Dependencies (MUST)
 
@@ -174,7 +174,7 @@ Controllers must:
 
 ## Validation and OpenAPI (MUST)
 
-- Use FluentValidation in `src/Server/Bud.Api/Validators/`, registered in DI.
+- Use FluentValidation in `src/Api/Bud.Api/Validators/`, registered in DI.
 - Validators must not access `ApplicationDbContext` directly.
 - Keep OpenAPI available at `/swagger` and `/openapi/v1.json` in Development.
 - Keep `ProducesResponseType`, `Consumes`, and `Produces` aligned with behavior.
@@ -195,7 +195,7 @@ Controllers must:
 To add migration:
 
 ```bash
-dotnet ef migrations add <Name> --project src/Server/Bud.Infrastructure --startup-project src/Server/Bud.Api
+dotnet ef migrations add <Name> --project src/Api/Bud.Infrastructure --startup-project src/Api/Bud.Api
 ```
 
 ## Testing Guidelines (Normative)
@@ -227,8 +227,8 @@ dotnet ef migrations add <Name> --project src/Server/Bud.Infrastructure --startu
 When contracts used by MCP tools change (`/api/goals`, `/api/indicators`, `/api/indicators/{id}/checkins`), run:
 
 ```bash
-dotnet run --project src/Client/Bud.Mcp/Bud.Mcp.csproj -- generate-tool-catalog
-dotnet run --project src/Client/Bud.Mcp/Bud.Mcp.csproj -- check-tool-catalog --fail-on-diff
+dotnet run --project src/Mcp/Bud.Mcp/Bud.Mcp.csproj -- generate-tool-catalog
+dotnet run --project src/Mcp/Bud.Mcp/Bud.Mcp.csproj -- check-tool-catalog --fail-on-diff
 ```
 
 ## Operational References
@@ -240,15 +240,15 @@ Operational command details are maintained in:
 
 ## Key Files (Essential)
 
-- `src/Server/Bud.Api/Controllers/ApiControllerBase.cs`
-- `src/Server/Bud.Api/Controllers/OrganizationsController.cs`
-- `src/Server/Bud.Application/Common/Result.cs`
-- `src/Server/Bud.Application/BudApplicationCompositionExtensions.cs`
-- `src/Server/Bud.Api/DependencyInjection/BudObservabilityCompositionExtensions.cs`
-- `src/Server/Bud.Api/DependencyInjection/BudSecurityCompositionExtensions.cs`
-- `src/Server/Bud.Infrastructure/Persistence/ApplicationDbContext.cs`
-- `src/Server/Bud.Application/Ports/ITenantProvider.cs`
-- `src/Server/Bud.Api/MultiTenancy/TenantRequiredMiddleware.cs`
-- `src/Client/Bud.BlazorWasm/State/OrganizationContext.cs`
-- `tests/Server/Bud.ArchitectureTests/Architecture/ArchitectureTests.cs`
+- `src/Api/Bud.Api/Controllers/ApiControllerBase.cs`
+- `src/Api/Bud.Api/Controllers/OrganizationsController.cs`
+- `src/Api/Bud.Application/Common/Result.cs`
+- `src/Api/Bud.Application/BudApplicationCompositionExtensions.cs`
+- `src/Api/Bud.Api/DependencyInjection/BudObservabilityCompositionExtensions.cs`
+- `src/Api/Bud.Api/DependencyInjection/BudSecurityCompositionExtensions.cs`
+- `src/Api/Bud.Infrastructure/Persistence/ApplicationDbContext.cs`
+- `src/Api/Bud.Application/Ports/ITenantProvider.cs`
+- `src/Api/Bud.Api/MultiTenancy/TenantRequiredMiddleware.cs`
+- `src/Web/Bud.BlazorWasm/State/OrganizationContext.cs`
+- `tests/Api/Bud.ArchitectureTests/Architecture/ArchitectureTests.cs`
 - `docs/adr/README.md`

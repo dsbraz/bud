@@ -5,39 +5,41 @@ VisualStudioVersion = 17.0.31903.59
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{827E0CD3-B72D-47B6-A68D-7590B98EB39B}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Bud.BlazorWasm", "src\Client\Bud.BlazorWasm\Bud.BlazorWasm.csproj", "{9984C9B2-FBED-4D47-A21B-4BE3D839559C}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Bud.BlazorWasm", "src\Web\Bud.BlazorWasm\Bud.BlazorWasm.csproj", "{9984C9B2-FBED-4D47-A21B-4BE3D839559C}"
 EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Server", "Server", "{E6B48023-E680-40DA-9E17-319585C26937}"
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Api", "Api", "{E6B48023-E680-40DA-9E17-319585C26937}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Bud.Api", "src\Server\Bud.Api\Bud.Api.csproj", "{02DBA762-A0A6-4503-A660-7D91781F0284}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Bud.Api", "src\Api\Bud.Api\Bud.Api.csproj", "{02DBA762-A0A6-4503-A660-7D91781F0284}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Bud.Application", "src\Server\Bud.Application\Bud.Application.csproj", "{626F2183-09DC-4DC1-94D4-7CD820709E86}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Bud.Application", "src\Api\Bud.Application\Bud.Application.csproj", "{626F2183-09DC-4DC1-94D4-7CD820709E86}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Bud.Domain", "src\Server\Bud.Domain\Bud.Domain.csproj", "{4EBCC779-F30E-4D41-A727-1BE049EFF942}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Bud.Domain", "src\Api\Bud.Domain\Bud.Domain.csproj", "{4EBCC779-F30E-4D41-A727-1BE049EFF942}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Bud.Infrastructure", "src\Server\Bud.Infrastructure\Bud.Infrastructure.csproj", "{09ECFC19-D9A2-4BB9-A6BC-57B90002A9F0}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Bud.Infrastructure", "src\Api\Bud.Infrastructure\Bud.Infrastructure.csproj", "{09ECFC19-D9A2-4BB9-A6BC-57B90002A9F0}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tests", "tests", "{0AB3BF05-4346-4AA6-1389-037BE0695223}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Bud.BlazorWasm.Tests", "tests\Client\Bud.BlazorWasm.Tests\Bud.BlazorWasm.Tests.csproj", "{77FDEF49-BE3A-4F0F-B9FC-31C9A57771F0}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Bud.BlazorWasm.Tests", "tests\Web\Bud.BlazorWasm.Tests\Bud.BlazorWasm.Tests.csproj", "{77FDEF49-BE3A-4F0F-B9FC-31C9A57771F0}"
 EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Server", "Server", "{87008D2B-D29E-68B5-A223-E2B1CD68373E}"
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Api", "Api", "{87008D2B-D29E-68B5-A223-E2B1CD68373E}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Bud.Api.IntegrationTests", "tests\Server\Bud.Api.IntegrationTests\Bud.Api.IntegrationTests.csproj", "{0E536519-AC4D-41D5-9573-632317854898}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Bud.Api.IntegrationTests", "tests\Api\Bud.Api.IntegrationTests\Bud.Api.IntegrationTests.csproj", "{0E536519-AC4D-41D5-9573-632317854898}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Bud.Api.UnitTests", "tests\Server\Bud.Api.UnitTests\Bud.Api.UnitTests.csproj", "{946E115C-0756-436F-A2BB-ECD67B0DD453}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Bud.Api.UnitTests", "tests\Api\Bud.Api.UnitTests\Bud.Api.UnitTests.csproj", "{946E115C-0756-436F-A2BB-ECD67B0DD453}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Bud.Application.UnitTests", "tests\Server\Bud.Application.UnitTests\Bud.Application.UnitTests.csproj", "{AD2E8BD1-5720-4086-BB85-AD9FD9078142}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Bud.Application.UnitTests", "tests\Api\Bud.Application.UnitTests\Bud.Application.UnitTests.csproj", "{AD2E8BD1-5720-4086-BB85-AD9FD9078142}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Bud.ArchitectureTests", "tests\Server\Bud.ArchitectureTests\Bud.ArchitectureTests.csproj", "{2F76A260-1516-4855-B241-F5FF892BA300}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Bud.ArchitectureTests", "tests\Api\Bud.ArchitectureTests\Bud.ArchitectureTests.csproj", "{2F76A260-1516-4855-B241-F5FF892BA300}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Bud.Domain.UnitTests", "tests\Server\Bud.Domain.UnitTests\Bud.Domain.UnitTests.csproj", "{5D29473D-FB5B-4929-A00F-F8F8A0B70571}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Bud.Domain.UnitTests", "tests\Api\Bud.Domain.UnitTests\Bud.Domain.UnitTests.csproj", "{5D29473D-FB5B-4929-A00F-F8F8A0B70571}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Bud.Infrastructure.UnitTests", "tests\Server\Bud.Infrastructure.UnitTests\Bud.Infrastructure.UnitTests.csproj", "{61929397-FA28-4284-8F12-1E643B481C62}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Bud.Infrastructure.UnitTests", "tests\Api\Bud.Infrastructure.UnitTests\Bud.Infrastructure.UnitTests.csproj", "{61929397-FA28-4284-8F12-1E643B481C62}"
 EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Client", "Client", "{C5A3B5EA-BE9F-76E5-E9B8-8A22B289B295}"
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Web", "Web", "{C5A3B5EA-BE9F-76E5-E9B8-8A22B289B295}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Bud.Mcp", "src\Client\Bud.Mcp\Bud.Mcp.csproj", "{7879701E-2F00-4F30-B4D0-5C560B2DC3E0}"
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Mcp", "Mcp", "{6D6ED4FF-05E4-4186-B3DE-F6D57321F03D}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Bud.Mcp", "src\Mcp\Bud.Mcp\Bud.Mcp.csproj", "{7879701E-2F00-4F30-B4D0-5C560B2DC3E0}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Shared", "Shared", "{C8E42992-5E42-0C2B-DBFE-AA848D06431C}"
 EndProject
@@ -45,9 +47,11 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Bud.Shared.Contracts", "src
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Bud.Shared.Kernel", "src\Shared\Bud.Shared.Kernel\Bud.Shared.Kernel.csproj", "{492C3871-EFE6-4167-AFE5-9BB849674ED5}"
 EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Client", "Client", "{7666E21D-583E-E4FE-A88E-7F4FC790134B}"
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Web", "Web", "{7666E21D-583E-E4FE-A88E-7F4FC790134B}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Bud.Mcp.Tests", "tests\Client\Bud.Mcp.Tests\Bud.Mcp.Tests.csproj", "{BF60C3EE-0641-4576-AA2F-56E0B5CDE318}"
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Mcp", "Mcp", "{0E4D4271-E6A6-4C6D-A4A1-8C6B97DE8743}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Bud.Mcp.Tests", "tests\Mcp\Bud.Mcp.Tests\Bud.Mcp.Tests.csproj", "{BF60C3EE-0641-4576-AA2F-56E0B5CDE318}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -271,11 +275,13 @@ Global
 		{5D29473D-FB5B-4929-A00F-F8F8A0B70571} = {87008D2B-D29E-68B5-A223-E2B1CD68373E}
 		{61929397-FA28-4284-8F12-1E643B481C62} = {87008D2B-D29E-68B5-A223-E2B1CD68373E}
 		{C5A3B5EA-BE9F-76E5-E9B8-8A22B289B295} = {827E0CD3-B72D-47B6-A68D-7590B98EB39B}
-		{7879701E-2F00-4F30-B4D0-5C560B2DC3E0} = {C5A3B5EA-BE9F-76E5-E9B8-8A22B289B295}
+		{6D6ED4FF-05E4-4186-B3DE-F6D57321F03D} = {827E0CD3-B72D-47B6-A68D-7590B98EB39B}
+		{7879701E-2F00-4F30-B4D0-5C560B2DC3E0} = {6D6ED4FF-05E4-4186-B3DE-F6D57321F03D}
 		{C8E42992-5E42-0C2B-DBFE-AA848D06431C} = {827E0CD3-B72D-47B6-A68D-7590B98EB39B}
 		{B7587E61-A6BB-4527-9BC3-A9CD1F3FD399} = {C8E42992-5E42-0C2B-DBFE-AA848D06431C}
 		{492C3871-EFE6-4167-AFE5-9BB849674ED5} = {C8E42992-5E42-0C2B-DBFE-AA848D06431C}
 		{7666E21D-583E-E4FE-A88E-7F4FC790134B} = {0AB3BF05-4346-4AA6-1389-037BE0695223}
-		{BF60C3EE-0641-4576-AA2F-56E0B5CDE318} = {7666E21D-583E-E4FE-A88E-7F4FC790134B}
+		{0E4D4271-E6A6-4C6D-A4A1-8C6B97DE8743} = {0AB3BF05-4346-4AA6-1389-037BE0695223}
+		{BF60C3EE-0641-4576-AA2F-56E0B5CDE318} = {0E4D4271-E6A6-4C6D-A4A1-8C6B97DE8743}
 	EndGlobalSection
 EndGlobal

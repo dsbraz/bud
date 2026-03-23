@@ -32,7 +32,7 @@ Old token names (e.g. `--orange-500`, `--font-family-body`, `--spacing-4`) are d
 
 ## Token Structure
 
-Design tokens are defined in [`src/Client/Bud.BlazorWasm/wwwroot/css/tokens.css`](src/Client/Bud.BlazorWasm/wwwroot/css/tokens.css).
+Design tokens are defined in [`src/Web/Bud.BlazorWasm/wwwroot/css/tokens.css`](src/Web/Bud.BlazorWasm/wwwroot/css/tokens.css).
 
 ### 1. Primitive Colors
 

@@ -20,7 +20,7 @@ public sealed class ArchitectureTests
     [Fact]
     public void Domain_should_not_reference_other_solution_projects()
     {
-        var references = GetProjectReferenceNames("src/Server/Bud.Domain/Bud.Domain.csproj");
+        var references = GetProjectReferenceNames("src/Api/Bud.Domain/Bud.Domain.csproj");
 
         references.Should().NotContain("Bud.Application");
         references.Should().NotContain("Bud.Infrastructure");
@@ -33,7 +33,7 @@ public sealed class ArchitectureTests
     [Fact]
     public void Application_should_reference_domain_and_shared_only()
     {
-        var references = GetProjectReferenceNames("src/Server/Bud.Application/Bud.Application.csproj");
+        var references = GetProjectReferenceNames("src/Api/Bud.Application/Bud.Application.csproj");
 
         references.Should().Contain("Bud.Domain");
         references.Should().Contain("Bud.Shared.Contracts");
@@ -46,7 +46,7 @@ public sealed class ArchitectureTests
     [Fact]
     public void Infrastructure_should_reference_application_and_domain()
     {
-        var references = GetProjectReferenceNames("src/Server/Bud.Infrastructure/Bud.Infrastructure.csproj");
+        var references = GetProjectReferenceNames("src/Api/Bud.Infrastructure/Bud.Infrastructure.csproj");
 
         references.Should().Contain("Bud.Application");
         references.Should().Contain("Bud.Domain");
@@ -59,7 +59,7 @@ public sealed class ArchitectureTests
     [Fact]
     public void Api_should_reference_application_and_infrastructure()
     {
-        var references = GetProjectReferenceNames("src/Server/Bud.Api/Bud.Api.csproj");
+        var references = GetProjectReferenceNames("src/Api/Bud.Api/Bud.Api.csproj");
 
         references.Should().Contain("Bud.Application");
         references.Should().Contain("Bud.Infrastructure");
@@ -121,7 +121,7 @@ public sealed class ArchitectureTests
     {
         var repositoryRoot = TestRepositoryRoot.Find();
         var repositoryFiles = Directory
-            .EnumerateFiles(Path.Combine(repositoryRoot, "src", "Server", "Bud.Application"), "*.cs", SearchOption.AllDirectories)
+            .EnumerateFiles(Path.Combine(repositoryRoot, "src", "Api", "Bud.Application"), "*.cs", SearchOption.AllDirectories)
             .Where(path => Path.GetFileName(path).StartsWith('I') && Path.GetFileName(path).EndsWith("Repository.cs", StringComparison.Ordinal))
             .ToList();
 
@@ -150,7 +150,7 @@ public sealed class ArchitectureTests
         File.Exists(filePath).Should().BeTrue();
 
         var content = File.ReadAllText(filePath);
-        content.Should().Contain("src/Server/Bud.Application/");
+        content.Should().Contain("src/Api/Bud.Application/");
         content.Should().NotContain("src/Bud.Server/");
     }
 

@@ -23,7 +23,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\..\src\Client\Bud.Mcp\Bud.Mcp.csproj" />
+    <ProjectReference Include="..\..\..\src\Mcp\Bud.Mcp\Bud.Mcp.csproj" />
     <ProjectReference Include="..\..\..\src\Shared\Bud.Shared.Contracts\Bud.Shared.Contracts.csproj" />
     <ProjectReference Include="..\..\..\src\Shared\Bud.Shared.Kernel\Bud.Shared.Kernel.csproj" />
   </ItemGroup>

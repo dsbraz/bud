@@ -165,7 +165,7 @@ O deploy da API executa migracoes EF Core automaticamente via Cloud Run Job.
 Para criar novas migracoes localmente:
 
 ```bash
-dotnet ef migrations add <NomeDaMigracao> --project src/Server/Bud.Infrastructure --startup-project src/Server/Bud.Api --output-dir Persistence/Migrations
+dotnet ef migrations add <NomeDaMigracao> --project src/Api/Bud.Infrastructure --startup-project src/Api/Bud.Api --output-dir Persistence/Migrations
 ```
 
 ## POS-DEPLOY

@@ -9,7 +9,7 @@ A manutenção de DDD estrito depende de testes que protejam comportamento e fro
 ## Decisão
 - Adotar TDD como fluxo padrão (Red -> Green -> Refactor).
 - Cobrir domínio, casos de uso, repositórios, validações e endpoints.
-- Organizar os testes do backend em `tests/Server/Bud.Domain.UnitTests`, `Bud.Application.UnitTests`, `Bud.Infrastructure.UnitTests`, `Bud.Api.UnitTests`, `Bud.Api.IntegrationTests` e `Bud.ArchitectureTests`.
+- Organizar os testes do backend em `tests/Api/Bud.Domain.UnitTests`, `Bud.Application.UnitTests`, `Bud.Infrastructure.UnitTests`, `Bud.Api.UnitTests`, `Bud.Api.IntegrationTests` e `Bud.ArchitectureTests`.
 - Manter testes de arquitetura como gate obrigatório para dependências e padrões físicos entre projetos.
 
 ## Consequências

@@ -7,7 +7,7 @@ Accepted
 A camada de aplicação precisa expressar capacidades de negócio de forma explícita e co-localizar todos os artefatos de uma feature.
 
 ## Decisão
-Modelar a aplicação por feature, co-localizando em `src/Server/Bud.Application/Features/<Feature>/`:
+Modelar a aplicação por feature, co-localizando em `src/Api/Bud.Application/Features/<Feature>/`:
 - Uma classe por caso de uso com método único `ExecuteAsync`.
 - Interface de repositório do feature (ex: `IGoalRepository`).
 - Ports da feature quando o adapter tem dono funcional claro (ex: `IMyDashboardReadStore` em `Me/`).
@@ -16,7 +16,7 @@ Modelar a aplicação por feature, co-localizando em `src/Server/Bud.Application
 - Policies de negócio do feature (ex: `GoalDateRangePolicy`).
 - Namespaces explícitos espelham `RootNamespace + subpasta`; por exemplo, use cases ficam em `Bud.Application.Features.<Feature>.UseCases`.
 
-Manter em `src/Server/Bud.Application/Ports/` apenas abstrações transversais, sem dono funcional específico, como tenant/auth.
+Manter em `src/Api/Bud.Application/Ports/` apenas abstrações transversais, sem dono funcional específico, como tenant/auth.
 
 Casos de uso orquestram regras de aplicação sem conter regra de domínio central.
 

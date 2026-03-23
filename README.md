@@ -35,26 +35,26 @@ Este documento é voltado para devs que precisam:
 O Bud segue uma arquitetura em camadas com separação explícita de responsabilidades:
 
 - **API (`Bud.Api`)**: exposição HTTP, autenticação/autorização, middleware e composição de dependências.
-- **Application (`src/Server/Bud.Application`)**: casos de uso, portas de aplicação, mapeamentos, read models e orquestração de eventos de domínio.
+- **Application (`src/Api/Bud.Application`)**: casos de uso, portas de aplicação, mapeamentos, read models e orquestração de eventos de domínio.
   - `Common`: resultados e utilitários transversais.
   - `Mapping`: mapeamento entre read models/domínio e contratos de borda.
-- **Domain (`src/Server/Bud.Domain`)**: entidades, aggregate roots, value objects, eventos de domínio, primitivos e interfaces de repositório.
-- **Infrastructure (`src/Server/Bud.Infrastructure`)**: EF Core (`ApplicationDbContext`), repositórios, serviços de infraestrutura, migrations e specifications de consulta.
+- **Domain (`src/Api/Bud.Domain`)**: entidades, aggregate roots, value objects, eventos de domínio, primitivos e interfaces de repositório.
+- **Infrastructure (`src/Api/Bud.Infrastructure`)**: EF Core (`ApplicationDbContext`), repositórios, serviços de infraestrutura, migrations e specifications de consulta.
 - **Client (`Bud.BlazorWasm`)**: SPA Blazor WASM com consumo da API.
 - **Shared (`Bud.Shared`)**: contratos de borda compartilhados entre cliente, servidor e MCP.
 
-### Organização do backend (`src/Server/*`)
+### Organização do backend (`src/Api/*`)
 
 - **Controllers** recebem requests, validam payloads (FluentValidation) e delegam para Use Cases.
   Validações dependentes de dados devem passar por abstrações/repositórios, não por acesso direto de validator ao `DbContext`.
-- **Use Cases** (`src/Server/Bud.Application/Features/<Feature>/UseCases/`) centralizam o fluxo completo da aplicação (orquestração, autorização, notificações) e retornam `Result`/`Result<T>` (`src/Server/Bud.Application/Common/`). Cada use case é uma classe com método `ExecuteAsync`, injetada diretamente nos controllers.
+- **Use Cases** (`src/Api/Bud.Application/Features/<Feature>/UseCases/`) centralizam o fluxo completo da aplicação (orquestração, autorização, notificações) e retornam `Result`/`Result<T>` (`src/Api/Bud.Application/Common/`). Cada use case é uma classe com método `ExecuteAsync`, injetada diretamente nos controllers.
   Os namespaces explícitos espelham a estrutura física: `Bud.Application.Features.<Feature>.UseCases`.
-- **Infrastructure** (`src/Server/Bud.Infrastructure/`) contém implementações concretas:
+- **Infrastructure** (`src/Api/Bud.Infrastructure/`) contém implementações concretas:
   - pastas por feature: implementações dos repositórios e adapters concretos associados à capacidade (`Goals/`, `Me/`, `Notifications/`, `Organizations/`, `Sessions/`, etc.).
   - `Authorization/`: adapters transversais de tenant/autorização que não pertencem a uma feature específica.
   - `Querying/`: specifications de consulta para filtros reutilizáveis.
   - `Persistence/`: `ApplicationDbContext`, factory de design-time, configurations, migrations e `DbSeeder`.
-- **Authorization e DI da API** vivem em `src/Server/Bud.Api/Authorization/` e `src/Server/Bud.Api/DependencyInjection/`.
+- **Authorization e DI da API** vivem em `src/Api/Bud.Api/Authorization/` e `src/Api/Bud.Api/DependencyInjection/`.
 
 ### Padrões arquiteturais adotados
 
@@ -67,12 +67,12 @@ O Bud segue uma arquitetura em camadas com separação explícita de responsabil
   Referências: `docs/adr/ADR-0007-autenticacao-e-autorizacao-por-politicas.md`.
 - **Specification Pattern (consultas reutilizáveis)**
   Filtros de domínio encapsulados em specifications para evitar duplicação de predicados.
-  Referências: `src/Server/Bud.Infrastructure/Querying/`.
+  Referências: `src/Api/Bud.Infrastructure/Querying/`.
 - **Structured Logging (source-generated)**
   Logs com `[LoggerMessage]` definidos localmente por componente (`partial`), com `EventId` estável e sem catálogo central global.
 - **Governança arquitetural por testes + ADRs**  
   Decisões versionadas (ADR) e proteção contra regressão de fronteiras via testes de arquitetura.
-  Referências: `docs/adr/README.md` e `tests/Server/Bud.ArchitectureTests/Architecture/ArchitectureTests.cs`.
+  Referências: `docs/adr/README.md` e `tests/Api/Bud.ArchitectureTests/Architecture/ArchitectureTests.cs`.
 - **Aggregate Roots explícitas**
   Entidades raiz de agregado são marcadas com `IAggregateRoot` para tornar boundaries verificáveis por testes.
   Referências: `docs/adr/ADR-0003-agregados-entidades-value-objects-e-invariantes.md`.
@@ -533,13 +533,13 @@ Comandos:
 ```bash
 dotnet restore
 dotnet build
-dotnet run --project src/Server/Bud.Api
-dotnet run --project src/Client/Bud.BlazorWasm
+dotnet run --project src/Api/Bud.Api
+dotnet run --project src/Web/Bud.BlazorWasm
 ```
 
 ## Servidor MCP (Metas e Indicadores)
 
-O repositório inclui um servidor MCP HTTP em `src/Client/Bud.Mcp`, que consome a API do `Bud.Api`.
+O repositório inclui um servidor MCP HTTP em `src/Mcp/Bud.Mcp`, que consome a API do `Bud.Api`.
 
 No transporte HTTP do MCP, o endpoint raiz delega o processamento para `IMcpRequestProcessor`/`McpRequestProcessor`,
 mantendo `Program.cs` focado em composição e roteamento.
@@ -572,7 +572,7 @@ docker compose up --build
 O serviço `mcp` é criado no compose usando:
 - `Dockerfile` (target `dev-mcp-web`)
 - `dotnet watch` para recarregar alterações locais automaticamente
-- `DOTNET_ENVIRONMENT=Development` (usa `src/Client/Bud.Mcp/appsettings.Development.json`)
+- `DOTNET_ENVIRONMENT=Development` (usa `src/Mcp/Bud.Mcp/appsettings.Development.json`)
 - `BUD_API_BASE_URL=http://api:8080` para chamadas internas ao `Bud.Api`
 - mapeamento de porta `8081:8080` para evitar conflito com o `web`
 
@@ -596,12 +596,12 @@ A resposta inclui o header `MCP-Session-Id`, que deve ser enviado nas chamadas s
 Fluxo obrigatório para atualizar catálogo MCP:
 
 ```bash
-dotnet run --project src/Client/Bud.Mcp/Bud.Mcp.csproj -- generate-tool-catalog
-dotnet run --project src/Client/Bud.Mcp/Bud.Mcp.csproj -- check-tool-catalog --fail-on-diff
+dotnet run --project src/Mcp/Bud.Mcp/Bud.Mcp.csproj -- generate-tool-catalog
+dotnet run --project src/Mcp/Bud.Mcp/Bud.Mcp.csproj -- check-tool-catalog --fail-on-diff
 ```
 
 Regras importantes do catálogo:
-- As ferramentas de domínio (`goal_*`, `goal_indicator_*`, `indicator_checkin_*`) são carregadas exclusivamente do arquivo `src/Client/Bud.Mcp/Tools/Generated/mcp-tool-catalog.json`.
+- As ferramentas de domínio (`goal_*`, `goal_indicator_*`, `indicator_checkin_*`) são carregadas exclusivamente do arquivo `src/Mcp/Bud.Mcp/Tools/Generated/mcp-tool-catalog.json`.
 - O `Bud.Mcp` falha na inicialização se o catálogo estiver ausente, inválido, vazio ou sem ferramentas de domínio obrigatórias.
 - O comando `check-tool-catalog --fail-on-diff` também valida o contrato mínimo de campos `required` por ferramenta e retorna erro quando houver quebra de contrato.
 
@@ -685,8 +685,8 @@ Opção B (sem Docker):
 ```bash
 dotnet restore
 dotnet build
-dotnet run --project src/Server/Bud.Api
-dotnet run --project src/Client/Bud.BlazorWasm
+dotnet run --project src/Api/Bud.Api
+dotnet run --project src/Web/Bud.BlazorWasm
 ```
 
 Defina a URL base conforme o modo de execução:
@@ -815,22 +815,22 @@ flowchart TD
 dotnet test
 
 # testes MCP
-dotnet test tests/Client/Bud.Mcp.Tests
+dotnet test tests/Mcp/Bud.Mcp.Tests
 
 # apenas unitários
-dotnet test tests/Server/Bud.Api.UnitTests
-dotnet test tests/Server/Bud.Application.UnitTests
-dotnet test tests/Server/Bud.Domain.UnitTests
-dotnet test tests/Server/Bud.Infrastructure.UnitTests
-dotnet test tests/Server/Bud.ArchitectureTests
+dotnet test tests/Api/Bud.Api.UnitTests
+dotnet test tests/Api/Bud.Application.UnitTests
+dotnet test tests/Api/Bud.Domain.UnitTests
+dotnet test tests/Api/Bud.Infrastructure.UnitTests
+dotnet test tests/Api/Bud.ArchitectureTests
 
 # apenas integração
-dotnet test tests/Server/Bud.Api.IntegrationTests
+dotnet test tests/Api/Bud.Api.IntegrationTests
 ```
 
 Observação:
 
-- `dotnet test Bud.sln` executa também `tests/Client/Bud.Mcp.Tests`.
+- `dotnet test Bud.sln` executa também `tests/Mcp/Bud.Mcp.Tests`.
 - Testes de integração usam PostgreSQL via Testcontainers.
 - Use `dotnet test --nologo` para saída mais limpa no terminal.
 - A solução usa `TreatWarningsAsErrors=true`; avisos quebram build/test.
@@ -861,13 +861,13 @@ O Bud 2.0 usa um sistema de tokens de design baseado no [Figma Style Guide](http
 
 ### Tokens de design
 
-Todos os valores de design (cores, tipografia, espaçamento e sombras) são definidos como propriedades CSS em [`src/Client/Bud.BlazorWasm/wwwroot/css/tokens.css`](src/Client/Bud.BlazorWasm/wwwroot/css/tokens.css).
+Todos os valores de design (cores, tipografia, espaçamento e sombras) são definidos como propriedades CSS em [`src/Web/Bud.BlazorWasm/wwwroot/css/tokens.css`](src/Web/Bud.BlazorWasm/wwwroot/css/tokens.css).
 
 ### Runtime do design system
 
-- `src/Client/Bud.BlazorWasm/wwwroot/css/fonts.css`: carrega `Crimson Pro` e `Plus Jakarta Sans` de forma local/self-hosted.
-- `src/Client/Bud.BlazorWasm/wwwroot/css/design-system.css`: aplica shell global, superfícies, tabelas, autenticação e overrides visuais do design system.
-- `src/Client/Bud.BlazorWasm/wwwroot/index.html`: carrega `fonts.css`, `tokens.css`, `app.css` e `design-system.css` nessa ordem.
+- `src/Web/Bud.BlazorWasm/wwwroot/css/fonts.css`: carrega `Crimson Pro` e `Plus Jakarta Sans` de forma local/self-hosted.
+- `src/Web/Bud.BlazorWasm/wwwroot/css/design-system.css`: aplica shell global, superfícies, tabelas, autenticação e overrides visuais do design system.
+- `src/Web/Bud.BlazorWasm/wwwroot/index.html`: carrega `fonts.css`, `tokens.css`, `app.css` e `design-system.css` nessa ordem.
 - O frontend não depende mais do CSS do Bootstrap para a camada visual principal.
 
 **Exemplo de uso:**
