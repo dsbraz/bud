@@ -100,27 +100,26 @@ if [[ -z "$API_URL" ]]; then
   exit 1
 fi
 
-echo "==> Buildando imagem do web no Cloud Build (${IMAGE_URI})"
+echo "==> Buildando imagem do web (Next.js) no Cloud Build (${IMAGE_URI})"
 gcloud builds submit \
   --project "$PROJECT_ID" \
-  --config "scripts/cloudbuild-image.yaml" \
-  --substitutions "_IMAGE_URI=${IMAGE_URI},_DOCKER_TARGET=prod-frontend" \
-  .
+  --config "scripts/cloudbuild-frontend.yaml" \
+  --substitutions "_IMAGE_URI=${IMAGE_URI}" \
+  ./frontend
 
-echo "==> Deployando web no Cloud Run"
+echo "==> Deployando web (Next.js) no Cloud Run"
 gcloud run deploy "$WEB_SERVICE_NAME" \
   --project "$PROJECT_ID" \
   --region "$REGION" \
   --platform managed \
   --image "$IMAGE_URI" \
-  --port 8080 \
-  --set-env-vars "BUD_API_BASE_URL=${API_URL}"
+  --port 3000 \
+  --set-env-vars "NEXT_PUBLIC_API_URL=${API_URL}"
 
 echo "==> Validando web"
 WEB_URL="$(gcloud run services describe "$WEB_SERVICE_NAME" --region "$REGION" --project "$PROJECT_ID" --format='value(status.url)')"
 
 curl --fail --silent --show-error "${WEB_URL}/" >/dev/null
-curl --fail --silent --show-error "${WEB_URL}/health/live" >/dev/null
 
 echo "==> Deploy do web concluido com sucesso"
 echo "WEB_URL=${WEB_URL}"

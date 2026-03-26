@@ -139,24 +139,24 @@ if [[ "$SKIP_MIGRATION" == "true" ]]; then
   echo "==> Buildando imagem da API no Cloud Build (${IMAGE_URI})"
   gcloud builds submit \
     --project "$PROJECT_ID" \
-    --config "scripts/cloudbuild-image.yaml" \
-    --substitutions "_IMAGE_URI=${IMAGE_URI},_DOCKER_TARGET=prod-web" \
-    .
+    --config "scripts/cloudbuild-backend.yaml" \
+    --substitutions "_IMAGE_URI=${IMAGE_URI},_DOCKER_TARGET=prod-api" \
+    ./backend
   echo "==> Migracao pulada (--skip-migration)"
 else
   echo "==> Buildando imagem de migracao (${MIGRATE_IMAGE_URI})"
   gcloud builds submit \
     --project "$PROJECT_ID" \
-    --config "scripts/cloudbuild-image.yaml" \
+    --config "scripts/cloudbuild-backend.yaml" \
     --substitutions "_IMAGE_URI=${MIGRATE_IMAGE_URI},_DOCKER_TARGET=prod-migrate" \
-    .
+    ./backend
 
   echo "==> Buildando imagem da API (${IMAGE_URI})"
   gcloud builds submit \
     --project "$PROJECT_ID" \
-    --config "scripts/cloudbuild-image.yaml" \
-    --substitutions "_IMAGE_URI=${IMAGE_URI},_DOCKER_TARGET=prod-web" \
-    .
+    --config "scripts/cloudbuild-backend.yaml" \
+    --substitutions "_IMAGE_URI=${IMAGE_URI},_DOCKER_TARGET=prod-api" \
+    ./backend
 
   echo "==> Garantindo Cloud Run Job de migracao"
   if job_exists "$MIGRATION_JOB_NAME"; then

@@ -103,9 +103,9 @@ fi
 echo "==> Buildando imagem MCP no Cloud Build (${IMAGE_URI})"
 gcloud builds submit \
   --project "$PROJECT_ID" \
-  --config "scripts/cloudbuild-image.yaml" \
+  --config "scripts/cloudbuild-backend.yaml" \
   --substitutions "_IMAGE_URI=${IMAGE_URI},_DOCKER_TARGET=prod-mcp" \
-  .
+  ./backend
 
 echo "==> Deployando MCP no Cloud Run"
 gcloud run deploy "$MCP_SERVICE_NAME" \
